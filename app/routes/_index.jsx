@@ -1,4 +1,4 @@
-import Welcome from '../components/pages/Welcome/Welcome'
+import RegisterStudent from '../components/pages/RegisterStudent'
 
 export function meta() {
   return [
@@ -8,5 +8,5 @@ export function meta() {
 }
 
 export default function Home() {
-  return <Welcome />
+  return <RegisterStudent />
 }
