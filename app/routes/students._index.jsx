@@ -224,9 +224,14 @@ export default function StudentsIndex() {
               ))}
             </Select>
           </Space>
-          <Button type="primary" size="large" onClick={handleAddStudent}>
-            Add Student
-          </Button>
+          <Space>
+            <Button type="default" size="large" style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>
+              Add Bulk
+            </Button>
+            <Button type="primary" size="large" onClick={handleAddStudent}>
+              Add Student
+            </Button>
+          </Space>
         </Space>
       </Space>
       <Table
