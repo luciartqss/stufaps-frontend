@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from 'react-router'
+import Layout from './components/Layout'
 
 import './app.css'
 
@@ -22,7 +23,7 @@ export const links = () => [
   },
 ]
 
-export function Layout({ children }) {
+export function HtmlLayout({ children }) {
   return (
     <html lang="en">
       <head>
@@ -40,8 +41,10 @@ export function Layout({ children }) {
   )
 }
 
+export { HtmlLayout as Layout }
+
 export default function App() {
-  return <Outlet />
+  return <Layout />
 }
 
 export function ErrorBoundary({ error }) {
@@ -61,14 +64,40 @@ export function ErrorBoundary({ error }) {
   }
 
   return (
-    <main className="container mx-auto p-4 pt-16">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full overflow-x-auto p-4">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <Layout>
+      <main
+        style={{
+          padding: '64px 24px',
+          textAlign: 'center',
+          backgroundColor: '#f5f5f5',
+          minHeight: '100vh',
+        }}
+      >
+        <h1
+          style={{
+            fontSize: '48px',
+            color: '#ff4d4f',
+            marginBottom: '16px',
+          }}
+        >
+          {message}
+        </h1>
+        <p style={{ color: '#8c8c8c', marginBottom: '24px' }}>{details}</p>
+        {stack && (
+          <pre
+            style={{
+              textAlign: 'left',
+              backgroundColor: '#fff',
+              padding: '16px',
+              borderRadius: '8px',
+              overflow: 'auto',
+              border: '1px solid #f0f0f0',
+            }}
+          >
+            <code>{stack}</code>
+          </pre>
+        )}
+      </main>
+    </Layout>
   )
 }
