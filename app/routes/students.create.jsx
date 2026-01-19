@@ -15,7 +15,6 @@ export default function CreateStudent() {
   const handleSubmit = async (values) => {
     setLoading(true)
     try {
-      // Format the date of birth
       const formattedValues = {
         ...values,
         date_of_birth: values.date_of_birth ? values.date_of_birth.format('YYYY-MM-DD') : null,
@@ -32,7 +31,7 @@ export default function CreateStudent() {
       }
 
       message.success('Student added successfully')
-      navigate('/students') // Redirect back to the students list
+      navigate('/students')
     } catch (error) {
       console.error('Error creating student:', error)
       message.error('Failed to add student')
@@ -42,9 +41,9 @@ export default function CreateStudent() {
   }
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
-        <Title level={2} style={{ textAlign: 'center', marginBottom: '24px' }}>Add Student</Title>
+    <div style={{ padding: '16px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '100%', margin: '0 auto', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
+        <Title level={2} style={{ textAlign: 'left', marginBottom: '24px' }}>Add Student</Title>
         <Form
           form={form}
           layout="vertical"
@@ -52,7 +51,7 @@ export default function CreateStudent() {
         >
           {/* Personal Information */}
           <Divider orientation="left" style={{ fontSize: '16px' }}>Personal Information</Divider>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <Form.Item
               label="First Name"
               name="first_name"
@@ -120,7 +119,7 @@ export default function CreateStudent() {
 
           {/* Contact Information */}
           <Divider orientation="left" style={{ fontSize: '16px' }}>Contact Information</Divider>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <Form.Item
               label="Contact Number"
               name="contact_number"
@@ -169,7 +168,7 @@ export default function CreateStudent() {
 
           {/* Institution Information */}
           <Divider orientation="left" style={{ fontSize: '16px' }}>Institution Information</Divider>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <Form.Item
               label="Name of Institution"
               name="name_of_institution"
@@ -237,7 +236,7 @@ export default function CreateStudent() {
 
           {/* Scholarship Information */}
           <Divider orientation="left" style={{ fontSize: '16px' }}>Scholarship Information</Divider>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             <Form.Item
               label="In-Charge"
               name="in_charge"

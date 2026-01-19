@@ -20,6 +20,8 @@ export default function StudentsIndex() {
   const [searchValue, setSearchValue] = useState('')
   const [statusFilter, setStatusFilter] = useState(null)
   const [programFilter, setProgramFilter] = useState(null)
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
+  const [semesterFilter, setSemesterFilter] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -130,23 +132,35 @@ export default function StudentsIndex() {
   // Handle search
   const handleSearch = (value) => {
     setSearchValue(value)
-    applyFilters(value, statusFilter, programFilter)
+    applyFilters(value, statusFilter, programFilter, academicYearFilter, semesterFilter)
   }
 
   // Handle status filter
   const handleStatusChange = (value) => {
     setStatusFilter(value)
-    applyFilters(searchValue, value, programFilter)
+    applyFilters(searchValue, value, programFilter, academicYearFilter, semesterFilter)
   }
 
   // Handle program filter
   const handleProgramChange = (value) => {
     setProgramFilter(value)
-    applyFilters(searchValue, statusFilter, value)
+    applyFilters(searchValue, statusFilter, value, academicYearFilter, semesterFilter)
+  }
+
+  // Handle academic year filter
+  const handleAcademicYearChange = (value) => {
+    setAcademicYearFilter(value)
+    applyFilters(searchValue, statusFilter, programFilter, value, semesterFilter)
+  }
+
+  // Handle semester filter
+  const handleSemesterChange = (value) => {
+    setSemesterFilter(value)
+    applyFilters(searchValue, statusFilter, programFilter, academicYearFilter, value)
   }
 
   // Apply filters and search
-  const applyFilters = (search, status, program) => {
+  const applyFilters = (search, status, program, academicYear, semester) => {
     let filtered = [...students]
 
     // Apply search filter
@@ -179,11 +193,23 @@ export default function StudentsIndex() {
       filtered = filtered.filter((student) => student.scholarship_program === program)
     }
 
+    // Apply academic year filter
+    if (academicYear) {
+      filtered = filtered.filter((student) => student.academic_year === academicYear)
+    }
+
+    // Apply semester filter
+    if (semester) {
+      filtered = filtered.filter((student) => student.semester === semester)
+    }
+
     setFilteredStudents(filtered)
   }
 
-  // Get unique scholarship programs for filter
+  // Get unique values for filters
   const scholarshipPrograms = [...new Set(students.map((s) => s.scholarship_program))].filter(Boolean)
+  const academicYears = [...new Set(students.map((s) => s.academic_year))].filter(Boolean)
+  const semesters = [...new Set(students.map((s) => s.semester))].filter(Boolean)
 
   return (
     <div style={{ padding: '24px' }}>
@@ -203,7 +229,7 @@ export default function StudentsIndex() {
               placeholder="Filter by Status"
               allowClear
               size="large"
-              style={{ width: 180 }}
+              style={{ width: 150 }}
               onChange={handleStatusChange}
             >
               <Option value="On-going">On-going</Option>
@@ -214,7 +240,7 @@ export default function StudentsIndex() {
               placeholder="Filter by Program"
               allowClear
               size="large"
-              style={{ width: 200 }}
+              style={{ width: 180 }}
               onChange={handleProgramChange}
             >
               {scholarshipPrograms.map((program) => (
@@ -223,8 +249,46 @@ export default function StudentsIndex() {
                 </Option>
               ))}
             </Select>
+            <Select
+              placeholder="Filter by Academic Year"
+              allowClear
+              size="large"
+              style={{ width: 160 }}
+              onChange={handleAcademicYearChange}
+            >
+              {academicYears.map((year) => (
+                <Option key={year} value={year}>
+                  {year}
+                </Option>
+              ))}
+            </Select>
+            <Select
+              placeholder="Filter by Semester"
+              allowClear
+              size="large"
+              style={{ width: 140 }}
+              onChange={handleSemesterChange}
+            >
+              {semesters.map((sem) => (
+                <Option key={sem} value={sem}>
+                  {sem}
+                </Option>
+              ))}
+            </Select>
           </Space>
           <Space>
+            <Button
+              type="default"
+              size="large"
+              style={{
+                backgroundColor: '#fff',
+                color: '#d32f2f',
+                borderColor: '#d32f2f',
+                fontWeight: 600,
+              }}
+            >
+              Extract PDF
+            </Button>
             <Button type="default" size="large" style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>
               Add Bulk
             </Button>
@@ -239,8 +303,8 @@ export default function StudentsIndex() {
         loading={loading}
         dataSource={filteredStudents}
         columns={columns}
-        rowKey="seq" // Use `seq` as the unique identifier
-        pagination={true} // Completely remove pagination
+        rowKey="seq"
+        pagination={true}
       />
     </div>
   )
