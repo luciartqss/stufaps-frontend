@@ -115,6 +115,16 @@ export default function StudentsIndex() {
     navigate('/students/create')
   }
 
+  // Handle "Add Bulk" button click
+  const handleBulkAdd = () => {
+    navigate('/students/bulk')
+  }
+
+  // Handle "Extract PDF" button click
+  const handleExtractPDF = () => {
+    navigate('/students/pdf')
+  }
+
   // Get color for status
   const getStatusColor = (status) => {
     switch (status) {
@@ -286,10 +296,16 @@ export default function StudentsIndex() {
                 borderColor: '#d32f2f',
                 fontWeight: 600,
               }}
+              onClick={handleExtractPDF}
             >
               Extract PDF
             </Button>
-            <Button type="default" size="large" style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}>
+            <Button
+              type="default"
+              size="large"
+              style={{ backgroundColor: '#52c41a', color: '#fff', borderColor: '#52c41a' }}
+              onClick={handleBulkAdd}
+            >
               Add Bulk
             </Button>
             <Button type="primary" size="large" onClick={handleAddStudent}>
