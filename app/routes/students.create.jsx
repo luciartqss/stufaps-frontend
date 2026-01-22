@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { Typography, Form, Input, Button, Select, message, DatePicker, Checkbox, Divider } from 'antd'
 import dayjs from 'dayjs'
+import { UploadOutlined } from '@ant-design/icons'
 
 const { Title } = Typography
 const { Option } = Select
@@ -43,7 +44,22 @@ export default function CreateStudent() {
   return (
     <div style={{ padding: '16px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <div style={{ maxWidth: '100%', margin: '0 auto', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
-        <Title level={2} style={{ textAlign: 'left', marginBottom: '24px' }}>Add Student</Title>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <Title level={2} style={{ margin: 0 }}>Add Student</Title>
+          <Button
+            type="default"
+            size="middle"
+            icon={<UploadOutlined />}
+            style={{
+              backgroundColor: '#52c41a',
+              color: '#fff',
+              borderColor: '#52c41a',
+            }}
+            onClick={() => navigate('/students/bulk')}
+          >
+            Import Bulk
+          </Button>
+        </div>
         <Form
           form={form}
           layout="vertical"

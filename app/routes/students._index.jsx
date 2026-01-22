@@ -406,20 +406,6 @@ export default function StudentsIndex() {
             >
               Extract PDF
             </Button>
-            <Button
-              type="default"
-              size="middle"
-              icon={<UploadOutlined />}
-              style={{
-                backgroundColor: '#52c41a',
-                color: '#fff',
-                borderColor: '#52c41a',
-                width: 120,
-              }}
-              onClick={handleBulkAdd}
-            >
-              Import Bulk
-            </Button>
 
             <Button
               type="primary"
