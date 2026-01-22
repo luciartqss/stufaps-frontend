@@ -58,13 +58,26 @@ export default function Financial_AssistanceIndex() {
       {/* Main content */}
       <main className="flex-1 p-8">
         
+        <Title level={3}>Priority</Title>
         {/* Grid layout for scholarship cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
+        <div className="grid gap-12 items-stretch">
+          
+      
+          
           <ScholarshipCard
             title="CMSP"
             description="CHED Merit Scholarship Program"
             to="/financial_assistance/cmsp"
           />
+        </div>
+
+        <br />
+
+        <Title level={3}>Other Programs</Title>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
+          
+        
+
           <ScholarshipCard
             title="ESTATISKOLAR"
             description="Scholarship Program for Future Statisticians"
@@ -100,6 +113,16 @@ export default function Financial_AssistanceIndex() {
             description="Cash Grant to Medical Students Enrolled in State Universities and Colleges"
             to="/financial_assistance/Cgms_Sucs"
           />
+          <ScholarshipCard
+            title="SNPLP"
+
+            //not finalized
+            description="Cash Grant to Medical Students Enrolled in State Universities and Colleges"
+            to="/financial_assistance/Snplp"
+            //up to here
+            
+          />
+
         </div>
       </main>
     </div>
