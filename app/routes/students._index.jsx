@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal } from 'antd'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Card } from 'antd'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { UploadOutlined } from '@ant-design/icons'
@@ -137,8 +137,29 @@ export default function StudentsIndex() {
     navigate(`/students/${student.seq}`) // Use `seq` as the unique identifier
   }
 
+  // Log action function
+  const logAction = async (model, modelId, action, oldData, newData) => {
+    try {
+      await fetch('http://localhost:8000/api/logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          model_id: modelId,
+          action,
+          old_data: oldData,
+          new_data: newData,
+          ip_address: 'client',
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to log action:', error)
+    }
+  }
+
   // Handle "Add Student" button click
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
+    // Log the navigation (logging will happen in the create page)
     navigate('/students/create')
   }
 
@@ -281,11 +302,16 @@ export default function StudentsIndex() {
 
   const oldValues = [...new Set(students.map(s => s[field])).values()].filter(Boolean)
 
+  // Update the handleSubmit for Bulk Edit to include logging
   const handleSubmit = async () => {
     if (!oldValue || !newValue) {
       message.error('Please select and enter all fields.')
       return
     }
+    
+    // Log the bulk edit action
+    await logAction('Student', 0, 'update', { [field]: oldValue }, { [field]: newValue })
+    
     const res = await fetch('http://localhost:8000/api/students/bulk-update-field', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -296,6 +322,8 @@ export default function StudentsIndex() {
       message.success(data.message)
       fetchStudents()
       setModalVisible(false)
+      setOldValue('')
+      setNewValue('')
     } else {
       message.error(data.error || 'Failed to update')
     }
@@ -457,6 +485,14 @@ export default function StudentsIndex() {
           placeholder="Enter new value"
         />
       </Modal>
+      <Card
+        styles={{
+          body: { padding: 16 },
+          header: { padding: '12px 16px' },
+        }}
+      >
+        Content
+      </Card>
     </div>
   )
 }
