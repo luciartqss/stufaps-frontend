@@ -5,6 +5,7 @@ import {
   DollarOutlined,
   CalendarOutlined,
   BarChartOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
@@ -27,6 +28,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       label: <NavLink to="/students">Students</NavLink>,
     },
     {
+      key: '/logs',
+      icon: <FileTextOutlined />,
+      label: <NavLink to="/logs">Logs</NavLink>,
+    },
+    {
       key: '/disbursements',
       icon: <DollarOutlined />,
       label: <NavLink to="/disbursements">Disbursements</NavLink>,
@@ -36,7 +42,6 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       icon: <BarChartOutlined />,
       label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
     },
-
   ]
 
   const getSelectedKey = () => {
