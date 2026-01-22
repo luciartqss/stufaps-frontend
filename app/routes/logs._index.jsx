@@ -6,15 +6,6 @@ const { Title, Text } = Typography
 
 const API_URL = 'http://localhost:8000/api'
 
-// Suppress Ant Design compatibility warning
-const originalWarn = console.warn;
-console.warn = (message) => {
-  if (message.includes('antd v5 support React is 16 ~ 18')) {
-    return;
-  }
-  originalWarn(message);
-};
-
 export function meta() {
   return [
     { title: 'Logs | StuFAPs' },
@@ -37,7 +28,11 @@ export default function LogsIndex() {
       const res = await fetch(`${API_URL}/logs`)
       if (!res.ok) throw new Error('Failed to fetch logs')
       const data = await res.json()
-      setLogs(data)
+      
+      // Sort by created_at in descending order (newest first)
+      const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      
+      setLogs(sortedData)
     } catch (error) {
       message.error('Failed to fetch logs')
       console.error(error)
@@ -87,6 +82,37 @@ export default function LogsIndex() {
     }
   }
 
+  const formatDataChange = (oldData, newData, action) => {
+    if (action === 'create') {
+      return <Text type="success">Record created</Text>
+    }
+    
+    if (action === 'delete') {
+      return <Text type="danger">Record deleted</Text>
+    }
+
+    if (action === 'update' && oldData && newData) {
+      const oldObj = typeof oldData === 'string' ? JSON.parse(oldData) : oldData
+      const newObj = typeof newData === 'string' ? JSON.parse(newData) : newData
+      
+      return (
+        <div>
+          {Object.keys(newObj).map(key => (
+            <div key={key} style={{ fontSize: '12px', marginBottom: '4px' }}>
+              <Text strong>{key}:</Text>
+              <br />
+              <Text delete style={{ color: '#ff4d4f' }}>{oldObj[key] || 'null'}</Text>
+              <br />
+              <Text style={{ color: '#52c41a' }}>{newObj[key] || 'null'}</Text>
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    return <Text type="secondary">No changes</Text>
+  }
+
   const columns = [
     {
       title: 'ID',
@@ -108,6 +134,7 @@ export default function LogsIndex() {
       key: 'model_id',
       width: 100,
       align: 'center',
+      render: (id) => id === 0 ? <Tag color="purple">Bulk</Tag> : id,
     },
     {
       title: 'Action',
@@ -121,15 +148,22 @@ export default function LogsIndex() {
       ),
     },
     {
+      title: 'Changes',
+      key: 'changes',
+      width: 250,
+      render: (_, record) => formatDataChange(record.old_data, record.new_data, record.action),
+    },
+    {
       title: 'Changed Fields',
       dataIndex: 'changed_fields',
       key: 'changed_fields',
+      width: 150,
       render: (fields) => {
         if (!fields) return <Text type="secondary">-</Text>
         return (
-          <Text style={{ fontSize: '12px' }} ellipsis title={fields}>
+          <Tag color="blue" style={{ fontSize: '11px' }}>
             {fields}
-          </Text>
+          </Tag>
         )
       },
     },
@@ -153,11 +187,7 @@ export default function LogsIndex() {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date) => {
-        return new Date(date).toLocaleString()
-      },
-      sorter: (a, b) => new Date(b.created_at) - new Date(a.created_at),
-      defaultSortOrder: 'descend',
+      render: (date) => new Date(date).toLocaleString(),
     },
     {
       title: 'Action',
@@ -173,8 +203,10 @@ export default function LogsIndex() {
               size="small"
               icon={<UndoOutlined />}
               onClick={() => handleRollback(record)}
+              disabled={record.is_rolled_back}
+              title={record.is_rolled_back ? 'Already rolled back' : 'Rollback this action'}
             >
-              Rollback
+              {record.is_rolled_back ? 'Rolled Back' : 'Rollback'}
             </Button>
           )
         }
