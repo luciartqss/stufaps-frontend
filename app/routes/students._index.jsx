@@ -416,10 +416,11 @@ export default function StudentsIndex() {
                 borderColor: '#52c41a',
                 width: 120,
               }}
-              onClick={() => setModalVisible(true)}
+              onClick={handleBulkAdd}
             >
               Import Bulk
             </Button>
+
             <Button
               type="primary"
               size="middle"
