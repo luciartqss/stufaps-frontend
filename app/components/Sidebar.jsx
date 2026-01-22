@@ -31,6 +31,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       icon: <DollarOutlined />,
       label: <NavLink to="/disbursements">Disbursements</NavLink>,
     },
+    {
+      key: '/financial_assistance',
+      icon: <BarChartOutlined />,
+      label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
+    },
 
   ]
 
