@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover } from 'antd'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal } from 'antd'
 import { InfoCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { UploadOutlined } from '@ant-design/icons'
@@ -26,6 +26,7 @@ export default function StudentsIndex() {
   const [semesterFilter, setSemesterFilter] = useState(null)
   const [courseFilter, setCourseFilter] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 })
+  const [modalVisible, setModalVisible] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -77,6 +78,12 @@ export default function StudentsIndex() {
         ].filter(Boolean)
         return parts.join(' ')
       },
+    },
+    {
+      title: 'School',
+      dataIndex: 'name_of_institution',
+      key: 'name_of_institution',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Degree Program',
@@ -263,6 +270,41 @@ export default function StudentsIndex() {
     </div>
   )
 
+  const [field, setField] = useState('degree_program')
+  const [oldValue, setOldValue] = useState('')
+  const [newValue, setNewValue] = useState('')
+
+  const fieldOptions = [
+    { label: 'Course Name', value: 'degree_program' },
+    { label: 'Institution Name', value: 'name_of_institution' },
+  ]
+
+  const oldValues = [...new Set(students.map(s => s[field])).values()].filter(Boolean)
+
+  const handleSubmit = async () => {
+    if (!oldValue || !newValue) {
+      message.error('Please select and enter all fields.')
+      return
+    }
+    const res = await fetch('http://localhost:8000/api/students/bulk-update-field', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ field, old_value: oldValue, new_value: newValue }),
+    })
+    const data = await res.json()
+    if (res.ok) {
+      message.success(data.message)
+      fetchStudents()
+      setModalVisible(false)
+    } else {
+      message.error(data.error || 'Failed to update')
+    }
+  }
+
+  const refreshStudents = () => {
+    fetchStudents()
+  }
+
   return (
     <div style={{ padding: '24px' }}>
       <Title level={2}>Students</Title>
@@ -374,7 +416,7 @@ export default function StudentsIndex() {
                 borderColor: '#52c41a',
                 width: 120,
               }}
-              onClick={handleBulkAdd}
+              onClick={() => setModalVisible(true)}
             >
               Import Bulk
             </Button>
@@ -385,6 +427,14 @@ export default function StudentsIndex() {
               onClick={handleAddStudent}
             >
               Add Student
+            </Button>
+            <Button
+              type="default"
+              size="middle"
+              style={{ width: 120 }}
+              onClick={() => setModalVisible(true)}
+            >
+              Bulk Edit
             </Button>
           </Space>
         </Space>
@@ -402,6 +452,24 @@ export default function StudentsIndex() {
           onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
         }}
       />
+      <Modal open={modalVisible} onCancel={() => setModalVisible(false)} onOk={handleSubmit} title="Bulk Edit">
+        <Select value={field} onChange={setField} style={{ width: '100%', marginBottom: 12 }}>
+          {fieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
+        </Select>
+        <Select
+          value={oldValue}
+          onChange={setOldValue}
+          style={{ width: '100%', marginBottom: 12 }}
+          placeholder="Select value to replace"
+        >
+          {oldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
+        </Select>
+        <Input
+          value={newValue}
+          onChange={e => setNewValue(e.target.value)}
+          placeholder="Enter new value"
+        />
+      </Modal>
     </div>
   )
 }
