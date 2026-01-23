@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Table, Button, Tag, Typography, Space, message, Modal, Spin, Empty } from 'antd'
 import { UndoOutlined } from '@ant-design/icons'
+import { api } from '../lib/api'
 
 const { Title, Text } = Typography
-
-const API_URL = 'http://localhost:8000/api'
 
 export function meta() {
   return [
@@ -25,7 +24,7 @@ export default function LogsIndex() {
   const fetchLogs = async () => {
     try {
       setLoading(true)
-      const res = await fetch(`${API_URL}/logs`)
+      const res = await api.get('/api/logs')
       if (!res.ok) throw new Error('Failed to fetch logs')
       const data = await res.json()
       
@@ -50,10 +49,7 @@ export default function LogsIndex() {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
-          const res = await fetch(`${API_URL}/logs/${log.id}/rollback`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-          })
+          const res = await api.post(`/api/logs/${log.id}/rollback`, {})
           const data = await res.json()
           if (res.ok) {
             message.success(data.message)

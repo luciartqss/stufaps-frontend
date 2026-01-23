@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
 import { Typography, message } from 'antd'
 import * as XLSX from 'xlsx'
+import { api } from '../lib/api'
 
 const { Title } = Typography
 
@@ -69,13 +70,7 @@ export default function ImportBulk() {
     })
 
     try {
-      const response = await fetch('http://localhost:8000/api/students/import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ students: cleanedData }),
-      })
+      const response = await api.post('/api/students/import', { students: cleanedData })
 
       if (response.ok) {
         message.success('Students imported successfully')

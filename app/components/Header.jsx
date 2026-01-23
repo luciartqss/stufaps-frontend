@@ -7,20 +7,18 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
-import { useNavigate } from "react-router";
 import { useAuth } from "../lib/AuthContext";
 
 const { Header: AntHeader } = Layout;
 const { Text } = Typography;
 
 export default function Header({ collapsed, setCollapsed }) {
-  const navigate = useNavigate();
   const { logout, user } = useAuth();
 
-  const handleMenuClick = ({ key }) => {
+  const handleMenuClick = async ({ key }) => {
     if (key === "logout") {
-      logout();
-      navigate("/");
+      await logout();
+      // Auth state change will automatically show the login page
     }
   };
 

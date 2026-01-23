@@ -1,12 +1,12 @@
-import Login from '../pages/login'
+import Dashboard from '../pages/dashboard'
 
 export function meta() {
   return [
-    { title: 'Login - StuFAPs' },
-    { name: 'description', content: 'Student Financial Assistance Programs Login' },
+    { title: 'Dashboard - StuFAPs' },
+    { name: 'description', content: 'Student Financial Assistance Programs Dashboard' },
   ]
 }
 
 export default function Home() {
-  return <Login />
+  return <Dashboard />
 }

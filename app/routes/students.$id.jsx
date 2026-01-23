@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message } from 'antd'
 import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { api } from '../lib/api'
 
 const { Title, Text } = Typography
 
@@ -21,7 +22,7 @@ export default function StudentDetails() {
       return
     }
 
-    fetch(`http://localhost:8000/api/students/${id}`)
+    api.get(`/api/students/${id}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
