@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Form, Input, Button, Card, Typography, message, Space } from 'antd'
+import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/AuthContext'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 
 export default function Login() {
   const [loading, setLoading] = useState(false)
@@ -37,32 +37,48 @@ export default function Login() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-      }}
-    >
+    <div className="min-h-screen flex justify-center items-center bg-gray-900 p-5">
       <Card
-        style={{
-          width: '100%',
-          maxWidth: 400,
-          borderRadius: 12,
-          boxShadow: '0 10px 40px rgba(0, 0, 0, 0.2)',
-        }}
-        bodyStyle={{ padding: '40px' }}
+        className="w-full max-w-md rounded-2xl shadow-2xl"
+        bodyStyle={{ padding: '64px 48px' }}
+        style={{ backgroundColor: 'white' }}
       >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div style={{ textAlign: 'center' }}>
-            <Title level={2} style={{ marginBottom: 8, color: '#1a1a2e' }}>
-              StuFAPs
-            </Title>
-            <Text type="secondary">
+        <div className="flex flex-col items-center w-full">
+          {/* Logo Section (adjusted spacing) */}
+          <div className="flex flex-col items-center mb-16">
+            <img 
+              src="/app/assets/images/CHED_Logo.png" 
+              alt="CHED Logo" 
+              className="w-32 h-32 mb-6 object-contain"
+            />
+            <Text
+              strong
+              style={{
+                color: "#1f2937",
+                fontSize: "20px",
+                fontWeight: 700,
+                display: "block",
+                lineHeight: "1.15",
+                textAlign: "center",
+                whiteSpace: "nowrap",
+                marginTop: 10,
+                marginBottom: 4
+              }}
+            >
               Student Financial Assistance Programs
+            </Text>
+            <Text
+              style={{
+                color: "#6b7280",
+                fontSize: "14px",
+                display: "block",
+                lineHeight: "1.25",
+                fontWeight: 500,
+                textAlign: "center",
+                marginBottom: 24
+              }}
+            >
+              Commission on Higher Education
             </Text>
           </div>
 
@@ -72,59 +88,49 @@ export default function Login() {
             layout="vertical"
             size="large"
             autoComplete="off"
+            className="w-full mt-2"
           >
             <Form.Item
               name="username"
               rules={[{ required: true, message: 'Please enter your username' }]}
+              style={{ marginBottom: 20 }}
             >
               <Input
-                prefix={<UserOutlined style={{ color: '#bfbfbf' }} />}
+                prefix={<UserOutlined className="text-gray-400" />}
                 placeholder="Username"
-                style={{ borderRadius: 8 }}
+                className="h-12 rounded-lg border-gray-300 hover:border-blue-400 focus:border-blue-500"
               />
             </Form.Item>
 
             <Form.Item
               name="password"
               rules={[{ required: true, message: 'Please enter your password' }]}
+              style={{ marginBottom: 28 }}
             >
               <Input.Password
-                prefix={<LockOutlined style={{ color: '#bfbfbf' }} />}
+                prefix={<LockOutlined className="text-gray-400" />}
                 placeholder="Password"
-                style={{ borderRadius: 8 }}
+                className="h-12 rounded-lg border-gray-300 hover:border-blue-400 focus:border-blue-500"
               />
             </Form.Item>
 
-            <Form.Item style={{ marginBottom: 0 }}>
+            <Form.Item className="mb-0">
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
                 block
-                style={{
-                  height: 48,
-                  borderRadius: 8,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  border: 'none',
-                  fontWeight: 600,
-                }}
+                className="h-12 rounded-lg font-semibold text-base bg-gradient-to-r from-blue-500 to-purple-600 border-0 hover:from-blue-600 hover:to-purple-700 transition-all duration-200"
               >
                 Sign In
               </Button>
             </Form.Item>
           </Form>
 
-          <Text
-            type="secondary"
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              fontSize: 12,
-            }}
-          >
+          <Text className="text-center text-xs text-gray-400 mt-12">
             © 2026 StuFAPs. All rights reserved.
           </Text>
-        </Space>
+        </div>
       </Card>
     </div>
   )
