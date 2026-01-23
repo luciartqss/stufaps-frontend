@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Card } from 'antd'
-import { TeamOutlined, DollarOutlined, CheckCircleOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { TeamOutlined, ContactsOutlined    , FundOutlined, UserOutlined  } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
@@ -12,18 +12,6 @@ export function meta() {
   ]
 }
 
-
-const routeMap = {
-  CMSP: "/financial_assistance/cmsp",
-  ESTATISKOLAR: "/financial_assistance/estatistikolar",
-  COSCHO: "/financial_assistance/coscho",
-  MSRS: "/financial_assistance/msrs",
-  "SIDA-SGP": "/financial_assistance/sida_sgp",
-  "ACEF-GIAHEP": "/financial_assistance/acef_giahep",
-  "MTP-SP": "/financial_assistance/mtp_sp",
-  "CGMS-SUCS": "/financial_assistance/cgms_sucs",
-  SNPLP: "/financial_assistance/snplp",
-}
 
 function StatsCards({ financialAssistances }) {
   const totals = {
@@ -36,14 +24,14 @@ function StatsCards({ financialAssistances }) {
     {
       title: 'Total Slots',
       value: totals.totalSlots,
-      icon: <DollarOutlined />,
+      icon: <ContactsOutlined />,
       color: '#1890ff',
       bgColor: '#e6f7ff',
     },
     {
       title: 'Total Filled Slots',
       value: totals.totalFilled,
-      icon: <CheckCircleOutlined />,
+      icon: <TeamOutlined/>,
       color: '#52c41a',
       bgColor: '#f6ffed',
       percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
@@ -51,7 +39,7 @@ function StatsCards({ financialAssistances }) {
     {
       title: 'Total Unfilled Slots',
       value: totals.totalUnfilled,
-      icon: <ClockCircleOutlined />,
+      icon: <UserOutlined/>,
       color: '#faad14',
       bgColor: '#fffbe6',
       percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
@@ -112,6 +100,18 @@ function StatsCards({ financialAssistances }) {
   )
 }
 
+const routeMap = {
+  CMSP: "/financial_assistance/cmsp",
+  ESTATISTIKOLAR: "/financial_assistance/estatistikolar",
+  COSCHO: "/financial_assistance/coscho",
+  MSRS: "/financial_assistance/msrs",
+  "SIDA-SGP": "/financial_assistance/sida_sgp",
+  "ACEF-GIAHEP": "/financial_assistance/acef_giahep",
+  "MTP-SP": "/financial_assistance/mtp_sp",
+  "CGMS-SUCS": "/financial_assistance/cgms_sucs",
+  SNPLP: "/financial_assistance/snplp",
+}
+
 function getRoute(programName) {
   return routeMap[programName.toUpperCase()] || "#"
 }
@@ -137,6 +137,7 @@ function ScholarshipCard({ title, description, to, total, filled, unfilled }) {
           <div>Slots: {total ?? '—'}</div>
           <div>Filled: {filled ?? '—'}</div>
           <div>Unfilled: {unfilled ?? '—'}</div>
+          <div>{total ? ((filled / total) * 100).toFixed(1) : '—'}% of total</div>
         </div>
       </div>
     </Link>
@@ -149,22 +150,27 @@ export default function Financial_AssistanceIndex() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  useEffect(() => 
+  {
     fetch('http://localhost:8000/api/scholarship_programs')
-      .then(res => {
-        if (!res.ok) {
+      .then(res => 
+      {
+        if (!res.ok) 
+        {
           throw new Error(`HTTP error! status: ${res.status}`)
         }
         return res.json()
       })
-      .then(data => {
+      .then(data => 
+      {
         console.log('API Response:', data)
         const programsData = data.data || data
         console.log('Programs Data:', programsData)
         setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
         setLoading(false)
       })
-      .catch(err => {
+      .catch(err => 
+      {
         console.error('Fetch Error:', err)
         setError(err.message)
         setLoading(false)
@@ -173,7 +179,8 @@ export default function Financial_AssistanceIndex() {
 
   if (loading) return <div className="p-8">Loading...</div>
   if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
-  if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
+  if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) 
+  {
     return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
   }
 
@@ -194,7 +201,6 @@ export default function Financial_AssistanceIndex() {
         <StatsCards financialAssistances={financialAssistances} />
         
         {/* Priority Section */}
-        <Title level={3}>Priority</Title>
         <div className="grid gap-12 items-stretch">
           {priorityProgram && (
             <ScholarshipCard
@@ -212,7 +218,6 @@ export default function Financial_AssistanceIndex() {
         <br />
 
         {/* Other Programs Section */}
-        <Title level={3}>Other Programs</Title>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
           {otherPrograms.map(program => (
             <ScholarshipCard
