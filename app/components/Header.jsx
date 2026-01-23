@@ -7,11 +7,23 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
+import { useNavigate } from "react-router";
+import { useAuth } from "../lib/AuthContext";
 
 const { Header: AntHeader } = Layout;
 const { Text } = Typography;
 
 export default function Header({ collapsed, setCollapsed }) {
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleMenuClick = ({ key }) => {
+    if (key === "logout") {
+      logout();
+      navigate("/");
+    }
+  };
+
   const userMenuItems = [
     {
       key: "profile",
@@ -96,7 +108,7 @@ export default function Header({ collapsed, setCollapsed }) {
 
       {/* Right side: User Info */}
       <Dropdown
-        menu={{ items: userMenuItems }}
+        menu={{ items: userMenuItems, onClick: handleMenuClick }}
         trigger={["click"]}
         placement="bottomRight"
       >
@@ -127,7 +139,7 @@ export default function Header({ collapsed, setCollapsed }) {
                   lineHeight: "1.3",
                 }}
               >
-                Administrator
+                {user?.username || "Administrator"}
               </Text>
               <Text
                 style={{
@@ -137,7 +149,7 @@ export default function Header({ collapsed, setCollapsed }) {
                   lineHeight: "1.3",
                 }}
               >
-                System Admin
+                {user?.role || "System Admin"}
               </Text>
             </div>
             <Avatar

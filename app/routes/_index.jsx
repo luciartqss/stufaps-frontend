@@ -1,12 +1,12 @@
-import Dashboard from '../pages/dashboard'
+import Login from '../pages/login'
 
 export function meta() {
   return [
-    { title: 'New React Router App' },
-    { name: 'description', content: 'Welcome to React Router!' },
+    { title: 'Login - StuFAPs' },
+    { name: 'description', content: 'Student Financial Assistance Programs Login' },
   ]
 }
 
 export default function Home() {
-  return <Dashboard />
+  return <Login />
 }
