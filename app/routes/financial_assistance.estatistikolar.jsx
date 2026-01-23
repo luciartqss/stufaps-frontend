@@ -1,133 +1,258 @@
-import { useState } from "react";
+import { useEffect, useState } from 'react' 
+import { Card, Typography } from 'antd' 
+import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+const { Text } = Typography
+import { Progress } from 'antd'
 
-export default function FinancialAssistanceEstatistikolar() {
-    const [expandedSUC, setExpandedSUC] = useState(null);
-    const [expandedPrivate, setExpandedPrivate] = useState(null);
-    const sucPrograms = [
-  {
-    id: "full-ssp",
-    name: "Full-SSP",
-    rows: [
-      { label: "TOSF", colSpan: 2, value: "Free Higher Education" },
-      { label: "Stipend", perSem: "₱35,000.00", perAY: "₱70,000.00" },
-      { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
-    ],
-    total: { perSem: "₱40,000.00", perAY: "₱80,000.00" },
-  },
-];
+export function meta() {
+  return [
+    { title: 'CHED Scholarship for Future Statisticians (Estatistikolar) | StuFAPs' },
+    { name: 'description', content: 'Manage Estatistikolar records' },
+  ]
+}
 
-const privatePrograms = [
-  {
-    id: "full-pesfa",
-    name: "Full-PESFA",
-    rows: [
-      { label: "TOSF", perSem: "₱20,000.00", perAY: "₱40,000.00" },
-      { label: "Stipend", perSem: "₱35,000.00", perAY: "₱70,000.00" },
-      { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
-    ],
-    total: { perSem: "₱60,000.00", perAY: "₱120,000.00" },
-  },
-];
+function StatsCards({ financialAssistances }) {
+  
+  const totals = {
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+  }
 
-const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
-  <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
-      {title}
-    </h2>
-    <div className="space-y-4">
-      {programs.map((program) => (
-        <div
-          key={program.id}
-          className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-        >
-          <button
-            onClick={() =>
-              setExpandedId(expandedId === program.id ? null : program.id)
-            }
-            className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
+  const statsConfig = [
+    {
+      title: 'Total Slots',
+      value: totals.totalSlots,
+      icon: <ContactsOutlined />,
+      color: '#1890ff',
+      bgColor: '#e6f7ff',
+    },
+    {
+      title: 'Filled Slots',
+      value: totals.totalFilled,
+      icon: <TeamOutlined />,
+      color: '#52c41a',
+      bgColor: '#f6ffed',
+      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
+    },
+    {
+      title: 'Unfilled Slots',
+      value: totals.totalUnfilled,
+      icon: <UserOutlined />,
+      color: '#faad14',
+      bgColor: '#fffbe6',
+      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
+    },
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+      {statsConfig.map((stat, index) => (
+        <div key={index} style={{ flex: '1 1 calc(33% - 8px)', minWidth: 250 }}>
+          <Card
+            style={{
+              borderRadius: 12,
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              height: "auto",
+            }}
+            bodyStyle={{
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+            }}
           >
-            <span className="font-bold text-gray-800">{program.name}</span>
-            <span
-              className="text-red-600 text-xl transition-transform duration-200"
-              style={{
-                transform:
-                  expandedId === program.id ? "rotate(180deg)" : "rotate(0deg)",
-              }}
-            >
-              ▼
-            </span>
-          </button>
-
-          {expandedId === program.id && (
-            <div className="p-4 animate-in fade-in duration-200">
-              <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">
-                      Item
-                    </th>
-                    <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                      Per Sem
-                    </th>
-                    <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                      Per AY
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {program.rows.map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className="hover:bg-gray-50 transition-colors duration-100"
-                    >
-                      <td className="border border-gray-400 p-3 text-left text-gray-700">
-                        {row.label}
-                      </td>
-
-                      {row.colSpan ? (
-                        <td
-                          colSpan={2}
-                          className="border border-gray-400 p-3 text-center font-medium text-gray-800"
-                        >
-                          {row.value}
-                        </td>
-                      ) : (
-                        <>
-                          <td className="border border-gray-400 p-3 text-right font-medium text-gray-800 w-28">
-                            {row.perSem}
-                          </td>
-                          <td className="border border-gray-400 p-3 text-right font-medium text-gray-800 w-28">
-                            {row.perAY}
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  ))}
-                  <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
-                    <td className="border border-gray-400 p-3 text-left text-gray-800">
-                      Total
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right text-gray-800 w-28">
-                      {program.total.perSem}
-                    </td>
-                    <td className="border border-gray-400 p-3 text-right text-gray-800 w-28">
-                      {program.total.perAY}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div style={{ marginBottom: 12 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 500 }}>
+                {stat.title}
+              </Text>
+              <Text strong style={{ fontSize: 18, color: stat.color, lineHeight: 1.1, display: 'block', marginBottom: 4 }}>
+                {stat.value.toLocaleString()}
+              </Text>
             </div>
-          )}
+            {stat.percentage && (
+              <>
+                <Progress percent={parseFloat(stat.percentage)} 
+                showInfo={false} 
+                strokeColor={stat.color} 
+                style={{ marginBottom: 8 }} 
+                />
+
+                <Text style={{ fontSize: 12, color: stat.color }}>
+                  {stat.percentage}% of total
+                </Text>
+              </>
+            )}
+          </Card>
         </div>
       ))}
     </div>
-  </div>
-);
+  )
+}
+
+export default function FinancialAssistanceEstatistikolar() {
+  const [financialAssistances, setFinancialAssistances] = useState([])
+  const [expandedSUC, setExpandedSUC] = useState(null);
+  const [expandedPrivate, setExpandedPrivate] = useState(null);
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+      fetch('http://localhost:8000/api/scholarship_programs')
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then(data => {
+          console.log('API Response:', data)
+          const programsData = data.data || data
+          console.log('Programs Data:', programsData)
+          setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
+          setLoading(false)
+        })
+        .catch(err => {
+          console.error('Fetch Error:', err)
+          setError(err.message)
+          setLoading(false)
+        })
+    }, [])
+  
+    if (loading) return <div className="p-8">Loading...</div>
+    if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
+    if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
+      return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
+    }
+
+  const sucPrograms = [
+    {
+      id: "full-ssp",
+      name: "Full-SSP",
+      rows: [
+        { label: "TOSF", colSpan: 2, value: "Free Higher Education" },
+        { label: "Stipend", perSem: "₱35,000.00", perAY: "₱70,000.00" },
+        { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
+      ],
+      total: { perSem: "₱40,000.00", perAY: "₱80,000.00" },
+    },
+  ];
+
+  const privatePrograms = [
+    {
+      id: "full-pesfa",
+      name: "Full-PESFA",
+      rows: [
+        { label: "TOSF", perSem: "₱20,000.00", perAY: "₱40,000.00" },
+        { label: "Stipend", perSem: "₱35,000.00", perAY: "₱70,000.00" },
+        { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
+      ],
+      total: { perSem: "₱60,000.00", perAY: "₱120,000.00" },
+    },
+  ];
+
+  const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
+    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
+        {title}
+      </h2>
+      <div className="space-y-4">
+        {programs.map((program) => (
+          <div
+            key={program.id}
+            className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+          >
+            <button
+              onClick={() =>
+                setExpandedId(expandedId === program.id ? null : program.id)
+              }
+              className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
+            >
+              <span className="font-bold text-gray-800">{program.name}</span>
+              <span
+                className="text-red-600 text-xl transition-transform duration-200"
+                style={{
+                  transform:
+                    expandedId === program.id ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+              >
+                ▼
+              </span>
+            </button>
+
+            {expandedId === program.id && (
+              <div className="p-4 animate-in fade-in duration-200">
+                <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">
+                        Item
+                      </th>
+                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
+                        Per Sem
+                      </th>
+                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
+                        Per AY
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {program.rows.map((row, idx) => (
+                      <tr
+                        key={idx}
+                        className="hover:bg-gray-50 transition-colors duration-100"
+                      >
+                        <td className="border border-gray-400 p-3 text-left text-gray-700">
+                          {row.label}
+                        </td>
+
+                        {row.colSpan ? (
+                          <td
+                            colSpan={2}
+                            className="border border-gray-400 p-3 text-center font-medium text-gray-800"
+                          >
+                            {row.value}
+                          </td>
+                        ) : (
+                          <>
+                            <td className="border border-gray-400 p-3 text-right font-medium text-gray-800 w-28">
+                              {row.perSem}
+                            </td>
+                            <td className="border border-gray-400 p-3 text-right font-medium text-gray-800 w-28">
+                              {row.perAY}
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                    <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
+                      <td className="border border-gray-400 p-3 text-left text-gray-800">
+                        Total
+                      </td>
+                      <td className="border border-gray-400 p-3 text-right text-gray-800 w-28">
+                        {program.total.perSem}
+                      </td>
+                      <td className="border border-gray-400 p-3 text-right text-gray-800 w-28">
+                        {program.total.perAY}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
 
   return (
     <div className="min-h-screen">
           <main>
+            <StatsCards financialAssistances={financialAssistances.filter(
+              p => p.scholarship_program_name.toUpperCase() === "ESTATISTIKOLAR"
+            )} />
           <div className="container mx-auto p-4 sm:p-6 lg:p-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
               CHED Scholarship for Future Statisticians (Estatistikolar)
