@@ -5,8 +5,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from 'react-router'
 import Layout from './components/Layout'
+import { AuthProvider, useAuth } from './lib/AuthContext'
+import ProtectedRoute from './components/ProtectedRoute'
 
 import './app.css'
 
@@ -43,8 +46,33 @@ export function HtmlLayout({ children }) {
 
 export { HtmlLayout as Layout }
 
+function AppContent() {
+  const location = useLocation()
+  const { isAuthenticated } = useAuth()
+  
+  // Public routes that don't need authentication or layout
+  const publicRoutes = ['/']
+  const isPublicRoute = publicRoutes.includes(location.pathname)
+  
+  // If on login page and authenticated, the login page will handle redirect
+  if (isPublicRoute) {
+    return <Outlet />
+  }
+  
+  // Protected routes - wrap with Layout and ProtectedRoute
+  return (
+    <ProtectedRoute>
+      <Layout />
+    </ProtectedRoute>
+  )
+}
+
 export default function App() {
-  return <Layout />
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  )
 }
 
 export function ErrorBoundary({ error }) {
