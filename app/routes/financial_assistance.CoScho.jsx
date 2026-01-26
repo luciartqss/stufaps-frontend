@@ -45,45 +45,64 @@ function StatsCards({ financialAssistances }) {
       percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
     },
   ]
-  return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+
+return (
+    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
       {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: '1 1 calc(33% - 8px)', minWidth: 250 }}>
+        <div key={index} style={{ flex: 1, minWidth: 0 }}>
           <Card
             style={{
               borderRadius: 12,
               border: 'none',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: "auto",
+              height: 96,
             }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              flexDirection: 'column',
+            bodyStyle={{ 
+              padding: 16, 
+              display: 'flex', 
+              alignItems: 'center', 
               justifyContent: 'space-between',
+              height: '100%'
             }}
           >
-            <div style={{ marginBottom: 12 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
                 {stat.title}
               </Text>
-              <Text strong style={{ fontSize: 18, color: stat.color, lineHeight: 1.1, display: 'block', marginBottom: 4 }}>
-                {stat.value.toLocaleString()}
+              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
+                {stat.prefix || ''}
+                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
               </Text>
-            </div>
-            {stat.percentage && (
-              <>
-                <Progress percent={parseFloat(stat.percentage)} 
-                showInfo={false} 
-                strokeColor={stat.color} 
-                style={{ marginBottom: 8 }} 
-                />
+              {stat.percentage && (
+                  <>
+                  <Progress percent={parseFloat(stat.percentage)} 
+                  showInfo={false} 
+                  strokeColor={stat.color} 
+                  style={{ marginBottom: 8 }} 
+                  />
 
-                <Text style={{ fontSize: 12, color: stat.color }}>
-                  {stat.percentage}% of total
-                </Text>
-              </>
-            )}
+                  <Text style={{ fontSize: 12, color: stat.color }}>
+                    {stat.percentage}% of total
+                  </Text>
+                </>   
+              )}
+            </div>
+            <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: stat.bgColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 20,
+                  color: stat.color,
+                  flexShrink: 0,
+                }}
+              >
+              {stat.icon}
+            </div>
           </Card>
         </div>
       ))}
