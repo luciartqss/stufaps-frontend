@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Card } from 'antd'
 import { TeamOutlined, ContactsOutlined    , FundOutlined, UserOutlined  } from '@ant-design/icons'
+import { FileTextOutlined } from '@ant-design/icons'
+import EditSlotsModal from '../components/EditSlotsModal'
 
 const { Title, Text } = Typography
 
@@ -75,7 +77,8 @@ function StatsCards({ financialAssistances }) {
               </Text>
               {stat.percentage && (
                 <Text style={{ fontSize: 11, color: '#8c8c8c' }}>{stat.percentage}% of total</Text>
-              )}
+              )}       
+           
             </div>
             <div
               style={{
@@ -118,18 +121,7 @@ function getRoute(programName) {
       .replace(/\s|-/g, "")   // remove spaces and dashes
       .toUpperCase()
 
-    const map = {
-      CMSP: "/financial_assistance/cmsp",
-      ESTATISTIKOLAR: "/financial_assistance/estatistikolar",
-      COSCHO: "/financial_assistance/coscho",
-      MSRS: "/financial_assistance/msrs",
-      SIDASGP: "/financial_assistance/sida_sgp",
-      ACEFGIAHEP: "/financial_assistance/acef_giahep",
-      MTPSP: "/financial_assistance/mtp_sp",
-      CGMSSUCS: "/financial_assistance/cgms_sucs",
-      SNPLP: "/financial_assistance/snplp",
-    }
-
+   
     return map[normalized] || "#"
   }
 
@@ -169,40 +161,32 @@ export default function Financial_AssistanceIndex() {
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [openModal, setOpenModal] = useState(false)
 
-  useEffect(() => 
-  {
-    fetch('http://localhost:8000/api/scholarship_programs')
-      .then(res => 
-      {
-        if (!res.ok) 
-        {
-          throw new Error(`HTTP error! status: ${res.status}`)
-        }
-        return res.json()
-      })
-      .then(data => 
-      {
-        console.log('API Response:', data)
-        const programsData = data.data || data
-        console.log('Programs Data:', programsData)
-        setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
-        setLoading(false)
-      })
-      .catch(err => 
-      {
-        console.error('Fetch Error:', err)
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [])
+  const fetchPrograms = () => {
+  setLoading(true)
+  fetch('http://localhost:8000/api/scholarship_programs')
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+      return res.json()
+    })
+    .then(data => {
+      const programsData = data.data || data
+      setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
+      setLoading(false)
+    })
+    .catch(err => {
+      console.error('Fetch Error:', err)
+      setError(err.message)
+      setLoading(false)
+    })
+}
 
-  if (loading) return <div className="p-8">Loading...</div>
-  if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
-  if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) 
-  {
-    return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
-  }
+useEffect(() => {
+  fetchPrograms()
+}, [])
+
+
 
  
 
@@ -221,6 +205,40 @@ return (
     </div>
 
     <main className="flex-1 p-8">
+
+<div>
+
+
+ 
+      <button
+  onClick={() => setOpenModal(true)}
+  className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+>
+  Edit Slots
+</button>
+
+
+      <EditSlotsModal 
+  open={openModal} 
+  onClose={() => setOpenModal(false)} 
+  onUpdated={(fetchPrograms) => {
+    // re-fetch programs after update
+    fetch('http://localhost:8000/api/scholarship_programs')
+      .then(res => res.json())
+      .then(data => setFinancialAssistances(data.data || data))
+      .catch(err => console.error('Refresh error:', err))
+  }} 
+/>
+
+
+
+
+  
+
+
+</div>
+
+<br />    
       <StatsCards financialAssistances={financialAssistances} />
       
       {/* Priority Section */}
@@ -254,9 +272,6 @@ return (
           />
         ))}
       </div>
-    
-
-
       </main>
     </div>
   )

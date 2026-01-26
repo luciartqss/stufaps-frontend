@@ -31,12 +31,6 @@ const navigate = useNavigate()
       icon: <ContactsOutlined />,
       color: '#1890ff',
       bgColor: '#e6f7ff',
-      button: ( 
-        <button 
-          onClick={() => navigate('/financial_assistance/edit-slots')}
-          className="px-2 py-1 bg-blue-500 text-white rounded mt-2"
-          > Edit Slots 
-        </button> ),
     },
     {
       title: 'Filled Slots',
@@ -56,7 +50,7 @@ const navigate = useNavigate()
     },
   ]
 
-  return (
+return (
     <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
       {statsConfig.map((stat, index) => (
         <div key={index} style={{ flex: 1, minWidth: 0 }}>
@@ -96,7 +90,11 @@ const navigate = useNavigate()
                   </Text>
                 </>   
               )}
+
+              {stat.button}
+
             </div>
+
             <div
                 style={{
                   width: 44,
