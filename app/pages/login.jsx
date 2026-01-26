@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/AuthContext'
 
@@ -20,19 +20,15 @@ export default function Login() {
 
   const onFinish = async (values) => {
     setLoading(true)
-    
-    // Simulate a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    const result = login(values.username, values.password)
-    
+    const result = await login(values.email, values.password)
+
     if (result.success) {
       message.success('Login successful!')
       navigate('/dashboard')
     } else {
       message.error(result.message || 'Login failed')
     }
-    
+
     setLoading(false)
   }
 
@@ -91,13 +87,13 @@ export default function Login() {
             className="w-full mt-2"
           >
             <Form.Item
-              name="username"
-              rules={[{ required: true, message: 'Please enter your username' }]}
+              name="email"
+              rules={[{ required: true, message: 'Please enter your email' }, { type: 'email', message: 'Enter a valid email' }]}
               style={{ marginBottom: 20 }}
             >
               <Input
-                prefix={<UserOutlined className="text-gray-400" />}
-                placeholder="Username"
+                prefix={<MailOutlined className="text-gray-400" />}
+                placeholder="Email"
                 className="h-12 rounded-lg border-gray-300 hover:border-blue-400 focus:border-blue-500"
               />
             </Form.Item>
