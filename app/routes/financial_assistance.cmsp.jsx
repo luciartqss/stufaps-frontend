@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react' 
+import { useNavigate } from 'react-router-dom'
 import { Card, Typography } from 'antd' 
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 const { Text } = Typography
 import { Progress } from 'antd'
+
+
 
 export function meta() {
   return [
@@ -12,12 +15,14 @@ export function meta() {
 }
 
 function StatsCards({ financialAssistances }) {
-  
+const navigate = useNavigate()
+
   const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+  totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
+  totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
+  totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
   }
+
 
   const statsConfig = [
     {
@@ -26,6 +31,12 @@ function StatsCards({ financialAssistances }) {
       icon: <ContactsOutlined />,
       color: '#1890ff',
       bgColor: '#e6f7ff',
+      button: ( 
+        <button 
+          onClick={() => navigate('/financial_assistance/edit-slots')}
+          className="px-2 py-1 bg-blue-500 text-white rounded mt-2"
+          > Edit Slots 
+        </button> ),
     },
     {
       title: 'Filled Slots',
@@ -44,45 +55,64 @@ function StatsCards({ financialAssistances }) {
       percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
     },
   ]
+
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
       {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: '1 1 calc(33% - 8px)', minWidth: 250 }}>
+        <div key={index} style={{ flex: 1, minWidth: 0 }}>
           <Card
             style={{
               borderRadius: 12,
               border: 'none',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: "auto",
+              height: 96,
             }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              flexDirection: 'column',
+            bodyStyle={{ 
+              padding: 16, 
+              display: 'flex', 
+              alignItems: 'center', 
               justifyContent: 'space-between',
+              height: '100%'
             }}
           >
-            <div style={{ marginBottom: 12 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 500 }}>
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
                 {stat.title}
               </Text>
-              <Text strong style={{ fontSize: 18, color: stat.color, lineHeight: 1.1, display: 'block', marginBottom: 4 }}>
-                {stat.value.toLocaleString()}
+              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
+                {stat.prefix || ''}
+                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
               </Text>
-            </div>
-            {stat.percentage && (
-              <>
-                <Progress percent={parseFloat(stat.percentage)} 
-                showInfo={false} 
-                strokeColor={stat.color} 
-                style={{ marginBottom: 8 }} 
-                />
+              {stat.percentage && (
+                  <>
+                  <Progress percent={parseFloat(stat.percentage)} 
+                  showInfo={false} 
+                  strokeColor={stat.color} 
+                  style={{ marginBottom: 8 }} 
+                  />
 
-                <Text style={{ fontSize: 12, color: stat.color }}>
-                  {stat.percentage}% of total
-                </Text>
-              </>
-            )}
+                  <Text style={{ fontSize: 12, color: stat.color }}>
+                    {stat.percentage}% of total
+                  </Text>
+                </>   
+              )}
+            </div>
+            <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  backgroundColor: stat.bgColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 20,
+                  color: stat.color,
+                  flexShrink: 0,
+                }}
+              >
+              {stat.icon}
+            </div>
           </Card>
         </div>
       ))}
@@ -92,6 +122,7 @@ function StatsCards({ financialAssistances }) {
 
 
 export default function FinancialAssistanceCmsp() {
+  
   const [financialAssistances, setFinancialAssistances] = useState([])
 
   const [expandedSUC, setExpandedSUC] = useState(null);
@@ -99,6 +130,9 @@ export default function FinancialAssistanceCmsp() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+
+
 
   useEffect(() => {
       fetch('http://localhost:8000/api/scholarship_programs')
@@ -121,6 +155,7 @@ export default function FinancialAssistanceCmsp() {
           setLoading(false)
         })
     }, [])
+
   
     if (loading) return <div className="p-8">Loading...</div>
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
@@ -206,19 +241,21 @@ export default function FinancialAssistanceCmsp() {
                     </tr>
                   </thead>
                   <tbody>
-                    {program.rows.map((row, idx) =>a (
-                      <tr key={idx} className="hover:bg-gray-50 transition-colors duration-100">
-                        <td className="border border-gray-400 p-3 text-left text-gray-700">
-                          {row.label}
-                        </td>
-                        <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                          {row.perSem}
-                        </td>
-                        <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                          {row.perAY}
-                        </td>
-                      </tr>
-                    ))}
+                    
+                  {program.rows.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors duration-100">
+                      <td className="border border-gray-400 p-3 text-left text-gray-700">
+                        {row.label}
+                      </td>
+                      <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
+                        {row.perSem}
+                      </td>
+                      <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
+                        {row.perAY}
+                      </td>
+                    </tr>
+                  ))}
+
                     <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
                       <td className="border border-gray-400 p-3 text-left text-gray-800">
                         Total
@@ -234,6 +271,7 @@ export default function FinancialAssistanceCmsp() {
                 </table>
               </div>
             )}
+            
           </div>
         ))}
       </div>

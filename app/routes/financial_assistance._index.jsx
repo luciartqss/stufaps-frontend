@@ -114,7 +114,27 @@ const routeMap = {
 
 function getRoute(programName) {
   return routeMap[programName.toUpperCase()] || "#"
-}
+  const normalized = programName
+      .replace(/\s|-/g, "")   // remove spaces and dashes
+      .toUpperCase()
+
+    const map = {
+      CMSP: "/financial_assistance/cmsp",
+      ESTATISTIKOLAR: "/financial_assistance/estatistikolar",
+      COSCHO: "/financial_assistance/coscho",
+      MSRS: "/financial_assistance/msrs",
+      SIDASGP: "/financial_assistance/sida_sgp",
+      ACEFGIAHEP: "/financial_assistance/acef_giahep",
+      MTPSP: "/financial_assistance/mtp_sp",
+      CGMSSUCS: "/financial_assistance/cgms_sucs",
+      SNPLP: "/financial_assistance/snplp",
+    }
+
+    return map[normalized] || "#"
+  }
+
+
+
 
 function ScholarshipCard({ title, description, to, total, filled, unfilled }) {
   const [active, setActive] = useState(false)
@@ -184,53 +204,59 @@ export default function Financial_AssistanceIndex() {
     return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
   }
 
-  const priorityProgram = financialAssistances.find(
-    p => p.scholarship_program_name.toUpperCase() === "CMSP"
-  )
-  const otherPrograms = financialAssistances.filter(
-    p => p.scholarship_program_name.toUpperCase() !== "CMSP"
-  )
+ 
 
-  return (
-    <div className="flex min-h-screen flex-col">
-      <div style={{ padding: '24px' }}>
-        <Title level={2}>Financial Assistance Management</Title>
+   const sortedPrograms = [...financialAssistances].sort((a, b) => 
+  a.scholarship_program_name.toUpperCase() === "CMSP" ? -1 : 
+  b.scholarship_program_name.toUpperCase() === "CMSP" ? 1 : 0
+)
+
+  const priorityProgram = sortedPrograms[0] // CMSP will always be first
+const otherPrograms = sortedPrograms.slice(1) // everything else follows
+
+return (
+  <div className="flex min-h-screen flex-col">
+    <div style={{ padding: '24px' }}>
+      <Title level={2}>Financial Assistance Management</Title>
+    </div>
+
+    <main className="flex-1 p-8">
+      <StatsCards financialAssistances={financialAssistances} />
+      
+      {/* Priority Section */}
+      <div className="grid gap-12 items-stretch">
+        {priorityProgram && (
+          <ScholarshipCard
+            key={priorityProgram.id}
+            title={priorityProgram.scholarship_program_name}
+            description={priorityProgram.description}
+            to={getRoute(priorityProgram.scholarship_program_name)}
+            total={priorityProgram.total_slot}
+            filled={priorityProgram.filled_slot}
+            unfilled={priorityProgram.unfilled_slot}
+          />
+        )}
       </div>
 
-      <main className="flex-1 p-8">
-        <StatsCards financialAssistances={financialAssistances} />
-        
-        {/* Priority Section */}
-        <div className="grid gap-12 items-stretch">
-          {priorityProgram && (
-            <ScholarshipCard
-              key={priorityProgram.id}
-              title={priorityProgram.scholarship_program_name}
-              description={priorityProgram.description}
-              to={getRoute(priorityProgram.scholarship_program_name)}
-              total={priorityProgram.total_slot}
-              filled={priorityProgram.filled_slot}
-              unfilled={priorityProgram.unfilled_slot}
-            />
-          )}
-        </div>
+       <br />
 
-        <br />
+      {/* Other Programs Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
+        {otherPrograms.map(program => (
+          <ScholarshipCard
+            key={program.id}
+            title={program.scholarship_program_name}
+            description={program.description}
+            to={getRoute(program.scholarship_program_name)}
+            total={program.total_slot}
+            filled={program.filled_slot}
+            unfilled={program.unfilled_slot}
+          />
+        ))}
+      </div>
+    
 
-        {/* Other Programs Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
-          {otherPrograms.map(program => (
-            <ScholarshipCard
-              key={program.id}
-              title={program.scholarship_program_name}
-              description={program.description}
-              to={getRoute(program.scholarship_program_name)}
-              total={program.total_slot}
-              filled={program.filled_slot}
-              unfilled={program.unfilled_slot}
-            />
-          ))}
-        </div>
+
       </main>
     </div>
   )

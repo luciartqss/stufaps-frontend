@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
 import { Typography, message } from 'antd'
 import * as XLSX from 'xlsx'
+import { useNavigate } from 'react-router-dom'
 
 const { Title } = Typography
 
 export default function ImportBulk() {
+    const navigate = useNavigate()
   const [data, setData] = useState([])
   const [inputKey, setInputKey] = useState(Date.now())
   const fileInputRef = useRef(null)
@@ -74,24 +76,34 @@ export default function ImportBulk() {
         headers: {
           'Content-Type': 'application/json',
         },
+                headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ students: cleanedData }),
       })
 
-      if (response.ok) {
-        message.success('Students imported successfully')
-        setData([])
-        setInputKey(Date.now())
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ''
-        }
-        // ⚠️ If you want to refresh the list, make sure fetchStudents exists
-        // fetchStudents()
+       if (!response.ok) throw new Error('Failed to import students')
+
+      const slotResponse = await fetch('http://localhost:8000/api/scholarship_programs/update-slots', {
+        method: 'POST',
+      })
+
+      if (!slotResponse.ok) {
+        message.warning('Students imported, but slot update failed')
       } else {
-        message.error('Failed to import students')
+        message.success('Students imported and slots updated successfully')
       }
+
+      setData([])
+      setInputKey(Date.now())
+      if (fileInputRef.current) fileInputRef.current.value = ''
+
     } catch (error) {
-      message.error('Error importing students')
-      console.error(error)
+
+
+      console.error('Error:', error)
+      message.error(error.message || 'Something went wrong')
+    } finally {
+      setLoading(false)
+      navigate('/students') // always redirect
     }
   }
 
