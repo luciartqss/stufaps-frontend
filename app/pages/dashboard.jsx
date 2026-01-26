@@ -21,11 +21,9 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { useEffect, useState } from 'react'
+import { api } from '../lib/api'
 
 const { Title, Text } = Typography
-
-// API Base URL
-const API_URL = 'http://localhost:8000/api'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
@@ -50,7 +48,7 @@ export default function Dashboard() {
         setLoading(true)
         setError(null)
 
-        const response = await fetch(`${API_URL}/dashboard/stats`)
+        const response = await api.get('/api/dashboard/stats')
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)

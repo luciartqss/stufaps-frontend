@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Typography, Form, Input, Button, Select, message, DatePicker, Checkbox, Divider } from 'antd'
 import dayjs from 'dayjs'
 import { UploadOutlined } from '@ant-design/icons'
+import { api } from '../lib/api'
 
 const { Title } = Typography
 const { Option } = Select
@@ -21,11 +22,7 @@ export default function CreateStudent() {
         date_of_birth: values.date_of_birth ? values.date_of_birth.format('YYYY-MM-DD') : null,
       }
 
-      const response = await fetch('http://localhost:8000/api/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formattedValues),
-      })
+      const response = await api.post('/api/students', formattedValues)
 
       if (!response.ok) {
         throw new Error('Failed to create student')

@@ -3,6 +3,7 @@ import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover,
 import { InfoCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { UploadOutlined } from '@ant-design/icons'
+import { api } from '../lib/api'
 
 const { Title } = Typography
 const { Search } = Input
@@ -36,7 +37,7 @@ export default function StudentsIndex() {
   const fetchStudents = async () => {
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8000/api/students')
+      const response = await api.get('/api/students')
       if (!response.ok) {
         throw new Error('Failed to fetch students')
       }
@@ -140,17 +141,13 @@ export default function StudentsIndex() {
   // Log action function
   const logAction = async (model, modelId, action, oldData, newData) => {
     try {
-      await fetch('http://localhost:8000/api/logs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          model_id: modelId,
-          action,
-          old_data: oldData,
-          new_data: newData,
-          ip_address: 'client',
-        }),
+      await api.post('/api/logs', {
+        model,
+        model_id: modelId,
+        action,
+        old_data: oldData,
+        new_data: newData,
+        ip_address: 'client',
       })
     } catch (error) {
       console.error('Failed to log action:', error)
@@ -312,11 +309,7 @@ export default function StudentsIndex() {
     // Log the bulk edit action
     await logAction('Student', 0, 'update', { [field]: oldValue }, { [field]: newValue })
     
-    const res = await fetch('http://localhost:8000/api/students/bulk-update-field', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ field, old_value: oldValue, new_value: newValue }),
-    })
+    const res = await api.post('/api/students/bulk-update-field', { field, old_value: oldValue, new_value: newValue })
     const data = await res.json()
     if (res.ok) {
       message.success(data.message)

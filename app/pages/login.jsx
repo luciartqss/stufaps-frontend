@@ -1,34 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/AuthContext'
 
 const { Text } = Typography
 
 export default function Login() {
   const [loading, setLoading] = useState(false)
-  const { login, isAuthenticated } = useAuth()
-  const navigate = useNavigate()
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard')
-    }
-  }, [isAuthenticated, navigate])
+  const { login } = useAuth()
 
   const onFinish = async (values) => {
     setLoading(true)
     
-    // Simulate a small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    const result = login(values.username, values.password)
+    const result = await login(values.username, values.password)
     
     if (result.success) {
       message.success('Login successful!')
-      navigate('/dashboard')
+      // Auth state change will automatically show the dashboard
     } else {
       message.error(result.message || 'Login failed')
     }
@@ -40,7 +28,7 @@ export default function Login() {
     <div className="min-h-screen flex justify-center items-center bg-gray-900 p-5">
       <Card
         className="w-full max-w-md rounded-2xl shadow-2xl"
-        bodyStyle={{ padding: '64px 48px' }}
+        styles={{ body: { padding: '64px 48px' } }}
         style={{ backgroundColor: 'white' }}
       >
         <div className="flex flex-col items-center w-full">

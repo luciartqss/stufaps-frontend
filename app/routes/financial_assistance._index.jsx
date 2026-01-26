@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Card } from 'antd'
 import { TeamOutlined, ContactsOutlined    , FundOutlined, UserOutlined  } from '@ant-design/icons'
+import { api } from '../lib/api'
 
 const { Title, Text } = Typography
 
@@ -158,7 +159,7 @@ export default function Financial_AssistanceIndex() {
 
   useEffect(() => 
   {
-    fetch('http://localhost:8000/api/scholarship_programs')
+    api.get('/api/scholarship_programs')
       .then(res => 
       {
         if (!res.ok) 

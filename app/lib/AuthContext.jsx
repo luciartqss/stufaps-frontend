@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { apiRequest, getCsrfCookie, API_URL } from './api'
 
 const AuthContext = createContext(null)
 
@@ -7,40 +8,86 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
+  // Check authentication status on mount
   useEffect(() => {
-    // Check if user is already logged in (from localStorage)
-    const storedAuth = localStorage.getItem('isAuthenticated')
-    const storedUser = localStorage.getItem('user')
-    
-    if (storedAuth === 'true' && storedUser) {
-      setIsAuthenticated(true)
-      setUser(JSON.parse(storedUser))
-    }
-    setLoading(false)
+    checkAuth()
   }, [])
 
-  const login = (username, password) => {
-    // Hard-coded credentials for now
-    if (username === 'admin' && password === 'admin') {
-      const userData = { username: 'admin', role: 'Administrator' }
-      setIsAuthenticated(true)
-      setUser(userData)
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('user', JSON.stringify(userData))
-      return { success: true }
+  // Check if user is authenticated by calling /api/me
+  const checkAuth = async () => {
+    try {
+      // First get CSRF cookie
+      await getCsrfCookie()
+      
+      const response = await apiRequest(`${API_URL}/api/me`, {
+        method: 'GET',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setIsAuthenticated(true)
+        setUser(data.user)
+      } else {
+        // 401 is expected when not logged in, don't log as error
+        setIsAuthenticated(false)
+        setUser(null)
+      }
+    } catch (error) {
+      // Network errors only
+      console.error('Auth check failed:', error)
+      setIsAuthenticated(false)
+      setUser(null)
+    } finally {
+      setLoading(false)
     }
-    return { success: false, message: 'Invalid username or password' }
   }
 
-  const logout = () => {
-    setIsAuthenticated(false)
-    setUser(null)
-    localStorage.removeItem('isAuthenticated')
-    localStorage.removeItem('user')
+  // Login function - calls Laravel API
+  const login = async (username, password) => {
+    try {
+      // First, get CSRF cookie
+      await getCsrfCookie()
+
+      // Then, attempt login
+      const response = await apiRequest(`${API_URL}/api/login`, {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsAuthenticated(true)
+        setUser(data.user)
+        return { success: true }
+      } else {
+        return { 
+          success: false, 
+          message: data.message || data.errors?.username?.[0] || 'Login failed' 
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      return { success: false, message: 'Network error. Please try again.' }
+    }
+  }
+
+  // Logout function - calls Laravel API
+  const logout = async () => {
+    try {
+      await apiRequest(`${API_URL}/api/logout`, {
+        method: 'POST',
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setIsAuthenticated(false)
+      setUser(null)
+    }
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading, checkAuth }}>
       {children}
     </AuthContext.Provider>
   )

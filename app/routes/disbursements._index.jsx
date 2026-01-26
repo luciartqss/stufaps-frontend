@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Typography, Table, Card, Input, Space, Select, DatePicker, Tag, Button, Statistic, Row, Col } from 'antd'
 import { SearchOutlined, DollarOutlined, CheckCircleOutlined, ClockCircleOutlined, ExportOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { api } from '../lib/api'
 
 const { Title } = Typography
 const { Search } = Input
@@ -28,7 +29,7 @@ export default function DisbursementsIndex() {
 
   useEffect(() => {
     // Fetch disbursements from the backend API
-    fetch('http://localhost:8000/api/disbursements') // Create this endpoint
+    api.get('/api/disbursements')
       .then((response) => response.json())
       .then((data) => {
         const records = data.data || []

@@ -5,11 +5,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLocation,
 } from 'react-router'
 import Layout from './components/Layout'
 import { AuthProvider, useAuth } from './lib/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
+import Login from './pages/login'
+import { Spin } from 'antd'
 
 import './app.css'
 
@@ -47,24 +47,30 @@ export function HtmlLayout({ children }) {
 export { HtmlLayout as Layout }
 
 function AppContent() {
-  const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, loading } = useAuth()
   
-  // Public routes that don't need authentication or layout
-  const publicRoutes = ['/']
-  const isPublicRoute = publicRoutes.includes(location.pathname)
-  
-  // If on login page and authenticated, the login page will handle redirect
-  if (isPublicRoute) {
-    return <Outlet />
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#1f2937',
+      }}>
+        <Spin size="large" />
+      </div>
+    )
   }
   
-  // Protected routes - wrap with Layout and ProtectedRoute
-  return (
-    <ProtectedRoute>
-      <Layout />
-    </ProtectedRoute>
-  )
+  // Not authenticated - always show login page
+  if (!isAuthenticated) {
+    return <Login />
+  }
+  
+  // Authenticated - show the main layout with routes
+  return <Layout />
 }
 
 export default function App() {
