@@ -84,9 +84,51 @@ const COLUMN_SCHEMA = [
 ]
 
 // Flattened ordered fields for data mapping
-const ALL_FIELDS = COLUMN_SCHEMA.flatMap(col => 
+const ALL_FIELDS = COLUMN_SCHEMA.flatMap(col =>
   col.children ? col.children.map(c => c.key) : [col.key]
 )
+
+// Map frontend keys to backend field names
+const FIELD_MAP = {
+  seq: null, // ignore on submit (DB autoincrement)
+  inCharge: 'in_charge',
+  awardYear: 'award_year',
+  scholarshipProgram: 'scholarship_program',
+  awardNumber: 'award_number',
+  surname: 'surname',
+  firstName: 'first_name',
+  middleName: 'middle_name',
+  extension: 'extension',
+  sex: 'sex',
+  dateOfBirth: 'date_of_birth',
+  contactNumber: 'contact_number',
+  emailAddress: 'email_address',
+  streetBrgy: 'street_brgy',
+  municipalityCity: 'municipality_city',
+  province: 'province',
+  congressionalDistrict: 'congressional_district',
+  zipCode: 'zip_code',
+  specialGroup: 'special_group',
+  certificationNumber: 'certification_number',
+  nameOfInstitution: 'name_of_institution',
+  uii: 'uii',
+  institutionalType: 'institutional_type',
+  regionSchoolLocated: 'region',
+  degreeProgram: 'degree_program',
+  programMajor: 'program_major',
+  programDiscipline: 'program_discipline',
+  programDegreeLevel: 'program_degree_level',
+  authorityType: 'authority_type',
+  authorityNumber: 'authority_number',
+  series: 'series',
+  priority: 'is_priority',
+  basisCmo: 'basis_cmo',
+  scholarshipStatus: 'scholarship_status',
+  replacement: 'replacement_info',
+  reason: 'termination_reason',
+}
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Get total column count
 const TOTAL_COLUMNS = ALL_FIELDS.length
@@ -171,26 +213,36 @@ export default function ImportBulk() {
       return
     }
 
-    // Clean the data before sending (remove empty values)
-    const cleanedData = data.map(row => {
-      const cleanedRow = {}
+    // Map frontend fields to backend keys and drop seq
+    const mappedData = data.map(row => {
+      const payloadRow = {}
       Object.entries(row).forEach(([key, value]) => {
-        if (value !== '') cleanedRow[key] = value
+        if (value === '' || FIELD_MAP[key] === null) return
+        const backendKey = FIELD_MAP[key]
+
+        // Normalize boolean for is_priority
+        if (backendKey === 'is_priority') {
+          const v = String(value).trim().toLowerCase()
+          payloadRow[backendKey] = ['1', 'true', 'yes', 'y'].includes(v)
+          return
+        }
+
+        payloadRow[backendKey] = value
       })
-      return cleanedRow
+      return payloadRow
     })
 
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8000/api/students/import', {
+      const response = await fetch(`${API_BASE}/students/import`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ students: cleanedData }),
+        body: JSON.stringify({ students: mappedData }),
       })
 
       if (!response.ok) throw new Error('Failed to import students')
 
-      const slotResponse = await fetch('http://localhost:8000/api/scholarship_programs/update-slots', {
+      const slotResponse = await fetch(`${API_BASE}/scholarship_programs/update-slots`, {
         method: 'POST',
       })
 
