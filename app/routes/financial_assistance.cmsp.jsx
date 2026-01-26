@@ -13,11 +13,13 @@ export function meta() {
 
 function StatsCards({ financialAssistances }) {
   
+
   const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+  totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
+  totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
+  totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
   }
+
 
   const statsConfig = [
     {
@@ -121,6 +123,7 @@ export default function FinancialAssistanceCmsp() {
           setLoading(false)
         })
     }, [])
+
   
     if (loading) return <div className="p-8">Loading...</div>
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
