@@ -1,5 +1,5 @@
-import { useState, useRef, useMemo } from 'react'
-import { Typography, message, Button, Card, Space, Input, Select, DatePicker } from 'antd'
+import { useState, useRef, useMemo, useEffect } from 'react'
+import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag } from 'antd'
 import { UploadOutlined, ExportOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
@@ -9,13 +9,31 @@ const { Title, Text } = Typography
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
-// Column schema describing headers and order (frontend display)
-const COLUMN_SCHEMA = [
-  { key: 'seq', label: 'SEQ', rowSpan: 2, width: 60 },
-  { key: 'inCharge', label: 'IN-CHARGE', rowSpan: 2, width: 120 },
-  { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 2, width: 100 },
-  { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 2, width: 180 },
-  { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 2, width: 140 },
+// Semester detail fields (shared for First/Second)
+const SEM_FIELDS = [
+  { key: 'nta', label: 'NTA', width: 120 },
+  { key: 'fundSource', label: 'FUND SOURCE', width: 140 },
+  { key: 'amount', label: 'AMOUNT', width: 120 },
+  { key: 'voucherNumber', label: 'VOUCHER NUMBER', width: 150 },
+  { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 150, type: 'select', options: ['ATM', 'Cheque', 'Through the HEI', ''] },
+  { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.', width: 160 },
+  { key: 'paymentAmount', label: 'PAYMENT AMOUNT', width: 140 },
+  { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 140 },
+  { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 140, type: 'date' },
+  { key: 'remarks', label: 'REMARKS', width: 160 },
+]
+
+// Helpers
+const sanitize = (str = '') => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+const makeAyId = (label) => `ay_${sanitize(label) || Date.now()}`
+
+// Static student schema (2-tier max)
+const STATIC_SCHEMA = [
+  { key: 'seq', label: 'SEQ', rowSpan: 3, width: 60 },
+  { key: 'inCharge', label: 'IN-CHARGE', rowSpan: 3, width: 120 },
+  { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 3, width: 100 },
+  { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 3, width: 180 },
+  { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3, width: 140 },
   {
     label: 'NAME OF GRANTEE',
     colSpan: 4,
@@ -23,11 +41,11 @@ const COLUMN_SCHEMA = [
       { key: 'surname', label: 'SURNAME', width: 140 },
       { key: 'firstName', label: 'FIRST NAME', width: 140 },
       { key: 'middleName', label: 'MIDDLE NAME', width: 140 },
-      { key: 'extension', label: 'EXT', width: 60 },
+      { key: 'extension', label: 'EXTENSION', width: 80 },
     ],
   },
-  { key: 'sex', label: 'SEX', rowSpan: 2, width: 80, type: 'select', options: ['Male', 'Female'] },
-  { key: 'dateOfBirth', label: 'DATE OF BIRTH', rowSpan: 2, width: 120, type: 'date' },
+  { key: 'sex', label: 'SEX', rowSpan: 3, width: 80, type: 'select', options: ['Male', 'Female'] },
+  { key: 'dateOfBirth', label: 'DATE OF BIRTH', rowSpan: 3, width: 120, type: 'date' },
   {
     label: 'CONTACT DETAILS',
     colSpan: 2,
@@ -40,41 +58,41 @@ const COLUMN_SCHEMA = [
     label: 'COMPLETE ADDRESS',
     colSpan: 5,
     children: [
-      { key: 'streetBrgy', label: 'STREET/BRGY', width: 180 },
-      { key: 'municipalityCity', label: 'MUNICIPALITY/CITY', width: 160 },
+      { key: 'streetBrgy', label: 'STREET_BRGY', width: 180 },
+      { key: 'municipalityCity', label: 'MUNICIPALITY_CITY', width: 160 },
       { key: 'province', label: 'PROVINCE', width: 140 },
-      { key: 'congressionalDistrict', label: 'CONG. DISTRICT', width: 130 },
-      { key: 'zipCode', label: 'ZIP CODE', width: 80 },
+      { key: 'congressionalDistrict', label: 'CONGRESSIONAL DISTRICT', width: 160 },
+      { key: 'zipCode', label: 'ZIP CODE', width: 100 },
     ],
   },
-  { key: 'specialGroup', label: 'SPECIAL GROUP', rowSpan: 2, width: 120, type: 'select', options: ['IP', 'PWD', 'Solo Parent', ''] },
-  { key: 'certificationNumber', label: 'CERT. NUMBER', rowSpan: 2, width: 140 },
-  { key: 'nameOfInstitution', label: 'NAME OF INSTITUTION', rowSpan: 2, width: 220 },
-  { key: 'uii', label: 'UII', rowSpan: 2, width: 100 },
-  { key: 'institutionalType', label: 'INST. TYPE', rowSpan: 2, width: 120 },
-  { key: 'regionSchoolLocated', label: 'REGION', rowSpan: 2, width: 100 },
-  { key: 'degreeProgram', label: 'DEGREE PROGRAM', rowSpan: 2, width: 180 },
-  { key: 'programMajor', label: 'PROGRAM MAJOR', rowSpan: 2, width: 160 },
-  { key: 'programDiscipline', label: 'PROGRAM DISCIPLINE', rowSpan: 2, width: 160 },
-  { key: 'programDegreeLevel', label: 'DEGREE LEVEL', rowSpan: 2, width: 140, type: 'select', options: ['Pre-baccalaureate', 'Baccalaureate', 'Post Baccalaureate', 'Masters', 'Doctorate', ''] },
+  { key: 'specialGroup', label: 'SPECIAL GROUP', rowSpan: 3, width: 140, type: 'select', options: ['IP', 'PWD', 'Solo Parent', ''] },
+  { key: 'certificationNumber', label: 'CERTIFICATION NUMBER (If Applicable)', rowSpan: 3, width: 200 },
+  { key: 'nameOfInstitution', label: 'NAME OF INSTITUTION', rowSpan: 3, width: 220 },
+  { key: 'uii', label: 'UII', rowSpan: 3, width: 100 },
+  { key: 'institutionalType', label: 'INSTITUTIONAL TYPE', rowSpan: 3, width: 140 },
+  { key: 'regionSchoolLocated', label: 'REGION WHERE THE SCHOOL IS LOCATED', rowSpan: 3, width: 220 },
+  { key: 'degreeProgram', label: 'DEGREE PROGRAM', rowSpan: 3, width: 200 },
+  { key: 'programMajor', label: 'PROGRAM MAJOR', rowSpan: 3, width: 180 },
+  { key: 'programDiscipline', label: 'PROGRAM DISCIPLINE', rowSpan: 3, width: 180 },
+  { key: 'programDegreeLevel', label: 'PROGRAM DEGREE LEVEL', rowSpan: 3, width: 200, type: 'select', options: ['Pre-baccalaureate', 'Baccalaureate', 'Post Baccalaureate', 'Masters', 'Doctorate', ''] },
   {
     label: 'GOVERNMENT AUTHORITY',
     colSpan: 3,
     children: [
-      { key: 'authorityType', label: 'AUTH TYPE', width: 100, type: 'select', options: ['GP', 'GR', 'RRPA', 'COPC', ''] },
-      { key: 'authorityNumber', label: 'AUTH NUMBER', width: 120 },
-      { key: 'series', label: 'SERIES', width: 80 },
+      { key: 'authorityType', label: 'AUTHORITY TYPE', width: 140, type: 'select', options: ['GP', 'GR', 'RRPA', 'COPC', ''] },
+      { key: 'authorityNumber', label: 'AUTHORITY NUMBER', width: 160 },
+      { key: 'series', label: 'SERIES', width: 100 },
     ],
   },
   {
     label: 'PRIORITY PROGRAM',
     colSpan: 2,
     children: [
-      { key: 'priority', label: 'PRIORITY', width: 100, type: 'select', options: ['Yes', 'No', ''] },
-      { key: 'basisCmo', label: 'BASIS (CMO)', width: 120 },
+      { key: 'priority', label: 'PRIORITY', width: 120, type: 'select', options: ['Yes', 'No', ''] },
+      { key: 'basisCmo', label: 'BASIS (CMO)', width: 140 },
     ],
   },
-  { key: 'scholarshipStatus', label: 'STATUS', rowSpan: 2, width: 120, type: 'select', options: ['On-going', 'Graduated', 'Terminated', ''] },
+  { key: 'scholarshipStatus', label: 'SCHOLARSHIP STATUS', rowSpan: 3, width: 180, type: 'select', options: ['On-going', 'Graduated', 'Terminated', ''] },
   {
     label: 'REMARKS',
     colSpan: 2,
@@ -85,16 +103,50 @@ const COLUMN_SCHEMA = [
   },
 ]
 
-// Flattened ordered fields for data mapping
-const ALL_FIELDS = COLUMN_SCHEMA.flatMap(col =>
-  col.children ? col.children.map(c => ({ ...c })) : [{ ...col }]
-)
+const buildHeaders = (academicYears) => {
+  const row1 = []
+  const row2 = []
+  const row3 = []
+  const leafFields = []
 
-// Get field config by key
-const getFieldConfig = (key) => ALL_FIELDS.find(f => f.key === key) || {}
+  // Static portion (2-tier maximum)
+  STATIC_SCHEMA.forEach(col => {
+    if (col.children) {
+      row1.push({ ...col })
+      col.children.forEach(child => {
+        row2.push({ ...child, rowSpan: 2 })
+        leafFields.push({ ...child })
+      })
+    } else {
+      row1.push({ ...col })
+      leafFields.push({ ...col })
+    }
+  })
 
-// Get total column count
-const TOTAL_COLUMNS = ALL_FIELDS.length
+  // Dynamic AY blocks (3-tier)
+  academicYears.forEach((ay) => {
+    const ayId = ay.id
+    const semFirst = SEM_FIELDS.map(f => ({ ...f, key: `${ayId}__first__${f.key}`, semester: 'First', ayId }))
+    const semSecond = SEM_FIELDS.map(f => ({ ...f, key: `${ayId}__second__${f.key}`, semester: 'Second', ayId }))
+    const cylKey = `${ayId}__cyl`
+
+    row1.push({ label: `AY ${ay.label}`, colSpan: 1 + semFirst.length + semSecond.length, ayId })
+
+    row2.push({ label: 'CURRICULUM YEAR LEVEL', key: cylKey, rowSpan: 2, width: 160, type: 'select', options: ['I', 'II', 'III', 'IV', 'V', 'VI', ''] })
+    row2.push({ label: 'FIRST SEMESTER', colSpan: semFirst.length, ayId, semester: 'First' })
+    row2.push({ label: 'SECOND SEMESTER', colSpan: semSecond.length, ayId, semester: 'Second' })
+
+    semFirst.forEach(f => row3.push(f))
+    semSecond.forEach(f => row3.push(f))
+
+    leafFields.push({ key: cylKey, label: `CYL (${ay.label})`, ayId, width: 160 })
+    semFirst.concat(semSecond).forEach(f => leafFields.push(f))
+  })
+
+  return { row1, row2, row3, leafFields }
+}
+
+const getFieldConfig = (fieldKey, leafFields) => leafFields.find(f => f.key === fieldKey) || {}
 
 // Map frontend keys to backend keys
 const FRONTEND_TO_BACKEND_MAP = {
@@ -156,22 +208,106 @@ const convertToBackendFormat = (frontendData) => {
   })
 }
 
+const convertDisbursementsToBackend = (rows, academicYears) => {
+  const semMap = {
+    nta: 'nta',
+    fundSource: 'fund_source',
+    amount: 'amount',
+    voucherNumber: 'voucher_number',
+    modeOfPayment: 'mode_of_payment',
+    accountCheckNo: 'account_check_no',
+    paymentAmount: 'payment_amount',
+    lddapNumber: 'lddap_number',
+    disbursementDate: 'disbursement_date',
+    remarks: 'remarks',
+  }
+
+  const disbursements = []
+
+  rows.forEach((row) => {
+    academicYears.forEach((ay) => {
+      const cylKey = `${ay.id}__cyl`
+      const cyl = row[cylKey]
+
+      ['first', 'second'].forEach((semKey, idx) => {
+        const semesterLabel = idx === 0 ? 'First' : 'Second'
+        const base = `${ay.id}__${semKey}__`
+
+        const payload = {
+          student_seq: row.seq,
+          academic_year: ay.label,
+          semester: semesterLabel,
+          curriculum_year_level: cyl || '',
+        }
+
+        let hasData = false
+        Object.entries(semMap).forEach(([k, backendK]) => {
+          const val = row[`${base}${k}`]
+          if (val !== '' && val !== null && val !== undefined) {
+            hasData = true
+            if (['amount', 'payment_amount'].includes(backendK)) {
+              const num = Number(String(val).replace(/,/g, ''))
+              payload[backendK] = Number.isFinite(num) ? num : val
+            } else if (backendK === 'semester') {
+              const sem = String(val).toLowerCase()
+              payload[backendK] = sem.startsWith('1') ? 'First' : sem.startsWith('2') ? 'Second' : val
+            } else {
+              payload[backendK] = val
+            }
+          }
+        })
+
+        if (hasData) disbursements.push(payload)
+      })
+    })
+  })
+
+  return disbursements
+}
+
 export default function ImportBulk() {
   const navigate = useNavigate()
   const [data, setData] = useState([])
   const [inputKey, setInputKey] = useState(Date.now())
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef(null)
+  const [academicYears, setAcademicYears] = useState([
+    { id: makeAyId('2024-2025'), label: '2024-2025' },
+  ])
+  const [ayInput, setAyInput] = useState('2024-2025')
+
+  const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
+    () => buildHeaders(academicYears),
+    [academicYears]
+  )
+
+  useEffect(() => {
+    setData((prev) =>
+      prev.map((row, idx) => {
+        const next = { ...row }
+        leafFields.forEach(f => {
+          if (next[f.key] === undefined) next[f.key] = ''
+        })
+        Object.keys(next).forEach(k => {
+          if (!leafFields.find(f => f.key === k) && k !== 'seq') delete next[k]
+        })
+        if (!next.seq) next.seq = String(idx + 1)
+        return next
+      })
+    )
+  }, [leafFields])
 
   // Normalize parsed rows to include all fields in order
   const normalizeRows = (rows) =>
     rows.map((row, idx) => {
       const normalized = {}
-      ALL_FIELDS.forEach((field) => {
-        const matchingKey =
-          Object.keys(row).find(k => k.toLowerCase().replace(/[_\s]/g, '') === field.key.toLowerCase().replace(/[_\s]/g, '')) || field.key
-        normalized[field.key] = row[matchingKey] ?? ''
+      const entries = Object.entries(row)
+
+      leafFields.forEach((field) => {
+        const match = entries.find(([k]) => sanitize(k) === sanitize(field.label) || sanitize(k) === sanitize(field.key))
+        normalized[field.key] = match ? match[1] ?? '' : ''
       })
+
       if (!normalized.seq) normalized.seq = String(idx + 1)
       return normalized
     })
@@ -212,7 +348,7 @@ export default function ImportBulk() {
   // Add new row
   const handleAddRow = () => {
     const newRow = {}
-    ALL_FIELDS.forEach(field => {
+    leafFields.forEach(field => {
       newRow[field.key] = ''
     })
     newRow.seq = String(data.length + 1)
@@ -241,7 +377,7 @@ export default function ImportBulk() {
       message.info('No data to export')
       return
     }
-    const ws = XLSX.utils.json_to_sheet(data, { header: ALL_FIELDS.map(f => f.key) })
+    const ws = XLSX.utils.json_to_sheet(data, { header: leafFields.map(f => f.key) })
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Students')
     XLSX.writeFile(wb, 'students-export.xlsx')
@@ -256,6 +392,7 @@ export default function ImportBulk() {
     }
 
     const backendData = convertToBackendFormat(data)
+  const backendDisbursements = convertDisbursementsToBackend(data, academicYears)
 
     setLoading(true)
     try {
@@ -266,6 +403,23 @@ export default function ImportBulk() {
       })
 
       if (!response.ok) throw new Error('Failed to import students')
+
+      if (backendDisbursements.length > 0) {
+        try {
+          const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ disbursements: backendDisbursements }),
+          })
+          if (!disbResponse.ok) {
+            const errText = await disbResponse.text()
+            message.warning(`Students saved, but disbursements failed: ${errText || disbResponse.status}`)
+          }
+        } catch (err) {
+          console.error('Disbursement import error:', err)
+          message.warning('Students saved, but disbursements failed to upload')
+        }
+      }
 
       const slotResponse = await fetch(`${API_BASE}/scholarship_programs/update-slots`, {
         method: 'POST',
@@ -287,14 +441,9 @@ export default function ImportBulk() {
     }
   }
 
-  // Build header rows
-  const subHeaders = useMemo(() => {
-    return COLUMN_SCHEMA.flatMap(col => col.children ? col.children : [])
-  }, [])
-
   // Render cell input based on field type
   const renderCellInput = (row, rowIndex, field) => {
-    const config = getFieldConfig(field.key)
+    const config = getFieldConfig(field.key, leafFields)
     const value = row[field.key] ?? ''
 
     if (config.type === 'select' && config.options) {
@@ -341,7 +490,7 @@ export default function ImportBulk() {
   }
 
   // Calculate total table width
-  const totalTableWidth = ALL_FIELDS.reduce((sum, field) => sum + (field.width || 120), 0) + 60 // +60 for actions column
+  const totalTableWidth = leafFields.reduce((sum, field) => sum + (field.width || 120), 0) + 60 // +60 for actions column
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-6">
@@ -355,10 +504,10 @@ export default function ImportBulk() {
             <div>
               <Title level={2} className="!mb-1 !text-slate-800 flex items-center gap-3">
                 <UploadOutlined className="text-cyan-600" />
-                Bulk Student Import
+                Bulk Student & Disbursement Import
               </Title>
               <Text type="secondary" className="text-base">
-                Upload an Excel file or manually add student records
+                Upload one continuous Excel sheet or manually add combined records
               </Text>
             </div>
 
@@ -391,6 +540,48 @@ export default function ImportBulk() {
                 Add Row
               </Button>
             </div>
+          </div>
+        </Card>
+
+        {/* Academic Year Blocks */}
+        <Card className="shadow-md rounded-xl mb-6 border-0" bodyStyle={{ padding: '16px 24px' }}>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <Text strong className="text-base text-slate-700">Academic Year Sections</Text>
+              <div className="text-slate-500 text-sm">Add/remove AY blocks; each includes First/Second semester disbursement fields.</div>
+            </div>
+            <Space wrap>
+              <Input
+                placeholder="e.g. 2024-2025"
+                value={ayInput}
+                onChange={(e) => setAyInput(e.target.value)}
+                style={{ width: 180 }}
+              />
+              <Button
+                icon={<PlusOutlined />}
+                type="primary"
+                onClick={() => {
+                  const label = ayInput.trim()
+                  if (!label) return
+                  const id = makeAyId(label)
+                  if (academicYears.find(ay => ay.id === id)) {
+                    message.info('AY already added')
+                    return
+                  }
+                  setAcademicYears(prev => [...prev, { id, label }])
+                  setAyInput('')
+                }}
+              >
+                Add AY
+              </Button>
+            </Space>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {academicYears.map((ay, idx) => (
+              <Tag key={ay.id} color={idx % 2 === 0 ? 'blue' : 'cyan'} closable onClose={() => setAcademicYears(prev => prev.filter(p => p.id !== ay.id))}>
+                AY {ay.label}
+              </Tag>
+            ))}
           </div>
         </Card>
 
@@ -442,7 +633,7 @@ export default function ImportBulk() {
           <div className="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
             <div className="flex items-center justify-between">
               <Text strong className="text-lg text-slate-700">
-                Student Data
+                Student & Disbursement Data
               </Text>
               <Text type="secondary">
                 ← Scroll horizontally to view all columns →
@@ -456,42 +647,44 @@ export default function ImportBulk() {
               style={{ minWidth: `${totalTableWidth}px` }}
             >
               <thead>
-                {/* Row 1: Main headers */}
                 <tr className="bg-gradient-to-r from-cyan-800 to-cyan-700">
-                  {COLUMN_SCHEMA.map((col, idx) =>
-                    col.children ? (
-                      <th
-                        key={idx}
-                        colSpan={col.colSpan}
-                        className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm tracking-wide uppercase"
-                      >
-                        {col.label}
-                      </th>
-                    ) : (
-                      <th
-                        key={idx}
-                        rowSpan={2}
-                        className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm whitespace-nowrap tracking-wide uppercase"
-                        style={{ minWidth: col.width }}
-                      >
-                        {col.label}
-                      </th>
-                    )
-                  )}
+                  {headerRow1.map((col, idx) => (
+                    <th
+                      key={idx}
+                      colSpan={col.colSpan || 1}
+                      rowSpan={col.rowSpan || 1}
+                      className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm tracking-wide uppercase whitespace-nowrap"
+                      style={{ minWidth: col.width }}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
                   <th
-                    rowSpan={2}
+                    rowSpan={3}
                     className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm tracking-wide uppercase sticky right-0 bg-cyan-800"
                     style={{ minWidth: 60 }}
                   >
                     #
                   </th>
                 </tr>
-                {/* Row 2: Sub-headers */}
                 <tr className="bg-gradient-to-r from-cyan-700 to-cyan-600">
-                  {subHeaders.map((col, idx) => (
+                  {headerRow2.map((col, idx) => (
                     <th
                       key={idx}
+                      colSpan={col.colSpan || 1}
+                      rowSpan={col.rowSpan || 1}
                       className="border border-cyan-500 px-3 py-3 text-center font-semibold text-cyan-50 text-xs whitespace-nowrap uppercase"
+                      style={{ minWidth: col.width }}
+                    >
+                      {col.label}
+                    </th>
+                  ))}
+                </tr>
+                <tr className="bg-gradient-to-r from-cyan-600 to-cyan-500">
+                  {headerRow3.map((col, idx) => (
+                    <th
+                      key={idx}
+                      className="border border-cyan-400 px-3 py-3 text-center font-semibold text-white text-xs whitespace-nowrap uppercase"
                       style={{ minWidth: col.width }}
                     >
                       {col.label}
@@ -505,7 +698,7 @@ export default function ImportBulk() {
                   <tr>
                     <td
                       className="border border-slate-200 px-4 py-16 text-center text-slate-400"
-                      colSpan={TOTAL_COLUMNS + 1}
+                      colSpan={leafFields.length + 1}
                     >
                       <InboxOutlined className="text-6xl mb-4 block" />
                       <div className="text-lg font-medium mb-2">No Data Loaded</div>
@@ -521,7 +714,7 @@ export default function ImportBulk() {
                         hover:bg-blue-50 transition-colors duration-100
                       `}
                     >
-                      {ALL_FIELDS.map((field) => (
+                      {leafFields.map((field) => (
                         <td
                           key={field.key}
                           className="border border-slate-200 p-0"
@@ -559,6 +752,7 @@ export default function ImportBulk() {
             </table>
           </div>
         </Card>
+
       </div>
     </div>
   )
