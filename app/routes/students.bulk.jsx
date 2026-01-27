@@ -27,6 +27,75 @@ const SEM_FIELDS = [
 const sanitize = (str = '') => str.toLowerCase().replace(/[^a-z0-9]/g, '')
 const makeAyId = (label) => `ay_${sanitize(label) || Date.now()}`
 
+// Expand AY input like "2021-2029" to individual blocks (2021-2022, 2022-2023, ...)
+const expandAcademicYearInput = (input = '') => {
+  const trimmed = input.trim()
+  if (!trimmed) return []
+
+  const rangeMatch = trimmed.match(/^(\d{4})\s*-\s*(\d{4})$/)
+  if (!rangeMatch) return [trimmed]
+
+  const start = Number(rangeMatch[1])
+  const end = Number(rangeMatch[2])
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [trimmed]
+
+  const labels = []
+  for (let year = start; year < end; year += 1) {
+    labels.push(`${year}-${year + 1}`)
+  }
+  return labels
+}
+
+const sortAcademicYears = (list = []) =>
+  [...list].sort((a, b) => {
+    const aYear = parseInt(String(a.label).slice(0, 4), 10)
+    const bYear = parseInt(String(b.label).slice(0, 4), 10)
+    if (Number.isNaN(aYear) || Number.isNaN(bYear)) return a.label.localeCompare(b.label)
+    return aYear - bYear
+  })
+
+const mergeAcademicYears = (current = [], labels = []) => {
+  const seen = new Set(current.map((ay) => ay.label))
+  const merged = [...current]
+
+  labels.forEach((label) => {
+    if (!seen.has(label)) {
+      merged.push({ id: makeAyId(label), label })
+      seen.add(label)
+    }
+  })
+
+  return sortAcademicYears(merged)
+}
+
+const deriveAyLabelFromKey = (key = '') => {
+  const compact = key.match(/ay[_-]?(\d{4})[_-]?(\d{4})/)
+  if (compact) {
+    const start = Number(compact[1])
+    const end = Number(compact[2])
+    if (end > start) return `${start}-${end}`
+  }
+
+  const pair = key.match(/(20\d{2})\D{0,2}(20\d{2})/)
+  if (pair) {
+    const start = Number(pair[1])
+    const end = Number(pair[2])
+    if (end > start) return `${start}-${end}`
+  }
+  return null
+}
+
+const extractAyLabelsFromRows = (rows = []) => {
+  const labels = new Set()
+  rows.forEach((row) => {
+    Object.keys(row || {}).forEach((key) => {
+      const label = deriveAyLabelFromKey(String(key))
+      if (label) labels.add(label)
+    })
+  })
+  return Array.from(labels).sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
+}
+
 // Static student schema (2-tier max)
 const STATIC_SCHEMA = [
   { key: 'seq', label: 'SEQ', rowSpan: 3, width: 60 },
@@ -298,12 +367,12 @@ export default function ImportBulk() {
   }, [leafFields])
 
   // Normalize parsed rows to include all fields in order
-  const normalizeRows = (rows) =>
+  const normalizeRows = (rows, fields = leafFields) =>
     rows.map((row, idx) => {
       const normalized = {}
       const entries = Object.entries(row)
 
-      leafFields.forEach((field) => {
+      fields.forEach((field) => {
         const match = entries.find(([k]) => sanitize(k) === sanitize(field.label) || sanitize(k) === sanitize(field.key))
         normalized[field.key] = match ? match[1] ?? '' : ''
       })
@@ -325,9 +394,16 @@ export default function ImportBulk() {
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
-        const normalized = normalizeRows(parsedData)
+        const detectedAyLabels = extractAyLabelsFromRows(parsedData)
+        const mergedAys = mergeAcademicYears(academicYears, detectedAyLabels)
+        const { leafFields: nextLeafFields } = buildHeaders(mergedAys)
+        const normalized = normalizeRows(parsedData, nextLeafFields)
+
+        setAcademicYears(mergedAys)
         setData(normalized)
-        message.success(`File ${file.name} loaded - ${normalized.length} records`)
+
+        const ayNote = detectedAyLabels.length > 0 ? ` | AY detected: ${detectedAyLabels.join(', ')}` : ''
+        message.success(`File ${file.name} loaded - ${normalized.length} records${ayNote}`)
       } catch (error) {
         console.error(error)
         message.error('Error parsing file')
@@ -561,14 +637,17 @@ export default function ImportBulk() {
                 icon={<PlusOutlined />}
                 type="primary"
                 onClick={() => {
-                  const label = ayInput.trim()
-                  if (!label) return
-                  const id = makeAyId(label)
-                  if (academicYears.find(ay => ay.id === id)) {
+                  const labels = expandAcademicYearInput(ayInput)
+                  if (labels.length === 0) return
+
+                  const merged = mergeAcademicYears(academicYears, labels)
+                  const addedCount = merged.length - academicYears.length
+                  if (addedCount === 0) {
                     message.info('AY already added')
-                    return
+                  } else {
+                    message.success(`Added ${addedCount} AY block${addedCount > 1 ? 's' : ''}`)
+                    setAcademicYears(merged)
                   }
-                  setAcademicYears(prev => [...prev, { id, label }])
                   setAyInput('')
                 }}
               >
@@ -578,7 +657,7 @@ export default function ImportBulk() {
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
             {academicYears.map((ay, idx) => (
-              <Tag key={ay.id} color={idx % 2 === 0 ? 'blue' : 'cyan'} closable onClose={() => setAcademicYears(prev => prev.filter(p => p.id !== ay.id))}>
+              <Tag key={ay.id} color={idx % 2 === 0 ? 'blue' : 'cyan'} closable onClose={() => setAcademicYears(prev => sortAcademicYears(prev.filter(p => p.id !== ay.id)))}>
                 AY {ay.label}
               </Tag>
             ))}
