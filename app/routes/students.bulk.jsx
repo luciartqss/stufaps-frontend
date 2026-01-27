@@ -286,16 +286,19 @@ const convertToBackendFormat = (frontendData) => {
   })
 }
 
-const convertDisbursementsToBackend = (rows = [], academicYears = []) => {
+const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeqByIndex = []) => {
   try {
     if (!Array.isArray(rows) || !Array.isArray(academicYears)) return []
     if (rows.length === 0 || academicYears.length === 0) return []
     
-    // Filter out any undefined/null entries
-    const validRows = rows.filter((r) => r && typeof r === 'object' && r.seq)
+    // Preserve index alignment with student seq mapping
+    const validRows = rows.map((r) => (r && typeof r === 'object' ? r : {}))
     const validAys = academicYears.filter((ay) => ay && ay.id && ay.label)
     
     if (validRows.length === 0 || validAys.length === 0) return []
+    
+    // Need DB-assigned seq mapping for proper foreign keys
+    if (!Array.isArray(studentSeqByIndex) || studentSeqByIndex.length === 0) return []
 
     const semFieldMap = {
       nta: 'nta',
@@ -315,7 +318,8 @@ const convertDisbursementsToBackend = (rows = [], academicYears = []) => {
 
     for (let ri = 0; ri < validRows.length; ri++) {
       const row = validRows[ri]
-      if (!row || !row.seq) continue
+      const studentSeq = studentSeqByIndex[ri]
+      if (!row || !studentSeq) continue
 
       for (let ai = 0; ai < validAys.length; ai++) {
         const ay = validAys[ai]
@@ -331,7 +335,7 @@ const convertDisbursementsToBackend = (rows = [], academicYears = []) => {
           const base = `${ay.id}__${semKey}__`
 
           const payload = {
-            student_seq: row.seq,
+            student_seq: studentSeq,
             academic_year: ay.label,
             semester: semesterLabel,
             curriculum_year_level: cyl,
@@ -515,8 +519,9 @@ export default function ImportBulk() {
         // Build set of known header tokens from all header rows
         const headerSanSet = new Set([...topRow, ...midRow, ...leafRow].map((v) => sanitize(String(v || ''))).filter(Boolean))
         
-        // Additional common header tokens that should be filtered
+        // Additional common header tokens that should be filtered (including abbreviated versions)
         const knownHeaderTokens = [
+          // Full names
           'seq', 'incharge', 'awardyear', 'scholarshipprogram', 'awardnumber',
           'surname', 'firstname', 'middlename', 'extension', 'sex', 'birthday',
           'dateofbirth', 'contactnumber', 'email', 'emailaddress', 'address',
@@ -528,7 +533,14 @@ export default function ImportBulk() {
           'terminationreason', 'cyl', 'curriculumyearlevel', 'nta', 'fundsource',
           'amount', 'vouchernumber', 'modeofpayment', 'accountcheckno', 'paymentamount',
           'lddapnumber', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
-          'semester', 'ay', 'academicyear'
+          'semester', 'ay', 'academicyear',
+          // Abbreviated versions from Excel (SCHO_PROG, AW_YR, S_NAME, F_NAME, etc.)
+          'awyr', 'schoprog', 'awno', 'sname', 'fname', 'mname', 'ename',
+          'contno', 'emladd', 'stbrgy', 'muncity', 'congdist', 'spgrp',
+          'certno', 'hei', 'insttype', 'progname', 'progmjr', 'progdiscp',
+          'proglvl', 'gprtype', 'gprno', 'gprseries', 'priobasis', 'schostatus',
+          'remarks1', 'remarks2', 'nameofgrantee', 'contactdetails', 'completeaddress',
+          'governmentauthority', 'priorityprogram'
         ]
         knownHeaderTokens.forEach(t => headerSanSet.add(t))
 
@@ -536,8 +548,9 @@ export default function ImportBulk() {
           const tokens = row.map((cell) => sanitize(String(cell || ''))).filter(Boolean)
           if (tokens.length === 0) return true
           const hits = tokens.filter((t) => headerSanSet.has(t)).length
-          // If more than 40% of non-empty cells match header tokens, skip this row
-          return hits / tokens.length >= 0.4
+          // If more than 25% of non-empty cells match header tokens, skip this row
+          // Lowered threshold to catch more header variants
+          return hits / tokens.length >= 0.25
         }
 
         const dataRows = dataRowsRaw.filter((row) => {
@@ -665,7 +678,6 @@ export default function ImportBulk() {
     }
 
     const backendData = convertToBackendFormat(data)
-  const backendDisbursements = convertDisbursementsToBackend(data, academicYears)
 
     setLoading(true)
     try {
@@ -676,6 +688,14 @@ export default function ImportBulk() {
       })
 
       if (!response.ok) throw new Error('Failed to import students')
+
+      // Get DB-assigned seq values from created students
+      const respJson = await response.json().catch(() => null)
+      const createdStudents = respJson?.data || []
+      const studentSeqByIndex = createdStudents.map((s) => s.seq)
+
+      // Now convert disbursements using actual DB seq values
+      const backendDisbursements = convertDisbursementsToBackend(data, academicYears, studentSeqByIndex)
 
       if (backendDisbursements.length > 0) {
         try {

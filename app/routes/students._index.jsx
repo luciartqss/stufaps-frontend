@@ -4,6 +4,8 @@ import { InfoCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { UploadOutlined } from '@ant-design/icons'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
 const { Title } = Typography
 const { Search } = Input
 const { Option } = Select
@@ -36,7 +38,7 @@ export default function StudentsIndex() {
   const fetchStudents = async () => {
     setLoading(true)
     try {
-      const response = await fetch('http://localhost:8000/api/students')
+      const response = await fetch(`${API_BASE}/students`)
       if (!response.ok) {
         throw new Error('Failed to fetch students')
       }
@@ -140,7 +142,7 @@ export default function StudentsIndex() {
   // Log action function
   const logAction = async (model, modelId, action, oldData, newData) => {
     try {
-      await fetch('http://localhost:8000/api/logs', {
+      await fetch(`${API_BASE}/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,6 +184,9 @@ export default function StudentsIndex() {
         return 'blue'
       case 'Terminated':
         return 'red'
+      case 'Active':
+      case 'active':
+        return 'green'
       default:
         return 'default'
     }
@@ -279,6 +284,7 @@ export default function StudentsIndex() {
   const scholarshipPrograms = [...new Set(students.map((s) => s.scholarship_program))].filter(Boolean)
   const academicYears = [...new Set(students.map((s) => s.academic_year))].filter(Boolean)
   const semesters = [...new Set(students.map((s) => s.semester))].filter(Boolean)
+  const statusValues = [...new Set(students.map((s) => s.scholarship_status))].filter(Boolean)
 
   const searchInstructions = (
     <div style={{ maxWidth: 300 }}>
@@ -312,7 +318,7 @@ export default function StudentsIndex() {
     // Log the bulk edit action
     await logAction('Student', 0, 'update', { [field]: oldValue }, { [field]: newValue })
     
-    const res = await fetch('http://localhost:8000/api/students/bulk-update-field', {
+    const res = await fetch(`${API_BASE}/students/bulk-update-field`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ field, old_value: oldValue, new_value: newValue }),
@@ -359,12 +365,14 @@ export default function StudentsIndex() {
               placeholder="Status"
               allowClear
               size="middle"
-              style={{ width: 120 }}
+              style={{ width: 140 }}
               onChange={handleStatusChange}
             >
-              <Option value="On-going">On-going</Option>
-              <Option value="Graduated">Graduated</Option>
-              <Option value="Terminated">Terminated</Option>
+              {statusValues.map((status) => (
+                <Option key={status} value={status}>
+                  {status}
+                </Option>
+              ))}
             </Select>
             <Select
               placeholder="Program"
