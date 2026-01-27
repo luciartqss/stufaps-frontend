@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext(null)
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [user, setUser] = useState(null)
@@ -19,17 +21,31 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  const login = (username, password) => {
-    // Hard-coded credentials for now
-    if (username === 'admin' && password === 'admin') {
-      const userData = { username: 'admin', role: 'Administrator' }
+  const login = async (email, password) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}))
+        return { success: false, message: error.message || 'Invalid credentials' }
+      }
+
+      const data = await res.json()
+      const userData = data.user || { email }
+
       setIsAuthenticated(true)
       setUser(userData)
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('user', JSON.stringify(userData))
-      return { success: true }
+
+      return { success: true, user: userData }
+    } catch (err) {
+      return { success: false, message: 'Unable to reach server' }
     }
-    return { success: false, message: 'Invalid username or password' }
   }
 
   const logout = () => {
