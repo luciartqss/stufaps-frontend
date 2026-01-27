@@ -96,6 +96,15 @@ const extractAyLabelsFromRows = (rows = []) => {
   return Array.from(labels).sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
 }
 
+const excelDateToISO = (value) => {
+  const parsed = XLSX.SSF?.parse_date_code?.(value)
+  if (!parsed) return value
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${parsed.y}-${pad(parsed.m)}-${pad(parsed.d)}`
+}
+
+const isAmountKey = (key = '') => /amount/.test(String(key).toLowerCase())
+
 // Static student schema (2-tier max)
 const STATIC_SCHEMA = [
   { key: 'seq', label: 'SEQ', rowSpan: 3, width: 60 },
@@ -393,17 +402,144 @@ export default function ImportBulk() {
         const workbook = XLSX.read(buffer, { type: 'array' })
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
-        const parsedData = XLSX.utils.sheet_to_json(worksheet, { defval: '' })
-        const detectedAyLabels = extractAyLabelsFromRows(parsedData)
+
+        // Grab first 3 header rows as arrays
+        const headerRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
+
+        const fillForward = (row = []) => {
+          const filled = [...row]
+          for (let i = 0; i < filled.length; i += 1) {
+            if (filled[i] === undefined || filled[i] === null || filled[i] === '') {
+              filled[i] = i > 0 ? filled[i - 1] : filled[i]
+            }
+          }
+          return filled
+        }
+
+        const topRowRaw = headerRows[0] || []
+        const midRowRaw = headerRows[1] || []
+        const leafRow = headerRows[2] || []
+
+        const topRow = fillForward(topRowRaw)
+        const midRow = fillForward(midRowRaw)
+
+        // Detect AYs from the top row labels (flexible patterns)
+        const ayFromTop = topRow
+          .map((cell) => deriveAyLabelFromKey(String(cell || '')))
+          .filter(Boolean)
+        const detectedAyLabels = Array.from(new Set(ayFromTop)).sort(
+          (a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10)
+        )
+
         const mergedAys = mergeAcademicYears(academicYears, detectedAyLabels)
         const { leafFields: nextLeafFields } = buildHeaders(mergedAys)
-        const normalized = normalizeRows(parsedData, nextLeafFields)
+
+        // Build column mapping using header rows
+        const maxCols = Math.max(topRow.length, midRow.length, leafRow.length)
+        const columnMeta = Array.from({ length: maxCols }).map((_, idx) => {
+          const leafLabel = leafRow[idx]
+          const fallback = midRow[idx] || topRow[idx] || ''
+          const label = leafLabel || fallback || ''
+          const ayLabel =
+            deriveAyLabelFromKey(String(topRow[idx] || '')) ||
+            deriveAyLabelFromKey(String(midRow[idx] || '')) ||
+            deriveAyLabelFromKey(String(label))
+          const semSan = sanitize(String(midRow[idx] || topRow[idx] || ''))
+          const semester = semSan.includes('first') || semSan.includes('1st')
+            ? 'First'
+            : semSan.includes('second') || semSan.includes('2nd')
+              ? 'Second'
+              : null
+          return { idx, label, ayLabel, semester, raw: { top: topRow[idx], mid: midRow[idx], leaf: leafLabel } }
+        })
+
+        // Map excel columns to leafFields
+        const colToField = new Map()
+        const unmappedCols = []
+
+        columnMeta.forEach((col) => {
+          const labelSan = sanitize(col.label)
+          if (!labelSan) {
+            unmappedCols.push(col)
+            return
+          }
+          const candidates = nextLeafFields.filter((f) => {
+            const matchesLabel = sanitize(f.label) === labelSan || sanitize(f.key) === labelSan
+            const ayMatches = col.ayLabel
+              ? mergedAys.find((ay) => ay.label === col.ayLabel)?.id === f.ayId
+              : !f.ayId
+            const semMatches = col.semester ? f.semester === col.semester : true
+
+            // For CYL columns, allow loose match
+            const isCyl = f.key.endsWith('__cyl') || sanitize(f.label).includes('cyl')
+            const cylMatch = isCyl && (labelSan.includes('cyl') || labelSan.includes('curriculum'))
+
+            return ayMatches && (semMatches && (matchesLabel || cylMatch))
+          })
+
+          if (candidates.length > 0) {
+            colToField.set(col.idx, candidates[0])
+          } else {
+            unmappedCols.push(col)
+          }
+        })
+
+        // Data rows start after the first 3 header rows
+        const dataRows = headerRows.slice(3)
+        const normalized = dataRows.map((row, idx) => {
+          const normalizedRow = {}
+
+          nextLeafFields.forEach((f) => {
+            normalizedRow[f.key] = ''
+          })
+          normalizedRow.seq = String(idx + 1)
+
+          row.forEach((value, colIdx) => {
+            const field = colToField.get(colIdx)
+            if (!field) return
+            let cellVal = value
+            if (cellVal === null || cellVal === undefined) cellVal = ''
+
+            if (typeof cellVal === 'number') {
+              if (field.type === 'date') {
+                cellVal = excelDateToISO(cellVal)
+              }
+            }
+
+            if (typeof cellVal === 'string') {
+              cellVal = cellVal.trim()
+              if (isAmountKey(field.key)) {
+                cellVal = cellVal.replace(/,/g, '')
+              }
+            }
+
+            normalizedRow[field.key] = cellVal === undefined || cellVal === null ? '' : cellVal
+          })
+
+          return normalizedRow
+        })
+
+        // Validation: required columns
+        const mappedKeys = Array.from(colToField.values()).map((f) => f.key)
+        const missingCritical = ['surname', 'firstName'].filter((req) => !mappedKeys.includes(req))
+        if (missingCritical.length > 0) {
+          message.error(`Missing required column(s): ${missingCritical.join(', ')}`)
+          return
+        }
+
+        const mappedCount = colToField.size
+        const ignoredCount = columnMeta.length - mappedCount
+        if (ignoredCount > 0) {
+          const unmappedAyCols = unmappedCols.filter((c) => c.ayLabel)
+          if (unmappedAyCols.length > 0) {
+            message.warning(`Some AY columns were not mapped: ${unmappedAyCols.map((c) => c.label || c.raw.leaf || c.raw.mid).join(', ')}`)
+          }
+        }
 
         setAcademicYears(mergedAys)
         setData(normalized)
 
-        const ayNote = detectedAyLabels.length > 0 ? ` | AY detected: ${detectedAyLabels.join(', ')}` : ''
-        message.success(`File ${file.name} loaded - ${normalized.length} records${ayNote}`)
+        message.success(`File ${file.name} loaded - ${normalized.length} records | Mapped ${mappedCount}/${columnMeta.length} columns${ignoredCount > 0 ? `, ignored ${ignoredCount}` : ''}${detectedAyLabels.length > 0 ? ` | AY detected: ${detectedAyLabels.join(', ')}` : ''}`)
       } catch (error) {
         console.error(error)
         message.error('Error parsing file')
