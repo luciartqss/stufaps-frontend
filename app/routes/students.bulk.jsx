@@ -286,61 +286,86 @@ const convertToBackendFormat = (frontendData) => {
   })
 }
 
-const convertDisbursementsToBackend = (rows, academicYears) => {
-  const semMap = {
-    nta: 'nta',
-    fundSource: 'fund_source',
-    amount: 'amount',
-    voucherNumber: 'voucher_number',
-    modeOfPayment: 'mode_of_payment',
-    accountCheckNo: 'account_check_no',
-    paymentAmount: 'payment_amount',
-    lddapNumber: 'lddap_number',
-    disbursementDate: 'disbursement_date',
-    remarks: 'remarks',
-  }
+const convertDisbursementsToBackend = (rows = [], academicYears = []) => {
+  try {
+    if (!Array.isArray(rows) || !Array.isArray(academicYears)) return []
+    if (rows.length === 0 || academicYears.length === 0) return []
+    
+    // Filter out any undefined/null entries
+    const validRows = rows.filter((r) => r && typeof r === 'object' && r.seq)
+    const validAys = academicYears.filter((ay) => ay && ay.id && ay.label)
+    
+    if (validRows.length === 0 || validAys.length === 0) return []
 
-  const disbursements = []
+    const semFieldMap = {
+      nta: 'nta',
+      fundSource: 'fund_source',
+      amount: 'amount',
+      voucherNumber: 'voucher_number',
+      modeOfPayment: 'mode_of_payment',
+      accountCheckNo: 'account_check_no',
+      paymentAmount: 'payment_amount',
+      lddapNumber: 'lddap_number',
+      disbursementDate: 'disbursement_date',
+      remarks: 'remarks',
+    }
 
-  rows.forEach((row) => {
-    academicYears.forEach((ay) => {
-      const cylKey = `${ay.id}__cyl`
-      const cyl = row[cylKey]
+    const semFieldKeys = Object.keys(semFieldMap)
+    const disbursements = []
 
-      ['first', 'second'].forEach((semKey, idx) => {
-        const semesterLabel = idx === 0 ? 'First' : 'Second'
-        const base = `${ay.id}__${semKey}__`
+    for (let ri = 0; ri < validRows.length; ri++) {
+      const row = validRows[ri]
+      if (!row || !row.seq) continue
 
-        const payload = {
-          student_seq: row.seq,
-          academic_year: ay.label,
-          semester: semesterLabel,
-          curriculum_year_level: cyl || '',
-        }
+      for (let ai = 0; ai < validAys.length; ai++) {
+        const ay = validAys[ai]
+        if (!ay || !ay.id || !ay.label) continue
 
-        let hasData = false
-        Object.entries(semMap).forEach(([k, backendK]) => {
-          const val = row[`${base}${k}`]
-          if (val !== '' && val !== null && val !== undefined) {
-            hasData = true
-            if (['amount', 'payment_amount'].includes(backendK)) {
-              const num = Number(String(val).replace(/,/g, ''))
-              payload[backendK] = Number.isFinite(num) ? num : val
-            } else if (backendK === 'semester') {
-              const sem = String(val).toLowerCase()
-              payload[backendK] = sem.startsWith('1') ? 'First' : sem.startsWith('2') ? 'Second' : val
-            } else {
-              payload[backendK] = val
+        const cylKey = `${ay.id}__cyl`
+        const cyl = row[cylKey] || ''
+
+        const semesters = ['first', 'second']
+        for (let si = 0; si < semesters.length; si++) {
+          const semKey = semesters[si]
+          const semesterLabel = si === 0 ? 'First' : 'Second'
+          const base = `${ay.id}__${semKey}__`
+
+          const payload = {
+            student_seq: row.seq,
+            academic_year: ay.label,
+            semester: semesterLabel,
+            curriculum_year_level: cyl,
+          }
+
+          let hasData = false
+          for (let fi = 0; fi < semFieldKeys.length; fi++) {
+            const k = semFieldKeys[fi]
+            const backendK = semFieldMap[k]
+            const val = row[`${base}${k}`]
+            
+            if (val !== '' && val !== null && val !== undefined) {
+              hasData = true
+              if (backendK === 'amount' || backendK === 'payment_amount') {
+                const num = Number(String(val).replace(/,/g, ''))
+                payload[backendK] = Number.isFinite(num) ? num : val
+              } else {
+                payload[backendK] = val
+              }
             }
           }
-        })
 
-        if (hasData) disbursements.push(payload)
-      })
-    })
-  })
+          if (hasData) {
+            disbursements.push(payload)
+          }
+        }
+      }
+    }
 
-  return disbursements
+    return disbursements
+  } catch (err) {
+    console.error('convertDisbursementsToBackend error:', err)
+    return []
+  }
 }
 
 export default function ImportBulk() {
@@ -485,7 +510,43 @@ export default function ImportBulk() {
         })
 
         // Data rows start after the first 3 header rows
-        const dataRows = headerRows.slice(3)
+        const dataRowsRaw = headerRows.slice(3)
+        
+        // Build set of known header tokens from all header rows
+        const headerSanSet = new Set([...topRow, ...midRow, ...leafRow].map((v) => sanitize(String(v || ''))).filter(Boolean))
+        
+        // Additional common header tokens that should be filtered
+        const knownHeaderTokens = [
+          'seq', 'incharge', 'awardyear', 'scholarshipprogram', 'awardnumber',
+          'surname', 'firstname', 'middlename', 'extension', 'sex', 'birthday',
+          'dateofbirth', 'contactnumber', 'email', 'emailaddress', 'address',
+          'streetbrgy', 'municipalitycity', 'province', 'congressionaldistrict',
+          'zipcode', 'specialgroup', 'certificationnumber', 'nameofinstitution',
+          'uii', 'institutionaltype', 'region', 'degreeprogram', 'programmajor',
+          'programdiscipline', 'programdegreelevel', 'authoritytype', 'authoritynumber',
+          'series', 'priority', 'basiscmo', 'scholarshipstatus', 'replacementinfo',
+          'terminationreason', 'cyl', 'curriculumyearlevel', 'nta', 'fundsource',
+          'amount', 'vouchernumber', 'modeofpayment', 'accountcheckno', 'paymentamount',
+          'lddapnumber', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
+          'semester', 'ay', 'academicyear'
+        ]
+        knownHeaderTokens.forEach(t => headerSanSet.add(t))
+
+        const isHeaderLikeRow = (row = []) => {
+          const tokens = row.map((cell) => sanitize(String(cell || ''))).filter(Boolean)
+          if (tokens.length === 0) return true
+          const hits = tokens.filter((t) => headerSanSet.has(t)).length
+          // If more than 40% of non-empty cells match header tokens, skip this row
+          return hits / tokens.length >= 0.4
+        }
+
+        const dataRows = dataRowsRaw.filter((row) => {
+          if (!Array.isArray(row)) return false
+          const hasValue = row.some((cell) => sanitize(String(cell || '')) !== '')
+          if (!hasValue) return false
+          if (isHeaderLikeRow(row)) return false
+          return true
+        })
         const normalized = dataRows.map((row, idx) => {
           const normalizedRow = {}
 
@@ -710,7 +771,7 @@ export default function ImportBulk() {
         {/* Upload Section */}
         <Card
           className="shadow-xl rounded-2xl mb-6 border-0"
-          bodyStyle={{ padding: '24px 32px' }}
+          styles={{ body: { padding: '24px 32px' } }}
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
@@ -756,7 +817,7 @@ export default function ImportBulk() {
         </Card>
 
         {/* Academic Year Blocks */}
-        <Card className="shadow-md rounded-xl mb-6 border-0" bodyStyle={{ padding: '16px 24px' }}>
+        <Card className="shadow-md rounded-xl mb-6 border-0" styles={{ body: { padding: '16px 24px' } }}>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <Text strong className="text-base text-slate-700">Academic Year Sections</Text>
@@ -802,7 +863,7 @@ export default function ImportBulk() {
 
         {/* Action Buttons */}
         {data.length > 0 && (
-          <Card className="shadow-xl rounded-2xl mb-6 border-0" bodyStyle={{ padding: '16px 32px' }}>
+          <Card className="shadow-xl rounded-2xl mb-6 border-0" styles={{ body: { padding: '16px 32px' } }}>
             <div className="flex flex-wrap items-center justify-between gap-4">
               <Text strong className="text-lg text-slate-700">
                 {data.length} record{data.length > 1 ? 's' : ''} loaded
@@ -843,7 +904,7 @@ export default function ImportBulk() {
         {/* Data Table */}
         <Card
           className="shadow-xl rounded-2xl border-0"
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <div className="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
             <div className="flex items-center justify-between">
