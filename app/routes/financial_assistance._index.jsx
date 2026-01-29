@@ -156,7 +156,7 @@ export default function Financial_AssistanceIndex() {
 
   const fetchPrograms = () => {
     setLoading(true)
-    fetch('http://localhost:8000/api/scholarship_programs')
+    fetch('http://localhost:8000/api/scholarship_program_records')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
         return res.json()
