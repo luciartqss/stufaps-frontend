@@ -118,7 +118,7 @@ export default function FinancialAssistanceEstatistikolar() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-      fetch('http://localhost:8000/api/scholarship_programs')
+      fetch('http://localhost:8000/api/scholarship_program_records')
         .then(res => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`)
