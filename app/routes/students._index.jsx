@@ -301,23 +301,49 @@ export default function StudentsIndex() {
   const [oldValue, setOldValue] = useState('')
   const [newValue, setNewValue] = useState('')
 
+  // Safe, bulk-editable fields (excluding disbursement/sensitive data)
   const fieldOptions = [
     { label: 'Course Name', value: 'degree_program' },
+    { label: 'Program Major', value: 'program_major' },
+    { label: 'Program Discipline', value: 'program_discipline' },
+    { label: 'Program Degree Level', value: 'program_degree_level' },
     { label: 'Institution Name', value: 'name_of_institution' },
+    { label: 'Institution Type', value: 'institutional_type' },
+    { label: 'Region', value: 'region' },
+    { label: 'Province', value: 'province' },
+    { label: 'City / Municipality', value: 'municipality_city' },
+    { label: 'Barangay / Street', value: 'street_brgy' },
+    { label: 'Congressional District', value: 'congressional_district' },
+    { label: 'Scholarship Program', value: 'scholarship_program' },
+    { label: 'Scholarship Status', value: 'scholarship_status' },
+    { label: 'Special Group', value: 'special_group' },
+    { label: 'Authority Type', value: 'authority_type' },
+    { label: 'Authority Number', value: 'authority_number' },
+    { label: 'Series', value: 'series' },
+    { label: 'Basis CMO', value: 'basis_cmo' },
+    { label: 'Termination Reason', value: 'termination_reason' },
+    { label: 'Replacement Info', value: 'replacement_info' },
   ]
 
-  const oldValues = [...new Set(students.map(s => s[field])).values()].filter(Boolean)
+  // Compute unique existing values for the selected field (defensive for missing keys)
+  const oldValues = [
+    ...new Set(
+      students
+        .map((s) => (s && s[field] !== undefined && s[field] !== null ? String(s[field]) : null))
+        .filter(Boolean)
+    ),
+  ]
 
   // Update the handleSubmit for Bulk Edit to include logging
   const handleSubmit = async () => {
-    if (!oldValue || !newValue) {
-      message.error('Please select and enter all fields.')
+    if (!field || !oldValue || !newValue) {
+      message.error('Please select a field and enter both old and new values.')
       return
     }
-    
+
     // Log the bulk edit action
     await logAction('Student', 0, 'update', { [field]: oldValue }, { [field]: newValue })
-    
+
     const res = await fetch(`${API_BASE}/students/bulk-update-field`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
