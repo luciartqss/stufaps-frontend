@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { Typography, Card } from 'antd'
-import { TeamOutlined, ContactsOutlined    , FundOutlined, UserOutlined  } from '@ant-design/icons'
-import { FileTextOutlined } from '@ant-design/icons'
+import { Typography, Card, Select } from 'antd'
+import { TeamOutlined, ContactsOutlined, UserOutlined } from '@ant-design/icons'
 import EditSlotsModal from '../components/EditSlotsModal'
 
 const { Title, Text } = Typography
+const { Option } = Select
 
 export function meta() {
   return [
@@ -13,7 +13,6 @@ export function meta() {
     { name: 'description', content: 'Manage financial assistance records' },
   ]
 }
-
 
 function StatsCards({ financialAssistances }) {
   const totals = {
@@ -33,7 +32,7 @@ function StatsCards({ financialAssistances }) {
     {
       title: 'Total Filled Slots',
       value: totals.totalFilled,
-      icon: <TeamOutlined/>,
+      icon: <TeamOutlined />,
       color: '#52c41a',
       bgColor: '#f6ffed',
       percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
@@ -41,7 +40,7 @@ function StatsCards({ financialAssistances }) {
     {
       title: 'Total Unfilled Slots',
       value: totals.totalUnfilled,
-      icon: <UserOutlined/>,
+      icon: <UserOutlined />,
       color: '#faad14',
       bgColor: '#fffbe6',
       percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
@@ -59,12 +58,12 @@ function StatsCards({ financialAssistances }) {
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               height: 96,
             }}
-            bodyStyle={{ 
-              padding: 16, 
-              display: 'flex', 
-              alignItems: 'center', 
+            bodyStyle={{
+              padding: 16,
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              height: '100%'
+              height: '100%',
             }}
           >
             <div style={{ overflow: 'hidden', flex: 1 }}>
@@ -72,13 +71,11 @@ function StatsCards({ financialAssistances }) {
                 {stat.title}
               </Text>
               <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.prefix || ''}
-                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
+                {stat.value.toLocaleString()}
               </Text>
               {stat.percentage && (
                 <Text style={{ fontSize: 11, color: '#8c8c8c' }}>{stat.percentage}% of total</Text>
-              )}       
-           
+              )}
             </div>
             <div
               style={{
@@ -104,29 +101,20 @@ function StatsCards({ financialAssistances }) {
 }
 
 const routeMap = {
-  CMSP: "/financial_assistance/cmsp",
-  ESTATISTIKOLAR: "/financial_assistance/estatistikolar",
-  COSCHO: "/financial_assistance/coscho",
-  MSRS: "/financial_assistance/msrs",
-  "SIDA-SGP": "/financial_assistance/sida_sgp",
-  "ACEF-GIAHEP": "/financial_assistance/acef_giahep",
-  "MTP-SP": "/financial_assistance/mtp_sp",
-  "CGMS-SUCS": "/financial_assistance/cgms_sucs",
-  SNPLP: "/financial_assistance/snplp",
+  CMSP: '/financial_assistance/cmsp',
+  ESTATISTIKOLAR: '/financial_assistance/estatistikolar',
+  COSCHO: '/financial_assistance/coscho',
+  MSRS: '/financial_assistance/msrs',
+  'SIDA-SGP': '/financial_assistance/sida_sgp',
+  'ACEF-GIAHEP': '/financial_assistance/acef_giahep',
+  'MTP-SP': '/financial_assistance/mtp_sp',
+  'CGMS-SUCS': '/financial_assistance/cgms_sucs',
+  SNPLP: '/financial_assistance/snplp',
 }
 
 function getRoute(programName) {
-  return routeMap[programName.toUpperCase()] || "#"
-  const normalized = programName
-      .replace(/\s|-/g, "")   // remove spaces and dashes
-      .toUpperCase()
-
-   
-    return map[normalized] || "#"
-  }
-
-
-
+  return routeMap[programName.toUpperCase()] || '#'
+}
 
 function ScholarshipCard({ title, description, to, total, filled, unfilled }) {
   const [active, setActive] = useState(false)
@@ -156,122 +144,129 @@ function ScholarshipCard({ title, description, to, total, filled, unfilled }) {
   )
 }
 
-
 export default function Financial_AssistanceIndex() {
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [openModal, setOpenModal] = useState(false)
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
+
+  // Example academic years list (replace with API call if needed)
+  const academicYears = ['2023-2024', '2024-2025', '2025-2026']
 
   const fetchPrograms = () => {
-  setLoading(true)
-  fetch('http://localhost:8000/api/scholarship_programs')
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-      return res.json()
-    })
-    .then(data => {
-      const programsData = data.data || data
-      setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
-      setLoading(false)
-    })
-    .catch(err => {
-      console.error('Fetch Error:', err)
-      setError(err.message)
-      setLoading(false)
-    })
-}
-
-useEffect(() => {
-  fetchPrograms()
-}, [])
-
-
-
- 
-
-   const sortedPrograms = [...financialAssistances].sort((a, b) => 
-  a.scholarship_program_name.toUpperCase() === "CMSP" ? -1 : 
-  b.scholarship_program_name.toUpperCase() === "CMSP" ? 1 : 0
-)
-
-  const priorityProgram = sortedPrograms[0] // CMSP will always be first
-const otherPrograms = sortedPrograms.slice(1) // everything else follows
-
-return (
-  <div className="flex min-h-screen flex-col">
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>Financial Assistance Management</Title>
-    </div>
-
-    <main className="flex-1 p-8">
-
-<div>
-
-
- 
-      <button
-  onClick={() => setOpenModal(true)}
-  className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
->
-  Edit Slots
-</button>
-
-
-      <EditSlotsModal 
-  open={openModal} 
-  onClose={() => setOpenModal(false)} 
-  onUpdated={(fetchPrograms) => {
-    // re-fetch programs after update
+    setLoading(true)
     fetch('http://localhost:8000/api/scholarship_programs')
-      .then(res => res.json())
-      .then(data => setFinancialAssistances(data.data || data))
-      .catch(err => console.error('Refresh error:', err))
-  }} 
-/>
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+        return res.json()
+      })
+      .then(data => {
+        const programsData = data.data || data
+        setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Fetch Error:', err)
+        setError(err.message)
+        setLoading(false)
+      })
+  }
 
+  useEffect(() => {
+    fetchPrograms()
+  }, [])
 
+  const sortedPrograms = [...financialAssistances].sort((a, b) =>
+    a.scholarship_program_name.toUpperCase() === 'CMSP'
+      ? -1
+      : b.scholarship_program_name.toUpperCase() === 'CMSP'
+      ? 1
+      : 0
+  )
 
+  const handleAcademicYearChange = value => {
+    setAcademicYearFilter(value)
+    // TODO: implement filtering logic here
+  }
 
-  
+  const priorityProgram = sortedPrograms[0] // CMSP first
+  const otherPrograms = sortedPrograms.slice(1)
 
-
-</div>
-
-<br />    
-      <StatsCards financialAssistances={financialAssistances} />
-      
-      {/* Priority Section */}
-      <div className="grid gap-12 items-stretch">
-        {priorityProgram && (
-          <ScholarshipCard
-            key={priorityProgram.id}
-            title={priorityProgram.scholarship_program_name}
-            description={priorityProgram.description}
-            to={getRoute(priorityProgram.scholarship_program_name)}
-            total={priorityProgram.total_slot}
-            filled={priorityProgram.filled_slot}
-            unfilled={priorityProgram.unfilled_slot}
-          />
-        )}
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div style={{ padding: '24px' }}>
+        <Title level={2}>Financial Assistance Management</Title>
       </div>
 
-       <br />
+      <main className="flex-1 p-8">
+        <div>
+          <button
+            onClick={() => setOpenModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+          >
+            Edit Slots
+          </button>
 
-      {/* Other Programs Section */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
-        {otherPrograms.map(program => (
-          <ScholarshipCard
-            key={program.id}
-            title={program.scholarship_program_name}
-            description={program.description}
-            to={getRoute(program.scholarship_program_name)}
-            total={program.total_slot}
-            filled={program.filled_slot}
-            unfilled={program.unfilled_slot}
+          <Select
+            placeholder="Academic Year"
+            allowClear
+            size="middle"
+            style={{ width: 130, marginLeft: 12 }}
+            onChange={handleAcademicYearChange}
+
+                        >
+              {academicYears.map(year => (
+                <Option key={year} value={year}>
+                  {year}
+                </Option>
+              ))}
+            </Select>
+
+          <EditSlotsModal
+            open={openModal}
+            onClose={() => setOpenModal(false)}
+            onUpdated={() => {
+              // re-fetch programs after update
+              fetchPrograms()
+            }}
           />
-        ))}
-      </div>
+        </div>
+
+        <br />
+        <StatsCards financialAssistances={financialAssistances} />
+
+        {/* Priority Section */}
+        <div className="grid gap-12 items-stretch">
+          {priorityProgram && (
+            <ScholarshipCard
+              key={priorityProgram.id}
+              title={priorityProgram.scholarship_program_name}
+              description={priorityProgram.description}
+              to={getRoute(priorityProgram.scholarship_program_name)}
+              total={priorityProgram.total_slot}
+              filled={priorityProgram.filled_slot}
+              unfilled={priorityProgram.unfilled_slot}
+            />
+          )}
+        </div>
+
+        <br />
+
+        {/* Other Programs Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-stretch">
+          {otherPrograms.map(program => (
+            <ScholarshipCard
+              key={program.id}
+              title={program.scholarship_program_name}
+              description={program.description}
+              to={getRoute(program.scholarship_program_name)}
+              total={program.total_slot}
+              filled={program.filled_slot}
+              unfilled={program.unfilled_slot}
+            />
+          ))}
+        </div>
       </main>
     </div>
   )
