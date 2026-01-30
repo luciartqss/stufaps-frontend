@@ -1,10 +1,113 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select } from 'antd'
+import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
 import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
+
+// API utility functions
+const api = {
+  async request(url, options = {}) {
+    const response = await fetch(`http://localhost:8000/api${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...options.headers,
+      },
+      ...options,
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+    }
+    
+    return response.json()
+  },
+  
+  get(url) {
+    return this.request(url)
+  },
+  
+  post(url, data) {
+    return this.request(url, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  },
+  
+  put(url, data) {
+    return this.request(url, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+  },
+  
+  delete(url) {
+    return this.request(url, {
+      method: 'DELETE',
+    })
+  }
+}
+
+// Simple field display with proper input types - moved outside to prevent focus loss
+const Field = ({ label, value, field, span = 12, type = 'text', editMode, formData, handleChange, options = [] }) => (
+  <Col span={span}>
+    <div className="mb-3">
+      <Text type="secondary" className="text-xs uppercase tracking-wide block mb-1">{label}</Text>
+      {editMode && field ? (
+        type === 'date' ? (
+          <DatePicker
+            size="small"
+            style={{ width: '100%' }}
+            value={formData?.[field] ? dayjs(formData[field]) : null}
+            onChange={(date) => handleChange(field, date ? date.format('YYYY-MM-DD') : null)}
+            format="YYYY-MM-DD"
+          />
+        ) : type === 'email' ? (
+          <Input
+            size="small"
+            type="email"
+            value={formData?.[field] ?? ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+          />
+        ) : type === 'select' ? (
+          <Select
+            size="small"
+            value={formData?.[field] || undefined}
+            onChange={(v) => handleChange(field, v)}
+            placeholder={`Select ${label.toLowerCase()}`}
+            style={{ width: '100%' }}
+            allowClear
+          >
+            {options.map(option => (
+              <Select.Option key={option.value} value={option.value}>
+                {option.label}
+              </Select.Option>
+            ))}
+          </Select>
+        ) : type === 'textarea' ? (
+          <Input.TextArea
+            size="small"
+            value={formData?.[field] ?? ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+            rows={3}
+            placeholder={`Enter ${label.toLowerCase()}`}
+          />
+        ) : (
+          <Input
+            size="small"
+            value={formData?.[field] ?? ''}
+            onChange={(e) => handleChange(field, e.target.value)}
+          />
+        )
+      ) : (
+        <div className="text-sm text-slate-800 font-medium">{value || '—'}</div>
+      )}
+    </div>
+  </Col>
+)
 
 export default function StudentDetails() {
   const params = useParams()
@@ -16,6 +119,10 @@ export default function StudentDetails() {
   const [editMode, setEditMode] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({})
+  const [disbursementModal, setDisbursementModal] = useState({ visible: false, mode: 'create', record: null })
+  const [disbursementForm] = Form.useForm()
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [disbursementLoading, setDisbursementLoading] = useState(false)
 
   useEffect(() => {
     if (!id) {
@@ -24,13 +131,7 @@ export default function StudentDetails() {
       return
     }
 
-    fetch(`http://localhost:8000/api/students/${id}`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        return response.json()
-      })
+    api.get(`/students/${id}`)
       .then((data) => {
         setStudent(data)
         setFormData(data) // seed form with fetched student
@@ -41,28 +142,77 @@ export default function StudentDetails() {
         setError(error.message)
         setLoading(false)
       })
-  }, [id])
+  }, [id, refreshTrigger])
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  // Check if form data has changed
+  const hasChanges = () => {
+    if (!student || !formData) return false
+    
+    // Compare relevant fields (excluding id, timestamps, etc.)
+    const fieldsToCompare = [
+      'sex', 'date_of_birth', 'special_group', 'certification_number',
+      'surname', 'first_name', 'middle_name', 'extension',
+      'contact_number', 'email_address', 'street_brgy', 'municipality_city',
+      'province', 'congressional_district', 'zip_code', 'name_of_institution',
+      'uii', 'institutional_type', 'region', 'degree_program', 'program_major',
+      'program_discipline', 'program_degree_level', 'in_charge', 'award_year',
+      'scholarship_program', 'award_number', 'authority_type', 'authority_number',
+      'series', 'is_priority', 'basis_cmo', 'replacement_info', 'termination_reason',
+      'scholarship_status'
+    ]
+    
+    return fieldsToCompare.some(field => {
+      const originalValue = student[field]
+      const currentValue = formData[field]
+      
+      // Handle null/undefined/empty string comparisons
+      const normalizeValue = (val) => {
+        if (val === null || val === undefined || val === '') return ''
+        return String(val)
+      }
+      
+      return normalizeValue(originalValue) !== normalizeValue(currentValue)
+    })
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
-      const res = await fetch(`http://localhost:8000/api/students/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
-      if (!res.ok) throw new Error(`Save failed (${res.status})`)
-      const updated = await res.json()
-      setStudent(updated)
-      setFormData(updated)
+      // Prepare data with proper type conversion
+      const dataToSave = { ...formData }
+      
+      // Convert boolean fields
+      if (typeof dataToSave.is_priority === 'string') {
+        dataToSave.is_priority = dataToSave.is_priority === 'yes' ? '1' : '0'
+      }
+      
+      // Ensure award year is always a string
+      if (dataToSave.award_year !== undefined && dataToSave.award_year !== null) {
+        dataToSave.award_year = String(dataToSave.award_year)
+      }
+      
+      // Format dates properly
+      if (dataToSave.date_of_birth && dayjs(dataToSave.date_of_birth).isValid()) {
+        dataToSave.date_of_birth = dayjs(dataToSave.date_of_birth).format('YYYY-MM-DD')
+      }
+      
+      const response = await api.put(`/students/${id}`, dataToSave)
+      // Preserve disbursements if not included in response
+      const updatedStudent = response.data
+      if (updatedStudent && !updatedStudent.disbursements && student?.disbursements) {
+        updatedStudent.disbursements = student.disbursements
+      }
+      setStudent(updatedStudent)
+      setFormData(updatedStudent)
       setEditMode(false)
-      message.success('Student updated')
+      message.success('Student updated successfully')
     } catch (err) {
-      message.error(err.message)
+      console.error('Save error:', err)
+      message.error(err.message || 'Failed to update student')
     } finally {
       setSaving(false)
     }
@@ -87,10 +237,15 @@ export default function StudentDetails() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'On-going': return 'green'
-      case 'Graduated': return 'blue'
-      case 'Terminated': return 'red'
-      default: return 'default'
+      case 'Active':
+      case 'On-going':
+        return 'green'
+      case 'Graduated':
+        return 'blue'
+      case 'Terminated':
+        return 'red'
+      default:
+        return 'default'
     }
   }
 
@@ -102,11 +257,69 @@ export default function StudentDetails() {
   }
 
   const handleEditDisbursement = (record) => {
-    message.info(`Edit disbursement ID: ${record.id}`)
+    setDisbursementModal({ visible: true, mode: 'edit', record })
+    disbursementForm.setFieldsValue({
+      ...record,
+      disbursement_date: record.disbursement_date ? dayjs(record.disbursement_date) : null,
+      amount: record.amount,
+      payment_amount: record.payment_amount,
+    })
   }
 
-  const handleDeleteDisbursement = (record) => {
-    message.success(`Deleted disbursement ID: ${record.id}`)
+  const handleDeleteDisbursement = async (record) => {
+    try {
+      await api.delete(`/disbursements/${record.id}`)
+      message.success('Disbursement record deleted successfully')
+      setRefreshTrigger(prev => prev + 1) // Refresh student data
+    } catch (err) {
+      console.error('Delete error:', err)
+      message.error(err.message || 'Failed to delete disbursement record. Please try again.')
+    }
+  }
+
+  const handleCreateDisbursement = () => {
+    setDisbursementModal({ visible: true, mode: 'create', record: null })
+    disbursementForm.resetFields()
+    disbursementForm.setFieldsValue({ student_seq: student?.seq })
+  }
+
+  const handleDisbursementSubmit = async () => {
+    setDisbursementLoading(true)
+    try {
+      const values = await disbursementForm.validateFields()
+      
+      // Format the data
+      const formattedData = {
+        ...values,
+        disbursement_date: values.disbursement_date ? 
+          dayjs(values.disbursement_date).format('YYYY-MM-DD') : null,
+        amount: values.amount ? parseFloat(values.amount) : null,
+        payment_amount: values.payment_amount ? parseFloat(values.payment_amount) : null,
+        // Ensure student_seq is included
+        student_seq: values.student_seq || student?.seq,
+      }
+
+      if (disbursementModal.mode === 'create') {
+        await api.post('/disbursements', formattedData)
+        message.success('Disbursement record created successfully')
+      } else {
+        await api.put(`/disbursements/${disbursementModal.record.id}`, formattedData)
+        message.success('Disbursement record updated successfully')
+      }
+      
+      setDisbursementModal({ visible: false, mode: 'create', record: null })
+      disbursementForm.resetFields()
+      setRefreshTrigger(prev => prev + 1) // Refresh student data
+    } catch (err) {
+      console.error('Disbursement submit error:', err)
+      if (err.message.includes('validation')) {
+        message.error('Please check all required fields and try again')
+      } else {
+        message.error(err.message || `Failed to ${disbursementModal.mode === 'create' ? 'create' : 'update'} disbursement record`)
+      }
+    } finally {
+      setDisbursementLoading(false)
+    }
   }
 
   const disbursementColumns = [
@@ -114,37 +327,37 @@ export default function StudentDetails() {
       title: 'Academic Year',
       dataIndex: 'academic_year',
       key: 'academic_year',
-      width: 120,
+      width: 140,
     },
     {
       title: 'Semester',
       dataIndex: 'semester',
       key: 'semester',
-      width: 100,
+      width: 120,
     },
     {
       title: 'Year Level',
       dataIndex: 'curriculum_year_level',
       key: 'curriculum_year_level',
-      width: 100,
+      width: 110,
     },
     {
       title: 'NTA',
       dataIndex: 'nta',
       key: 'nta',
-      width: 120,
+      width: 140,
     },
     {
       title: 'Fund Source',
       dataIndex: 'fund_source',
       key: 'fund_source',
-      width: 120,
+      width: 160,
     },
     {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      width: 120,
+      width: 140,
       align: 'right',
       render: (amount) => formatCurrency(amount),
     },
@@ -152,26 +365,26 @@ export default function StudentDetails() {
       title: 'Voucher No.',
       dataIndex: 'voucher_number',
       key: 'voucher_number',
-      width: 140,
+      width: 160,
     },
     {
       title: 'Mode of Payment',
       dataIndex: 'mode_of_payment',
       key: 'mode_of_payment',
-      width: 140,
+      width: 180,
     },
     {
       title: 'Account/Check No.',
       dataIndex: 'account_check_no',
       key: 'account_check_no',
-      width: 140,
+      width: 160,
       render: (text) => text || 'N/A',
     },
     {
       title: 'Payment Amount',
       dataIndex: 'payment_amount',
       key: 'payment_amount',
-      width: 130,
+      width: 150,
       align: 'right',
       render: (amount) => formatCurrency(amount),
     },
@@ -179,64 +392,57 @@ export default function StudentDetails() {
       title: 'LDDAP No.',
       dataIndex: 'lddap_number',
       key: 'lddap_number',
-      width: 130,
+      width: 140,
       render: (text) => text || 'N/A',
     },
     {
-      title: 'Date',
+      title: 'Disbursement Date',
       dataIndex: 'disbursement_date',
       key: 'disbursement_date',
-      width: 110,
+      width: 140,
       render: (date) => formatDate(date),
     },
     {
       title: 'Remarks',
       dataIndex: 'remarks',
       key: 'remarks',
-      width: 150,
+      width: 200,
       render: (text) => text || 'N/A',
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 100,
+      width: 120,
+      fixed: 'right',
       render: (_, record) => (
         <Space>
           <Button
             type="text"
             icon={<EditOutlined />}
             onClick={() => handleEditDisbursement(record)}
+            title="Edit disbursement"
+            size="small"
           />
           <Popconfirm
-            title="Delete record?"
+            title="Are you sure you want to delete this disbursement record?"
+            description="This action cannot be undone."
             onConfirm={() => handleDeleteDisbursement(record)}
-            okText="Yes"
-            cancelText="No"
+            okText="Yes, Delete"
+            cancelText="Cancel"
+            okType="danger"
           >
-            <Button type="text" danger icon={<DeleteOutlined />} />
+            <Button 
+              type="text" 
+              danger 
+              icon={<DeleteOutlined />} 
+              title="Delete disbursement"
+              size="small"
+            />
           </Popconfirm>
         </Space>
       ),
     },
   ]
-
-  // Simple field display
-  const Field = ({ label, value, field, span = 12 }) => (
-    <Col span={span}>
-      <div style={{ marginBottom: '8px' }}>
-        <Text type="secondary" style={{ fontSize: '11px' }}>{label}</Text>
-        {editMode && field ? (
-          <Input
-            size="small"
-            value={formData?.[field] ?? ''}
-            onChange={(e) => handleChange(field, e.target.value)}
-          />
-        ) : (
-          <div>{value || 'N/A'}</div>
-        )}
-      </div>
-    </Col>
-  )
 
   if (loading) {
     return (
@@ -263,101 +469,264 @@ export default function StudentDetails() {
   }
 
   return (
-    <div style={{ padding: '16px' }}>
-      {/* Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: '16px' }}>
-        <Col>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => window.history.back()}>
-            Back
-          </Button>
-        </Col>
-        <Col>
-          <Title level={4} style={{ margin: 0 }}>{getFullName()}</Title>
-        </Col>
-        <Col>
-          <Space>
-            <Tag color={getStatusColor(student.scholarship_status)}>
-              {student.scholarship_status}
-            </Tag>
-            {editMode ? (
-              <>
-                <Button size="small" onClick={() => { setFormData(student); setEditMode(false) }}>
-                  Cancel
-                </Button>
-                <Button size="small" type="primary" loading={saving} onClick={handleSave}>
-                  Save
-                </Button>
-              </>
-            ) : (
-              <Button size="small" icon={<EditOutlined />} onClick={() => setEditMode(true)}>
-                Edit
+    <div className="bg-slate-50 min-h-screen p-4 md:p-6">
+      {/* Header summary */}
+      <Card
+        className="shadow-sm border border-slate-200 mb-6"
+        styles={{ body: { padding: '24px 32px' } }}
+      >
+        <Row align="middle" justify="space-between">
+          <Col flex="0 0 auto">
+            <Space size={16} align="center">
+              <Button 
+                icon={<ArrowLeftOutlined />} 
+                onClick={() => window.history.back()}
+                type="text"
+                className="hover:bg-slate-100"
+              >
+                Back
               </Button>
-            )}
-          </Space>
+              <div className="h-10 w-px bg-slate-300" />
+              <div>
+                <Title 
+                  level={3} 
+                  className="!mb-1 !mt-0" 
+                  style={{ color: '#1e40af', fontWeight: 700 }}
+                >
+                  {getFullName() || 'Unnamed Grantee'}
+                </Title>
+                <div className="text-sm text-slate-600 font-medium">
+                  Award No: {student.award_number || '—'}
+                </div>
+              </div>
+            </Space>
+          </Col>
+          
+          <Col flex="0 0 auto">
+            <Space size={16} align="center">
+              <div>
+                <Text type="secondary" className="text-xs uppercase tracking-wide font-medium">
+                  Status
+                </Text>
+                <div className="mt-1">
+                  <Tag 
+                    color={getStatusColor(student.scholarship_status)} 
+                    className="!text-sm !px-4 !py-1 !font-medium"
+                  >
+                    {student.scholarship_status || 'N/A'}
+                  </Tag>
+                </div>
+              </div>
+              <div className="h-10 w-px bg-slate-300" />
+              {editMode ? (
+                <Space size={8}>
+                  <Button 
+                    onClick={() => { setFormData(student); setEditMode(false) }}
+                    className="min-w-[80px]"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    loading={saving} 
+                    onClick={handleSave} 
+                    disabled={!hasChanges()}
+                    className="min-w-[100px]"
+                  >
+                    Save Changes
+                  </Button>
+                </Space>
+              ) : (
+                <Button 
+                  type="primary" 
+                  icon={<EditOutlined />} 
+                  onClick={() => setEditMode(true)}
+                  className="min-w-[100px]"
+                >
+                  Edit Record
+                </Button>
+              )}
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Cards - Row 1 */}
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Personal Information" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full" 
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field label="Surname" value={student.surname} field="surname" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="First Name" value={student.first_name} field="first_name" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Middle Name" value={student.middle_name} field="middle_name" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Extension" value={student.extension} field="extension" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field 
+                label="Sex" 
+                value={student.sex} 
+                field="sex" 
+                type="select" 
+                options={[
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field 
+                label="Date of Birth" 
+                value={`${formatDate(student.date_of_birth)} (${calculateAge(student.date_of_birth)} yrs)`} 
+                field="date_of_birth" 
+                type="date"
+                editMode={editMode}
+                formData={formData}
+                handleChange={handleChange}
+              />
+              <Field 
+                label="Special Group" 
+                value={student.special_group} 
+                field="special_group" 
+                type="select" 
+                options={[
+                  { label: 'N/A', value: '' },
+                  { label: 'IP', value: 'IP' },
+                  { label: 'PWD', value: 'PWD' },
+                  { label: 'Solo Parent', value: 'Solo Parent' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field label="Certification No." value={student.certification_number} field="certification_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+            </Row>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Contact Information" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full"
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field label="Contact Number" value={student.contact_number} field="contact_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Email Address" value={student.email_address} field="email_address" type="email" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Street / Barangay" value={student.street_brgy} field="street_brgy" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="City / Municipality" value={student.municipality_city} field="municipality_city" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province" value={student.province} field="province" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Congressional District" value={student.congressional_district} field="congressional_district" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="ZIP Code" value={student.zip_code} field="zip_code" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Col span={12} /> {/* Spacer for symmetry */}
+            </Row>
+          </Card>
         </Col>
       </Row>
 
-      {/* Cards */}
-      <Row gutter={16} style={{ marginBottom: '16px' }}>
-        <Col xs={24} md={12}>
-          <Card title="Personal Information" size="small">
-            <Row>
-              <Field label="ID" value={student.seq} />
-              <Field label="Sex" value={student.sex} field="sex" />
-              <Field label="Date of Birth" value={`${formatDate(student.date_of_birth)} (${calculateAge(student.date_of_birth)} years)`} field="date_of_birth" span={24} />
-              <Field label="Special Group" value={student.special_group} field="special_group" />
-              <Field label="Certification No." value={student.certification_number} field="certification_number" />
-              <Field label="Surname" value={student.surname} field="surname" />
-              <Field label="First Name" value={student.first_name} field="first_name" />
-              <Field label="Middle Name" value={student.middle_name} field="middle_name" />
-              <Field label="Extension" value={student.extension} field="extension" />
+      {/* Cards - Row 2 */}
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Institution & Academic Program" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full"
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="UII" value={student.uii} field="uii" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Region" value={student.region} field="region" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Degree Program" value={student.degree_program} field="degree_program" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field 
+                label="Degree Level" 
+                value={student.program_degree_level} 
+                field="program_degree_level" 
+                type="select" 
+                options={[
+                  { label: 'Pre-baccalaureate', value: 'Pre-baccalaureate' },
+                  { label: 'Baccalaureate', value: 'Baccalaureate' },
+                  { label: 'Post Baccalaureate', value: 'Post Baccalaureate' },
+                  { label: "Master's", value: "Master's" },
+                  { label: 'Doctorate', value: 'Doctorate' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
             </Row>
           </Card>
         </Col>
 
-        <Col xs={24} md={12}>
-          <Card title="Contact Details" size="small">
-            <Row>
-              <Field label="Contact" value={student.contact_number} field="contact_number" />
-              <Field label="Email" value={student.email_address} field="email_address" />
-              <Field label="Address" value={`${student.street_brgy}, ${student.municipality_city}, ${student.province}`} span={24} />
-              <Field label="Street / Brgy" value={student.street_brgy} field="street_brgy" />
-              <Field label="City / Municipality" value={student.municipality_city} field="municipality_city" />
-              <Field label="Province" value={student.province} field="province" />
-              <Field label="District" value={student.congressional_district} field="congressional_district" />
-              <Field label="ZIP" value={student.zip_code} field="zip_code" />
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Scholarship & Authority Details" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full"
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field label="In-Charge" value={student.in_charge} field="in_charge" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Award Year" value={student.award_year} field="award_year" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Scholarship Program" value={student.scholarship_program} field="scholarship_program" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Award Number" value={student.award_number} field="award_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field 
+                label="Authority Type" 
+                value={student.authority_type} 
+                field="authority_type" 
+                type="select" 
+                options={[
+                  { label: 'GP', value: 'GP' },
+                  { label: 'GR', value: 'GR' },
+                  { label: 'RRPA', value: 'RRPA' },
+                  { label: 'COPC', value: 'COPC' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field label="Authority Number" value={student.authority_number} field="authority_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Series" value={student.series} field="series" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Basis (CMO)" value={student.basis_cmo} field="basis_cmo" editMode={editMode} formData={formData} handleChange={handleChange} />
             </Row>
           </Card>
         </Col>
+      </Row>
 
-        <Col xs={24} md={12}>
-          <Card title="Institution & Program" size="small">
-            <Row>
-              <Field label="Institution" value={student.name_of_institution} field="name_of_institution" span={24} />
-              <Field label="UII" value={student.uii} field="uii" />
-              <Field label="Type" value={student.institutional_type} field="institutional_type" />
-              <Field label="Region" value={student.region} field="region" />
-              <Field label="Degree Program" value={student.degree_program} field="degree_program" />
-              <Field label="Major" value={student.program_major} field="program_major" />
-              <Field label="Discipline" value={student.program_discipline} field="program_discipline" />
-              <Field label="Level" value={student.program_degree_level} field="program_degree_level" span={24} />
-            </Row>
-          </Card>
-        </Col>
-
-        <Col xs={24} md={12}>
-          <Card title="Scholarship Details" size="small">
-            <Row>
-              <Field label="In-Charge" value={student.in_charge} field="in_charge" />
-              <Field label="Award Year" value={student.award_year} field="award_year" />
-              <Field label="Program" value={student.scholarship_program} field="scholarship_program" />
-              <Field label="Award No." value={student.award_number} field="award_number" />
-              <Field label="Authority Type" value={student.authority_type} field="authority_type" />
-              <Field label="Authority No." value={student.authority_number} field="authority_number" />
-              <Field label="Series" value={student.series} field="series" />
+      {/* Cards - Row 3: Status & Remarks */}
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Status & Priority" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full"
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field 
+                label="Scholarship Status" 
+                value={student.scholarship_status} 
+                field="scholarship_status" 
+                type="select" 
+                options={[
+                  { label: 'Active', value: 'Active' },
+                  { label: 'Graduated', value: 'Graduated' },
+                  { label: 'Terminated', value: 'Terminated' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
               <Col span={12}>
                 <div style={{ marginBottom: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>Priority</Text>
+                  <Text type="secondary" style={{ fontSize: '11px' }}>Priority Program</Text>
                   {editMode ? (
                     <Select
                       size="small"
@@ -370,15 +739,37 @@ export default function StudentDetails() {
                       style={{ width: '100%' }}
                     />
                   ) : (
-                    <Tag color={student.is_priority ? 'red' : 'default'} size="small">
-                      {student.is_priority ? 'Yes' : 'No'}
-                    </Tag>
+                    <div>
+                      <Tag color={student.is_priority ? 'green' : 'default'}>
+                        {student.is_priority ? 'Yes' : 'No'}
+                      </Tag>
+                    </div>
                   )}
                 </div>
               </Col>
-              <Field label="Basis CMO" value={student.basis_cmo} field="basis_cmo" />
-              <Field label="Replacement" value={student.replacement_info} field="replacement_info" />
-              <Field label="Termination" value={student.termination_reason} field="termination_reason" span={24} />
+              <Field label="Replacement Info" value={student.replacement_info} field="replacement_info" span={24} editMode={editMode} formData={formData} handleChange={handleChange} />
+            </Row>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card 
+            title="Remarks" 
+            size="small" 
+            className="shadow-sm border border-slate-200 h-full"
+            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
+          >
+            <Row gutter={[12, 8]}>
+              <Field 
+                label="General Remarks / Notes" 
+                value={student.termination_reason} 
+                field="termination_reason" 
+                span={24} 
+                type="textarea"
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
             </Row>
           </Card>
         </Col>
@@ -388,9 +779,11 @@ export default function StudentDetails() {
       <Card
         title="Semester Transaction Records"
         size="small"
+        className="shadow-sm border border-slate-200"
+        styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} size="small">
-            Add
+          <Button type="primary" icon={<PlusOutlined />} size="small" onClick={handleCreateDisbursement}>
+            Add Disbursement
           </Button>
         }
       >
@@ -399,10 +792,113 @@ export default function StudentDetails() {
           columns={disbursementColumns}
           rowKey="id"
           pagination={false}
-          scroll={{ x: 1400 }}
-          size="small"
+          scroll={{ x: 1800, y: 500 }}
+          className="disbursement-table"
         />
       </Card>
+
+      {/* Disbursement Modal */}
+      <Modal
+        title={disbursementModal.mode === 'create' ? 'Add Disbursement Record' : 'Edit Disbursement Record'}
+        open={disbursementModal.visible}
+        onOk={handleDisbursementSubmit}
+        onCancel={() => {
+          setDisbursementModal({ visible: false, mode: 'create', record: null })
+          disbursementForm.resetFields()
+        }}
+        width={800}
+        okText={disbursementModal.mode === 'create' ? 'Create Record' : 'Update Record'}
+        confirmLoading={disbursementLoading}
+        destroyOnClose={true}
+      >
+        <Form form={disbursementForm} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="student_seq" label="Student ID" hidden>
+                <Input disabled />
+              </Form.Item>
+              <Form.Item name="academic_year" label="Academic Year">
+                <Input placeholder="e.g., 2024-2025" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="semester" label="Semester">
+                <Select placeholder="Select semester">
+                  <Select.Option value="1st">1st Semester</Select.Option>
+                  <Select.Option value="2nd">2nd Semester</Select.Option>
+                  <Select.Option value="Summer">Summer</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="curriculum_year_level" label="Year Level">
+                <Select placeholder="Select year level">
+                  <Select.Option value="I">I</Select.Option>
+                  <Select.Option value="II">II</Select.Option>
+                  <Select.Option value="III">III</Select.Option>
+                  <Select.Option value="IV">IV</Select.Option>
+                  <Select.Option value="V">V</Select.Option>
+                  <Select.Option value="VI">VI</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="nta" label="NTA">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="fund_source" label="Fund Source">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="amount" label="Amount">
+                <Input type="number" step="0.01" prefix="₱" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="voucher_number" label="Voucher Number">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="mode_of_payment" label="Mode of Payment">
+                <Select placeholder="Select mode of payment">
+                  <Select.Option value="ATM">ATM</Select.Option>
+                  <Select.Option value="Cheque">Cheque</Select.Option>
+                  <Select.Option value="Through the HEI">Through the HEI</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="account_check_no" label="Account/Check No.">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="payment_amount" label="Payment Amount">
+                <Input type="number" step="0.01" prefix="₱" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="lddap_number" label="LDDAP Number">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="disbursement_date" label="Disbursement Date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={24}>
+              <Form.Item name="remarks" label="Remarks">
+                <Input.TextArea rows={3} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   )
 }
