@@ -320,8 +320,8 @@ export default function FinancialAssistanceAcef_giahep() {
 
         <main>
 
-            <StatsCards financialAssistances={financialAssistances.filter(
-                p => p.scholarship_program_name.toUpperCase() === "ACEF-GIAHEP"
+            <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+                        p => p?.scholarship_program_name?.toUpperCase() === "ACEF-GIAHEP"
             )} />
 
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">

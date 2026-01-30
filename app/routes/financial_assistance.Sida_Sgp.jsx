@@ -11,12 +11,12 @@ export function meta() {
   ]
 }
 
-function StatsCards({ financialAssistances }) {
+function StatsCards({ financialAssistances = [] }) {
   
   const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.filled_slot || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
   }
 
   const statsConfig = [
@@ -400,8 +400,9 @@ export default function FinancialAssistanceSida_Sgp() {
         <div className="min-h-screen bg-gray-100">
         
         <main>
-            <StatsCards financialAssistances={financialAssistances.filter(
-                p => p.scholarship_program_name.toUpperCase() === "SIDA-SGP"
+            
+            <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+              p => p?.scholarship_program_name?.toUpperCase() === "SIDA-SGP"
             )} />
 
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">
