@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react' 
-import { Card, Typography } from 'antd' 
+import { useNavigate } from 'react-router-dom'
+import { Card, Typography, Select } from 'antd' 
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 const { Text } = Typography
+const { Option } = Select
 import { Progress } from 'antd'
 
 export function meta() {
@@ -116,6 +118,8 @@ export default function FinancialAssistanceAcef_giahep() {
     const [expandedSUC, setExpandedSUC] = useState(null);
     const [expandedPrivate, setExpandedPrivate] = useState(null);
     const [loading, setLoading] = useState(true)
+    const [academicYearFilter, setAcademicYearFilter] = useState('All')
+    const [academicYears, setAcademicYears] = useState([])
     const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -131,7 +135,15 @@ export default function FinancialAssistanceAcef_giahep() {
           const programsData = data.data || data
           console.log('Programs Data:', programsData)
           setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
-          setLoading(false)
+          
+          const uniqueYears = [
+            ...new Set(
+                programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
+            )
+            ]
+            
+            setAcademicYears(['All', ...uniqueYears.sort()])
+            setLoading(false)
         })
         .catch(err => {
           console.error('Fetch Error:', err)
@@ -140,11 +152,21 @@ export default function FinancialAssistanceAcef_giahep() {
         })
     }, [])
   
+    const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+
     if (loading) return <div className="p-8">Loading...</div>
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
     if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
       return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
     }
+
+    const filteredAcef_Giahep = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
+        if (p?.scholarship_program_name?.toUpperCase() !== 'ACEF-GIAHEP') return false
+        if (academicYearFilter && academicYearFilter !== 'All') {
+        return (p.academic_year || p.Academic_year) === academicYearFilter
+        }
+        return true
+    })
     
       // ✅ Scholarship Benefits Data
       const PrivateHEIs = [
@@ -320,9 +342,19 @@ export default function FinancialAssistanceAcef_giahep() {
 
         <main>
 
-            <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
-                        p => p?.scholarship_program_name?.toUpperCase() === "ACEF-GIAHEP"
-            )} />
+            <Select
+                      value={academicYearFilter}
+                      allowClear
+                      size="middle"
+                      style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
+                      onChange={handleAcademicYearChange}
+                    >
+                      {academicYears.map(year => (
+                        <Option key={year} value={year}>{year}</Option>
+                      ))}
+                    </Select>
+            
+            <StatsCards financialAssistances={filteredAcef_Giahep} />
 
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">
 

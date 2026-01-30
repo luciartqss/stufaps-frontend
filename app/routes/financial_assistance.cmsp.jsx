@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react' 
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography } from 'antd' 
+import { Card, Typography, Select } from 'antd' 
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 const { Text } = Typography
+const { Option } = Select
 import { Progress } from 'antd'
-
-
 
 export function meta() {
   return [
@@ -14,7 +13,7 @@ export function meta() {
   ]
 }
 
-function StatsCards({ financialAssistances }) {
+function StatsCards({ financialAssistances = [] }) {
   const totals = {
     totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
     totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.filled_slot || 0), 0),
@@ -81,6 +80,8 @@ export default function FinancialAssistanceCmsp() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [expandedSUC, setExpandedSUC] = useState(null)
+  const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [academicYears, setAcademicYears] = useState([])
   const [expandedPrivate, setExpandedPrivate] = useState(null)
 
   useEffect(() => {
@@ -93,6 +94,14 @@ export default function FinancialAssistanceCmsp() {
         console.log('API Response:', data)
         const programsData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
         setFinancialAssistances(programsData)
+
+        const uniqueYears = [
+          ...new Set(
+            programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
+          )
+        ]
+        
+        setAcademicYears(['All', ...uniqueYears.sort()])
         setLoading(false)
       })
       .catch(err => {
@@ -102,8 +111,18 @@ export default function FinancialAssistanceCmsp() {
       })
   }, [])
 
+  const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+
   if (loading) return <div>Loading CMSP data...</div>
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>
+
+  const filteredCms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
+    if (p?.scholarship_program_name?.toUpperCase() !== 'CMSP') return false
+    if (academicYearFilter && academicYearFilter !== 'All') {
+      return (p.academic_year || p.Academic_year) === academicYearFilter
+    }
+    return true
+  })
 
   const sucPrograms = [
     {
@@ -222,7 +241,19 @@ export default function FinancialAssistanceCmsp() {
   return (
     <div className="min-h-screen">
       <main>
-        <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => p?.scholarship_program_name?.toUpperCase() === "CMSP")} />
+        <Select
+          value={academicYearFilter}
+          allowClear
+          size="middle"
+          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
+          onChange={handleAcademicYearChange}
+        >
+          {academicYears.map(year => (
+            <Option key={year} value={year}>{year}</Option>
+          ))}
+        </Select>
+
+        <StatsCards financialAssistances={filteredCms} />
 
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">

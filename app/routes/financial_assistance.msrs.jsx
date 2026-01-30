@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react' 
-import { Card, Typography } from 'antd' 
+import { useNavigate } from 'react-router-dom'
+import { Card, Typography, Select } from 'antd' 
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 const { Text } = Typography
+const { Option } = Select
 import { Progress } from 'antd'
 
 export function meta() {
@@ -113,11 +115,14 @@ return (
 export default function FinancialAssistanceMSRS() {
     const [financialAssistances, setFinancialAssistances] = useState([])
     
-      const [expandedSUC, setExpandedSUC] = useState(null);
-      const [expandedPrivate, setExpandedPrivate] = useState(null);
+    const [expandedSUC, setExpandedSUC] = useState(null);
+    const [expandedPrivate, setExpandedPrivate] = useState(null);
     
-      const [loading, setLoading] = useState(true)
-      const [error, setError] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    const [academicYearFilter, setAcademicYearFilter] = useState('All')
+    const [academicYears, setAcademicYears] = useState([])
     
       useEffect(() => {
         fetch('http://localhost:8000/api/scholarship_program_records')
@@ -132,6 +137,13 @@ export default function FinancialAssistanceMSRS() {
               const programsData = data.data || data
               console.log('Programs Data:', programsData)
               setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
+
+              const uniqueYears = [
+                ...new Set(
+                programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
+                )
+            ]     
+            setAcademicYears(['All', ...uniqueYears.sort()])
               setLoading(false)
             })
             .catch(err => {
@@ -140,6 +152,8 @@ export default function FinancialAssistanceMSRS() {
               setLoading(false)
             })
         }, [])
+
+        const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
       
         if (loading) return <div className="p-8">Loading...</div>
         if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
@@ -147,13 +161,31 @@ export default function FinancialAssistanceMSRS() {
           return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
         }
 
+        const filteredMSRS = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
+        if (p?.scholarship_program_name?.toUpperCase() !== 'MSRS') return false
+        if (academicYearFilter && academicYearFilter !== 'All') {
+            return (p.academic_year || p.Academic_year) === academicYearFilter
+        }
+        return true
+        })
+
   return (
         <div className="min-h-screen">
         <main>
             
-            <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
-                        p => p?.scholarship_program_name?.toUpperCase() === "MSRS"
-            )} />
+            <Select
+                          value={academicYearFilter}
+                          allowClear
+                          size="middle"
+                          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
+                          onChange={handleAcademicYearChange}
+                        >
+                          {academicYears.map(year => (
+                            <Option key={year} value={year}>{year}</Option>
+                          ))}
+                        </Select>
+            
+                        <StatsCards financialAssistances={filteredMSRS} />
 
             <div className="container mx-auto p-4 sm:p-6 lg:p-8">
                 <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Medical Scholarship and Return Service (MSRS)</h1>

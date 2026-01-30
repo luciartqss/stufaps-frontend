@@ -115,6 +115,7 @@ export default function Financial_AssistanceIndex() {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
         return res.json()
       })
+
       .then(data => {
         console.log('API Response:', data)
         const programsData = Array.isArray(data?.data)
@@ -144,7 +145,7 @@ export default function Financial_AssistanceIndex() {
     fetchPrograms()
   }, [])
 
-  const handleAcademicYearChange = value => 
+    const handleAcademicYearChange = value => 
     { 
       setAcademicYearFilter(value || 'All') // default back to All if cleared 
     }
@@ -166,7 +167,7 @@ export default function Financial_AssistanceIndex() {
     const cmsTotals = getProgramTotals(filteredAssistances, "CMSP")
     const estatistikolarTotals = getProgramTotals(filteredAssistances, "Estatistikolar")
 
-    const CoSchoTotals = getProgramTotals(filteredAssistances, "COSCHO")
+    const CoSchoTotals = getProgramTotals(filteredAssistances, "CoScho")
     const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
 
     const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDA-SGP")
