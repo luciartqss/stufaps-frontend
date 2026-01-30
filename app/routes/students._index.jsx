@@ -1,13 +1,279 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Card } from 'antd'
 import { InfoCircleOutlined, FileExcelOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
+import * as XLSX from 'xlsx-js-style'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 const { Title } = Typography
 const { Search } = Input
 const { Option } = Select
+
+// Shared schema copied from students.bulk for consistent Excel structure
+const SEM_FIELDS = [
+  { key: 'nta', label: 'NTA' },
+  { key: 'fundSource', label: 'FUND SOURCE' },
+  { key: 'amount', label: 'AMOUNT' },
+  { key: 'voucherNumber', label: 'VOUCHER NUMBER' },
+  { key: 'modeOfPayment', label: 'MODE OF PAYMENT' },
+  { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.' },
+  { key: 'paymentAmount', label: 'PAYMENT AMOUNT' },
+  { key: 'lddapNumber', label: 'LDDAP NUMBER' },
+  { key: 'disbursementDate', label: 'DISBURSEMENT DATE' },
+  { key: 'remarks', label: 'REMARKS' },
+]
+
+const STATIC_SCHEMA = [
+  { key: 'seq', label: 'SEQ', rowSpan: 3 },
+  { key: 'inCharge', label: 'IN-CHARGE', rowSpan: 3 },
+  { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 3 },
+  { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 3 },
+  { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3 },
+  {
+    label: 'NAME OF GRANTEE',
+    colSpan: 4,
+    children: [
+      { key: 'surname', label: 'SURNAME' },
+      { key: 'firstName', label: 'FIRST NAME' },
+      { key: 'middleName', label: 'MIDDLE NAME' },
+      { key: 'extension', label: 'EXTENSION' },
+    ],
+  },
+  { key: 'sex', label: 'SEX', rowSpan: 3 },
+  { key: 'dateOfBirth', label: 'DATE OF BIRTH', rowSpan: 3 },
+  {
+    label: 'CONTACT DETAILS',
+    colSpan: 2,
+    children: [
+      { key: 'contactNumber', label: 'CONTACT NUMBER' },
+      { key: 'emailAddress', label: 'EMAIL ADDRESS' },
+    ],
+  },
+  {
+    label: 'COMPLETE ADDRESS',
+    colSpan: 5,
+    children: [
+      { key: 'streetBrgy', label: 'STREET_BRGY' },
+      { key: 'municipalityCity', label: 'MUNICIPALITY_CITY' },
+      { key: 'province', label: 'PROVINCE' },
+      { key: 'congressionalDistrict', label: 'CONGRESSIONAL DISTRICT' },
+      { key: 'zipCode', label: 'ZIP CODE' },
+    ],
+  },
+  { key: 'specialGroup', label: 'SPECIAL GROUP', rowSpan: 3 },
+  { key: 'certificationNumber', label: 'CERTIFICATION NUMBER (If Applicable)', rowSpan: 3 },
+  { key: 'nameOfInstitution', label: 'NAME OF INSTITUTION', rowSpan: 3 },
+  { key: 'uii', label: 'UII', rowSpan: 3 },
+  { key: 'institutionalType', label: 'INSTITUTIONAL TYPE', rowSpan: 3 },
+  { key: 'regionSchoolLocated', label: 'REGION WHERE THE SCHOOL IS LOCATED', rowSpan: 3 },
+  { key: 'degreeProgram', label: 'DEGREE PROGRAM', rowSpan: 3 },
+  { key: 'programMajor', label: 'PROGRAM MAJOR', rowSpan: 3 },
+  { key: 'programDiscipline', label: 'PROGRAM DISCIPLINE', rowSpan: 3 },
+  { key: 'programDegreeLevel', label: 'PROGRAM DEGREE LEVEL', rowSpan: 3 },
+  {
+    label: 'GOVERNMENT AUTHORITY',
+    colSpan: 3,
+    children: [
+      { key: 'authorityType', label: 'AUTHORITY TYPE' },
+      { key: 'authorityNumber', label: 'AUTHORITY NUMBER' },
+      { key: 'series', label: 'SERIES' },
+    ],
+  },
+  {
+    label: 'PRIORITY PROGRAM',
+    colSpan: 2,
+    children: [
+      { key: 'priority', label: 'PRIORITY' },
+      { key: 'basisCmo', label: 'BASIS (CMO)' },
+    ],
+  },
+  { key: 'scholarshipStatus', label: 'SCHOLARSHIP STATUS', rowSpan: 3 },
+  {
+    label: 'REMARKS',
+    colSpan: 2,
+    children: [
+      { key: 'replacement', label: 'REPLACEMENT' },
+      { key: 'reason', label: 'REASON' },
+    ],
+  },
+]
+
+const sanitize = (str = '') => str.toLowerCase().replace(/[^a-z0-9]/g, '')
+const makeAyId = (label) => `ay_${sanitize(label) || Date.now()}`
+
+const sortAcademicYears = (list = []) =>
+  [...list].sort((a, b) => {
+    const aYear = parseInt(String(a.label).slice(0, 4), 10)
+    const bYear = parseInt(String(b.label).slice(0, 4), 10)
+    if (Number.isNaN(aYear) || Number.isNaN(bYear)) return a.label.localeCompare(b.label)
+    return aYear - bYear
+  })
+
+const mergeAcademicYears = (current = [], labels = []) => {
+  const seen = new Set(current.map((ay) => ay.label))
+  const merged = [...current]
+
+  labels.forEach((label) => {
+    if (!seen.has(label)) {
+      merged.push({ id: makeAyId(label), label })
+      seen.add(label)
+    }
+  })
+
+  return sortAcademicYears(merged)
+}
+
+const buildHeaders = (academicYears) => {
+  const row1 = []
+  const row2 = []
+  const row3 = []
+  const leafFields = []
+
+  STATIC_SCHEMA.forEach(col => {
+    if (col.children) {
+      row1.push({ ...col })
+      col.children.forEach(child => {
+        row2.push({ ...child, rowSpan: 2 })
+        leafFields.push({ ...child, topLabel: col.label, midLabel: child.label, bottomLabel: '' })
+      })
+    } else {
+      row1.push({ ...col })
+      leafFields.push({ ...col, topLabel: col.label, midLabel: '', bottomLabel: '' })
+    }
+  })
+
+  academicYears.forEach((ay) => {
+    const ayId = ay.id
+    const semFirst = SEM_FIELDS.map(f => ({ ...f, key: `${ayId}__first__${f.key}`, semester: 'First', ayId }))
+    const semSecond = SEM_FIELDS.map(f => ({ ...f, key: `${ayId}__second__${f.key}`, semester: 'Second', ayId }))
+    const cylKey = `${ayId}__cyl`
+
+    row1.push({ label: `AY ${ay.label}`, colSpan: 1 + semFirst.length + semSecond.length, ayId })
+
+    row2.push({ label: 'CURRICULUM YEAR LEVEL', key: cylKey, rowSpan: 2, ayId })
+    row2.push({ label: 'FIRST SEMESTER', colSpan: semFirst.length, ayId, semester: 'First' })
+    row2.push({ label: 'SECOND SEMESTER', colSpan: semSecond.length, ayId, semester: 'Second' })
+
+    semFirst.forEach(f => row3.push(f))
+    semSecond.forEach(f => row3.push(f))
+
+    leafFields.push({ key: cylKey, label: `CYL (${ay.label})`, ayId, topLabel: `AY ${ay.label}`, midLabel: 'CURRICULUM YEAR LEVEL', bottomLabel: '' })
+    semFirst.forEach(f => leafFields.push({ ...f, topLabel: `AY ${ay.label}`, midLabel: 'FIRST SEMESTER', bottomLabel: f.label }))
+    semSecond.forEach(f => leafFields.push({ ...f, topLabel: `AY ${ay.label}`, midLabel: 'SECOND SEMESTER', bottomLabel: f.label }))
+  })
+
+  return { row1, row2, row3, leafFields }
+}
+
+const STUDENT_TO_EXPORT = {
+  seq: 'seq',
+  inCharge: 'in_charge',
+  awardYear: 'award_year',
+  scholarshipProgram: 'scholarship_program',
+  awardNumber: 'award_number',
+  surname: 'surname',
+  firstName: 'first_name',
+  middleName: 'middle_name',
+  extension: 'extension',
+  sex: 'sex',
+  dateOfBirth: 'date_of_birth',
+  contactNumber: 'contact_number',
+  emailAddress: 'email_address',
+  streetBrgy: 'street_brgy',
+  municipalityCity: 'municipality_city',
+  province: 'province',
+  congressionalDistrict: 'congressional_district',
+  zipCode: 'zip_code',
+  specialGroup: 'special_group',
+  certificationNumber: 'certification_number',
+  nameOfInstitution: 'name_of_institution',
+  uii: 'uii',
+  institutionalType: 'institutional_type',
+  regionSchoolLocated: 'region',
+  degreeProgram: 'degree_program',
+  programMajor: 'program_major',
+  programDiscipline: 'program_discipline',
+  programDegreeLevel: 'program_degree_level',
+  authorityType: 'authority_type',
+  authorityNumber: 'authority_number',
+  series: 'series',
+  priority: 'is_priority',
+  basisCmo: 'basis_cmo',
+  scholarshipStatus: 'scholarship_status',
+  replacement: 'replacement_info',
+  reason: 'termination_reason',
+}
+
+const DISB_FIELD_MAP = {
+  nta: 'nta',
+  fundSource: 'fund_source',
+  amount: 'amount',
+  voucherNumber: 'voucher_number',
+  modeOfPayment: 'mode_of_payment',
+  accountCheckNo: 'account_check_no',
+  paymentAmount: 'payment_amount',
+  lddapNumber: 'lddap_number',
+  disbursementDate: 'disbursement_date',
+  remarks: 'remarks',
+}
+
+const normalizeSemester = (sem = '') => {
+  const val = String(sem || '').toLowerCase()
+  if (val.includes('1')) return 'first'
+  if (val.includes('2')) return 'second'
+  if (val.includes('first')) return 'first'
+  if (val.includes('second')) return 'second'
+  return null
+}
+
+const buildHeaderRowsWithMerges = (leafFields) => {
+  const totalCols = leafFields.length
+  const headerRows = [Array(totalCols).fill(''), Array(totalCols).fill(''), Array(totalCols).fill('')]
+  const merges = []
+
+  const topRow = headerRows[0]
+  const midRow = headerRows[1]
+  const botRow = headerRows[2]
+
+  leafFields.forEach((leaf, idx) => {
+    topRow[idx] = leaf.topLabel || leaf.label
+    midRow[idx] = leaf.midLabel || ''
+    botRow[idx] = leaf.bottomLabel || ''
+  })
+
+  const addHorizontalMerges = (row, rIndex) => {
+    let start = 0
+    while (start < row.length) {
+      const label = row[start]
+      let end = start
+      while (end + 1 < row.length && row[end + 1] === label) {
+        end += 1
+      }
+      if (label && end > start) {
+        merges.push({ s: { r: rIndex, c: start }, e: { r: rIndex, c: end } })
+      }
+      start = end + 1
+    }
+  }
+
+  addHorizontalMerges(topRow, 0)
+  addHorizontalMerges(midRow, 1)
+  addHorizontalMerges(botRow, 2)
+
+  leafFields.forEach((leaf, idx) => {
+    const hasMid = Boolean(leaf.midLabel)
+    const hasBot = Boolean(leaf.bottomLabel)
+
+    if (!hasMid && !hasBot) {
+      merges.push({ s: { r: 0, c: idx }, e: { r: 2, c: idx } })
+    } else if (hasMid && !hasBot) {
+      merges.push({ s: { r: 1, c: idx }, e: { r: 2, c: idx } })
+    }
+  })
+
+  return { headerRows, merges }
+}
 
 export function meta() {
   return [
@@ -29,6 +295,16 @@ export default function StudentsIndex() {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 })
   const [modalVisible, setModalVisible] = useState(false)
   const navigate = useNavigate()
+
+  const academicYearsFromData = useMemo(() => {
+    const labels = new Set()
+    filteredStudents.forEach((s) => {
+      (s.disbursements || []).forEach((d) => {
+        if (d.academic_year) labels.add(d.academic_year)
+      })
+    })
+    return sortAcademicYears(Array.from(labels).map((label) => ({ id: makeAyId(label), label })))
+  }, [filteredStudents])
 
   useEffect(() => {
     fetchStudents()
@@ -173,9 +449,190 @@ export default function StudentsIndex() {
     navigate('/students/bulk')
   }
 
-  // Handle "Extract Excel" button click - reuse bulk format
+  // Build rows for export
+  const buildExportRows = (data, academicYears, leafFields) => {
+    const rows = []
+
+    data.forEach((student, idx) => {
+      const row = {}
+
+      // Static fields
+      Object.entries(STUDENT_TO_EXPORT).forEach(([exportKey, sourceKey]) => {
+        row[exportKey] = student[sourceKey] ?? ''
+      })
+      if (!row.seq) row.seq = student.seq ?? idx + 1
+
+      // Disbursements -> dynamic columns
+      const disbList = Array.isArray(student.disbursements) ? student.disbursements : []
+      disbList.forEach((d) => {
+        const ayLabel = d.academic_year
+        if (!ayLabel) return
+        const ay = academicYears.find((a) => a.label === ayLabel)
+        if (!ay) return
+
+        const sem = normalizeSemester(d.semester)
+        const cylKey = `${ay.id}__cyl`
+        if (d.curriculum_year_level) {
+          row[cylKey] = d.curriculum_year_level
+        }
+
+        if (!sem) return
+        const semPrefix = `${ay.id}__${sem}__`
+        Object.entries(DISB_FIELD_MAP).forEach(([exportKey, sourceKey]) => {
+          const value = d[sourceKey]
+          if (value !== undefined && value !== null && value !== '') {
+            row[`${semPrefix}${exportKey}`] = value
+          }
+        })
+      })
+
+      // Ensure all fields exist in order
+      leafFields.forEach((f, leafIdx) => {
+        if (row[f.key] === undefined || row[f.key] === null) {
+          row[f.key] = ''
+        }
+        // Also ensure seq fallback when merged headers reorder
+        if (f.key === 'seq' && !row.seq) row.seq = idx + 1
+      })
+
+      rows.push(row)
+    })
+
+    return rows
+  }
+
+  // Handle "Extract Excel" button click - build XLSX with merged headers like bulk import
   const handleExtractExcel = () => {
-    navigate('/students/bulk')
+    if (filteredStudents.length === 0) {
+      message.info('No students to export')
+      return
+    }
+
+    const academicYears = academicYearsFromData
+    const { leafFields } = buildHeaders(academicYears)
+    const { headerRows, merges } = buildHeaderRowsWithMerges(leafFields)
+
+    const rows = buildExportRows(filteredStudents, academicYears, leafFields)
+    const dataRows = rows.map((r) => leafFields.map((f) => r[f.key] ?? ''))
+
+    const sheet = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows])
+    sheet['!merges'] = merges
+
+    // Define header styles (cyan gradient colors matching the UI)
+    const headerStyle1 = {
+      fill: { fgColor: { rgb: "0E7490" } }, // cyan-700
+      font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "0891B2" } },
+        bottom: { style: "thin", color: { rgb: "0891B2" } },
+        left: { style: "thin", color: { rgb: "0891B2" } },
+        right: { style: "thin", color: { rgb: "0891B2" } }
+      }
+    }
+
+    const headerStyle2 = {
+      fill: { fgColor: { rgb: "0891B2" } }, // cyan-600
+      font: { bold: true, color: { rgb: "F0FDFA" }, sz: 10 },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "06B6D4" } },
+        bottom: { style: "thin", color: { rgb: "06B6D4" } },
+        left: { style: "thin", color: { rgb: "06B6D4" } },
+        right: { style: "thin", color: { rgb: "06B6D4" } }
+      }
+    }
+
+    const headerStyle3 = {
+      fill: { fgColor: { rgb: "06B6D4" } }, // cyan-500
+      font: { bold: true, color: { rgb: "FFFFFF" }, sz: 10 },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "thin", color: { rgb: "22D3EE" } },
+        bottom: { style: "thin", color: { rgb: "22D3EE" } },
+        left: { style: "thin", color: { rgb: "22D3EE" } },
+        right: { style: "thin", color: { rgb: "22D3EE" } }
+      }
+    }
+
+    const dataStyle = {
+      alignment: { horizontal: "left", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "E2E8F0" } },
+        bottom: { style: "thin", color: { rgb: "E2E8F0" } },
+        left: { style: "thin", color: { rgb: "E2E8F0" } },
+        right: { style: "thin", color: { rgb: "E2E8F0" } }
+      }
+    }
+
+    // Apply styles to header rows
+    const range = XLSX.utils.decode_range(sheet['!ref'])
+    
+    // Row 1 (top header)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
+      if (!sheet[cellAddress]) continue
+      sheet[cellAddress].s = headerStyle1
+    }
+
+    // Row 2 (mid header)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 1, c: C })
+      if (!sheet[cellAddress]) continue
+      sheet[cellAddress].s = headerStyle2
+    }
+
+    // Row 3 (bottom header)
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cellAddress = XLSX.utils.encode_cell({ r: 2, c: C })
+      if (!sheet[cellAddress]) continue
+      sheet[cellAddress].s = headerStyle3
+    }
+
+    // Apply styles to data rows and calculate column widths
+    const colWidths = leafFields.map(() => ({ wch: 12 })) // Default width
+
+    for (let R = 3; R <= range.e.r; ++R) {
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+        if (!sheet[cellAddress]) continue
+        
+        sheet[cellAddress].s = dataStyle
+        
+        // Calculate column width based on content
+        const cellValue = sheet[cellAddress].v ? String(sheet[cellAddress].v) : ''
+        const cellWidth = Math.max(cellValue.length + 2, 8)
+        if (cellWidth > colWidths[C].wch) {
+          colWidths[C].wch = Math.min(cellWidth, 50) // Max width 50
+        }
+      }
+    }
+
+    // Set column widths based on header labels too
+    leafFields.forEach((field, idx) => {
+      const headerWidth = Math.max(
+        (field.topLabel || field.label || '').length,
+        (field.midLabel || '').length,
+        (field.bottomLabel || '').length
+      ) + 2
+      if (headerWidth > colWidths[idx].wch) {
+        colWidths[idx].wch = Math.min(headerWidth, 50)
+      }
+    })
+
+    sheet['!cols'] = colWidths
+
+    // Set row heights for headers
+    sheet['!rows'] = [
+      { hpt: 30 }, // Row 1 height
+      { hpt: 25 }, // Row 2 height
+      { hpt: 25 }, // Row 3 height
+    ]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, sheet, 'Students')
+    XLSX.writeFile(wb, 'students-export.xlsx', { cellStyles: true })
+    message.success('Excel file exported successfully!')
   }
 
   // Get color for status
