@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag } from 'antd'
-import { UploadOutlined, ExportOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -11,16 +11,16 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Semester detail fields (shared for First/Second)
 const SEM_FIELDS = [
-  { key: 'nta', label: 'NTA', width: 120 },
-  { key: 'fundSource', label: 'FUND SOURCE', width: 140 },
-  { key: 'amount', label: 'AMOUNT', width: 120 },
-  { key: 'voucherNumber', label: 'VOUCHER NUMBER', width: 150 },
-  { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 150, type: 'select', options: ['ATM', 'Cheque', 'Through the HEI', ''] },
-  { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.', width: 160 },
-  { key: 'paymentAmount', label: 'PAYMENT AMOUNT', width: 140 },
-  { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 140 },
-  { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 140, type: 'date' },
-  { key: 'remarks', label: 'REMARKS', width: 160 },
+  { key: 'nta', label: 'NTA', width: 150 },
+  { key: 'fundSource', label: 'FUND SOURCE', width: 180 },
+  { key: 'amount', label: 'AMOUNT', width: 150 },
+  { key: 'voucherNumber', label: 'VOUCHER NUMBER', width: 180 },
+  { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 180, type: 'select', options: ['ATM', 'Cheque', 'Through the HEI', ''] },
+  { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.', width: 180 },
+  { key: 'paymentAmount', label: 'PAYMENT AMOUNT', width: 160 },
+  { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 160 },
+  { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 160, type: 'date' },
+  { key: 'remarks', label: 'REMARKS', width: 200 },
 ]
 
 // Helpers
@@ -210,14 +210,14 @@ const buildHeaders = (academicYears) => {
 
     row1.push({ label: `AY ${ay.label}`, colSpan: 1 + semFirst.length + semSecond.length, ayId })
 
-    row2.push({ label: 'CURRICULUM YEAR LEVEL', key: cylKey, rowSpan: 2, width: 160, type: 'select', options: ['I', 'II', 'III', 'IV', 'V', 'VI', ''] })
+    row2.push({ label: 'CURRICULUM YEAR LEVEL', key: cylKey, rowSpan: 2, width: 180, type: 'select', options: ['I', 'II', 'III', 'IV', 'V', 'VI', ''] })
     row2.push({ label: 'FIRST SEMESTER', colSpan: semFirst.length, ayId, semester: 'First' })
     row2.push({ label: 'SECOND SEMESTER', colSpan: semSecond.length, ayId, semester: 'Second' })
 
     semFirst.forEach(f => row3.push(f))
     semSecond.forEach(f => row3.push(f))
 
-    leafFields.push({ key: cylKey, label: `CYL (${ay.label})`, ayId, width: 160 })
+    leafFields.push({ key: cylKey, label: `CYL (${ay.label})`, ayId, width: 180 })
     semFirst.concat(semSecond).forEach(f => leafFields.push(f))
   })
 
@@ -657,19 +657,6 @@ export default function ImportBulk() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  // Export current grid to XLSX
-  const handleExport = () => {
-    if (data.length === 0) {
-      message.info('No data to export')
-      return
-    }
-    const ws = XLSX.utils.json_to_sheet(data, { header: leafFields.map(f => f.key) })
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Students')
-    XLSX.writeFile(wb, 'students-export.xlsx')
-    message.success('Exported students-export.xlsx')
-  }
-
   // Submit data
   const handleSubmitData = async () => {
     if (data.length === 0) {
@@ -900,14 +887,6 @@ export default function ImportBulk() {
                   Submit All
                 </Button>
                 <Button
-                  icon={<ExportOutlined />}
-                  onClick={handleExport}
-                  size="large"
-                  className="!bg-emerald-600 !text-white hover:!bg-emerald-700 !border-0"
-                >
-                  Export
-                </Button>
-                <Button
                   danger
                   icon={<CloseOutlined />}
                   onClick={handleClear}
@@ -949,16 +928,16 @@ export default function ImportBulk() {
                       key={idx}
                       colSpan={col.colSpan || 1}
                       rowSpan={col.rowSpan || 1}
-                      className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm tracking-wide uppercase whitespace-nowrap"
-                      style={{ minWidth: col.width }}
+                      className="border border-cyan-600 px-2 py-3 text-center font-bold text-white text-xs tracking-wide uppercase leading-snug"
+                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
                     >
                       {col.label}
                     </th>
                   ))}
                   <th
                     rowSpan={3}
-                    className="border border-cyan-600 px-3 py-4 text-center font-bold text-white text-sm tracking-wide uppercase sticky right-0 bg-cyan-800"
-                    style={{ minWidth: 60 }}
+                    className="border border-cyan-600 px-2 py-3 text-center font-bold text-white text-xs tracking-wide uppercase sticky right-0 bg-cyan-800"
+                    style={{ minWidth: 60, maxWidth: 60 }}
                   >
                     #
                   </th>
@@ -969,8 +948,8 @@ export default function ImportBulk() {
                       key={idx}
                       colSpan={col.colSpan || 1}
                       rowSpan={col.rowSpan || 1}
-                      className="border border-cyan-500 px-3 py-3 text-center font-semibold text-cyan-50 text-xs whitespace-nowrap uppercase"
-                      style={{ minWidth: col.width }}
+                      className="border border-cyan-500 px-2 py-2 text-center font-semibold text-cyan-50 text-xs uppercase leading-snug"
+                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
                     >
                       {col.label}
                     </th>
@@ -980,8 +959,8 @@ export default function ImportBulk() {
                   {headerRow3.map((col, idx) => (
                     <th
                       key={idx}
-                      className="border border-cyan-400 px-3 py-3 text-center font-semibold text-white text-xs whitespace-nowrap uppercase"
-                      style={{ minWidth: col.width }}
+                      className="border border-cyan-400 px-2 py-2 text-center font-semibold text-white text-xs uppercase leading-snug"
+                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
                     >
                       {col.label}
                     </th>
@@ -1014,7 +993,7 @@ export default function ImportBulk() {
                         <td
                           key={field.key}
                           className="border border-slate-200 p-0"
-                          style={{ minWidth: field.width, maxWidth: field.width }}
+                          style={{ minWidth: field.width, maxWidth: field.width, wordWrap: 'break-word', whiteSpace: 'normal' }}
                         >
                           {field.key === 'seq' ? (
                             <div className="px-3 py-2 text-center text-slate-600 font-medium bg-slate-100">
