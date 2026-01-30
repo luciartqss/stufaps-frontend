@@ -152,9 +152,10 @@ export default function FinancialAssistancescgms_sucs() {
     
     <div className="min-h-screen bg-gray-50">
     <main>
-        <StatsCards financialAssistances={financialAssistances.filter(
-          p => p.scholarship_program_name.toUpperCase() === "CGMS-SUCS"
-        )} />
+        
+        <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+                        p => p?.scholarship_program_name?.toUpperCase() === "CGMS-SUCS"
+            )} />
 
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">

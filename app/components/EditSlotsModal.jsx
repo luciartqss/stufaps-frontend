@@ -5,63 +5,71 @@ import axios from 'axios'
 export default function EditSlotsModal({ open, onClose, onUpdated }) {
   const [records, setRecords] = useState([])
   const [selectedRecord, setSelectedRecord] = useState(null)
-  const [scholarshipName, setScholarshipName] = useState('')
   const [academicYear, setAcademicYear] = useState('')
   const [totalSlots, setTotalSlots] = useState(null)
 
-  // Fetch scholarship program records (choices) when modal opens
+  // Fetch scholarship program records
   useEffect(() => {
     if (open) {
       axios.get('http://localhost:8000/api/scholarship_program_records')
         .then(res => {
-          const data = res.data.data || res.data
-          setRecords(Array.isArray(data) ? data : [])
+          const payload = res?.data?.data ?? []
+          setRecords(Array.isArray(payload) ? payload : [])
         })
         .catch(() => message.error('Error fetching scholarship program choices'))
     }
   }, [open])
 
-  const handleInsert = () => {
-    if (!selectedRecord || !academicYear) {
+  // Reset fields when modal opens
+  useEffect(() => {
+    if (open) {
+      setSelectedRecord(null)
+      setAcademicYear('')
+      setTotalSlots(null)
+    }
+  }, [open])
+
+  const handleSave = () => {
+    const rec = records.find(r => r.id === selectedRecord)
+
+    if (!rec || !academicYear) {
       message.warning('Please select a scholarship and enter an academic year')
       return
     }
 
-    const total = Number(totalSlots || 0)
-    axios.post('http://localhost:8000/api/scholarship_program_records', {
-      program_id: selectedRecord,
-      scholarship_program_name: scholarshipName,
+    const payload = {
+      scholarship_program_name: rec.scholarship_program_name,
+      description: rec.description,
       academic_year: academicYear,
-      total_slot: total,
-    })
-    .then(res => {
-      message.success('Scholarship program inserted successfully!')
-      onClose()
-      if (onUpdated) onUpdated(res.data.program)
-    })
-    .catch(() => message.error('Failed to insert scholarship program'))
+      total_slot: Number(totalSlots || 0),
+    }
+
+    axios.post('http://localhost:8000/api/scholarship_program_records', payload)
+      .then(res => {
+        message.success('Scholarship program inserted successfully!')
+        onClose()
+        const program = res?.data?.program ?? res?.data ?? null
+        if (onUpdated) onUpdated(program)
+      })
+      .catch(() => message.error('Failed to insert scholarship program'))
   }
 
   return (
     <Modal
-      title="Add Scholarship Program"
+      title="Insert Slot to Scholarship Program"
       open={open}
       onCancel={onClose}
       footer={null}
     >
       <Select
         style={{ width: '100%', marginBottom: 12 }}
-        placeholder="Select a scholarship (from records)"
-        onChange={value => {
-          setSelectedRecord(value)
-          const rec = records.find(rr => rr.id === value)
-          setScholarshipName(rec?.scholarship_program_name || '')
-        }}
+        placeholder="Select a scholarship (Name - Description)"
+        onChange={value => setSelectedRecord(value)}
         value={selectedRecord}
       >
         {records.map(r => (
           <Select.Option key={r.id} value={r.id}>
-            {r.scholarship_program_name}{r.description ? ` — ${r.description}` : ''}
+            {r.scholarship_program_name} — {r.description}
           </Select.Option>
         ))}
       </Select>
@@ -75,12 +83,13 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
 
       <InputNumber
         style={{ width: '100%', marginBottom: 12 }}
-        placeholder="Total slots (optional)"
+        placeholder="Total slots"
         value={totalSlots}
         onChange={value => setTotalSlots(value)}
         min={0}
       />
-      <Button type="primary" block onClick={handleInsert}>
+
+      <Button type="primary" block onClick={handleSave}>
         Insert Slot to Scholarship Program
       </Button>
     </Modal>

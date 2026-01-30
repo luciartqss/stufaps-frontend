@@ -15,14 +15,11 @@ export function meta() {
 }
 
 function StatsCards({ financialAssistances }) {
-const navigate = useNavigate()
-
   const totals = {
-  totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
-  totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
-  totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.filled_slot || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
   }
-
 
   const statsConfig = [
     {
@@ -50,117 +47,63 @@ const navigate = useNavigate()
     },
   ]
 
-return (
+  return (
     <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
       {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: 1, minWidth: 0 }}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: 96,
-            }}
-            bodyStyle={{ 
-              padding: 16, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              height: '100%'
-            }}
-          >
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                {stat.title}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.prefix || ''}
-                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
-              </Text>
-              {stat.percentage && (
-                  <>
-                  <Progress percent={parseFloat(stat.percentage)} 
-                  showInfo={false} 
-                  strokeColor={stat.color} 
-                  style={{ marginBottom: 8 }} 
-                  />
-
-                  <Text style={{ fontSize: 12, color: stat.color }}>
-                    {stat.percentage}% of total
-                  </Text>
-                </>   
-              )}
-
-              {stat.button}
-
-            </div>
-
-            <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  backgroundColor: stat.bgColor,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 20,
-                  color: stat.color,
-                  flexShrink: 0,
-                }}
-              >
-              {stat.icon}
-            </div>
-          </Card>
-        </div>
+        <Card key={index} style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', height: 96 }}
+          bodyStyle={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}
+        >
+          <div style={{ overflow: 'hidden', flex: 1 }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+              {stat.title}
+            </Text>
+            <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
+              {(stat.value ?? 0).toLocaleString()}
+            </Text>
+            {stat.percentage && (
+              <>
+                <Progress percent={parseFloat(stat.percentage)} showInfo={false} strokeColor={stat.color} style={{ marginBottom: 8 }} />
+                <Text style={{ fontSize: 12, color: stat.color }}>{stat.percentage}% of total</Text>
+              </>
+            )}
+          </div>
+          <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: stat.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: stat.color }}>
+            {stat.icon}
+          </div>
+        </Card>
       ))}
     </div>
   )
 }
 
-
 export default function FinancialAssistanceCmsp() {
-  
   const [financialAssistances, setFinancialAssistances] = useState([])
-
-  const [expandedSUC, setExpandedSUC] = useState(null);
-  const [expandedPrivate, setExpandedPrivate] = useState(null);
-
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
-
-
+  const [expandedSUC, setExpandedSUC] = useState(null)
+  const [expandedPrivate, setExpandedPrivate] = useState(null)
 
   useEffect(() => {
-      fetch('http://localhost:8000/api/scholarship_program_records')
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then(data => {
-          console.log('API Response:', data)
-          const programsData = data.data || data
-          console.log('Programs Data:', programsData)
-          setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
-          setLoading(false)
-        })
-        .catch(err => {
-          console.error('Fetch Error:', err)
-          setError(err.message)
-          setLoading(false)
-        })
-    }, [])
+    fetch('http://localhost:8000/api/scholarship_program_records')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+        return res.json()
+      })
+      .then(data => {
+        console.log('API Response:', data)
+        const programsData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
+        setFinancialAssistances(programsData)
+        setLoading(false)
+      })
+      .catch(err => {
+        console.error('Fetch Error:', err)
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
-  
-    if (loading) return <div className="p-8">Loading...</div>
-    if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
-    if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
-      return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
-    }
-  
+  if (loading) return <div>Loading CMSP data...</div>
+  if (error) return <div style={{ color: 'red' }}>Error: {error}</div>
 
   const sucPrograms = [
     {
@@ -279,9 +222,7 @@ export default function FinancialAssistanceCmsp() {
   return (
     <div className="min-h-screen">
       <main>
-        <StatsCards financialAssistances={financialAssistances.filter(
-          p => p.scholarship_program_name.toUpperCase() === "CMSP"
-        )} />
+        <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => p?.scholarship_program_name?.toUpperCase() === "CMSP")} />
 
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">

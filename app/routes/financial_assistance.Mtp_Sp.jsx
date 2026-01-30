@@ -272,8 +272,8 @@ const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
     <div className="min-h-screen bg-white">
         <main>
 
-            <StatsCards financialAssistances={financialAssistances.filter(
-                p => p.scholarship_program_name.toUpperCase() === "MTP-SP"
+            <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+                        p => p?.scholarship_program_name?.toUpperCase() === "MTP-SP"
             )} />
 
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">

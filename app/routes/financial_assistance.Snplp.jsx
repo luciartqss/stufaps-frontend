@@ -151,9 +151,10 @@ export default function FinancialAssistanceSida_Sgp() {
       <div className="min-h-screen bg-white">
           <main>   </main>
 
-          <StatsCards financialAssistances={financialAssistances.filter(
-              p => p.scholarship_program_name.toUpperCase() === "SNPLP"
-          )} /> 
+          <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+                        p => p?.scholarship_program_name?.toUpperCase() === "SNLP"
+            )} />
+
         </div>
     )
 }

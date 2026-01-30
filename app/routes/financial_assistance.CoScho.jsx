@@ -13,11 +13,11 @@ export function meta() {
 
 
 
-function StatsCards({ financialAssistances }) {
+function StatsCards({ financialAssistances =[] }) {
   const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p.filled_slot || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p.unfilled_slot || 0), 0),
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.filled_slot || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
   }
 
   const statsConfig = [
@@ -318,9 +318,11 @@ export default function FinancialAssistanceCoScho()
     
     <main>
       {/* Program Title */}
-        <StatsCards financialAssistances={financialAssistances.filter(
-          p => p.scholarship_program_name.toUpperCase() === "COSCHO"
-        )} />
+        
+        <StatsCards financialAssistances={(Array.isArray(financialAssistances) ? financialAssistances : []).filter(
+              p => p?.scholarship_program_name?.toUpperCase() === "COSCHO"
+            )} />
+        
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
           Scholarship Program for Coconut Farmers and Their Families (CoScho)
