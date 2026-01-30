@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Card } from 'antd'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Drawer } from 'antd'
 import { InfoCircleOutlined, FileExcelOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
@@ -294,6 +294,15 @@ export default function StudentsIndex() {
   const [courseFilter, setCourseFilter] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10 })
   const [modalVisible, setModalVisible] = useState(false)
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
+  const [regionFilter, setRegionFilter] = useState(null)
+  const [provinceFilter, setProvinceFilter] = useState(null)
+  const [cityFilter, setCityFilter] = useState(null)
+  const [schoolFilter, setSchoolFilter] = useState(null)
+  const [priorityFilter, setPriorityFilter] = useState(null)
+  const [specialGroupFilter, setSpecialGroupFilter] = useState(null)
+  const [authorityTypeFilter, setAuthorityTypeFilter] = useState(null)
+  const [awardYearFilter, setAwardYearFilter] = useState(null)
   const navigate = useNavigate()
 
   const academicYearsFromData = useMemo(() => {
@@ -328,6 +337,25 @@ export default function StudentsIndex() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const applyAllFilters = (overrides = {}) => {
+    applyFilters({
+      search: overrides.search ?? searchValue,
+      status: overrides.status ?? statusFilter,
+      program: overrides.program ?? programFilter,
+      academicYear: overrides.academicYear ?? academicYearFilter,
+      semester: overrides.semester ?? semesterFilter,
+      course: overrides.course ?? courseFilter,
+      region: overrides.region ?? regionFilter,
+      province: overrides.province ?? provinceFilter,
+      city: overrides.city ?? cityFilter,
+      school: overrides.school ?? schoolFilter,
+      priority: overrides.priority ?? priorityFilter,
+      specialGroup: overrides.specialGroup ?? specialGroupFilter,
+      authorityType: overrides.authorityType ?? authorityTypeFilter,
+      awardYear: overrides.awardYear ?? awardYearFilter,
+    })
   }
 
   // Define table columns
@@ -655,48 +683,83 @@ export default function StudentsIndex() {
   // Handle search
   const handleSearch = (value) => {
     setSearchValue(value)
-    applyFilters(value, statusFilter, programFilter, academicYearFilter, semesterFilter, courseFilter)
+    applyAllFilters({ search: value })
   }
 
   // Handle status filter
   const handleStatusChange = (value) => {
     setStatusFilter(value)
-    applyFilters(searchValue, value, programFilter, academicYearFilter, semesterFilter, courseFilter)
+    applyAllFilters({ status: value })
   }
 
   // Handle program filter
   const handleProgramChange = (value) => {
     setProgramFilter(value)
-    applyFilters(searchValue, statusFilter, value, academicYearFilter, semesterFilter, courseFilter)
+    applyAllFilters({ program: value })
   }
 
-  // Handle academic year filter
-  const handleAcademicYearChange = (value) => {
-    setAcademicYearFilter(value)
-    applyFilters(searchValue, statusFilter, programFilter, value, semesterFilter, courseFilter)
+  const handleResetFilters = () => {
+    setSearchValue('')
+    setStatusFilter(null)
+    setProgramFilter(null)
+    setAcademicYearFilter(null)
+    setSemesterFilter(null)
+    setCourseFilter(null)
+    setRegionFilter(null)
+    setProvinceFilter(null)
+    setCityFilter(null)
+    setSchoolFilter(null)
+    setPriorityFilter(null)
+    setSpecialGroupFilter(null)
+    setAuthorityTypeFilter(null)
+    setAwardYearFilter(null)
+    applyAllFilters({
+      search: '',
+      status: null,
+      program: null,
+      academicYear: null,
+      semester: null,
+      course: null,
+      region: null,
+      province: null,
+      city: null,
+      school: null,
+      priority: null,
+      specialGroup: null,
+      authorityType: null,
+      awardYear: null,
+    })
+    setFiltersDrawerOpen(false)
   }
 
-  // Handle semester filter
-  const handleSemesterChange = (value) => {
-    setSemesterFilter(value)
-    applyFilters(searchValue, statusFilter, programFilter, academicYearFilter, value, courseFilter)
-  }
-
-  // Handle course filter
-  const handleCourseChange = (value) => {
-    setCourseFilter(value)
-    applyFilters(searchValue, statusFilter, programFilter, academicYearFilter, semesterFilter, value)
+  const handleApplyDrawerFilters = () => {
+    applyAllFilters()
+    setFiltersDrawerOpen(false)
   }
 
   // Apply filters and search
-  const applyFilters = (search, status, program, academicYear, semester, course) => {
+  const applyFilters = ({
+    search,
+    status,
+    program,
+    academicYear,
+    semester,
+    course,
+    region,
+    province,
+    city,
+    school,
+    priority,
+    specialGroup,
+    authorityType,
+    awardYear,
+  }) => {
     let filtered = [...students]
 
-    // Apply search filter
     if (search) {
       const searchLower = search.toLowerCase()
       filtered = filtered.filter((student) => {
-        const fullName = `${student.surname} ${student.first_name} ${student.middle_name || ''} ${student.extension || ''}`.toLowerCase()
+        const fullName = `${student.surname || ''} ${student.first_name || ''} ${student.middle_name || ''} ${student.extension || ''}`.toLowerCase()
         const scholarshipProgram = (student.scholarship_program || '').toLowerCase()
         const awardNumber = (student.award_number || '').toLowerCase()
         const contactNumber = (student.contact_number || '').toLowerCase()
@@ -712,29 +775,57 @@ export default function StudentsIndex() {
       })
     }
 
-    // Apply status filter
     if (status) {
       filtered = filtered.filter((student) => student.scholarship_status === status)
     }
 
-    // Apply program filter
     if (program) {
       filtered = filtered.filter((student) => student.scholarship_program === program)
     }
 
-    // Apply academic year filter
     if (academicYear) {
       filtered = filtered.filter((student) => student.academic_year === academicYear)
     }
 
-    // Apply semester filter
     if (semester) {
       filtered = filtered.filter((student) => student.semester === semester)
     }
 
-    // Apply course filter
     if (course) {
       filtered = filtered.filter((student) => student.degree_program === course)
+    }
+
+    if (region) {
+      filtered = filtered.filter((student) => student.region === region)
+    }
+
+    if (province) {
+      filtered = filtered.filter((student) => student.province === province)
+    }
+
+    if (city) {
+      filtered = filtered.filter((student) => student.municipality_city === city)
+    }
+
+    if (school) {
+      filtered = filtered.filter((student) => student.name_of_institution === school)
+    }
+
+    if (priority !== null && priority !== undefined && priority !== '') {
+      const target = String(priority).toLowerCase()
+      filtered = filtered.filter((student) => String(student.is_priority || '').toLowerCase() === target)
+    }
+
+    if (specialGroup) {
+      filtered = filtered.filter((student) => student.special_group === specialGroup)
+    }
+
+    if (authorityType) {
+      filtered = filtered.filter((student) => student.authority_type === authorityType)
+    }
+
+    if (awardYear) {
+      filtered = filtered.filter((student) => student.award_year === awardYear)
     }
 
     setFilteredStudents(filtered)
@@ -745,6 +836,15 @@ export default function StudentsIndex() {
   const academicYears = [...new Set(students.map((s) => s.academic_year))].filter(Boolean)
   const semesters = [...new Set(students.map((s) => s.semester))].filter(Boolean)
   const statusValues = [...new Set(students.map((s) => s.scholarship_status))].filter(Boolean)
+  const courses = [...new Set(students.map((s) => s.degree_program))].filter(Boolean)
+  const regions = [...new Set(students.map((s) => s.region))].filter(Boolean)
+  const provinces = [...new Set(students.map((s) => s.province))].filter(Boolean)
+  const cities = [...new Set(students.map((s) => s.municipality_city))].filter(Boolean)
+  const schools = [...new Set(students.map((s) => s.name_of_institution))].filter(Boolean)
+  const priorities = [...new Set(students.map((s) => s.is_priority))].filter((v) => v !== null && v !== undefined && v !== '')
+  const specialGroups = [...new Set(students.map((s) => s.special_group))].filter(Boolean)
+  const authorityTypes = [...new Set(students.map((s) => s.authority_type))].filter(Boolean)
+  const awardYears = [...new Set(students.map((s) => s.award_year))].filter(Boolean)
 
   const searchInstructions = (
     <div style={{ maxWidth: 300 }}>
@@ -844,6 +944,12 @@ export default function StudentsIndex() {
               allowClear
               enterButton="Search"
               size="middle"
+              value={searchValue}
+              onChange={(e) => {
+                const next = e.target.value
+                setSearchValue(next)
+                if (next === '') applyAllFilters({ search: '' })
+              }}
               onSearch={handleSearch}
               style={{ width: 300 }}
             />
@@ -852,6 +958,7 @@ export default function StudentsIndex() {
               allowClear
               size="middle"
               style={{ width: 140 }}
+              value={statusFilter}
               onChange={handleStatusChange}
             >
               {statusValues.map((status) => (
@@ -866,6 +973,7 @@ export default function StudentsIndex() {
               size="middle"
               style={{ width: 150 }}
               onChange={handleProgramChange}
+              value={programFilter}
             >
               {scholarshipPrograms.map((program) => (
                 <Option key={program} value={program}>
@@ -873,45 +981,12 @@ export default function StudentsIndex() {
                 </Option>
               ))}
             </Select>
-            <Select
-              placeholder="Academic Year"
-              allowClear
+            <Button
               size="middle"
-              style={{ width: 130 }}
-              onChange={handleAcademicYearChange}
+              onClick={() => setFiltersDrawerOpen(true)}
             >
-              {academicYears.map((year) => (
-                <Option key={year} value={year}>
-                  {year}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="Semester"
-              allowClear
-              size="middle"
-              style={{ width: 110 }}
-              onChange={handleSemesterChange}
-            >
-              {semesters.map((sem) => (
-                <Option key={sem} value={sem}>
-                  {sem}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="Course"
-              allowClear
-              size="middle"
-              style={{ width: 150 }}
-              onChange={handleCourseChange}
-            >
-              {[...new Set(students.map((s) => s.degree_program))].filter(Boolean).map((course) => (
-                <Option key={course} value={course}>
-                  {course}
-                </Option>
-              ))}
-            </Select>
+              Filters
+            </Button>
           </Space>
           <Space>
             <Button
@@ -980,6 +1055,214 @@ export default function StudentsIndex() {
           placeholder="Enter new value"
         />
       </Modal>
+
+      <Drawer
+        title="Filters"
+        placement="right"
+        width={420}
+        onClose={() => setFiltersDrawerOpen(false)}
+        open={filtersDrawerOpen}
+        extra={(
+          <Space>
+            <Button onClick={handleResetFilters}>Reset</Button>
+            <Button type="primary" onClick={handleApplyDrawerFilters}>Apply</Button>
+          </Space>
+        )}
+      >
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Academic & Term</div>
+            <Space wrap>
+              <Select
+                placeholder="Academic Year"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 180 }}
+                value={academicYearFilter}
+                onChange={(value) => {
+                  setAcademicYearFilter(value)
+                  applyAllFilters({ academicYear: value })
+                }}
+              >
+                {academicYears.map((year) => (
+                  <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Semester"
+                allowClear
+                size="middle"
+                style={{ width: 140 }}
+                value={semesterFilter}
+                onChange={(value) => {
+                  setSemesterFilter(value)
+                  applyAllFilters({ semester: value })
+                }}
+              >
+                {semesters.map((sem) => (
+                  <Option key={sem} value={sem}>{sem}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Award Year"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 160 }}
+                value={awardYearFilter}
+                onChange={(value) => {
+                  setAwardYearFilter(value)
+                  applyAllFilters({ awardYear: value })
+                }}
+              >
+                {awardYears.map((year) => (
+                  <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Course"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 200 }}
+                value={courseFilter}
+                onChange={(value) => {
+                  setCourseFilter(value)
+                  applyAllFilters({ course: value })
+                }}
+              >
+                {courses.map((course) => (
+                  <Option key={course} value={course}>{course}</Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>School & Location</div>
+            <Space wrap>
+              <Select
+                placeholder="Region"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 160 }}
+                value={regionFilter}
+                onChange={(value) => {
+                  setRegionFilter(value)
+                  applyAllFilters({ region: value })
+                }}
+              >
+                {regions.map((region) => (
+                  <Option key={region} value={region}>{region}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Province"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 160 }}
+                value={provinceFilter}
+                onChange={(value) => {
+                  setProvinceFilter(value)
+                  applyAllFilters({ province: value })
+                }}
+              >
+                {provinces.map((province) => (
+                  <Option key={province} value={province}>{province}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="City / Municipality"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 200 }}
+                value={cityFilter}
+                onChange={(value) => {
+                  setCityFilter(value)
+                  applyAllFilters({ city: value })
+                }}
+              >
+                {cities.map((city) => (
+                  <Option key={city} value={city}>{city}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="School"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 240 }}
+                value={schoolFilter}
+                onChange={(value) => {
+                  setSchoolFilter(value)
+                  applyAllFilters({ school: value })
+                }}
+              >
+                {schools.map((school) => (
+                  <Option key={school} value={school}>{school}</Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 8 }}>Scholarship & Tags</div>
+            <Space wrap>
+              <Select
+                placeholder="Priority"
+                allowClear
+                size="middle"
+                style={{ width: 140 }}
+                value={priorityFilter}
+                onChange={(value) => {
+                  setPriorityFilter(value)
+                  applyAllFilters({ priority: value })
+                }}
+              >
+                {priorities.map((p) => (
+                  <Option key={String(p)} value={p}>{String(p)}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Special Group"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 160 }}
+                value={specialGroupFilter}
+                onChange={(value) => {
+                  setSpecialGroupFilter(value)
+                  applyAllFilters({ specialGroup: value })
+                }}
+              >
+                {specialGroups.map((group) => (
+                  <Option key={group} value={group}>{group}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Authority Type"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: 160 }}
+                value={authorityTypeFilter}
+                onChange={(value) => {
+                  setAuthorityTypeFilter(value)
+                  applyAllFilters({ authorityType: value })
+                }}
+              >
+                {authorityTypes.map((type) => (
+                  <Option key={type} value={type}>{type}</Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+        </Space>
+      </Drawer>
     </div>
   )
 }
