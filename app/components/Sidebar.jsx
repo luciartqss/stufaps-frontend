@@ -18,9 +18,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   const menuItems = [
     {
-      key: '/',
+      key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: <NavLink to="/">Dashboard</NavLink>,
+      label: <NavLink to="/dashboard">Dashboard</NavLink>,
     },
     {
       key: '/students',

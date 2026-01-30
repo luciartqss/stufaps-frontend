@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Card } from 'antd'
-import { InfoCircleOutlined } from '@ant-design/icons'
+import { InfoCircleOutlined, FileExcelOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import { UploadOutlined } from '@ant-design/icons'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -69,17 +68,38 @@ export default function StudentsIndex() {
       align: 'center',
     },
     {
+      title: 'Award Number',
+      dataIndex: 'award_number',
+      key: 'award_number',
+    },
+    {
       title: 'Full Name',
       key: 'full_name',
       render: (_, student) => {
-        const parts = [
-          student.surname,
-          student.first_name,
-          student.middle_name,
-          student.extension,
-        ].filter(Boolean)
-        return parts.join(' ')
+        const surname = student.surname || ''
+        const firstName = student.first_name || ''
+        const middleName = student.middle_name || ''
+        const extension = student.extension || ''
+        
+        const otherParts = [firstName, middleName, extension].filter(Boolean).join(' ')
+        
+        if (surname && otherParts) {
+          return `${surname}, ${otherParts}`
+        }
+        return surname || otherParts
       },
+    },
+    {
+      title: 'Contact Number',
+      dataIndex: 'contact_number',
+      key: 'contact_number',
+      render: (text) => text || 'N/A',
+    },
+    {
+      title: 'Email Address',
+      dataIndex: 'email_address',
+      key: 'email_address',
+      render: (text) => text || 'N/A',
     },
     {
       title: 'School',
@@ -96,23 +116,6 @@ export default function StudentsIndex() {
       title: 'Scholarship Program',
       dataIndex: 'scholarship_program',
       key: 'scholarship_program',
-    },
-    {
-      title: 'Award Number',
-      dataIndex: 'award_number',
-      key: 'award_number',
-    },
-    {
-      title: 'Contact Number',
-      dataIndex: 'contact_number',
-      key: 'contact_number',
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Email Address',
-      dataIndex: 'email_address',
-      key: 'email_address',
-      render: (text) => text || 'N/A',
     },
     {
       title: 'Status',
@@ -170,9 +173,9 @@ export default function StudentsIndex() {
     navigate('/students/bulk')
   }
 
-  // Handle "Extract PDF" button click
-  const handleExtractPDF = () => {
-    navigate('/students/pdf')
+  // Handle "Extract Excel" button click - reuse bulk format
+  const handleExtractExcel = () => {
+    navigate('/students/bulk')
   }
 
   // Get color for status
@@ -457,16 +460,17 @@ export default function StudentsIndex() {
             <Button
               type="default"
               size="middle"
+              icon={<FileExcelOutlined />}
               style={{
-                backgroundColor: '#fff',
-                color: '#d32f2f',
-                borderColor: '#d32f2f',
+                backgroundColor: '#ecfdf3',
+                color: '#16a34a',
+                borderColor: '#16a34a',
                 fontWeight: 600,
-                width: 120,
+                width: 140,
               }}
-              onClick={handleExtractPDF}
+              onClick={handleExtractExcel}
             >
-              Extract PDF
+              Extract Excel
             </Button>
 
             <Button
@@ -519,14 +523,6 @@ export default function StudentsIndex() {
           placeholder="Enter new value"
         />
       </Modal>
-      <Card
-        styles={{
-          body: { padding: 16 },
-          header: { padding: '12px 16px' },
-        }}
-      >
-        Content
-      </Card>
     </div>
   )
 }
