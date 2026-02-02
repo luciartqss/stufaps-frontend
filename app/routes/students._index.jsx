@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Drawer } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined } from '@ant-design/icons'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 
@@ -921,6 +921,10 @@ export default function StudentsIndex() {
     }
   }
 
+  const handlePrintMasterlist = () => {
+    navigate('/students/pdf')
+  }
+
   const refreshStudents = () => {
     fetchStudents()
   }
@@ -992,6 +996,16 @@ export default function StudentsIndex() {
             <Button
               type="default"
               size="middle"
+              icon={<FilePdfOutlined />}
+              className="bg-red-50 text-red-600 border border-red-500 font-semibold"
+              style={{ width: 160 }}
+              onClick={handlePrintMasterlist}
+            >
+              Print masterlist
+            </Button>
+            <Button
+              type="default"
+              size="middle"
               icon={<FileExcelOutlined />}
               style={{
                 backgroundColor: '#ecfdf3',
@@ -1004,7 +1018,6 @@ export default function StudentsIndex() {
             >
               Extract Excel
             </Button>
-
             <Button
               type="primary"
               size="middle"
