@@ -54,12 +54,11 @@ const api = {
 // Simple field display with proper input types - moved outside to prevent focus loss
 const Field = ({ label, value, field, span = 12, type = 'text', editMode, formData, handleChange, options = [] }) => (
   <Col span={span}>
-    <div className="mb-3">
-      <Text type="secondary" className="text-xs uppercase tracking-wide block mb-1">{label}</Text>
+    <div style={{ marginBottom: '16px' }}>
+      <Text strong style={{ fontSize: '13px', color: '#262626', display: 'block', marginBottom: '4px' }}>{label}</Text>
       {editMode && field ? (
         type === 'date' ? (
           <DatePicker
-            size="small"
             style={{ width: '100%' }}
             value={formData?.[field] ? dayjs(formData[field]) : null}
             onChange={(date) => handleChange(field, date ? date.format('YYYY-MM-DD') : null)}
@@ -67,14 +66,12 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           />
         ) : type === 'email' ? (
           <Input
-            size="small"
             type="email"
             value={formData?.[field] ?? ''}
             onChange={(e) => handleChange(field, e.target.value)}
           />
         ) : type === 'select' ? (
           <Select
-            size="small"
             value={formData?.[field] || undefined}
             onChange={(v) => handleChange(field, v)}
             placeholder={`Select ${label.toLowerCase()}`}
@@ -89,7 +86,6 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           </Select>
         ) : type === 'textarea' ? (
           <Input.TextArea
-            size="small"
             value={formData?.[field] ?? ''}
             onChange={(e) => handleChange(field, e.target.value)}
             rows={3}
@@ -97,13 +93,12 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           />
         ) : (
           <Input
-            size="small"
             value={formData?.[field] ?? ''}
             onChange={(e) => handleChange(field, e.target.value)}
           />
         )
       ) : (
-        <div className="text-sm text-slate-800 font-medium">{value || '—'}</div>
+        <div style={{ fontSize: '14px', color: '#262626' }}>{value || '—'}</div>
       )}
     </div>
   </Col>
@@ -469,35 +464,25 @@ export default function StudentDetails() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen p-4 md:p-6">
+    <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
       {/* Header summary */}
-      <Card
-        className="shadow-sm border border-slate-200 mb-6"
-        styles={{ body: { padding: '24px 32px' } }}
-      >
+      <Card style={{ marginBottom: '24px' }}>
         <Row align="middle" justify="space-between">
           <Col flex="0 0 auto">
             <Space size={16} align="center">
               <Button 
                 icon={<ArrowLeftOutlined />} 
                 onClick={() => window.history.back()}
-                type="text"
-                className="hover:bg-slate-100"
               >
                 Back
               </Button>
-              <div className="h-10 w-px bg-slate-300" />
               <div>
-                <Title 
-                  level={3} 
-                  className="!mb-1 !mt-0" 
-                  style={{ color: '#1e40af', fontWeight: 700 }}
-                >
+                <Title level={3} style={{ margin: '0 0 4px 0', color: '#262626' }}>
                   {getFullName() || 'Unnamed Grantee'}
                 </Title>
-                <div className="text-sm text-slate-600 font-medium">
+                <Text type="secondary">
                   Award No: {student.award_number || '—'}
-                </div>
+                </Text>
               </div>
             </Space>
           </Col>
@@ -505,25 +490,16 @@ export default function StudentDetails() {
           <Col flex="0 0 auto">
             <Space size={16} align="center">
               <div>
-                <Text type="secondary" className="text-xs uppercase tracking-wide font-medium">
+                <Text strong style={{ fontSize: '13px', display: 'block' }}>
                   Status
                 </Text>
-                <div className="mt-1">
-                  <Tag 
-                    color={getStatusColor(student.scholarship_status)} 
-                    className="!text-sm !px-4 !py-1 !font-medium"
-                  >
-                    {student.scholarship_status || 'N/A'}
-                  </Tag>
-                </div>
+                <Tag color={getStatusColor(student.scholarship_status)}>
+                  {student.scholarship_status || 'N/A'}
+                </Tag>
               </div>
-              <div className="h-10 w-px bg-slate-300" />
               {editMode ? (
-                <Space size={8}>
-                  <Button 
-                    onClick={() => { setFormData(student); setEditMode(false) }}
-                    className="min-w-[80px]"
-                  >
+                <Space>
+                  <Button onClick={() => { setFormData(student); setEditMode(false) }}>
                     Cancel
                   </Button>
                   <Button 
@@ -531,7 +507,6 @@ export default function StudentDetails() {
                     loading={saving} 
                     onClick={handleSave} 
                     disabled={!hasChanges()}
-                    className="min-w-[100px]"
                   >
                     Save Changes
                   </Button>
@@ -541,7 +516,6 @@ export default function StudentDetails() {
                   type="primary" 
                   icon={<EditOutlined />} 
                   onClick={() => setEditMode(true)}
-                  className="min-w-[100px]"
                 >
                   Edit Record
                 </Button>
@@ -552,14 +526,9 @@ export default function StudentDetails() {
       </Card>
 
       {/* Cards - Row 1 */}
-      <Row gutter={[16, 16]} className="mb-4">
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card 
-            title="Personal Information" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full" 
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Personal Information" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field label="Surname" value={student.surname} field="surname" editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="First Name" value={student.first_name} field="first_name" editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -608,12 +577,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card 
-            title="Contact Information" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full"
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Contact Information" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field label="Contact Number" value={student.contact_number} field="contact_number" editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Email Address" value={student.email_address} field="email_address" type="email" editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -629,14 +593,9 @@ export default function StudentDetails() {
       </Row>
 
       {/* Cards - Row 2 */}
-      <Row gutter={[16, 16]} className="mb-4">
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card 
-            title="Institution & Academic Program" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full"
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Institution & Academic Program" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="UII" value={student.uii} field="uii" editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -666,12 +625,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card 
-            title="Scholarship & Authority Details" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full"
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Scholarship & Authority Details" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field label="In-Charge" value={student.in_charge} field="in_charge" editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Award Year" value={student.award_year} field="award_year" editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -701,14 +655,9 @@ export default function StudentDetails() {
       </Row>
 
       {/* Cards - Row 3: Status & Remarks */}
-      <Row gutter={[16, 16]} className="mb-4">
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card 
-            title="Status & Priority" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full"
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Status & Priority" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field 
                 label="Scholarship Status" 
@@ -725,11 +674,10 @@ export default function StudentDetails() {
                 handleChange={handleChange} 
               />
               <Col span={12}>
-                <div style={{ marginBottom: '8px' }}>
-                  <Text type="secondary" style={{ fontSize: '11px' }}>Priority Program</Text>
+                <div style={{ marginBottom: '16px' }}>
+                  <Text strong style={{ fontSize: '13px', color: '#262626', display: 'block', marginBottom: '4px' }}>Priority Program</Text>
                   {editMode ? (
                     <Select
-                      size="small"
                       value={formData?.is_priority ? 'yes' : 'no'}
                       onChange={(v) => handleChange('is_priority', v === 'yes')}
                       options={[
@@ -739,7 +687,7 @@ export default function StudentDetails() {
                       style={{ width: '100%' }}
                     />
                   ) : (
-                    <div>
+                    <div style={{ fontSize: '14px', color: '#262626' }}>
                       <Tag color={student.is_priority ? 'green' : 'default'}>
                         {student.is_priority ? 'Yes' : 'No'}
                       </Tag>
@@ -753,12 +701,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card 
-            title="Remarks" 
-            size="small" 
-            className="shadow-sm border border-slate-200 h-full"
-            styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
-          >
+          <Card title="Remarks" style={{ height: '100%' }}>
             <Row gutter={[12, 8]}>
               <Field 
                 label="General Remarks / Notes" 
@@ -778,11 +721,8 @@ export default function StudentDetails() {
       {/* Table */}
       <Card
         title="Semester Transaction Records"
-        size="small"
-        className="shadow-sm border border-slate-200"
-        styles={{ header: { background: '#f1f5f9', fontWeight: 600, borderBottom: '1px solid #e2e8f0' } }}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} size="small" onClick={handleCreateDisbursement}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDisbursement}>
             Add Disbursement
           </Button>
         }
@@ -793,7 +733,6 @@ export default function StudentDetails() {
           rowKey="id"
           pagination={false}
           scroll={{ x: 1800, y: 500 }}
-          className="disbursement-table"
         />
       </Card>
 
@@ -808,95 +747,157 @@ export default function StudentDetails() {
         }}
         width={800}
         okText={disbursementModal.mode === 'create' ? 'Create Record' : 'Update Record'}
+        cancelText="Cancel"
         confirmLoading={disbursementLoading}
         destroyOnClose={true}
       >
         <Form form={disbursementForm} layout="vertical">
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="student_seq" label="Student ID" hidden>
-                <Input disabled />
-              </Form.Item>
-              <Form.Item name="academic_year" label="Academic Year">
-                <Input placeholder="e.g., 2024-2025" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="semester" label="Semester">
-                <Select placeholder="Select semester">
-                  <Select.Option value="1st">1st Semester</Select.Option>
-                  <Select.Option value="2nd">2nd Semester</Select.Option>
-                  <Select.Option value="Summer">Summer</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="curriculum_year_level" label="Year Level">
-                <Select placeholder="Select year level">
-                  <Select.Option value="I">I</Select.Option>
-                  <Select.Option value="II">II</Select.Option>
-                  <Select.Option value="III">III</Select.Option>
-                  <Select.Option value="IV">IV</Select.Option>
-                  <Select.Option value="V">V</Select.Option>
-                  <Select.Option value="VI">VI</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="nta" label="NTA">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="fund_source" label="Fund Source">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="amount" label="Amount">
-                <Input type="number" step="0.01" prefix="₱" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="voucher_number" label="Voucher Number">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="mode_of_payment" label="Mode of Payment">
-                <Select placeholder="Select mode of payment">
-                  <Select.Option value="ATM">ATM</Select.Option>
-                  <Select.Option value="Cheque">Cheque</Select.Option>
-                  <Select.Option value="Through the HEI">Through the HEI</Select.Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="account_check_no" label="Account/Check No.">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="payment_amount" label="Payment Amount">
-                <Input type="number" step="0.01" prefix="₱" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="lddap_number" label="LDDAP Number">
-                <Input />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="disbursement_date" label="Disbursement Date">
-                <DatePicker style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={24}>
-              <Form.Item name="remarks" label="Remarks">
-                <Input.TextArea rows={3} />
-              </Form.Item>
-            </Col>
-          </Row>
+          {/* Academic Information */}
+          <div style={{ marginBottom: '24px' }}>
+            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
+              Academic Information
+            </Text>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="student_seq" label="Student ID" hidden>
+                  <Input disabled />
+                </Form.Item>
+                <Form.Item 
+                  name="academic_year" 
+                  label="Academic Year"
+                  rules={[{ required: true, message: 'Please enter academic year' }]}
+                >
+                  <Input placeholder="e.g., 2024-2025" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="semester" label="Semester">
+                  <Select placeholder="Select semester">
+                    <Select.Option value="First">First</Select.Option>
+                    <Select.Option value="Second">Second</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  name="curriculum_year_level" 
+                  label="Year Level"
+                  rules={[{ required: true, message: 'Please select year level' }]}
+                >
+                  <Select placeholder="Select year level">
+                    <Select.Option value="I">I</Select.Option>
+                    <Select.Option value="II">II</Select.Option>
+                    <Select.Option value="III">III</Select.Option>
+                    <Select.Option value="IV">IV</Select.Option>
+                    <Select.Option value="V">V</Select.Option>
+                    <Select.Option value="VI">VI</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Financial Information */}
+          <div style={{ marginBottom: '24px' }}>
+            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
+              Financial Information
+            </Text>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="nta" label="NTA">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="fund_source" label="Fund Source">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  name="amount" 
+                  label="Amount"
+                  rules={[{ required: true, message: 'Please enter amount' }]}
+                >
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    prefix="₱" 
+                    placeholder="0.00"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  name="payment_amount" 
+                  label="Payment Amount"
+                  rules={[{ required: true, message: 'Please enter payment amount' }]}
+                >
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    prefix="₱" 
+                    placeholder="0.00"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Payment Details */}
+          <div style={{ marginBottom: '24px' }}>
+            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
+              Payment Details
+            </Text>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="voucher_number" label="Voucher Number">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="mode_of_payment" label="Mode of Payment">
+                  <Select placeholder="Select mode of payment">
+                    <Select.Option value="ATM">ATM</Select.Option>
+                    <Select.Option value="Cheque">Cheque</Select.Option>
+                    <Select.Option value="Through the HEI">Through the HEI</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="account_check_no" label="Account/Check No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="lddap_number" label="LDDAP Number">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item 
+                  name="disbursement_date" 
+                  label="Disbursement Date"
+                  rules={[{ required: true, message: 'Please select disbursement date' }]}
+                >
+                  <DatePicker 
+                    style={{ width: '100%' }}
+                    placeholder="Select date"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Remarks */}
+          <div>
+            <Form.Item name="remarks" label="Remarks">
+              <Input.TextArea 
+                rows={3} 
+                placeholder="Enter any additional remarks or notes..."
+              />
+            </Form.Item>
+          </div>
         </Form>
       </Modal>
     </div>

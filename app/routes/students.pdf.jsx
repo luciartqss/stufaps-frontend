@@ -312,42 +312,25 @@ export default function StudentsPdf() {
   }
 
   return (
-    <div style={{ padding: '0', background: '#f5f5f5', minHeight: 'calc(100vh - 72px)' }}>
-      <div style={{ width: '100%', padding: '0 24px' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '24px', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ 
-                width: '48px', 
-                height: '48px', 
-                borderRadius: '8px', 
-                background: '#1890ff', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
-                <PrinterOutlined style={{ fontSize: '24px', color: '#fff' }} />
-              </div>
-              <div>
-                <Title level={3} style={{ margin: '0 0 4px 0', color: '#262626' }}>
-                  Print Masterlist
-                </Title>
-                <Text type="secondary" style={{ fontSize: '14px' }}>
-                  Generate and download PDF masterlist reports
-                </Text>
-              </div>
-            </div>
-            <Space size="middle">
-              <Tooltip title="Clear all fields and start over">
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={handleReset}
-                  disabled={loadingPreview}
-                >
-                  Reset
-                </Button>
-              </Tooltip>
+    <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Header - Filters */}
+      <Card style={{ marginBottom: '24px' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <Title level={3} style={{ margin: '0 0 8px 0', color: '#262626' }}>
+              Generate PDF Masterlist
+            </Title>
+            <Text type="secondary" style={{ fontSize: '14px' }}>
+              Select program, semester, and academic year to generate the masterlist document
+            </Text>
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleReset}
+                disabled={loadingPreview}
+              >
+                Reset
+              </Button>
               <Button
                 type="primary"
                 icon={<DownloadOutlined />}
@@ -357,421 +340,355 @@ export default function StudentsPdf() {
               >
                 Download PDF
               </Button>
-            </Space>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <Form layout="inline" style={{ maxWidth: '1100px', width: '100%', justifyContent: 'center' }}>
+            <Form.Item label="Program" style={{ minWidth: '300px', marginBottom: '16px' }}>
+              <Select
+                showSearch
+                allowClear
+                placeholder="Select program"
+                value={program}
+                onChange={setProgram}
+                loading={loadingOptions}
+                style={{ width: '100%' }}
+                optionFilterProp="label"
+                options={programOptions.map((opt) => ({ label: opt, value: opt }))}
+              />
+            </Form.Item>
+            
+            <Form.Item label="Semester" style={{ minWidth: '200px', marginBottom: '16px' }}>
+              <Select
+                allowClear
+                placeholder="Select semester"
+                value={semester}
+                onChange={setSemester}
+                loading={loadingOptions}
+                style={{ width: '100%' }}
+                options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
+              />
+            </Form.Item>
+            
+            <Form.Item label="Academic Year" style={{ minWidth: '200px', marginBottom: '16px' }}>
+              <Select
+                showSearch
+                allowClear
+                placeholder="Select academic year"
+                value={academicYear}
+                onChange={setAcademicYear}
+                loading={loadingOptions}
+                style={{ width: '100%' }}
+                optionFilterProp="label"
+                options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
+              />
+            </Form.Item>
+
+            {canGenerate && (
+              <Form.Item style={{ marginBottom: '16px' }}>
+                <div style={{ 
+                  padding: '8px 16px', 
+                  background: '#f5f5f5', 
+                  border: '1px solid #d9d9d9',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <CheckCircleOutlined />
+                  <Text style={{ fontSize: '14px' }}>
+                    Ready to generate
+                  </Text>
+                </div>
+              </Form.Item>
+            )}
+            </Form>
           </div>
         </div>
+      </Card>
 
-        <Row gutter={[32, 24]} style={{ minHeight: 'calc(100vh - 200px)' }}>
-          {/* Left Column - Filters & Signatories */}
-          <Col xs={24} lg={8} xl={7}>
-            {/* Filter Options */}
-            <Card 
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FilterOutlined style={{ color: '#1890ff' }} />
-                  <span>Filter Options</span>
-                  {canGenerate && (
-                    <Badge 
-                      count={<CheckCircleOutlined style={{ color: '#52c41a' }} />} 
-                      style={{ marginLeft: '8px' }}
-                    />
-                  )}
-                </div>
-              }
-              style={{ marginBottom: '24px' }}
-            >
-              <Form layout="vertical">
-                <Form.Item 
-                  label={<Text strong style={{ fontSize: '13px' }}>Program</Text>}
-                  style={{ marginBottom: '16px' }}
-                >
-                  <Select
-                    showSearch
-                    allowClear
-                    placeholder="Select program"
-                    value={program}
-                    onChange={setProgram}
-                    loading={loadingOptions}
-                    size="large"
-                    optionFilterProp="label"
-                    options={programOptions.map((opt) => ({ label: opt, value: opt }))}
-                  />
-                </Form.Item>
-                
-                <Row gutter={16}>
-                  <Col span={12}>
-                    <Form.Item 
-                      label={<Text strong style={{ fontSize: '13px' }}>Semester</Text>}
-                      style={{ marginBottom: '16px' }}
-                    >
-                      <Select
-                        allowClear
-                        placeholder="Select semester"
-                        value={semester}
-                        onChange={setSemester}
-                        loading={loadingOptions}
-                        size="large"
-                        options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
-                      />
-                    </Form.Item>
-                  </Col>
-                  <Col span={12}>
-                    <Form.Item 
-                      label={<Text strong style={{ fontSize: '13px' }}>Academic Year</Text>}
-                      style={{ marginBottom: '0' }}
-                    >
-                      <Select
-                        showSearch
-                        allowClear
-                        placeholder="Select academic year"
-                        value={academicYear}
-                        onChange={setAcademicYear}
-                        loading={loadingOptions}
-                        size="large"
-                        optionFilterProp="label"
-                        options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
-                      />
-                    </Form.Item>
-                  </Col>
-                </Row>
+      {/* Body - PDF Viewer */}
+      <Card 
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileTextOutlined />
+            <span>PDF Preview</span>
+            {loadingPreview && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                <SyncOutlined spin style={{ fontSize: '12px' }} />
+                <Text style={{ fontSize: '12px' }}>Updating...</Text>
+              </div>
+            )}
+          </div>
+        }
+        extra={
+          <Space>
+            {lastUpdated && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                Updated {formatLastUpdated(lastUpdated)}
+              </Text>
+            )}
+            {previewUrl && (
+              <Button
+                type="link"
+                icon={<EyeOutlined />}
+                onClick={handleOpenNewTab}
+                size="small"
+              >
+                Open in new tab
+              </Button>
+            )}
+          </Space>
+        }
+        style={{ flex: 1, marginBottom: '24px', minHeight: '500px' }}
+        bodyStyle={{ padding: '16px', height: '500px', display: 'flex', flexDirection: 'column' }}
+      >
+        {loadingPreview ? (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            background: '#fafafa',
+            borderRadius: '6px',
+            flex: 1
+          }}>
+            <Spin size="large" tip="Generating preview..." />
+          </div>
+        ) : previewError ? (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            background: '#fff2f0',
+            border: '2px dashed #ffccc7',
+            borderRadius: '6px',
+            textAlign: 'center',
+            flex: 1
+          }}>
+            <FileTextOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
+            <Text style={{ fontSize: '16px', fontWeight: 500 }}>
+              {previewError}
+            </Text>
+            <Text type="secondary" style={{ marginTop: '8px' }}>
+              Try adjusting the filters above.
+            </Text>
+          </div>
+        ) : previewUrl ? (
+          <iframe
+            title="Masterlist Preview"
+            src={previewUrl}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              border: '1px solid #d9d9d9',
+              borderRadius: '6px',
+              flex: 1
+            }}
+          />
+        ) : (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            height: '100%',
+            background: '#fafafa',
+            border: '2px dashed #d9d9d9',
+            borderRadius: '6px',
+            textAlign: 'center',
+            flex: 1
+          }}>
+            <FileTextOutlined style={{ fontSize: '64px', color: '#bfbfbf', marginBottom: '24px' }} />
+            <Text style={{ fontSize: '18px', fontWeight: 500, color: '#8c8c8c', marginBottom: '8px' }}>
+              Select Program, Semester, and Academic Year
+            </Text>
+            <Text type="secondary" style={{ fontSize: '14px' }}>
+              to preview the masterlist
+            </Text>
+          </div>
+        )}
+      </Card>
 
-                {canGenerate && (
-                  <div style={{ 
-                    marginTop: '16px', 
-                    padding: '12px', 
-                    background: '#f6ffed', 
-                    border: '1px solid #b7eb8f',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    <Text style={{ color: '#52c41a', fontSize: '12px' }}>
-                      Filters applied - Preview will update automatically
-                    </Text>
-                  </div>
-                )}
-              </Form>
-            </Card>
-
-            {/* Signatory Details */}
-            <Card 
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <UserOutlined style={{ color: '#1890ff' }} />
-                  <span>Signatory Details</span>
-                  {signatoryComplete && (
-                    <Badge 
-                      count={<CheckCircleOutlined style={{ color: '#52c41a' }} />} 
-                      style={{ marginLeft: '8px' }}
-                    />
-                  )}
-                </div>
-              }
-            >
-              <Form layout="vertical">
-                {/* Prepared By */}
-                <div style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <Text strong style={{ color: '#1890ff' }}>Prepared By</Text>
-                    {preparedBy.length < 2 && (
-                      <Button
-                        type="dashed"
-                        size="small"
-                        icon={<PlusOutlined />}
-                        onClick={addPreparedBy}
-                      >
-                        Add 2nd Person
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {preparedBy.map((person, index) => (
-                    <div key={index} style={{ 
-                      marginBottom: index < preparedBy.length - 1 ? '16px' : '0',
-                      padding: '16px',
-                      background: '#fafafa',
-                      borderRadius: '6px',
-                      border: '1px solid #f0f0f0'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {preparedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : 'Person 1'}
-                        </Text>
-                        {preparedBy.length > 1 && (
-                          <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<CloseCircleOutlined />}
-                            onClick={() => removePreparedBy(index)}
-                          />
-                        )}
-                      </div>
-                      <Row gutter={12}>
-                        <Col span={12}>
-                          <Form.Item label="Name" style={{ marginBottom: '12px' }}>
-                            <Input
-                              placeholder="Enter name"
-                              value={person.name}
-                              onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="Position" style={{ marginBottom: '12px' }}>
-                            <Input
-                              placeholder="Enter position"
-                              value={person.position}
-                              onChange={(e) => handlePreparedByChange(index, 'position', e.target.value)}
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Reviewed & Certified By */}
-                <div style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <Text strong style={{ color: '#52c41a' }}>Reviewed & Certified By</Text>
-                    {reviewedBy.length < 2 && (
-                      <Button
-                        type="dashed"
-                        size="small"
-                        icon={<PlusOutlined />}
-                        onClick={addReviewedBy}
-                      >
-                        Add 2nd Person
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {reviewedBy.map((person, index) => (
-                    <div key={index} style={{ 
-                      marginBottom: index < reviewedBy.length - 1 ? '16px' : '0',
-                      padding: '16px',
-                      background: '#f6ffed',
-                      borderRadius: '6px',
-                      border: '1px solid #d9f7be'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                        <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
-                          {reviewedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : 'Person 1'}
-                        </Text>
-                        {reviewedBy.length > 1 && (
-                          <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<CloseCircleOutlined />}
-                            onClick={() => removeReviewedBy(index)}
-                          />
-                        )}
-                      </div>
-                      <Row gutter={12}>
-                        <Col span={12}>
-                          <Form.Item label="Name" style={{ marginBottom: '12px' }}>
-                            <Input
-                              placeholder="Enter name"
-                              value={person.name}
-                              onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                          <Form.Item label="Position" style={{ marginBottom: '12px' }}>
-                            <Input
-                              placeholder="Enter position"
-                              value={person.position}
-                              onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Approved By */}
-                <div>
-                  <Text strong style={{ color: '#722ed1', marginBottom: '12px', display: 'block' }}>Approved By</Text>
-                  <div style={{ 
+      {/* Footer - Signatories */}
+      <Card 
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <UserOutlined />
+            <span>Document Signatories</span>
+            {signatoryComplete && (
+              <Badge 
+                count={<CheckCircleOutlined />} 
+                style={{ marginLeft: '8px' }}
+              />
+            )}
+          </div>
+        }
+      >
+        <Row gutter={[24, 24]}>
+          {/* Prepared By */}
+          <Col xs={24} md={8}>
+            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Text strong style={{ fontSize: '16px' }}>Prepared By</Text>
+              </div>
+              
+              <div style={{ flex: 1 }}>
+                {preparedBy.map((person, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: index < preparedBy.length - 1 ? '16px' : '0',
                     padding: '16px',
-                    background: '#f9f0ff',
+                    background: '#f9f9f9',
                     borderRadius: '6px',
-                    border: '1px solid #d3adf7'
+                    border: '1px solid #d9d9d9'
                   }}>
-                    <Row gutter={12}>
-                      <Col span={12}>
-                        <Form.Item label="Name" style={{ marginBottom: '12px' }}>
-                          <Input
-                            placeholder="Enter name"
-                            value={approvedName}
-                            onChange={(e) => setApprovedName(e.target.value)}
-                          />
-                        </Form.Item>
-                      </Col>
-                      <Col span={12}>
-                        <Form.Item label="Position" style={{ marginBottom: '12px' }}>
-                          <Input
-                            placeholder="Enter position"
-                            value={approvedPosition}
-                            onChange={(e) => setApprovedPosition(e.target.value)}
-                          />
-                        </Form.Item>
-                      </Col>
-                    </Row>
-                  </div>
-                </div>
-
-                {signatoryComplete && (
-                  <div style={{ 
-                    marginTop: '16px', 
-                    padding: '12px', 
-                    background: '#f6ffed', 
-                    border: '1px solid #b7eb8f',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                    <Text style={{ color: '#52c41a', fontSize: '12px' }}>
-                      All signatories completed
-                    </Text>
-                  </div>
-                )}
-              </Form>
-            </Card>
-          </Col>
-
-          {/* Right Column - PDF Preview */}
-          <Col xs={24} lg={16} xl={17}>
-            <Card 
-              title={
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <FileTextOutlined style={{ color: '#1890ff' }} />
-                  <span>PDF Preview</span>
-                  <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
-                    (8.5" × 13" Landscape)
-                  </Text>
-                  {loadingPreview && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
-                      <SyncOutlined spin style={{ color: '#1890ff', fontSize: '12px' }} />
-                      <Text style={{ fontSize: '12px', color: '#1890ff' }}>Updating...</Text>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
+                        {preparedBy.length > 1 ? `Person ${index + 1}` : 'Person'}
+                      </Text>
+                      {preparedBy.length > 1 && (
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<CloseCircleOutlined />}
+                          onClick={() => removePreparedBy(index)}
+                        />
+                      )}
                     </div>
-                  )}
-                </div>
-              }
-              extra={
-                <Space>
-                  {lastUpdated && (
-                    <Text type="secondary" style={{ fontSize: '12px' }}>
-                      Updated {formatLastUpdated(lastUpdated)}
-                    </Text>
-                  )}
-                  {previewUrl && (
-                    <Button
-                      type="link"
-                      icon={<EyeOutlined />}
-                      onClick={handleOpenNewTab}
-                      size="small"
-                    >
-                      Open in new tab
-                    </Button>
-                  )}
-                </Space>
-              }
-              style={{ height: 'calc(100vh - 200px)' }}
-              bodyStyle={{ padding: '16px', height: 'calc(100vh - 280px)', display: 'flex', flexDirection: 'column' }}
-            >
-              {loadingPreview ? (
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  height: '100%',
-                  background: '#fafafa',
-                  borderRadius: '6px',
-                  flex: 1
-                }}>
-                  <Spin size="large" tip="Generating preview..." />
-                </div>
-              ) : previewError ? (
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  height: '100%',
-                  background: '#fff2f0',
-                  border: '2px dashed #ffccc7',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  flex: 1
-                }}>
-                  <FileTextOutlined style={{ fontSize: '48px', color: '#ff4d4f', marginBottom: '16px' }} />
-                  <Text type="danger" style={{ fontSize: '16px', fontWeight: 500 }}>
-                    {previewError}
-                  </Text>
-                  <Text type="secondary" style={{ marginTop: '8px' }}>
-                    Try adjusting the filters above.
-                  </Text>
-                </div>
-              ) : previewUrl ? (
-                <iframe
-                  title="Masterlist Preview"
-                  src={previewUrl}
-                  style={{ 
-                    width: '100%', 
-                    height: '100%',
-                    border: '1px solid #d9d9d9',
-                    borderRadius: '6px',
-                    flex: 1
-                  }}
-                />
-              ) : (
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  height: '100%',
-                  background: '#fafafa',
-                  border: '2px dashed #d9d9d9',
-                  borderRadius: '6px',
-                  textAlign: 'center',
-                  flex: 1
-                }}>
-                  <FileTextOutlined style={{ fontSize: '64px', color: '#bfbfbf', marginBottom: '24px' }} />
-                  <Text style={{ fontSize: '18px', fontWeight: 500, color: '#8c8c8c', marginBottom: '8px' }}>
-                    Select Program, Semester, and Academic Year
-                  </Text>
-                  <Text type="secondary" style={{ fontSize: '14px' }}>
-                    to preview the masterlist
-                  </Text>
-                  <div style={{ 
-                    marginTop: '32px', 
-                    padding: '16px 24px',
-                    background: '#fff',
-                    border: '1px solid #e8e8e8',
-                    borderRadius: '8px',
-                    maxWidth: '400px'
-                  }}>
-                    <Text style={{ fontSize: '13px', color: '#595959', lineHeight: '1.6' }}>
-                      Once you select the required filters, the PDF preview will appear here automatically. 
-                      You can then fill in the signatory details on the left to customize the document.
-                    </Text>
+                    <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                      <Input
+                        placeholder="Enter full name"
+                        value={person.name}
+                        onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
+                      />
+                    </Form.Item>
+                    <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                      <Input
+                        placeholder="Enter position/title"
+                        value={person.position}
+                        onChange={(e) => handlePreparedByChange(index, 'position', e.target.value)}
+                      />
+                    </Form.Item>
                   </div>
+                ))}
+              </div>
+
+              {preparedBy.length < 2 && (
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <Button
+                    type="dashed"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={addPreparedBy}
+                  >
+                    Add Person
+                  </Button>
                 </div>
               )}
-            </Card>
+            </div>
+          </Col>
+
+          {/* Reviewed By */}
+          <Col xs={24} md={8}>
+            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Text strong style={{ fontSize: '16px' }}>Reviewed By</Text>
+              </div>
+              
+              <div style={{ flex: 1 }}>
+                {reviewedBy.map((person, index) => (
+                  <div key={index} style={{ 
+                    marginBottom: index < reviewedBy.length - 1 ? '16px' : '0',
+                    padding: '16px',
+                    background: '#f9f9f9',
+                    borderRadius: '6px',
+                    border: '1px solid #d9d9d9'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                      <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
+                        {reviewedBy.length > 1 ? `Person ${index + 1}` : 'Person'}
+                      </Text>
+                      {reviewedBy.length > 1 && (
+                        <Button
+                          type="text"
+                          size="small"
+                          danger
+                          icon={<CloseCircleOutlined />}
+                          onClick={() => removeReviewedBy(index)}
+                        />
+                      )}
+                    </div>
+                    <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                      <Input
+                        placeholder="Enter full name"
+                        value={person.name}
+                        onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
+                      />
+                    </Form.Item>
+                    <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                      <Input
+                        placeholder="Enter position/title"
+                        value={person.position}
+                        onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
+                      />
+                    </Form.Item>
+                  </div>
+                ))}
+              </div>
+
+              {reviewedBy.length < 2 && (
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <Button
+                    type="dashed"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={addReviewedBy}
+                  >
+                    Add Person
+                  </Button>
+                </div>
+              )}
+            </div>
+          </Col>
+
+          {/* Approved By */}
+          <Col xs={24} md={8}>
+            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+                <Text strong style={{ fontSize: '16px' }}>Approved By</Text>
+              </div>
+              
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  padding: '16px',
+                  background: '#f9f9f9',
+                  borderRadius: '6px',
+                  border: '1px solid #d9d9d9'
+                }}>
+                  <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                    <Input
+                      placeholder="Enter full name"
+                      value={approvedName}
+                      onChange={(e) => setApprovedName(e.target.value)}
+                    />
+                  </Form.Item>
+                  <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                    <Input
+                      placeholder="Enter position/title"
+                      value={approvedPosition}
+                      onChange={(e) => setApprovedPosition(e.target.value)}
+                    />
+                  </Form.Item>
+                </div>
+              </div>
+            </div>
           </Col>
         </Row>
-      </div>
+      </Card>
     </div>
   )
 }
