@@ -16,7 +16,7 @@ export function meta() {
 function StatsCards({ financialAssistances = [] }) {
   const totals = {
     totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.filled_slot || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.total_students || 0), 0),
     totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
   }
 

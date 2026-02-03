@@ -162,6 +162,9 @@ export default function Financial_AssistanceIndex() {
       const filtered = assistances.filter(p => p.scholarship_program_name === programName)
       return {
         totalSlots: filtered.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
+        totalFilled: filtered.reduce((sum, p) => sum + (p?.total_students || 0), 0),
+        totalUnfilled: filtered.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
+        percentage: filtered.length > 0 ? ((filtered.reduce((sum, p) => sum + (p?.total_students || 0), 0) / filtered.reduce((sum, p) => sum + (p?.total_slot || 0), 0)) * 100).toFixed(1) : 0,
       }
     }
 
@@ -192,8 +195,11 @@ export default function Financial_AssistanceIndex() {
             onClick={() => setOpenModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
           >
-            Edit Slots
+            Add Slots
           </button>
+
+          
+          
 
           <Select
             placeholder="Academic Year"
@@ -236,9 +242,9 @@ export default function Financial_AssistanceIndex() {
                 </div>
                 <div className="mt-6 space-y-2 text-sm text-gray-700">
                   <div>Slots: {cmsTotals.totalSlots}</div>
-                  <div>Filled:</div>
-                  <div>Unfilled:</div>
-                  <div>% of total</div>
+                  <div>Filled: {cmsTotals.totalFilled}</div>
+                  <div>Unfilled: {cmsTotals.totalUnfilled}</div>
+                  <div>% of total: {cmsTotals.percentage}%</div>
                 </div>
               </div>
             </Link>
@@ -256,9 +262,9 @@ export default function Financial_AssistanceIndex() {
                 <p className="text-sm text-red-600">Statistics-focused scholarship</p>
                 <div className="mt-6 space-y-2 text-sm text-gray-700">
                   <div>Slots: {estatistikolarTotals.totalSlots}</div>
-                  <div>Filled:</div>
-                  <div>Unfilled:</div>
-                  <div>% of total</div>
+                  <div>Filled: {estatistikolarTotals.totalFilled}</div>
+                  <div>Unfilled: {estatistikolarTotals.totalUnfilled}</div>
+                  <div>% of total: {estatistikolarTotals.percentage}%</div>
                 </div>
               </div>
             </Link>
@@ -270,9 +276,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">College Scholarship Program</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {CoSchoTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {CoSchoTotals.totalFilled}</div>
+                <div>Unfilled: {CoSchoTotals.totalUnfilled}</div>
+                <div>% of total: {CoSchoTotals.percentage}%</div>
               </div>
             </div>
             </Link>
@@ -284,9 +290,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">Medical Scholarship and Return Service</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {MSRSTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {MSRSTotals.totalFilled}</div>
+                <div>Unfilled: {MSRSTotals.totalUnfilled}</div>
+                <div>% of total: {MSRSTotals.percentage}%</div>
               </div>
             </div>
             </Link>
@@ -297,9 +303,9 @@ export default function Financial_AssistanceIndex() {
                 <p className="text-sm text-red-600">Agricultural Competitiveness Enhancement Fund</p>
                 <div className="mt-6 space-y-2 text-sm text-gray-700">
                   <div>Slots: {ACEF_GIAHEPTotals.totalSlots}</div>
-                  <div>Filled:</div>
-                  <div>Unfilled:</div>
-                  <div>% of total</div>
+                  <div>Filled: {ACEF_GIAHEPTotals.totalFilled}</div>
+                  <div>Unfilled: {ACEF_GIAHEPTotals.totalUnfilled}</div>
+                  <div>% of total: {ACEF_GIAHEPTotals.percentage}%</div>
                 </div>
               </div>
             </Link>
@@ -314,9 +320,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">Sugarcane Industry Devt. Act</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {SIDA_SGPTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {SIDA_SGPTotals.totalFilled}</div>
+                <div>Unfilled: {SIDA_SGPTotals.totalUnfilled}</div>
+                <div>% of total: {SIDA_SGPTotals.percentage}%</div>
               </div>
             </div>
           </Link>
@@ -327,9 +333,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">Maritime Training Program</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {Mtp_SpTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {Mtp_SpTotals.totalFilled}</div>
+                <div>Unfilled: {Mtp_SpTotals.totalUnfilled}</div>
+                <div>% of total: {Mtp_SpTotals.percentage}%</div>
               </div>
             </div>
           </Link>
@@ -340,9 +346,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">Cultural and General Management Scholarship for Students</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {CGMS_SUCsTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {CGMS_SUCsTotals.totalFilled}</div>
+                <div>Unfilled: {CGMS_SUCsTotals.totalUnfilled}</div>
+                <div>% of total: {CGMS_SUCsTotals.percentage}%</div>
               </div>
             </div>
           </Link>  
@@ -353,9 +359,9 @@ export default function Financial_AssistanceIndex() {
               <p className="text-sm text-red-600">Student Loan Program</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
                 <div>Slots: {SNPLPTotals.totalSlots}</div>
-                <div>Filled:</div>
-                <div>Unfilled:</div>
-                <div>% of total</div>
+                <div>Filled: {SNPLPTotals.totalFilled}</div>
+                <div>Unfilled: {SNPLPTotals.totalUnfilled}</div>
+                <div>% of total: {SNPLPTotals.percentage}%</div>
               </div>
             </div>
           </Link> 
