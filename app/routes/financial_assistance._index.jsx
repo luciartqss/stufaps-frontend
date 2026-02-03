@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { Typography, Card, Select } from 'antd'
+import { Typography, Card, Select, Progress } from 'antd'
 import { TeamOutlined, ContactsOutlined, UserOutlined } from '@ant-design/icons'
 import EditSlotsModal from '../components/EditSlotsModal'
 
@@ -75,7 +75,20 @@ function StatsCards({ financialAssistances }) {
                 {stat.value.toLocaleString()}
               </Text>
               {stat.percentage && (
-                <Text style={{ fontSize: 11, color: '#8c8c8c' }}>{stat.percentage}% of total</Text>
+                <>
+                  <Text style={{ fontSize: 11, color: '#8c8c8c' }}
+                  >
+                    {stat.percentage}% of total
+                  </Text>
+                  
+                  <Progress
+                    percent={parseFloat(stat.percentage)}
+                    size="small"
+                    strokeColor={stat.color}
+                    showInfo={false} // hide the number since you already show it above
+                    style={{ marginTop: 4 }}
+                  />
+                </>
               )}
             </div>
             <div
@@ -197,9 +210,6 @@ export default function Financial_AssistanceIndex() {
           >
             Add Slots
           </button>
-
-          
-          
 
           <Select
             placeholder="Academic Year"
