@@ -26,8 +26,7 @@ export default function StudentsPdf() {
 
   // Signature fields
   const [preparedBy, setPreparedBy] = useState([{ name: '', position: '' }])
-  const [reviewedName, setReviewedName] = useState('')
-  const [reviewedPosition, setReviewedPosition] = useState('')
+  const [reviewedBy, setReviewedBy] = useState([{ name: '', position: '' }])
   const [approvedName, setApprovedName] = useState('')
   const [approvedPosition, setApprovedPosition] = useState('Director IV')
 
@@ -92,8 +91,6 @@ export default function StudentsPdf() {
         program,
         semester,
         academic_year: academicYear,
-        reviewed_name: reviewedName,
-        reviewed_position: reviewedPosition,
         approved_name: approvedName,
         approved_position: approvedPosition,
       })
@@ -101,6 +98,10 @@ export default function StudentsPdf() {
       preparedBy.forEach((p, i) => {
         params.append(`prepared_name[${i}]`, p.name)
         params.append(`prepared_position[${i}]`, p.position)
+      })
+      reviewedBy.forEach((p, i) => {
+        params.append(`reviewed_name[${i}]`, p.name)
+        params.append(`reviewed_position[${i}]`, p.position)
       })
       const res = await fetch(`${API_BASE}/students/masterlist?${params}`, {
         signal: abortRef.current.signal,
@@ -127,7 +128,7 @@ export default function StudentsPdf() {
     } finally {
       setLoadingPreview(false)
     }
-  }, [program, semester, academicYear, preparedBy, reviewedName, reviewedPosition, approvedName, approvedPosition])
+  }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition])
 
   // Auto-generate preview when filters change
   useEffect(() => {
@@ -156,8 +157,7 @@ export default function StudentsPdf() {
     setAcademicYear(undefined)
     setPreviewError('')
     setPreparedBy([{ name: '', position: '' }])
-    setReviewedName('')
-    setReviewedPosition('')
+    setReviewedBy([{ name: '', position: '' }])
     setApprovedName('')
     setApprovedPosition('Director IV')
   }
@@ -180,6 +180,26 @@ export default function StudentsPdf() {
   const removePreparedBy = (index) => {
     if (preparedBy.length > 1) {
       setPreparedBy((prev) => prev.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleReviewedByChange = (index, field, value) => {
+    setReviewedBy((prev) => {
+      const updated = [...prev]
+      updated[index] = { ...updated[index], [field]: value }
+      return updated
+    })
+  }
+
+  const addReviewedBy = () => {
+    if (reviewedBy.length < 2) {
+      setReviewedBy((prev) => [...prev, { name: '', position: '' }])
+    }
+  }
+
+  const removeReviewedBy = (index) => {
+    if (reviewedBy.length > 1) {
+      setReviewedBy((prev) => prev.filter((_, i) => i !== index))
     }
   }
 
@@ -460,34 +480,68 @@ export default function StudentsPdf() {
             {/* Reviewed & Certified By */}
             <Col xs={24} md={8}>
               <div className="rounded-xl border-2 border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-4 h-full">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white text-xs font-bold">
-                    2
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white text-xs font-bold">
+                      2
+                    </div>
+                    <Text strong className="text-green-700">Reviewed & Certified By</Text>
                   </div>
-                  <Text strong className="text-green-700">Reviewed & Certified By</Text>
+                  {reviewedBy.length < 2 && (
+                    <Button
+                      type="dashed"
+                      size="small"
+                      icon={<PlusOutlined />}
+                      onClick={addReviewedBy}
+                      className="border-green-400 text-green-600 hover:border-green-500 hover:text-green-700"
+                    >
+                      Add 2nd
+                    </Button>
+                  )}
                 </div>
-                <Form layout="vertical" className="space-y-3">
-                  <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Name</span>} className="!mb-3">
-                    <Input
-                      placeholder="Enter name"
-                      value={reviewedName}
-                      onChange={(e) => setReviewedName(e.target.value)}
-                      prefix={<UserOutlined className="text-gray-400" />}
-                      className="rounded-lg"
-                      size="large"
-                    />
-                  </Form.Item>
-                  <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Position</span>} className="!mb-0">
-                    <Input
-                      placeholder="Enter position"
-                      value={reviewedPosition}
-                      onChange={(e) => setReviewedPosition(e.target.value)}
-                      prefix={<EditOutlined className="text-gray-400" />}
-                      className="rounded-lg"
-                      size="large"
-                    />
-                  </Form.Item>
-                </Form>
+                <div className="space-y-4">
+                  {reviewedBy.map((person, index) => (
+                    <div key={index} className={`${index > 0 ? 'pt-4 border-t border-green-200' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <Text className="text-xs font-semibold text-green-600">
+                          {reviewedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : ''}
+                        </Text>
+                        {reviewedBy.length > 1 && (
+                          <Button
+                            type="text"
+                            size="small"
+                            danger
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => removeReviewedBy(index)}
+                            className="!px-1"
+                          />
+                        )}
+                      </div>
+                      <Form layout="vertical">
+                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Name</span>} className="!mb-3">
+                          <Input
+                            placeholder="Enter name"
+                            value={person.name}
+                            onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
+                            prefix={<UserOutlined className="text-gray-400" />}
+                            className="rounded-lg"
+                            size="large"
+                          />
+                        </Form.Item>
+                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Position</span>} className="!mb-0">
+                          <Input
+                            placeholder="Enter position"
+                            value={person.position}
+                            onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
+                            prefix={<EditOutlined className="text-gray-400" />}
+                            className="rounded-lg"
+                            size="large"
+                          />
+                        </Form.Item>
+                      </Form>
+                    </div>
+                  ))}
+                </div>
               </div>
             </Col>
 
