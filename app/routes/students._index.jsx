@@ -660,7 +660,6 @@ export default function StudentsIndex() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, sheet, 'Students')
     XLSX.writeFile(wb, 'students-export.xlsx', { cellStyles: true })
-    message.success('Excel file exported successfully!')
   }
 
   // Get color for status
@@ -991,14 +990,25 @@ export default function StudentsIndex() {
             >
               Filters
             </Button>
+            <Button
+              type="default"
+              size="middle"
+              onClick={() => setModalVisible(true)}
+            >
+              Bulk Edit
+            </Button>
           </Space>
           <Space>
             <Button
               type="default"
               size="middle"
               icon={<FilePdfOutlined />}
-              className="bg-red-50 text-red-600 border border-red-500 font-semibold"
-              style={{ width: 160 }}
+              style={{
+                color: '#dc2626',
+                borderColor: '#dc2626',
+                fontWeight: 500,
+                width: 160
+              }}
               onClick={handlePrintMasterlist}
             >
               Print masterlist
@@ -1026,14 +1036,6 @@ export default function StudentsIndex() {
             >
               Add Student
             </Button>
-            <Button
-              type="default"
-              size="middle"
-              style={{ width: 120 }}
-              onClick={() => setModalVisible(true)}
-            >
-              Bulk Edit
-            </Button>
           </Space>
         </Space>
       </Space>
@@ -1050,23 +1052,93 @@ export default function StudentsIndex() {
           onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
         }}
       />
-      <Modal open={modalVisible} onCancel={() => setModalVisible(false)} onOk={handleSubmit} title="Bulk Edit">
-        <Select value={field} onChange={setField} style={{ width: '100%', marginBottom: 12 }}>
-          {fieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
-        </Select>
-        <Select
-          value={oldValue}
-          onChange={setOldValue}
-          style={{ width: '100%', marginBottom: 12 }}
-          placeholder="Select value to replace"
-        >
-          {oldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
-        </Select>
-        <Input
-          value={newValue}
-          onChange={e => setNewValue(e.target.value)}
-          placeholder="Enter new value"
-        />
+      <Modal 
+        open={modalVisible} 
+        onCancel={() => setModalVisible(false)} 
+        onOk={handleSubmit} 
+        title="Bulk Edit Records"
+        width={500}
+        okText="Apply Changes"
+        cancelText="Cancel"
+        okType="primary"
+      >
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ 
+            backgroundColor: '#fff7ed', 
+            border: '1px solid #fb923c', 
+            borderRadius: 6, 
+            padding: 16, 
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8
+          }}>
+            <span style={{ color: '#ea580c', fontSize: 16, marginTop: 1 }}>⚠️</span>
+            <div>
+              <div style={{ fontWeight: 600, color: '#ea580c', marginBottom: 4 }}>
+                Important Notice
+              </div>
+              <div style={{ fontSize: 14, color: '#9a3412', lineHeight: 1.4 }}>
+                This operation will modify multiple student records simultaneously. 
+                Please review your selections carefully as this action cannot be undone.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            Select Field to Update
+          </label>
+          <Select 
+            value={field} 
+            onChange={setField} 
+            style={{ width: '100%' }}
+            placeholder="Choose the field you want to update"
+          >
+            {fieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
+          </Select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            Current Value to Replace
+          </label>
+          <Select
+            value={oldValue}
+            onChange={setOldValue}
+            style={{ width: '100%' }}
+            placeholder="Select the existing value to replace"
+            showSearch
+          >
+            {oldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
+          </Select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            New Value
+          </label>
+          <Input
+            value={newValue}
+            onChange={e => setNewValue(e.target.value)}
+            placeholder="Enter the new value to replace with"
+          />
+        </div>
+
+        {field && oldValue && newValue && (
+          <div style={{ 
+            backgroundColor: '#f0f9ff', 
+            border: '1px solid #0ea5e9', 
+            borderRadius: 6, 
+            padding: 12,
+            marginTop: 16
+          }}>
+            <div style={{ fontSize: 13, color: '#0369a1' }}>
+              <strong>Preview:</strong> All records with "{oldValue}" in the {fieldOptions.find(opt => opt.value === field)?.label} field will be updated to "{newValue}".
+            </div>
+          </div>
+        )}
       </Modal>
 
       <Drawer
@@ -1085,60 +1157,64 @@ export default function StudentsIndex() {
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Academic & Term</div>
-            <Space wrap>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Space wrap style={{ width: '100%' }}>
+                <Select
+                  placeholder="Academic Year"
+                  allowClear
+                  showSearch
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={academicYearFilter}
+                  onChange={(value) => {
+                    setAcademicYearFilter(value)
+                    applyAllFilters({ academicYear: value })
+                  }}
+                >
+                  {academicYears.map((year) => (
+                    <Option key={year} value={year}>{year}</Option>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Semester"
+                  allowClear
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={semesterFilter}
+                  onChange={(value) => {
+                    setSemesterFilter(value)
+                    applyAllFilters({ semester: value })
+                  }}
+                >
+                  {semesters.map((sem) => (
+                    <Option key={sem} value={sem}>{sem}</Option>
+                  ))}
+                </Select>
+              </Space>
+              <Space wrap style={{ width: '100%' }}>
+                <Select
+                  placeholder="Award Year"
+                  allowClear
+                  showSearch
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={awardYearFilter}
+                  onChange={(value) => {
+                    setAwardYearFilter(value)
+                    applyAllFilters({ awardYear: value })
+                  }}
+                >
+                  {awardYears.map((year) => (
+                    <Option key={year} value={year}>{year}</Option>
+                  ))}
+                </Select>
+              </Space>
               <Select
-                placeholder="Academic Year"
+                placeholder="Course / Degree Program"
                 allowClear
                 showSearch
                 size="middle"
-                style={{ width: 180 }}
-                value={academicYearFilter}
-                onChange={(value) => {
-                  setAcademicYearFilter(value)
-                  applyAllFilters({ academicYear: value })
-                }}
-              >
-                {academicYears.map((year) => (
-                  <Option key={year} value={year}>{year}</Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Semester"
-                allowClear
-                size="middle"
-                style={{ width: 140 }}
-                value={semesterFilter}
-                onChange={(value) => {
-                  setSemesterFilter(value)
-                  applyAllFilters({ semester: value })
-                }}
-              >
-                {semesters.map((sem) => (
-                  <Option key={sem} value={sem}>{sem}</Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Award Year"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: 160 }}
-                value={awardYearFilter}
-                onChange={(value) => {
-                  setAwardYearFilter(value)
-                  applyAllFilters({ awardYear: value })
-                }}
-              >
-                {awardYears.map((year) => (
-                  <Option key={year} value={year}>{year}</Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Course"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: 200 }}
+                style={{ width: '100%' }}
                 value={courseFilter}
                 onChange={(value) => {
                   setCourseFilter(value)
@@ -1154,45 +1230,47 @@ export default function StudentsIndex() {
 
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>School & Location</div>
-            <Space wrap>
-              <Select
-                placeholder="Region"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: 160 }}
-                value={regionFilter}
-                onChange={(value) => {
-                  setRegionFilter(value)
-                  applyAllFilters({ region: value })
-                }}
-              >
-                {regions.map((region) => (
-                  <Option key={region} value={region}>{region}</Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Province"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: 160 }}
-                value={provinceFilter}
-                onChange={(value) => {
-                  setProvinceFilter(value)
-                  applyAllFilters({ province: value })
-                }}
-              >
-                {provinces.map((province) => (
-                  <Option key={province} value={province}>{province}</Option>
-                ))}
-              </Select>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Space wrap style={{ width: '100%' }}>
+                <Select
+                  placeholder="Region"
+                  allowClear
+                  showSearch
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={regionFilter}
+                  onChange={(value) => {
+                    setRegionFilter(value)
+                    applyAllFilters({ region: value })
+                  }}
+                >
+                  {regions.map((region) => (
+                    <Option key={region} value={region}>{region}</Option>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Province"
+                  allowClear
+                  showSearch
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={provinceFilter}
+                  onChange={(value) => {
+                    setProvinceFilter(value)
+                    applyAllFilters({ province: value })
+                  }}
+                >
+                  {provinces.map((province) => (
+                    <Option key={province} value={province}>{province}</Option>
+                  ))}
+                </Select>
+              </Space>
               <Select
                 placeholder="City / Municipality"
                 allowClear
                 showSearch
                 size="middle"
-                style={{ width: 200 }}
+                style={{ width: '100%' }}
                 value={cityFilter}
                 onChange={(value) => {
                   setCityFilter(value)
@@ -1204,11 +1282,11 @@ export default function StudentsIndex() {
                 ))}
               </Select>
               <Select
-                placeholder="School"
+                placeholder="School / Institution Name"
                 allowClear
                 showSearch
                 size="middle"
-                style={{ width: 240 }}
+                style={{ width: '100%' }}
                 value={schoolFilter}
                 onChange={(value) => {
                   setSchoolFilter(value)
@@ -1224,44 +1302,46 @@ export default function StudentsIndex() {
 
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Scholarship & Tags</div>
-            <Space wrap>
-              <Select
-                placeholder="Priority"
-                allowClear
-                size="middle"
-                style={{ width: 140 }}
-                value={priorityFilter}
-                onChange={(value) => {
-                  setPriorityFilter(value)
-                  applyAllFilters({ priority: value })
-                }}
-              >
-                {priorities.map((p) => (
-                  <Option key={String(p)} value={p}>{String(p)}</Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Special Group"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: 160 }}
-                value={specialGroupFilter}
-                onChange={(value) => {
-                  setSpecialGroupFilter(value)
-                  applyAllFilters({ specialGroup: value })
-                }}
-              >
-                {specialGroups.map((group) => (
-                  <Option key={group} value={group}>{group}</Option>
-                ))}
-              </Select>
+            <Space direction="vertical" style={{ width: '100%' }} size="small">
+              <Space wrap style={{ width: '100%' }}>
+                <Select
+                  placeholder="Priority Program"
+                  allowClear
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={priorityFilter}
+                  onChange={(value) => {
+                    setPriorityFilter(value)
+                    applyAllFilters({ priority: value })
+                  }}
+                >
+                  {priorities.map((p) => (
+                    <Option key={String(p)} value={p}>{String(p)}</Option>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Special Group"
+                  allowClear
+                  showSearch
+                  size="middle"
+                  style={{ width: 185 }}
+                  value={specialGroupFilter}
+                  onChange={(value) => {
+                    setSpecialGroupFilter(value)
+                    applyAllFilters({ specialGroup: value })
+                  }}
+                >
+                  {specialGroups.map((group) => (
+                    <Option key={group} value={group}>{group}</Option>
+                  ))}
+                </Select>
+              </Space>
               <Select
                 placeholder="Authority Type"
                 allowClear
                 showSearch
                 size="middle"
-                style={{ width: 160 }}
+                style={{ width: '100%' }}
                 value={authorityTypeFilter}
                 onChange={(value) => {
                   setAuthorityTypeFilter(value)
