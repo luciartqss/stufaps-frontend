@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Divider, Form } from 'antd'
-import { DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, EditOutlined, PlusOutlined, CloseCircleOutlined } from '@ant-design/icons'
+import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Form, Space, Badge, Tooltip } from 'antd'
+import { DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, FilterOutlined, PrinterOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
@@ -22,6 +22,7 @@ export default function StudentsPdf() {
   const [loadingPreview, setLoadingPreview] = useState(false)
   const [previewUrl, setPreviewUrl] = useState('')
   const [previewError, setPreviewError] = useState('')
+  const [lastUpdated, setLastUpdated] = useState(null)
   const abortRef = useRef(null)
 
   // Signature fields
@@ -29,6 +30,51 @@ export default function StudentsPdf() {
   const [reviewedBy, setReviewedBy] = useState([{ name: '', position: '' }])
   const [approvedName, setApprovedName] = useState('')
   const [approvedPosition, setApprovedPosition] = useState('Director IV')
+
+  // LocalStorage keys
+  const STORAGE_KEY = 'stufaps_masterlist_form'
+
+  // Save form data to localStorage
+  const saveFormData = useCallback(() => {
+    const formData = {
+      program,
+      semester,
+      academicYear,
+      preparedBy,
+      reviewedBy,
+      approvedName,
+      approvedPosition,
+      timestamp: new Date().toISOString()
+    }
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
+    } catch (error) {
+      console.warn('Failed to save form data to localStorage:', error)
+    }
+  }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition])
+
+  // Load form data from localStorage
+  const loadFormData = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const formData = JSON.parse(saved)
+        // Only restore if the data is not too old (7 days)
+        const isRecent = new Date() - new Date(formData.timestamp) < 7 * 24 * 60 * 60 * 1000
+        if (isRecent && formData) {
+          if (formData.program) setProgram(formData.program)
+          if (formData.semester) setSemester(formData.semester)
+          if (formData.academicYear) setAcademicYear(formData.academicYear)
+          if (formData.preparedBy?.length) setPreparedBy(formData.preparedBy)
+          if (formData.reviewedBy?.length) setReviewedBy(formData.reviewedBy)
+          if (formData.approvedName) setApprovedName(formData.approvedName)
+          if (formData.approvedPosition) setApprovedPosition(formData.approvedPosition)
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load form data from localStorage:', error)
+    }
+  }, [])
 
   // Fetch students for filter options
   useEffect(() => {
@@ -48,6 +94,20 @@ export default function StudentsPdf() {
     }
     fetchStudents()
   }, [])
+
+  // Load saved form data on mount
+  useEffect(() => {
+    loadFormData()
+  }, [loadFormData])
+
+  // Save form data whenever values change
+  useEffect(() => {
+    if (program || semester || academicYear || preparedBy.some(p => p.name || p.position) || 
+        reviewedBy.some(r => r.name || r.position) || approvedName || approvedPosition !== 'Director IV') {
+      const timeoutId = setTimeout(saveFormData, 1000) // Debounce saves
+      return () => clearTimeout(timeoutId)
+    }
+  }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition, saveFormData])
 
   // Derive filter options
   const programOptions = useMemo(() => {
@@ -74,6 +134,14 @@ export default function StudentsPdf() {
   }, [students])
 
   const canGenerate = Boolean(program && semester && academicYear)
+
+  // Check if signatories are complete
+  const signatoryComplete = useMemo(() => {
+    const preparedComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
+    const reviewedComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
+    const approvedComplete = approvedName.trim() && approvedPosition.trim()
+    return preparedComplete && reviewedComplete && approvedComplete
+  }, [preparedBy, reviewedBy, approvedName, approvedPosition])
 
   // Generate preview when all filters are selected
   const generatePreview = useCallback(async () => {
@@ -119,6 +187,7 @@ export default function StudentsPdf() {
         if (prev) URL.revokeObjectURL(prev)
         return url
       })
+      setLastUpdated(new Date())
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error(err)
@@ -130,16 +199,20 @@ export default function StudentsPdf() {
     }
   }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition])
 
-  // Auto-generate preview when filters change
+  // Auto-generate preview when filters change (with debounce)
   useEffect(() => {
     if (canGenerate) {
-      generatePreview()
+      const timeoutId = setTimeout(() => {
+        generatePreview()
+      }, 300) // 300ms debounce
+      return () => clearTimeout(timeoutId)
     } else {
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev)
         return ''
       })
       setPreviewError('')
+      setLastUpdated(null)
     }
   }, [canGenerate, generatePreview])
 
@@ -160,6 +233,15 @@ export default function StudentsPdf() {
     setReviewedBy([{ name: '', position: '' }])
     setApprovedName('')
     setApprovedPosition('Director IV')
+    setLastUpdated(null)
+    
+    // Clear saved data
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+      message.success('Form reset and saved data cleared')
+    } catch (error) {
+      console.warn('Failed to clear saved data:', error)
+    }
   }
 
   // Handle prepared by changes
@@ -218,225 +300,204 @@ export default function StudentsPdf() {
     if (previewUrl) window.open(previewUrl, '_blank')
   }
 
+  const formatLastUpdated = (date) => {
+    if (!date) return ''
+    const now = new Date()
+    const diff = Math.floor((now - date) / 1000)
+    
+    if (diff < 60) return 'just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+    return date.toLocaleDateString()
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="mx-auto max-w-7xl space-y-5">
-        {/* Header & Filters */}
-        <Card
-          bordered={false}
-          className="shadow-md hover:shadow-lg transition-shadow duration-300"
-          styles={{ header: { borderBottom: '2px solid #1890ff' } }}
-          title={
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500 text-white">
-                <FileTextOutlined className="text-xl" />
+    <div style={{ padding: '0', background: '#f5f5f5', minHeight: 'calc(100vh - 72px)' }}>
+      <div style={{ width: '100%', padding: '0 24px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '24px', background: '#fff', padding: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ 
+                width: '48px', 
+                height: '48px', 
+                borderRadius: '8px', 
+                background: '#1890ff', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center' 
+              }}>
+                <PrinterOutlined style={{ fontSize: '24px', color: '#fff' }} />
               </div>
               <div>
-                <Title level={4} className="!mb-0 !text-gray-800">
+                <Title level={3} style={{ margin: '0 0 4px 0', color: '#262626' }}>
                   Print Masterlist
                 </Title>
-                <Text type="secondary" className="text-xs">
-                  Generate and download PDF masterlist
+                <Text type="secondary" style={{ fontSize: '14px' }}>
+                  Generate and download PDF masterlist reports
                 </Text>
               </div>
             </div>
-          }
-          extra={
-            <div className="flex flex-wrap gap-2">
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleReset}
-                disabled={loadingPreview}
-                className="hover:border-orange-400 hover:text-orange-500"
-              >
-                Reset
-              </Button>
-              <Button
-                icon={<EyeOutlined />}
-                onClick={generatePreview}
-                loading={loadingPreview}
-                disabled={!canGenerate}
-                className="hover:border-green-400 hover:text-green-500"
-              >
-                Refresh
-              </Button>
+            <Space size="middle">
+              <Tooltip title="Clear all fields and start over">
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={handleReset}
+                  disabled={loadingPreview}
+                >
+                  Reset
+                </Button>
+              </Tooltip>
               <Button
                 type="primary"
                 icon={<DownloadOutlined />}
                 onClick={handleDownload}
                 disabled={!previewUrl}
-                className="bg-gradient-to-r from-blue-500 to-blue-600 border-0 hover:from-blue-600 hover:to-blue-700 shadow-md"
+                size="large"
               >
                 Download PDF
               </Button>
-            </div>
-          }
-        >
-          <div className="rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 p-4 mb-1">
-            <Text className="text-sm font-medium text-blue-700 mb-3 block">
-              <EditOutlined className="mr-2" />
-              Filter Options
-            </Text>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={8}>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide">Program</label>
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Select program"
-                  value={program}
-                  onChange={setProgram}
-                  loading={loadingOptions}
-                  className="w-full"
-                  size="large"
-                  optionFilterProp="label"
-                  options={programOptions.map((opt) => ({ label: opt, value: opt }))}
-                />
-              </Col>
-              <Col xs={24} sm={8}>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide">Semester</label>
-                <Select
-                  allowClear
-                  placeholder="Select semester"
-                  value={semester}
-                  onChange={setSemester}
-                  loading={loadingOptions}
-                  className="w-full"
-                  size="large"
-                  options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
-                />
-              </Col>
-              <Col xs={24} sm={8}>
-                <label className="mb-1.5 block text-xs font-semibold text-gray-600 uppercase tracking-wide">Academic Year</label>
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Select academic year"
-                  value={academicYear}
-                  onChange={setAcademicYear}
-                  loading={loadingOptions}
-                  className="w-full"
-                  size="large"
-                  optionFilterProp="label"
-                  options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
-                />
-              </Col>
-            </Row>
+            </Space>
           </div>
-        </Card>
+        </div>
 
-        {/* Preview Area */}
-        <Card
-          bordered={false}
-          className="shadow-md hover:shadow-lg transition-shadow duration-300"
-          styles={{ header: { borderBottom: '2px solid #52c41a' } }}
-          title={
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500 text-white">
-                <EyeOutlined className="text-xl" />
-              </div>
-              <div>
-                <span className="text-base font-semibold text-gray-800">PDF Preview</span>
-                <Text type="secondary" className="text-xs block">Folio 8.5" × 13" Landscape</Text>
-              </div>
-            </div>
-          }
-          extra={
-            previewUrl && (
-              <Button
-                size="small"
-                type="primary"
-                ghost
-                icon={<FileTextOutlined />}
-                onClick={handleOpenNewTab}
-                className="border-green-400 text-green-600 hover:border-green-500 hover:text-green-700"
-              >
-                Open in new tab
-              </Button>
-            )
-          }
-        >
-          {loadingPreview ? (
-            <div className="flex h-[60vh] items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl">
-              <Spin size="large" tip="Generating preview..." />
-            </div>
-          ) : previewError ? (
-            <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-red-300 bg-gradient-to-br from-red-50 to-orange-50 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-3">
-                <FileTextOutlined className="text-2xl text-red-500" />
-              </div>
-              <Text type="danger" className="text-base font-medium">
-                {previewError}
-              </Text>
-              <Text type="secondary" className="mt-1 text-sm">
-                Try adjusting the filters above.
-              </Text>
-            </div>
-          ) : previewUrl ? (
-            <iframe
-              title="Masterlist Preview"
-              src={previewUrl}
-              className="w-full rounded-xl border-2 border-gray-200 shadow-inner"
-              style={{ height: '60vh' }}
-            />
-          ) : (
-            <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gradient-to-br from-gray-50 to-slate-100 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-200 mb-3">
-                <FileTextOutlined className="text-2xl text-gray-400" />
-              </div>
-              <Text type="secondary" className="font-medium">Select Program, Semester, and Academic Year</Text>
-              <Text type="secondary" className="text-xs mt-1">to preview the masterlist</Text>
-            </div>
-          )}
-        </Card>
-
-        {/* Signature Form */}
-        <Card
-          bordered={false}
-          className="shadow-md hover:shadow-lg transition-shadow duration-300"
-          styles={{ header: { borderBottom: '2px solid #722ed1' } }}
-          title={
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500 text-white">
-                <UserOutlined className="text-xl" />
-              </div>
-              <div>
-                <span className="text-base font-semibold text-gray-800">Signatory Details</span>
-                <Text type="secondary" className="text-xs block">Fill in the names and positions for the PDF footer</Text>
-              </div>
-            </div>
-          }
-        >
-          <Row gutter={[24, 24]}>
-            {/* Prepared By - supports 1 or 2 entries */}
-            <Col xs={24} md={8}>
-              <div className="rounded-xl border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-4 h-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white text-xs font-bold">
-                      1
-                    </div>
-                    <Text strong className="text-blue-700">Prepared By</Text>
-                  </div>
-                  {preparedBy.length < 2 && (
-                    <Button
-                      type="dashed"
-                      size="small"
-                      icon={<PlusOutlined />}
-                      onClick={addPreparedBy}
-                      className="border-blue-400 text-blue-600 hover:border-blue-500 hover:text-blue-700"
-                    >
-                      Add 2nd
-                    </Button>
+        <Row gutter={[32, 24]} style={{ minHeight: 'calc(100vh - 200px)' }}>
+          {/* Left Column - Filters & Signatories */}
+          <Col xs={24} lg={8} xl={7}>
+            {/* Filter Options */}
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FilterOutlined style={{ color: '#1890ff' }} />
+                  <span>Filter Options</span>
+                  {canGenerate && (
+                    <Badge 
+                      count={<CheckCircleOutlined style={{ color: '#52c41a' }} />} 
+                      style={{ marginLeft: '8px' }}
+                    />
                   )}
                 </div>
+              }
+              style={{ marginBottom: '24px' }}
+            >
+              <Form layout="vertical">
+                <Form.Item 
+                  label={<Text strong style={{ fontSize: '13px' }}>Program</Text>}
+                  style={{ marginBottom: '16px' }}
+                >
+                  <Select
+                    showSearch
+                    allowClear
+                    placeholder="Select program"
+                    value={program}
+                    onChange={setProgram}
+                    loading={loadingOptions}
+                    size="large"
+                    optionFilterProp="label"
+                    options={programOptions.map((opt) => ({ label: opt, value: opt }))}
+                  />
+                </Form.Item>
                 
-                <div className="space-y-4">
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item 
+                      label={<Text strong style={{ fontSize: '13px' }}>Semester</Text>}
+                      style={{ marginBottom: '16px' }}
+                    >
+                      <Select
+                        allowClear
+                        placeholder="Select semester"
+                        value={semester}
+                        onChange={setSemester}
+                        loading={loadingOptions}
+                        size="large"
+                        options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
+                      />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item 
+                      label={<Text strong style={{ fontSize: '13px' }}>Academic Year</Text>}
+                      style={{ marginBottom: '0' }}
+                    >
+                      <Select
+                        showSearch
+                        allowClear
+                        placeholder="Select academic year"
+                        value={academicYear}
+                        onChange={setAcademicYear}
+                        loading={loadingOptions}
+                        size="large"
+                        optionFilterProp="label"
+                        options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
+                      />
+                    </Form.Item>
+                  </Col>
+                </Row>
+
+                {canGenerate && (
+                  <div style={{ 
+                    marginTop: '16px', 
+                    padding: '12px', 
+                    background: '#f6ffed', 
+                    border: '1px solid #b7eb8f',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    <Text style={{ color: '#52c41a', fontSize: '12px' }}>
+                      Filters applied - Preview will update automatically
+                    </Text>
+                  </div>
+                )}
+              </Form>
+            </Card>
+
+            {/* Signatory Details */}
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserOutlined style={{ color: '#1890ff' }} />
+                  <span>Signatory Details</span>
+                  {signatoryComplete && (
+                    <Badge 
+                      count={<CheckCircleOutlined style={{ color: '#52c41a' }} />} 
+                      style={{ marginLeft: '8px' }}
+                    />
+                  )}
+                </div>
+              }
+            >
+              <Form layout="vertical">
+                {/* Prepared By */}
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <Text strong style={{ color: '#1890ff' }}>Prepared By</Text>
+                    {preparedBy.length < 2 && (
+                      <Button
+                        type="dashed"
+                        size="small"
+                        icon={<PlusOutlined />}
+                        onClick={addPreparedBy}
+                      >
+                        Add 2nd Person
+                      </Button>
+                    )}
+                  </div>
+                  
                   {preparedBy.map((person, index) => (
-                    <div key={index} className={`${index > 0 ? 'pt-4 border-t border-blue-200' : ''}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <Text className="text-xs font-semibold text-blue-600">
-                          {preparedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : ''}
+                    <div key={index} style={{ 
+                      marginBottom: index < preparedBy.length - 1 ? '16px' : '0',
+                      padding: '16px',
+                      background: '#fafafa',
+                      borderRadius: '6px',
+                      border: '1px solid #f0f0f0'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                          {preparedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : 'Person 1'}
                         </Text>
                         {preparedBy.length > 1 && (
                           <Button
@@ -445,66 +506,60 @@ export default function StudentsPdf() {
                             danger
                             icon={<CloseCircleOutlined />}
                             onClick={() => removePreparedBy(index)}
-                            className="!px-1"
                           />
                         )}
                       </div>
-                      <Form layout="vertical">
-                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Name</span>} className="!mb-3">
-                          <Input
-                            placeholder="Enter name"
-                            value={person.name}
-                            onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
-                            prefix={<UserOutlined className="text-gray-400" />}
-                            className="rounded-lg"
-                            size="large"
-                          />
-                        </Form.Item>
-                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Position</span>} className="!mb-0">
-                          <Input
-                            placeholder="Enter position"
-                            value={person.position}
-                            onChange={(e) => handlePreparedByChange(index, 'position', e.target.value)}
-                            prefix={<EditOutlined className="text-gray-400" />}
-                            className="rounded-lg"
-                            size="large"
-                          />
-                        </Form.Item>
-                      </Form>
+                      <Row gutter={12}>
+                        <Col span={12}>
+                          <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                            <Input
+                              placeholder="Enter name"
+                              value={person.name}
+                              onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="Position" style={{ marginBottom: '12px' }}>
+                            <Input
+                              placeholder="Enter position"
+                              value={person.position}
+                              onChange={(e) => handlePreparedByChange(index, 'position', e.target.value)}
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
                     </div>
                   ))}
                 </div>
-              </div>
-            </Col>
 
-            {/* Reviewed & Certified By */}
-            <Col xs={24} md={8}>
-              <div className="rounded-xl border-2 border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-4 h-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-500 text-white text-xs font-bold">
-                      2
-                    </div>
-                    <Text strong className="text-green-700">Reviewed & Certified By</Text>
+                {/* Reviewed & Certified By */}
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <Text strong style={{ color: '#52c41a' }}>Reviewed & Certified By</Text>
+                    {reviewedBy.length < 2 && (
+                      <Button
+                        type="dashed"
+                        size="small"
+                        icon={<PlusOutlined />}
+                        onClick={addReviewedBy}
+                      >
+                        Add 2nd Person
+                      </Button>
+                    )}
                   </div>
-                  {reviewedBy.length < 2 && (
-                    <Button
-                      type="dashed"
-                      size="small"
-                      icon={<PlusOutlined />}
-                      onClick={addReviewedBy}
-                      className="border-green-400 text-green-600 hover:border-green-500 hover:text-green-700"
-                    >
-                      Add 2nd
-                    </Button>
-                  )}
-                </div>
-                <div className="space-y-4">
+                  
                   {reviewedBy.map((person, index) => (
-                    <div key={index} className={`${index > 0 ? 'pt-4 border-t border-green-200' : ''}`}>
-                      <div className="flex items-center justify-between mb-2">
-                        <Text className="text-xs font-semibold text-green-600">
-                          {reviewedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : ''}
+                    <div key={index} style={{ 
+                      marginBottom: index < reviewedBy.length - 1 ? '16px' : '0',
+                      padding: '16px',
+                      background: '#f6ffed',
+                      borderRadius: '6px',
+                      border: '1px solid #d9f7be'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <Text style={{ fontSize: '12px', color: '#8c8c8c' }}>
+                          {reviewedBy.length > 1 ? `Person ${index + 1} ${index === 0 ? '(Left)' : '(Right)'}` : 'Person 1'}
                         </Text>
                         {reviewedBy.length > 1 && (
                           <Button
@@ -513,89 +568,209 @@ export default function StudentsPdf() {
                             danger
                             icon={<CloseCircleOutlined />}
                             onClick={() => removeReviewedBy(index)}
-                            className="!px-1"
                           />
                         )}
                       </div>
-                      <Form layout="vertical">
-                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Name</span>} className="!mb-3">
-                          <Input
-                            placeholder="Enter name"
-                            value={person.name}
-                            onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
-                            prefix={<UserOutlined className="text-gray-400" />}
-                            className="rounded-lg"
-                            size="large"
-                          />
-                        </Form.Item>
-                        <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Position</span>} className="!mb-0">
-                          <Input
-                            placeholder="Enter position"
-                            value={person.position}
-                            onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
-                            prefix={<EditOutlined className="text-gray-400" />}
-                            className="rounded-lg"
-                            size="large"
-                          />
-                        </Form.Item>
-                      </Form>
+                      <Row gutter={12}>
+                        <Col span={12}>
+                          <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                            <Input
+                              placeholder="Enter name"
+                              value={person.name}
+                              onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                          <Form.Item label="Position" style={{ marginBottom: '12px' }}>
+                            <Input
+                              placeholder="Enter position"
+                              value={person.position}
+                              onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
                     </div>
                   ))}
                 </div>
-              </div>
-            </Col>
 
-            {/* Approved By */}
-            <Col xs={24} md={8}>
-              <div className="rounded-xl border-2 border-purple-100 bg-gradient-to-br from-purple-50 to-violet-50 p-4 h-full">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500 text-white text-xs font-bold">
-                    3
+                {/* Approved By */}
+                <div>
+                  <Text strong style={{ color: '#722ed1', marginBottom: '12px', display: 'block' }}>Approved By</Text>
+                  <div style={{ 
+                    padding: '16px',
+                    background: '#f9f0ff',
+                    borderRadius: '6px',
+                    border: '1px solid #d3adf7'
+                  }}>
+                    <Row gutter={12}>
+                      <Col span={12}>
+                        <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                          <Input
+                            placeholder="Enter name"
+                            value={approvedName}
+                            onChange={(e) => setApprovedName(e.target.value)}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item label="Position" style={{ marginBottom: '12px' }}>
+                          <Input
+                            placeholder="Enter position"
+                            value={approvedPosition}
+                            onChange={(e) => setApprovedPosition(e.target.value)}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
                   </div>
-                  <Text strong className="text-purple-700">Approved By</Text>
                 </div>
-                <Form layout="vertical" className="space-y-3">
-                  <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Name</span>} className="!mb-3">
-                    <Input
-                      placeholder="Enter name"
-                      value={approvedName}
-                      onChange={(e) => setApprovedName(e.target.value)}
-                      prefix={<UserOutlined className="text-gray-400" />}
-                      className="rounded-lg"
-                      size="large"
-                    />
-                  </Form.Item>
-                  <Form.Item label={<span className="text-xs font-semibold text-gray-600 uppercase">Position</span>} className="!mb-0">
-                    <Input
-                      placeholder="Enter position"
-                      value={approvedPosition}
-                      onChange={(e) => setApprovedPosition(e.target.value)}
-                      prefix={<EditOutlined className="text-gray-400" />}
-                      className="rounded-lg"
-                      size="large"
-                    />
-                  </Form.Item>
-                </Form>
-              </div>
-            </Col>
-          </Row>
 
-          <Divider className="!my-4" />
+                {signatoryComplete && (
+                  <div style={{ 
+                    marginTop: '16px', 
+                    padding: '12px', 
+                    background: '#f6ffed', 
+                    border: '1px solid #b7eb8f',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                    <Text style={{ color: '#52c41a', fontSize: '12px' }}>
+                      All signatories completed
+                    </Text>
+                  </div>
+                )}
+              </Form>
+            </Card>
+          </Col>
 
-          <div className="flex justify-end">
-            <Button
-              type="primary"
-              icon={<EyeOutlined />}
-              onClick={generatePreview}
-              loading={loadingPreview}
-              disabled={!canGenerate}
-              size="large"
-              className="bg-gradient-to-r from-purple-500 to-indigo-600 border-0 hover:from-purple-600 hover:to-indigo-700 shadow-md px-8"
+          {/* Right Column - PDF Preview */}
+          <Col xs={24} lg={16} xl={17}>
+            <Card 
+              title={
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <FileTextOutlined style={{ color: '#1890ff' }} />
+                  <span>PDF Preview</span>
+                  <Text type="secondary" style={{ fontSize: '12px', marginLeft: '8px' }}>
+                    (8.5" × 13" Landscape)
+                  </Text>
+                  {loadingPreview && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                      <SyncOutlined spin style={{ color: '#1890ff', fontSize: '12px' }} />
+                      <Text style={{ fontSize: '12px', color: '#1890ff' }}>Updating...</Text>
+                    </div>
+                  )}
+                </div>
+              }
+              extra={
+                <Space>
+                  {lastUpdated && (
+                    <Text type="secondary" style={{ fontSize: '12px' }}>
+                      Updated {formatLastUpdated(lastUpdated)}
+                    </Text>
+                  )}
+                  {previewUrl && (
+                    <Button
+                      type="link"
+                      icon={<EyeOutlined />}
+                      onClick={handleOpenNewTab}
+                      size="small"
+                    >
+                      Open in new tab
+                    </Button>
+                  )}
+                </Space>
+              }
+              style={{ height: 'calc(100vh - 200px)' }}
+              bodyStyle={{ padding: '16px', height: 'calc(100vh - 280px)', display: 'flex', flexDirection: 'column' }}
             >
-              Update Preview with Signatories
-            </Button>
-          </div>
-        </Card>
+              {loadingPreview ? (
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: '100%',
+                  background: '#fafafa',
+                  borderRadius: '6px',
+                  flex: 1
+                }}>
+                  <Spin size="large" tip="Generating preview..." />
+                </div>
+              ) : previewError ? (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: '100%',
+                  background: '#fff2f0',
+                  border: '2px dashed #ffccc7',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  flex: 1
+                }}>
+                  <FileTextOutlined style={{ fontSize: '48px', color: '#ff4d4f', marginBottom: '16px' }} />
+                  <Text type="danger" style={{ fontSize: '16px', fontWeight: 500 }}>
+                    {previewError}
+                  </Text>
+                  <Text type="secondary" style={{ marginTop: '8px' }}>
+                    Try adjusting the filters above.
+                  </Text>
+                </div>
+              ) : previewUrl ? (
+                <iframe
+                  title="Masterlist Preview"
+                  src={previewUrl}
+                  style={{ 
+                    width: '100%', 
+                    height: '100%',
+                    border: '1px solid #d9d9d9',
+                    borderRadius: '6px',
+                    flex: 1
+                  }}
+                />
+              ) : (
+                <div style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  height: '100%',
+                  background: '#fafafa',
+                  border: '2px dashed #d9d9d9',
+                  borderRadius: '6px',
+                  textAlign: 'center',
+                  flex: 1
+                }}>
+                  <FileTextOutlined style={{ fontSize: '64px', color: '#bfbfbf', marginBottom: '24px' }} />
+                  <Text style={{ fontSize: '18px', fontWeight: 500, color: '#8c8c8c', marginBottom: '8px' }}>
+                    Select Program, Semester, and Academic Year
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    to preview the masterlist
+                  </Text>
+                  <div style={{ 
+                    marginTop: '32px', 
+                    padding: '16px 24px',
+                    background: '#fff',
+                    border: '1px solid #e8e8e8',
+                    borderRadius: '8px',
+                    maxWidth: '400px'
+                  }}>
+                    <Text style={{ fontSize: '13px', color: '#595959', lineHeight: '1.6' }}>
+                      Once you select the required filters, the PDF preview will appear here automatically. 
+                      You can then fill in the signatory details on the left to customize the document.
+                    </Text>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </Col>
+        </Row>
       </div>
     </div>
   )
