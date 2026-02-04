@@ -388,6 +388,10 @@ export default function StudentsPdf() {
               </Button>
             </div>
           </div>
+
+          <Text type="secondary" style={{ display: 'block', marginTop: '12px', fontStyle: 'italic' }}>
+            Note: COSCHO and MSRS scholarships have a different format and are not applicable to this layout.
+          </Text>
         </div>
       </Card>
 
