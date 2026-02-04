@@ -316,18 +316,64 @@ export default function StudentsPdf() {
       {/* Header - Filters */}
       <Card style={{ marginBottom: '24px' }}>
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <Title level={3} style={{ margin: '0 0 8px 0', color: '#262626' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <Title level={3} style={{ margin: '0 0 8px 0', color: '#262626', textAlign: 'left' }}>
               Generate PDF Masterlist
             </Title>
-            <Text type="secondary" style={{ fontSize: '14px' }}>
+            <Text type="secondary" style={{ fontSize: '14px', textAlign: 'left' }}>
               Select program, semester, and academic year to generate the masterlist document
             </Text>
-            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '16px' }}>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <Form layout="inline" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
+              <Form.Item label="Program" style={{ minWidth: '300px', flex: 1 }}>
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Select program"
+                  value={program}
+                  onChange={setProgram}
+                  loading={loadingOptions}
+                  style={{ width: '100%' }}
+                  optionFilterProp="label"
+                  options={programOptions.map((opt) => ({ label: opt, value: opt }))}
+                />
+              </Form.Item>
+
+              <Form.Item label="Semester" style={{ minWidth: '200px', flex: 1 }}>
+                <Select
+                  allowClear
+                  placeholder="Select semester"
+                  value={semester}
+                  onChange={setSemester}
+                  loading={loadingOptions}
+                  style={{ width: '100%' }}
+                  options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
+                />
+              </Form.Item>
+
+              <Form.Item label="Academic Year" style={{ minWidth: '200px', flex: 1 }}>
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Select academic year"
+                  value={academicYear}
+                  onChange={setAcademicYear}
+                  loading={loadingOptions}
+                  style={{ width: '100%' }}
+                  optionFilterProp="label"
+                  options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
+                />
+              </Form.Item>
+            </Form>
+
+            <div style={{ display: 'flex', gap: '16px' }}>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={handleReset}
                 disabled={loadingPreview}
+                style={{ height: '40px' }}
               >
                 Reset
               </Button>
@@ -336,74 +382,11 @@ export default function StudentsPdf() {
                 icon={<DownloadOutlined />}
                 onClick={handleDownload}
                 disabled={!previewUrl}
-                size="large"
+                style={{ height: '40px' }}
               >
                 Download PDF
               </Button>
             </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <Form layout="inline" style={{ maxWidth: '1100px', width: '100%', justifyContent: 'center' }}>
-            <Form.Item label="Program" style={{ minWidth: '300px', marginBottom: '16px' }}>
-              <Select
-                showSearch
-                allowClear
-                placeholder="Select program"
-                value={program}
-                onChange={setProgram}
-                loading={loadingOptions}
-                style={{ width: '100%' }}
-                optionFilterProp="label"
-                options={programOptions.map((opt) => ({ label: opt, value: opt }))}
-              />
-            </Form.Item>
-            
-            <Form.Item label="Semester" style={{ minWidth: '200px', marginBottom: '16px' }}>
-              <Select
-                allowClear
-                placeholder="Select semester"
-                value={semester}
-                onChange={setSemester}
-                loading={loadingOptions}
-                style={{ width: '100%' }}
-                options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
-              />
-            </Form.Item>
-            
-            <Form.Item label="Academic Year" style={{ minWidth: '200px', marginBottom: '16px' }}>
-              <Select
-                showSearch
-                allowClear
-                placeholder="Select academic year"
-                value={academicYear}
-                onChange={setAcademicYear}
-                loading={loadingOptions}
-                style={{ width: '100%' }}
-                optionFilterProp="label"
-                options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
-              />
-            </Form.Item>
-
-            {canGenerate && (
-              <Form.Item style={{ marginBottom: '16px' }}>
-                <div style={{ 
-                  padding: '8px 16px', 
-                  background: '#f5f5f5', 
-                  border: '1px solid #d9d9d9',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <CheckCircleOutlined />
-                  <Text style={{ fontSize: '14px' }}>
-                    Ready to generate
-                  </Text>
-                </div>
-              </Form.Item>
-            )}
-            </Form>
           </div>
         </div>
       </Card>
@@ -559,14 +542,24 @@ export default function StudentsPdf() {
                         />
                       )}
                     </div>
-                    <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                    <Form.Item
+                      label="Name"
+                      labelCol={{ span: 6 }} // Adjust label width
+                      wrapperCol={{ span: 18 }} // Adjust input width
+                      style={{ marginBottom: '12px' }}
+                    >
                       <Input
                         placeholder="Enter full name"
                         value={person.name}
                         onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
                       />
                     </Form.Item>
-                    <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                    <Form.Item
+                      label="Position"
+                      labelCol={{ span: 6 }} // Same label width as "Name"
+                      wrapperCol={{ span: 18 }} // Same input width as "Name"
+                      style={{ marginBottom: '0' }}
+                    >
                       <Input
                         placeholder="Enter position/title"
                         value={person.position}
@@ -622,14 +615,24 @@ export default function StudentsPdf() {
                         />
                       )}
                     </div>
-                    <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                    <Form.Item
+                      label="Name"
+                      labelCol={{ span: 6 }}
+                      wrapperCol={{ span: 18 }}
+                      style={{ marginBottom: '12px' }}
+                    >
                       <Input
                         placeholder="Enter full name"
                         value={person.name}
                         onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
                       />
                     </Form.Item>
-                    <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                    <Form.Item
+                      label="Position"
+                      labelCol={{ span: 6 }}
+                      wrapperCol={{ span: 18 }}
+                      style={{ marginBottom: '0' }}
+                    >
                       <Input
                         placeholder="Enter position/title"
                         value={person.position}
@@ -669,14 +672,24 @@ export default function StudentsPdf() {
                   borderRadius: '6px',
                   border: '1px solid #d9d9d9'
                 }}>
-                  <Form.Item label="Name" style={{ marginBottom: '12px' }}>
+                  <Form.Item
+                    label="Name"
+                    labelCol={{ span: 6 }}
+                    wrapperCol={{ span: 18 }}
+                    style={{ marginBottom: '12px' }}
+                  >
                     <Input
                       placeholder="Enter full name"
                       value={approvedName}
                       onChange={(e) => setApprovedName(e.target.value)}
                     />
                   </Form.Item>
-                  <Form.Item label="Position" style={{ marginBottom: '0' }}>
+                  <Form.Item
+                    label="Position"
+                    labelCol={{ span: 6 }}
+                    wrapperCol={{ span: 18 }}
+                    style={{ marginBottom: '0' }}
+                  >
                     <Input
                       placeholder="Enter position/title"
                       value={approvedPosition}
