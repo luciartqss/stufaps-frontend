@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Typography, Card, Select, Progress } from 'antd'
 import { TeamOutlined, ContactsOutlined, UserOutlined } from '@ant-design/icons'
 import EditSlotsModal from '../components/EditSlotsModal'
+import UpdateSlotModal from '../components/UpdateSlotModal'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -15,12 +16,25 @@ export function meta() {
 }
 
 function StatsCards({ financialAssistances }) {
-  const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.total_students || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
+  let totals;
 
+  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
+    // Use backend values directly for the "All" row
+    const row = financialAssistances[0];
+    totals = {
+      totalSlots: Number(row?.total_slot) || 0,
+      totalFilled: Number(row?.total_students) || 0,
+      totalUnfilled: Number(row?.unfilled_slot) || 0,
+    };
+  } else {
+    // Sum across rows for a specific year
+    totals = {
+      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
+      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
+      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
+    };
   }
+
 
   const statsConfig = [
     {
@@ -104,8 +118,7 @@ function StatsCards({ financialAssistances }) {
                 color: stat.color,
                 flexShrink: 0,
               }}
-            >
-              {stat.icon}
+            > {stat.icon}
             </div>
           </Card>
         </div>
@@ -117,8 +130,8 @@ function StatsCards({ financialAssistances }) {
 export default function Financial_AssistanceIndex() {
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [openModal, setOpenModal] = useState(false)
+  const [openModalAddSlot, setOpenModalAddSlot] = useState(false)
+  const [openModalUpdateSlot, setOpenModalUpdateSlot] = useState(false)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
   const [academicYears, setAcademicYears] = useState([])
 
@@ -161,40 +174,61 @@ export default function Financial_AssistanceIndex() {
 
     const handleAcademicYearChange = value => 
     { 
-      setAcademicYearFilter(value || 'All') // default back to All if cleared 
+      setAcademicYearFilter(value || null) // default back to All if cleared 
     }
 
-    const filteredAssistances = 
-      academicYearFilter && academicYearFilter !== 'All' 
-        ? financialAssistances.filter( 
-          p => (p.academic_year || p.Academic_year) === academicYearFilter 
-          ) 
-        : financialAssistances
+    const filteredAssistances =
+  academicYearFilter && academicYearFilter !== 'All'
+    ? financialAssistances.filter(
+        p => (p.academic_year || p.Academic_year) === academicYearFilter
+      )
+    : financialAssistances.filter(
+        p => (p.academic_year || p.Academic_year) === 'All'
+      )
 
-    const getProgramTotals = (assistances, programName) => {
-      const filtered = assistances.filter(p => p.scholarship_program_name === programName)
-      return {
-        totalSlots: filtered.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
-        totalFilled: filtered.reduce((sum, p) => sum + (p?.total_students || 0), 0),
-        totalUnfilled: filtered.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
-        percentage: filtered.length > 0 ? ((filtered.reduce((sum, p) => sum + (p?.total_students || 0), 0) / filtered.reduce((sum, p) => sum + (p?.total_slot || 0), 0)) * 100).toFixed(1) : 0,
-      }
+      const getProgramTotals = (assistances, programName) => {
+  const filtered = assistances.filter(p => p.scholarship_program_name === programName)
+
+  if (
+    filtered.length === 1 &&
+    (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
+  ) {
+    // Use backend values directly for the "All" row
+    const row = filtered[0]
+    return {
+      totalSlots: Number(row?.total_slot) || 0,
+      totalFilled: Number(row?.total_students) || 0,
+      totalUnfilled: Number(row?.unfilled_slot) || 0,
+      percentage:
+        row?.total_slot > 0
+          ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
+          : 0,
     }
+  } else {
+    // Sum across rows for a specific year
+    const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
+    const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
+    const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
+
+    return {
+      totalSlots,
+      totalFilled,
+      totalUnfilled,
+      percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
+    }
+  }
+}
+
 
     const cmsTotals = getProgramTotals(filteredAssistances, "CMSP")
     const estatistikolarTotals = getProgramTotals(filteredAssistances, "Estatistikolar")
-
     const CoSchoTotals = getProgramTotals(filteredAssistances, "CoScho")
     const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
-
     const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDA-SGP")
     const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEF-GIAHEP")
     const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTP-SP")
-
     const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMS-SUCs")
     const SNPLPTotals = getProgramTotals(filteredAssistances, "SNPLP")
-
-    
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -205,12 +239,19 @@ export default function Financial_AssistanceIndex() {
       <main className="flex-1 p-8">
         <div>
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => setOpenModalAddSlot(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
           >
             Add Slots
           </button>
 
+          <button
+            onClick={() => setOpenModalUpdateSlot(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+          >
+            Update Slots
+          </button>
+          
           <Select
             placeholder="Academic Year"
             allowClear
@@ -226,16 +267,19 @@ export default function Financial_AssistanceIndex() {
           </Select>
 
           <EditSlotsModal
-            open={openModal}
-            onClose={() => setOpenModal(false)}
-            onUpdated={() => {
-              fetchPrograms()
-            }}
+            open={openModalAddSlot}
+            onClose={() => setOpenModalAddSlot(false)}
+            
           />
+
+          <UpdateSlotModal
+            open={openModalUpdateSlot}
+            onClose={() => setOpenModalUpdateSlot(false)}
+            
+          />
+          
         </div>
-
         <br />
-
         <StatsCards financialAssistances={filteredAssistances} />
 
         {/* Priority Section */}

@@ -11,9 +11,9 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
   // Fetch scholarship program records
   useEffect(() => {
     if (open) {
-      axios.get('http://localhost:8000/api/scholarship_program_records')
+      axios.get('http://localhost:8000/api/scholarship_program_records/grouped')
         .then(res => {
-          const payload = res?.data?.data ?? []
+          const payload = res?.data?.programs ?? []
           setRecords(Array.isArray(payload) ? payload : [])
         })
         .catch(() => message.error('Error fetching scholarship program choices'))
@@ -40,7 +40,7 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
     const payload = {
       scholarship_program_name: rec.scholarship_program_name,
       description: rec.description,
-      academic_year: academicYear,
+      Academic_year: academicYear,
       total_slot: Number(totalSlots || 0),
     }
 
