@@ -119,6 +119,34 @@ export default function StudentDetails() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [disbursementLoading, setDisbursementLoading] = useState(false)
 
+  // Lookup function to auto-fill UII and authority fields
+  const lookupAndFillFields = async (currentData) => {
+    try {
+      const response = await api.post('/students/lookup-program-info', {
+        uii: currentData.uii || null,
+        name_of_institution: currentData.name_of_institution || null,
+        degree_program: currentData.degree_program || null,
+        program_major: currentData.program_major || null,
+      })
+      
+      // Update form with looked up values (only if they exist in response)
+      setFormData(prev => ({
+        ...prev,
+        ...(response.uii && { uii: response.uii }),
+        ...(response.name_of_institution && !prev.name_of_institution && { name_of_institution: response.name_of_institution }),
+        ...(response.institutional_type && { institutional_type: response.institutional_type }),
+        ...(response.authority_type && { authority_type: response.authority_type }),
+        ...(response.authority_number && { authority_number: response.authority_number }),
+        ...(response.series && { series: response.series }),
+        ...(response.program_discipline && { program_discipline: response.program_discipline }),
+        ...(response.program_degree_level && { program_degree_level: response.program_degree_level }),
+      }))
+    } catch (err) {
+      console.error('Lookup error:', err)
+      // Silently fail - user can still manually enter values
+    }
+  }
+
   useEffect(() => {
     if (!id) {
       setError('No student ID provided')
@@ -140,7 +168,29 @@ export default function StudentDetails() {
   }, [id, refreshTrigger])
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+    const newFormData = { ...formData, [field]: value }
+    setFormData(newFormData)
+    
+    // Trigger lookup when institution, program, or major changes
+    if (['name_of_institution', 'degree_program', 'program_major'].includes(field)) {
+      // Clear dependent fields when institution changes
+      if (field === 'name_of_institution') {
+        newFormData.uii = null
+        newFormData.institutional_type = null
+        newFormData.authority_type = null
+        newFormData.authority_number = null
+        newFormData.series = null
+        setFormData(newFormData)
+      }
+      
+      // Debounce the lookup to avoid too many API calls
+      if (window.lookupTimeout) {
+        clearTimeout(window.lookupTimeout)
+      }
+      window.lookupTimeout = setTimeout(() => {
+        lookupAndFillFields(newFormData)
+      }, 500)
+    }
   }
 
   // Check if form data has changed
