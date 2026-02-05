@@ -448,6 +448,13 @@ export default function StudentDetails() {
       render: (date) => formatDate(date),
     },
     {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (text) => text || 'N/A',
+    },
+    {
       title: 'Remarks',
       dataIndex: 'remarks',
       key: 'remarks',
@@ -622,6 +629,7 @@ export default function StudentDetails() {
                 handleChange={handleChange} 
               />
               <Field label="Certification No." value={student.certification_number} field="certification_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Learner Reference No. (LRN)" value={student.learner_reference_number} field="learner_reference_number" editMode={editMode} formData={formData} handleChange={handleChange} />
             </Row>
           </Card>
         </Col>
@@ -934,6 +942,11 @@ export default function StudentDetails() {
                     style={{ width: '100%' }}
                     placeholder="Select date"
                   />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="status" label="Status">
+                  <Input placeholder="e.g., Paid, Pending, etc." />
                 </Form.Item>
               </Col>
             </Row>
