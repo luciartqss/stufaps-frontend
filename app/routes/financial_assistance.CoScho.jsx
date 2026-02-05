@@ -13,13 +13,25 @@ export function meta() {
   ]
 }
 
-
-
 function StatsCards({ financialAssistances =[] }) {
-  const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (p?.total_slot || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (p?.total_students || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (p?.unfilled_slot || 0), 0),
+  
+  let totals;
+
+  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
+    // Use backend values directly for the "All" row
+    const row = financialAssistances[0];
+    totals = {
+      totalSlots: Number(row?.total_slot) || 0,
+      totalFilled: Number(row?.total_students) || 0,
+      totalUnfilled: Number(row?.unfilled_slot) || 0,
+    };
+  } else {
+    // Sum across rows for a specific year
+    totals = {
+      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
+      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
+      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
+    };
   }
 
   const statsConfig = [
@@ -166,10 +178,10 @@ export default function FinancialAssistanceCoScho()
       if (academicYearFilter && academicYearFilter !== 'All') {
         return (p.academic_year || p.Academic_year) === academicYearFilter
       }
-      return true
+      // Only keep the "All" row when filter is All
+      return (p.academic_year || p.Academic_year) === 'All'
     })
-
-
+    
   // ✅ Scholarship Benefits Data
   const sucPrograms = [
     {
