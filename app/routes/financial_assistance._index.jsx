@@ -35,7 +35,6 @@ function StatsCards({ financialAssistances }) {
     };
   }
 
-
   const statsConfig = [
     {
       title: 'Total Slots',
@@ -94,7 +93,7 @@ function StatsCards({ financialAssistances }) {
                   >
                     {stat.percentage}% of total
                   </Text>
-                  
+
                   <Progress
                     percent={parseFloat(stat.percentage)}
                     size="small"
@@ -148,8 +147,8 @@ export default function Financial_AssistanceIndex() {
         const programsData = Array.isArray(data?.data)
           ? data.data
           : Array.isArray(data)
-          ? data
-          : []
+            ? data
+            : []
         setFinancialAssistances(programsData)
 
         const uniqueYears = [
@@ -157,8 +156,8 @@ export default function Financial_AssistanceIndex() {
             programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
           )
         ]
-        
-        setAcademicYears(['All', ...uniqueYears.sort()])
+
+        setAcademicYears([ ...uniqueYears.sort()])
         setLoading(false)
       })
       .catch(err => {
@@ -172,63 +171,60 @@ export default function Financial_AssistanceIndex() {
     fetchPrograms()
   }, [])
 
-    const handleAcademicYearChange = value => 
-    { 
-      setAcademicYearFilter(value || null) // default back to All if cleared 
-    }
+  const handleAcademicYearChange = value => {
+    setAcademicYearFilter(value || null) // default back to All if cleared 
+  }
 
-    const filteredAssistances =
-  academicYearFilter && academicYearFilter !== 'All'
-    ? financialAssistances.filter(
+  const filteredAssistances =
+    academicYearFilter && academicYearFilter !== 'All'
+      ? financialAssistances.filter(
         p => (p.academic_year || p.Academic_year) === academicYearFilter
       )
-    : financialAssistances.filter(
+      : financialAssistances.filter(
         p => (p.academic_year || p.Academic_year) === 'All'
       )
 
-      const getProgramTotals = (assistances, programName) => {
-  const filtered = assistances.filter(p => p.scholarship_program_name === programName)
+  const getProgramTotals = (assistances, programName) => {
+    const filtered = assistances.filter(p => p.scholarship_program_name === programName)
 
-  if (
-    filtered.length === 1 &&
-    (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
-  ) {
-    // Use backend values directly for the "All" row
-    const row = filtered[0]
-    return {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-      percentage:
-        row?.total_slot > 0
-          ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
-          : 0,
-    }
-  } else {
-    // Sum across rows for a specific year
-    const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
-    const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
-    const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
+    if (
+      filtered.length === 1 &&
+      (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
+    ) {
+      // Use backend values directly for the "All" row
+      const row = filtered[0]
+      return {
+        totalSlots: Number(row?.total_slot) || 0,
+        totalFilled: Number(row?.total_students) || 0,
+        totalUnfilled: Number(row?.unfilled_slot) || 0,
+        percentage:
+          row?.total_slot > 0
+            ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
+            : 0,
+      }
+    } else {
+      // Sum across rows for a specific year
+      const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
+      const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
+      const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
 
-    return {
-      totalSlots,
-      totalFilled,
-      totalUnfilled,
-      percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
+      return {
+        totalSlots,
+        totalFilled,
+        totalUnfilled,
+        percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
+      }
     }
   }
-}
-
-
-    const cmsTotals = getProgramTotals(filteredAssistances, "CMSP")
-    const estatistikolarTotals = getProgramTotals(filteredAssistances, "Estatistikolar")
-    const CoSchoTotals = getProgramTotals(filteredAssistances, "CoScho")
-    const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
-    const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDA-SGP")
-    const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEF-GIAHEP")
-    const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTP-SP")
-    const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMS-SUCs")
-    const SNPLPTotals = getProgramTotals(filteredAssistances, "SNPLP")
+  const cmsTotals = getProgramTotals(filteredAssistances, "CMSP")
+  const estatistikolarTotals = getProgramTotals(filteredAssistances, "Estatistikolar")
+  const CoSchoTotals = getProgramTotals(filteredAssistances, "CoScho")
+  const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
+  const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDA-SGP")
+  const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEF-GIAHEP")
+  const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTP-SP")
+  const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMS-SUCs")
+  const SNPLPTotals = getProgramTotals(filteredAssistances, "SNPLP")
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -251,7 +247,7 @@ export default function Financial_AssistanceIndex() {
           >
             Update Slots
           </button>
-          
+
           <Select
             placeholder="Academic Year"
             allowClear
@@ -269,163 +265,162 @@ export default function Financial_AssistanceIndex() {
           <EditSlotsModal
             open={openModalAddSlot}
             onClose={() => setOpenModalAddSlot(false)}
-            
+
           />
 
           <UpdateSlotModal
             open={openModalUpdateSlot}
             onClose={() => setOpenModalUpdateSlot(false)}
-            
+
           />
-          
+
         </div>
         <br />
         <StatsCards financialAssistances={filteredAssistances} />
 
         {/* Priority Section */}
         <div className="space-y-8">
-            
+
           {/* Top Card */}
-          
-          
-            <Link to="/financial_assistance/cmsp">
-              <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                <div>
-                  <h3 className="text-lg font-bold text-red-700">CMSP</h3>
-                  <p className="text-sm text-red-600">CHED Merit Scholarship Program</p>
-                </div>
-                <div className="mt-6 space-y-2 text-sm text-gray-700">
-                  <div>Slots: {cmsTotals.totalSlots}</div>
-                  <div>Filled: {cmsTotals.totalFilled}</div>
-                  <div>Unfilled: {cmsTotals.totalUnfilled}</div>
-                  <div>% of total: {cmsTotals.percentage}%</div>
-                </div>
-              </div>
-            </Link>
-        
-
-        {/* Grid of 8 Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-          {/* Column 1 */}
-        
-          <div className="space-y-6">
-            <Link to="/financial_assistance/estatistikolar">
-              <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                <h3 className="text-lg font-bold text-red-700">Estatistikolar</h3>
-                <p className="text-sm text-red-600">Statistics-focused scholarship</p>
-                <div className="mt-6 space-y-2 text-sm text-gray-700">
-                  <div>Slots: {estatistikolarTotals.totalSlots}</div>
-                  <div>Filled: {estatistikolarTotals.totalFilled}</div>
-                  <div>Unfilled: {estatistikolarTotals.totalUnfilled}</div>
-                  <div>% of total: {estatistikolarTotals.percentage}%</div>
-                </div>
-              </div>
-            </Link>
 
 
-            <Link to="/financial_assistance/CoScho">
+          <Link to="/financial_assistance/cmsp">
             <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">CoScho</h3>
-              <p className="text-sm text-red-600">College Scholarship Program</p>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {CoSchoTotals.totalSlots}</div>
-                <div>Filled: {CoSchoTotals.totalFilled}</div>
-                <div>Unfilled: {CoSchoTotals.totalUnfilled}</div>
-                <div>% of total: {CoSchoTotals.percentage}%</div>
+              <div>
+                <h3 className="text-lg font-bold text-red-700">CMSP</h3>
+                <p className="text-sm text-red-600">CHED Merit Scholarship Program</p>
               </div>
-            </div>
-            </Link>
-
-
-            <Link to="/financial_assistance/msrs">
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">MSRS</h3>
-              <p className="text-sm text-red-600">Medical Scholarship and Return Service</p>
               <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {MSRSTotals.totalSlots}</div>
-                <div>Filled: {MSRSTotals.totalFilled}</div>
-                <div>Unfilled: {MSRSTotals.totalUnfilled}</div>
-                <div>% of total: {MSRSTotals.percentage}%</div>
-              </div>
-            </div>
-            </Link>
-
-            <Link to="/financial_assistance/Acef_Giahep">
-              <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                <h3 className="text-lg font-bold text-red-700">ACEF-GIAHEP</h3>
-                <p className="text-sm text-red-600">Agricultural Competitiveness Enhancement Fund</p>
-                <div className="mt-6 space-y-2 text-sm text-gray-700">
-                  <div>Slots: {ACEF_GIAHEPTotals.totalSlots}</div>
-                  <div>Filled: {ACEF_GIAHEPTotals.totalFilled}</div>
-                  <div>Unfilled: {ACEF_GIAHEPTotals.totalUnfilled}</div>
-                  <div>% of total: {ACEF_GIAHEPTotals.percentage}%</div>
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Column 2 */}
-          <div className="space-y-6">
-
-          <Link to="/financial_assistance/Sida_Sgp">
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">SIDA-SGP</h3>
-              <p className="text-sm text-red-600">Sugarcane Industry Devt. Act</p>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {SIDA_SGPTotals.totalSlots}</div>
-                <div>Filled: {SIDA_SGPTotals.totalFilled}</div>
-                <div>Unfilled: {SIDA_SGPTotals.totalUnfilled}</div>
-                <div>% of total: {SIDA_SGPTotals.percentage}%</div>
+                <div>Slots: {cmsTotals.totalSlots}</div>
+                <div>Filled: {cmsTotals.totalFilled}</div>
+                <div>Unfilled: {cmsTotals.totalUnfilled}</div>
+                <div>% of total: {cmsTotals.percentage}%</div>
               </div>
             </div>
           </Link>
 
-          <Link to="/financial_assistance/Mtp_Sp">
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">MTP-SP</h3>
-              <p className="text-sm text-red-600">Maritime Training Program</p>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {Mtp_SpTotals.totalSlots}</div>
-                <div>Filled: {Mtp_SpTotals.totalFilled}</div>
-                <div>Unfilled: {Mtp_SpTotals.totalUnfilled}</div>
-                <div>% of total: {Mtp_SpTotals.percentage}%</div>
-              </div>
-            </div>
-          </Link>
 
-          <Link to="/financial_assistance/Cgms_Sucs">  
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">CGMS-SUCs</h3>
-              <p className="text-sm text-red-600">Cultural and General Management Scholarship for Students</p>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {CGMS_SUCsTotals.totalSlots}</div>
-                <div>Filled: {CGMS_SUCsTotals.totalFilled}</div>
-                <div>Unfilled: {CGMS_SUCsTotals.totalUnfilled}</div>
-                <div>% of total: {CGMS_SUCsTotals.percentage}%</div>
-              </div>
-            </div>
-          </Link>  
+          {/* Grid of 8 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          <Link to="/financial_assistance/Snplp">  
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <h3 className="text-lg font-bold text-red-700">SNLP</h3>
-              <p className="text-sm text-red-600">Student Loan Program</p>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {SNPLPTotals.totalSlots}</div>
-                <div>Filled: {SNPLPTotals.totalFilled}</div>
-                <div>Unfilled: {SNPLPTotals.totalUnfilled}</div>
-                <div>% of total: {SNPLPTotals.percentage}%</div>
-              </div>
-            </div>
-          </Link> 
+            {/* Column 1 */}
 
+            <div className="space-y-6">
+              <Link to="/financial_assistance/estatistikolar">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">Estatistikolar</h3>
+                  <p className="text-sm text-red-600">Statistics-focused scholarship</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {estatistikolarTotals.totalSlots}</div>
+                    <div>Filled: {estatistikolarTotals.totalFilled}</div>
+                    <div>Unfilled: {estatistikolarTotals.totalUnfilled}</div>
+                    <div>% of total: {estatistikolarTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+
+              <Link to="/financial_assistance/CoScho">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">CoScho</h3>
+                  <p className="text-sm text-red-600">College Scholarship Program</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {CoSchoTotals.totalSlots}</div>
+                    <div>Filled: {CoSchoTotals.totalFilled}</div>
+                    <div>Unfilled: {CoSchoTotals.totalUnfilled}</div>
+                    <div>% of total: {CoSchoTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+
+              <Link to="/financial_assistance/msrs">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">MSRS</h3>
+                  <p className="text-sm text-red-600">Medical Scholarship and Return Service</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {MSRSTotals.totalSlots}</div>
+                    <div>Filled: {MSRSTotals.totalFilled}</div>
+                    <div>Unfilled: {MSRSTotals.totalUnfilled}</div>
+                    <div>% of total: {MSRSTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link to="/financial_assistance/Acef_Giahep">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">ACEF-GIAHEP</h3>
+                  <p className="text-sm text-red-600">Agricultural Competitiveness Enhancement Fund</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {ACEF_GIAHEPTotals.totalSlots}</div>
+                    <div>Filled: {ACEF_GIAHEPTotals.totalFilled}</div>
+                    <div>Unfilled: {ACEF_GIAHEPTotals.totalUnfilled}</div>
+                    <div>% of total: {ACEF_GIAHEPTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {/* Column 2 */}
+            <div className="space-y-6">
+
+              <Link to="/financial_assistance/Sida_Sgp">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">SIDA-SGP</h3>
+                  <p className="text-sm text-red-600">Sugarcane Industry Devt. Act</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {SIDA_SGPTotals.totalSlots}</div>
+                    <div>Filled: {SIDA_SGPTotals.totalFilled}</div>
+                    <div>Unfilled: {SIDA_SGPTotals.totalUnfilled}</div>
+                    <div>% of total: {SIDA_SGPTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link to="/financial_assistance/Mtp_Sp">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">MTP-SP</h3>
+                  <p className="text-sm text-red-600">Maritime Training Program</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {Mtp_SpTotals.totalSlots}</div>
+                    <div>Filled: {Mtp_SpTotals.totalFilled}</div>
+                    <div>Unfilled: {Mtp_SpTotals.totalUnfilled}</div>
+                    <div>% of total: {Mtp_SpTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link to="/financial_assistance/Cgms_Sucs">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">CGMS-SUCs</h3>
+                  <p className="text-sm text-red-600">Cultural and General Management Scholarship for Students</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {CGMS_SUCsTotals.totalSlots}</div>
+                    <div>Filled: {CGMS_SUCsTotals.totalFilled}</div>
+                    <div>Unfilled: {CGMS_SUCsTotals.totalUnfilled}</div>
+                    <div>% of total: {CGMS_SUCsTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+              <Link to="/financial_assistance/Snplp">
+                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
+                  <h3 className="text-lg font-bold text-red-700">SNLP</h3>
+                  <p className="text-sm text-red-600">Student Loan Program</p>
+                  <div className="mt-6 space-y-2 text-sm text-gray-700">
+                    <div>Slots: {SNPLPTotals.totalSlots}</div>
+                    <div>Filled: {SNPLPTotals.totalFilled}</div>
+                    <div>Unfilled: {SNPLPTotals.totalUnfilled}</div>
+                    <div>% of total: {SNPLPTotals.percentage}%</div>
+                  </div>
+                </div>
+              </Link>
+
+            </div>
           </div>
         </div>
-      </div>               
       </main>
     </div>
   )
 }
 
-              
