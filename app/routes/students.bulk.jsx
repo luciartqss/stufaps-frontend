@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
-import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag } from 'antd'
+import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination } from 'antd'
 import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
@@ -386,11 +386,27 @@ export default function ImportBulk() {
     { id: makeAyId('2024-2025'), label: '2024-2025' },
   ])
   const [ayInput, setAyInput] = useState('2024-2025')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
     [academicYears]
   )
+
+  // Paginated data slice
+  const paginatedData = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize
+    const endIndex = startIndex + pageSize
+    return data.slice(startIndex, endIndex)
+  }, [data, currentPage, pageSize])
+
+  // Reset to first page when data changes significantly
+  useEffect(() => {
+    if (currentPage > Math.ceil(data.length / pageSize)) {
+      setCurrentPage(1)
+    }
+  }, [data.length, pageSize, currentPage])
 
   useEffect(() => {
     setData((prev) =>
@@ -649,6 +665,10 @@ export default function ImportBulk() {
     })
     newRow.seq = String(data.length + 1)
     setData(prev => [...prev, newRow])
+    // Navigate to the page containing the new row
+    const newTotalRows = data.length + 1
+    const newPage = Math.ceil(newTotalRows / pageSize)
+    setCurrentPage(newPage)
   }
 
   // Delete row
@@ -664,6 +684,7 @@ export default function ImportBulk() {
   const handleClear = () => {
     setData([])
     setInputKey(Date.now())
+    setCurrentPage(1)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -783,262 +804,374 @@ export default function ImportBulk() {
   const totalTableWidth = leafFields.reduce((sum, field) => sum + (field.width || 120), 0) + 60 // +60 for actions column
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 p-6">
-      <div className="max-w-full mx-auto">
-        {/* Upload Section */}
-        <Card
-          className="shadow-xl rounded-2xl mb-6 border-0"
-          styles={{ body: { padding: '24px 32px' } }}
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <Title level={2} className="!mb-1 !text-slate-800 flex items-center gap-3">
-                <UploadOutlined className="text-cyan-600" />
-                Bulk Student & Disbursement Import
-              </Title>
-              <Text type="secondary" className="text-base">
-                Upload one continuous Excel sheet or manually add combined records
-              </Text>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <label className="cursor-pointer">
-                <input
-                  key={inputKey}
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,.xlsm,.xlsb,.csv"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button
-                  icon={<UploadOutlined />}
-                  size="large"
-                  className="!bg-cyan-600 !text-white hover:!bg-cyan-700 !border-0"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  Upload Excel
-                </Button>
-              </label>
-
-              <Button
-                icon={<PlusOutlined />}
-                size="large"
-                onClick={handleAddRow}
-                className="!bg-emerald-600 !text-white hover:!bg-emerald-700 !border-0"
-              >
-                Add Row
-              </Button>
-            </div>
-          </div>
-        </Card>
-
-        {/* Academic Year Blocks */}
-        <Card className="shadow-md rounded-xl mb-6 border-0" styles={{ body: { padding: '16px 24px' } }}>
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <Text strong className="text-base text-slate-700">Academic Year Sections</Text>
-              <div className="text-slate-500 text-sm">Add/remove AY blocks; each includes First/Second semester disbursement fields.</div>
-            </div>
-            <Space wrap>
-              <Input
-                placeholder="e.g. 2024-2025"
-                value={ayInput}
-                onChange={(e) => setAyInput(e.target.value)}
-                style={{ width: 180 }}
+    <div style={{ 
+      height: 'calc(100vh - 120px)', 
+      display: 'flex', 
+      flexDirection: 'column',
+      overflow: 'hidden',
+      margin: '-24px'
+    }}>
+      {/* Compact Header Controls */}
+      <div style={{ 
+        background: 'white', 
+        padding: '12px 16px',
+        borderBottom: '1px solid #e8e8e8',
+        flexShrink: 0
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          {/* Left: Title and Upload */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UploadOutlined style={{ color: '#1890ff' }} />
+              Bulk Import
+            </Title>
+            
+            <label className="cursor-pointer">
+              <input
+                key={inputKey}
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.xlsm,.xlsb,.csv"
+                onChange={handleFileUpload}
+                className="hidden"
               />
               <Button
-                icon={<PlusOutlined />}
-                type="primary"
-                onClick={() => {
-                  const labels = expandAcademicYearInput(ayInput)
-                  if (labels.length === 0) return
-
-                  const merged = mergeAcademicYears(academicYears, labels)
-                  const addedCount = merged.length - academicYears.length
-                  if (addedCount === 0) {
-                    message.info('AY already added')
-                  } else {
-                    message.success(`Added ${addedCount} AY block${addedCount > 1 ? 's' : ''}`)
-                    setAcademicYears(merged)
-                  }
-                  setAyInput('')
-                }}
+                icon={<UploadOutlined />}
+                onClick={() => fileInputRef.current?.click()}
               >
-                Add AY
+                Upload Excel
+              </Button>
+            </label>
+
+            <Button
+              icon={<PlusOutlined />}
+              onClick={handleAddRow}
+            >
+              Add Row
+            </Button>
+
+            {/* Academic Year Input */}
+            <Input
+              placeholder="AY (e.g. 2024-2025)"
+              value={ayInput}
+              onChange={(e) => setAyInput(e.target.value)}
+              style={{ width: 160 }}
+              size="small"
+            />
+            <Button
+              size="small"
+              type="primary"
+              onClick={() => {
+                const labels = expandAcademicYearInput(ayInput)
+                if (labels.length === 0) return
+                const merged = mergeAcademicYears(academicYears, labels)
+                const addedCount = merged.length - academicYears.length
+                if (addedCount === 0) {
+                  message.info('AY already added')
+                } else {
+                  message.success(`Added ${addedCount} AY`)
+                  setAcademicYears(merged)
+                }
+                setAyInput('')
+              }}
+            >
+              Add AY
+            </Button>
+          </div>
+
+          {/* Right: Actions */}
+          {data.length > 0 && (
+            <Space>
+              <Text type="secondary">{data.length} records</Text>
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleSubmitData}
+                loading={loading}
+              >
+                Submit All
+              </Button>
+              <Button
+                danger
+                icon={<CloseOutlined />}
+                onClick={handleClear}
+                disabled={loading}
+              >
+                Clear
               </Button>
             </Space>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {academicYears.map((ay, idx) => (
-              <Tag key={ay.id} color={idx % 2 === 0 ? 'blue' : 'cyan'} closable onClose={() => setAcademicYears(prev => sortAcademicYears(prev.filter(p => p.id !== ay.id)))}>
-                AY {ay.label}
+          )}
+        </div>
+
+        {/* AY Tags Row */}
+        {academicYears.length > 0 && (
+          <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Text type="secondary" style={{ fontSize: '12px' }}>Academic Years:</Text>
+            {academicYears.map((ay) => (
+              <Tag 
+                key={ay.id} 
+                closable 
+                onClose={() => setAcademicYears(prev => sortAcademicYears(prev.filter(p => p.id !== ay.id)))}
+              >
+                {ay.label}
               </Tag>
             ))}
           </div>
-        </Card>
-
-        {/* Action Buttons */}
-        {data.length > 0 && (
-          <Card className="shadow-xl rounded-2xl mb-6 border-0" styles={{ body: { padding: '16px 32px' } }}>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <Text strong className="text-lg text-slate-700">
-                {data.length} record{data.length > 1 ? 's' : ''} loaded
-              </Text>
-              <Space size="middle" wrap>
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={handleSubmitData}
-                  loading={loading}
-                  size="large"
-                  className="!bg-blue-600 hover:!bg-blue-700 !shadow-lg"
-                >
-                  Submit All
-                </Button>
-                <Button
-                  danger
-                  icon={<CloseOutlined />}
-                  onClick={handleClear}
-                  disabled={loading}
-                  size="large"
-                >
-                  Clear All
-                </Button>
-              </Space>
-            </div>
-          </Card>
         )}
+      </div>
 
-        {/* Data Table */}
-        <Card
-          className="shadow-xl rounded-2xl border-0"
-          styles={{ body: { padding: 0 } }}
+      {/* Table Controls Bar */}
+      <div style={{ 
+        background: '#fafafa', 
+        padding: '8px 16px',
+        borderBottom: '1px solid #e8e8e8',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0
+      }}>
+        <div>
+          {data.length > 0 ? (
+            <Text type="secondary">
+              Showing {Math.min((currentPage - 1) * pageSize + 1, data.length)}-{Math.min(currentPage * pageSize, data.length)} of {data.length} rows
+            </Text>
+          ) : (
+            <Text type="secondary">No data loaded</Text>
+          )}
+        </div>
+        
+        {data.length > 0 && (
+          <Space size="small">
+            <Text type="secondary">Rows:</Text>
+            <Select
+              value={pageSize}
+              onChange={(value) => {
+                setPageSize(value)
+                setCurrentPage(1)
+              }}
+              size="small"
+              style={{ width: 70 }}
+              options={[
+                { label: '20', value: 20 },
+                { label: '50', value: 50 },
+                { label: '100', value: 100 },
+              ]}
+            />
+          </Space>
+        )}
+      </div>
+
+      {/* Table Container with Scroll */}
+      <div style={{ 
+        flex: 1, 
+        overflow: 'auto',
+        background: 'white'
+      }}>
+        <table
+          className="border-collapse"
+          style={{ 
+            minWidth: `${totalTableWidth}px`,
+            width: '100%'
+          }}
         >
-          <div className="p-4 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
-            <div className="flex items-center justify-between">
-              <Text strong className="text-lg text-slate-700">
-                Student & Disbursement Data
-              </Text>
-              <Text type="secondary">
-                ← Scroll horizontally to view all columns →
-              </Text>
-            </div>
-          </div>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+            <tr style={{ background: '#1890ff' }}>
+              {headerRow1.map((col, idx) => (
+                <th
+                  key={idx}
+                  colSpan={col.colSpan || 1}
+                  rowSpan={col.rowSpan || 1}
+                  style={{ 
+                    minWidth: col.width, 
+                    maxWidth: col.width,
+                    padding: '6px 4px',
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'white',
+                    border: '1px solid #0c7cd5',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  {col.label}
+                </th>
+              ))}
+              <th
+                rowSpan={3}
+                style={{ 
+                  minWidth: 60,
+                  maxWidth: 60,
+                  padding: '6px 4px',
+                  textAlign: 'center',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: 'white',
+                  border: '1px solid #0c7cd5',
+                  position: 'sticky',
+                  right: 0,
+                  background: '#1890ff'
+                }}
+              >
+                #
+              </th>
+            </tr>
+            <tr style={{ background: '#40a9ff' }}>
+              {headerRow2.map((col, idx) => (
+                <th
+                  key={idx}
+                  colSpan={col.colSpan || 1}
+                  rowSpan={col.rowSpan || 1}
+                  style={{ 
+                    minWidth: col.width,
+                    maxWidth: col.width,
+                    padding: '5px 4px',
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'white',
+                    border: '1px solid #0c7cd5',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+            <tr style={{ background: '#69c0ff' }}>
+              {headerRow3.map((col, idx) => (
+                <th
+                  key={idx}
+                  style={{ 
+                    minWidth: col.width,
+                    maxWidth: col.width,
+                    padding: '5px 4px',
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'white',
+                    border: '1px solid #0c7cd5',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    lineHeight: '1.2'
+                  }}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
 
-          <div className="overflow-x-auto">
-            <table
-              className="border-collapse"
-              style={{ minWidth: `${totalTableWidth}px` }}
-            >
-              <thead>
-                <tr className="bg-gradient-to-r from-cyan-800 to-cyan-700">
-                  {headerRow1.map((col, idx) => (
-                    <th
-                      key={idx}
-                      colSpan={col.colSpan || 1}
-                      rowSpan={col.rowSpan || 1}
-                      className="border border-cyan-600 px-2 py-3 text-center font-bold text-white text-xs tracking-wide uppercase leading-snug"
-                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
-                  <th
-                    rowSpan={3}
-                    className="border border-cyan-600 px-2 py-3 text-center font-bold text-white text-xs tracking-wide uppercase sticky right-0 bg-cyan-800"
-                    style={{ minWidth: 60, maxWidth: 60 }}
+          <tbody>
+            {data.length === 0 ? (
+              <tr>
+                <td
+                  style={{ 
+                    padding: '60px 20px',
+                    textAlign: 'center',
+                    color: '#bfbfbf',
+                    border: '1px solid #f0f0f0'
+                  }}
+                  colSpan={leafFields.length + 1}
+                >
+                  <InboxOutlined style={{ fontSize: '48px', marginBottom: '16px', display: 'block' }} />
+                  <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>No Data</div>
+                  <div style={{ fontSize: '14px' }}>Upload Excel or Add Row to start</div>
+                </td>
+              </tr>
+            ) : (
+              paginatedData.map((row, paginatedIndex) => {
+                const actualRowIndex = (currentPage - 1) * pageSize + paginatedIndex
+                return (
+                  <tr
+                    key={actualRowIndex}
+                    style={{ 
+                      background: paginatedIndex % 2 === 0 ? 'white' : '#fafafa'
+                    }}
+                    className="hover:bg-blue-50"
                   >
-                    #
-                  </th>
-                </tr>
-                <tr className="bg-gradient-to-r from-cyan-700 to-cyan-600">
-                  {headerRow2.map((col, idx) => (
-                    <th
-                      key={idx}
-                      colSpan={col.colSpan || 1}
-                      rowSpan={col.rowSpan || 1}
-                      className="border border-cyan-500 px-2 py-2 text-center font-semibold text-cyan-50 text-xs uppercase leading-snug"
-                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
-                </tr>
-                <tr className="bg-gradient-to-r from-cyan-600 to-cyan-500">
-                  {headerRow3.map((col, idx) => (
-                    <th
-                      key={idx}
-                      className="border border-cyan-400 px-2 py-2 text-center font-semibold text-white text-xs uppercase leading-snug"
-                      style={{ minWidth: col.width, maxWidth: col.width, whiteSpace: 'normal', wordWrap: 'break-word', lineHeight: '1.3' }}
-                    >
-                      {col.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {data.length === 0 ? (
-                  <tr>
+                    {leafFields.map((field) => (
+                      <td
+                        key={field.key}
+                        style={{ 
+                          minWidth: field.width,
+                          maxWidth: field.width,
+                          padding: 0,
+                          border: '1px solid #f0f0f0',
+                          wordWrap: 'break-word',
+                          whiteSpace: 'normal'
+                        }}
+                      >
+                        {field.key === 'seq' ? (
+                          <div style={{ 
+                            padding: '4px 6px',
+                            textAlign: 'center',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            background: '#f5f5f5'
+                          }}>
+                            {row.seq}
+                          </div>
+                        ) : (
+                          <div style={{ padding: '1px' }}>
+                            {renderCellInput(row, actualRowIndex, field)}
+                          </div>
+                        )}
+                      </td>
+                    ))}
                     <td
-                      className="border border-slate-200 px-4 py-16 text-center text-slate-400"
-                      colSpan={leafFields.length + 1}
+                      style={{ 
+                        minWidth: 60,
+                        padding: '4px',
+                        textAlign: 'center',
+                        border: '1px solid #f0f0f0',
+                        position: 'sticky',
+                        right: 0,
+                        background: paginatedIndex % 2 === 0 ? 'white' : '#fafafa'
+                      }}
                     >
-                      <InboxOutlined className="text-6xl mb-4 block" />
-                      <div className="text-lg font-medium mb-2">No Data Loaded</div>
-                      <div>Upload an Excel file or click "Add Row" to get started</div>
+                      <Button
+                        type="text"
+                        danger
+                        size="small"
+                        onClick={() => handleDeleteRow(actualRowIndex)}
+                        style={{ padding: '0 4px' }}
+                      >
+                        ✕
+                      </Button>
                     </td>
                   </tr>
-                ) : (
-                  data.map((row, rowIndex) => (
-                    <tr
-                      key={rowIndex}
-                      className={`
-                        ${rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50'}
-                        hover:bg-blue-50 transition-colors duration-100
-                      `}
-                    >
-                      {leafFields.map((field) => (
-                        <td
-                          key={field.key}
-                          className="border border-slate-200 p-0"
-                          style={{ minWidth: field.width, maxWidth: field.width, wordWrap: 'break-word', whiteSpace: 'normal' }}
-                        >
-                          {field.key === 'seq' ? (
-                            <div className="px-3 py-2 text-center text-slate-600 font-medium bg-slate-100">
-                              {row.seq}
-                            </div>
-                          ) : (
-                            <div className="px-1 py-1">
-                              {renderCellInput(row, rowIndex, field)}
-                            </div>
-                          )}
-                        </td>
-                      ))}
-                      <td
-                        className="border border-slate-200 p-2 text-center sticky right-0 bg-white"
-                        style={{ minWidth: 60 }}
-                      >
-                        <Button
-                          type="text"
-                          danger
-                          size="small"
-                          onClick={() => handleDeleteRow(rowIndex)}
-                          className="!px-2"
-                        >
-                          ✕
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
+                )
+              })
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination Footer */}
+      {data.length > 0 && (
+        <div style={{ 
+          background: '#fafafa',
+          padding: '10px 16px',
+          borderTop: '1px solid #e8e8e8',
+          display: 'flex',
+          justifyContent: 'center',
+          flexShrink: 0
+        }}>
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={data.length}
+            onChange={(page) => setCurrentPage(page)}
+            showSizeChanger={false}
+            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
+            size="small"
+          />
+        </div>
+      )}
     </div>
   )
 }
