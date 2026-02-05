@@ -1,4 +1,4 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Progress } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Progress, Select, Alert, Collapse } from 'antd'
 import {
   TeamOutlined,
   CheckCircleOutlined,
@@ -6,6 +6,12 @@ import {
   CloseCircleOutlined,
   DollarOutlined,
   CalendarOutlined,
+  WarningOutlined,
+  ExclamationCircleOutlined,
+  InfoCircleOutlined,
+  FilterOutlined,
+  BankOutlined,
+  BookOutlined,
 } from '@ant-design/icons'
 import {
   PieChart,
@@ -16,90 +22,153 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const { Title, Text } = Typography
+const { Panel } = Collapse
 
 // API Base URL
 const API_URL = 'http://localhost:8000/api'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [filters, setFilters] = useState({
+    semester: null,
+    academic_year: null,
+  })
+  const [filterOptions, setFilterOptions] = useState({
+    semesters: [],
+    academic_years: [],
+  })
   const [dashboardData, setDashboardData] = useState({
     stats: {
       totalStudents: 0,
       activeScholars: 0,
       graduated: 0,
       terminated: 0,
+      others: 0,
       totalDisbursed: 0,
     },
-    scholarshipStatus: [],
+    statusDistribution: [],
     degreeLevels: [],
+    scholarshipPrograms: [],
+    institutionTypes: [],
     recentRegistrations: [],
+    warnings: {
+      no_uii: { count: 0, students: [] },
+      duplicate_award_numbers: { count: 0, duplicates: [], students: [] },
+      no_authority: { count: 0, students: [] },
+      incomplete_info: { count: 0, students: [] },
+    },
   })
 
   // Fetch dashboard data from Laravel API
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const fetchDashboardData = async (currentFilters = filters) => {
+    try {
+      setLoading(true)
+      setError(null)
 
-        const response = await fetch(`${API_URL}/dashboard/stats`)
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
+      const params = new URLSearchParams()
+      if (currentFilters.semester) params.append('semester', currentFilters.semester)
+      if (currentFilters.academic_year) params.append('academic_year', currentFilters.academic_year)
 
-        const data = await response.json()
-
-        // Handle potential error response
-        if (data.error) {
-          throw new Error(data.message || 'Unknown error occurred')
-        }
-
-        setDashboardData({
-          stats: {
-            totalStudents: data.total_students || 0,
-            activeScholars: data.active_scholars || 0,
-            graduated: data.graduated || 0,
-            terminated: data.terminated || 0,
-            totalDisbursed: data.total_disbursed || 0,
-          },
-          scholarshipStatus: [
-            { name: 'On-going', value: data.active_scholars || 0, color: '#52c41a' },
-            { name: 'Graduated', value: data.graduated || 0, color: '#1890ff' },
-            { name: 'Terminated', value: data.terminated || 0, color: '#ff4d4f' },
-          ],
-          degreeLevels: (data.degree_levels || []).map(item => ({
-            level: item.level || 'Unknown',
-            students: parseInt(item.students) || 0,
-          })),
-          recentRegistrations: data.recent_registrations || [],
-        })
-      } catch (err) {
-        console.error('Dashboard fetch error:', err)
-        setError(err.message)
-        
-        // Set fallback empty data
-        setDashboardData({
-          stats: { totalStudents: 0, activeScholars: 0, graduated: 0, terminated: 0, totalDisbursed: 0 },
-          scholarshipStatus: [],
-          degreeLevels: [],
-          recentRegistrations: [],
-        })
-      } finally {
-        setLoading(false)
+      const url = `${API_URL}/dashboard/stats${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
-    }
 
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.message || 'Unknown error occurred')
+      }
+
+      // Set filter options (only on first load)
+      if (data.filters) {
+        setFilterOptions({
+          semesters: data.filters.semesters || [],
+          academic_years: data.filters.academic_years || [],
+        })
+      }
+
+      setDashboardData({
+        stats: {
+          totalStudents: data.total_students || 0,
+          activeScholars: data.active_scholars || 0,
+          graduated: data.graduated || 0,
+          terminated: data.terminated || 0,
+          others: data.others || 0,
+          totalDisbursed: data.total_disbursed || 0,
+        },
+        statusDistribution: (data.status_distribution || []).map(item => ({
+          name: item.status || 'Unknown',
+          value: item.count || 0,
+          color: getStatusColor(item.status),
+        })),
+        degreeLevels: (data.degree_levels || []).map(item => ({
+          level: item.level || 'Unknown',
+          students: parseInt(item.students) || 0,
+        })),
+        scholarshipPrograms: (data.scholarship_programs || []).map(item => ({
+          program: item.scholarship_program || 'Unknown',
+          count: parseInt(item.count) || 0,
+        })),
+        institutionTypes: (data.institution_types || []).map(item => ({
+          type: item.institutional_type || 'Unknown',
+          count: parseInt(item.count) || 0,
+        })),
+        recentRegistrations: data.recent_registrations || [],
+        warnings: data.warnings || {
+          no_uii: { count: 0, students: [] },
+          duplicate_award_numbers: { count: 0, duplicates: [], students: [] },
+          no_authority: { count: 0, students: [] },
+          incomplete_info: { count: 0, students: [] },
+        },
+      })
+    } catch (err) {
+      console.error('Dashboard fetch error:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchDashboardData()
   }, [])
+
+  const handleFilterChange = (key, value) => {
+    const newFilters = { ...filters, [key]: value }
+    setFilters(newFilters)
+    fetchDashboardData(newFilters)
+  }
+
+  const clearFilters = () => {
+    const newFilters = { semester: null, academic_year: null }
+    setFilters(newFilters)
+    fetchDashboardData(newFilters)
+  }
+
+  // Get color for status
+  function getStatusColor(status) {
+    const colors = {
+      'Active': '#52c41a',
+      'Graduated': '#1890ff',
+      'Terminated': '#ff4d4f',
+      'Others': '#faad14',
+      'Unknown': '#d9d9d9',
+    }
+    return colors[status] || colors['Others']
+  }
 
   // Calculate percentages for quick stats
   const getPercentage = (value) => {
@@ -117,6 +186,15 @@ export default function Dashboard() {
     return value.toLocaleString()
   }
 
+  // Get total warnings count
+  const getTotalWarnings = () => {
+    const w = dashboardData.warnings
+    return (w.no_uii?.count || 0) + 
+           (w.duplicate_award_numbers?.count || 0) + 
+           (w.no_authority?.count || 0) + 
+           (w.incomplete_info?.count || 0)
+  }
+
   // Stats Cards Configuration
   const statsConfig = [
     {
@@ -127,7 +205,7 @@ export default function Dashboard() {
       bgColor: '#e6edfa',
     },
     {
-      title: 'Active Scholars',
+      title: 'Active',
       value: dashboardData.stats.activeScholars,
       icon: <CheckCircleOutlined />,
       color: '#52c41a',
@@ -161,45 +239,62 @@ export default function Dashboard() {
     },
   ]
 
-  // Recent Registrations Table Columns
-  const recentColumns = [
-    {
-      title: 'Name',
-      key: 'name',
-      render: (_, record) => {
-        const fullName = [
-          record.first_name,
-          record.middle_name,
-          record.surname,
-          record.extension
-        ].filter(Boolean).join(' ')
-        return <Text strong style={{ fontSize: '13px' }}>{fullName}</Text>
+  // Warning columns for tables
+  const warningColumns = {
+    noUii: [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
       },
-    },
-    {
-      title: 'Program',
-      dataIndex: 'degree_program',
-      key: 'degree_program',
-      ellipsis: true,
-      render: (text) => <Text style={{ fontSize: '12px' }}>{text}</Text>,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'scholarship_status',
-      key: 'scholarship_status',
-      width: 90,
-      render: (status) => {
-        const colorMap = {
-          'On-going': 'green',
-          'Graduated': 'blue',
-          'Terminated': 'red',
-        }
-        return <Tag color={colorMap[status] || 'default'} style={{ fontSize: '11px' }}>{status}</Tag>
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
+      { title: 'Institution', dataIndex: 'name_of_institution', key: 'institution', ellipsis: true },
+      {
+        title: 'Action',
+        key: 'action',
+        width: 80,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
       },
-    },
-  ]
+    ],
+    duplicateAward: [
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number' },
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
+      },
+      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+      {
+        title: 'Action',
+        key: 'action',
+        width: 80,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
+      },
+    ],
+    noAuthority: [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
+      },
+      { title: 'UII', dataIndex: 'uii', key: 'uii', width: 80 },
+      { title: 'Degree Program', dataIndex: 'degree_program', key: 'program', ellipsis: true },
+      {
+        title: 'Action',
+        key: 'action',
+        width: 80,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
+      },
+    ],
+  }
 
-  if (loading) {
+  if (loading && !dashboardData.stats.totalStudents) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
         <Spin size="large" />
@@ -216,9 +311,7 @@ export default function Dashboard() {
             <div style={{ textAlign: 'center' }}>
               <Text type="danger" strong>Failed to load dashboard data</Text>
               <br />
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                {error}
-              </Text>
+              <Text type="secondary" style={{ fontSize: '12px' }}>{error}</Text>
               <br />
               <Text type="secondary" style={{ fontSize: '12px' }}>
                 Make sure Laravel server is running on localhost:8000
@@ -231,29 +324,185 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ padding: '16px', height: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <Title level={3} style={{ margin: 0, color: '#0032a0' }}>
-            Dashboard
-          </Title>
-          <Text type="secondary" style={{ fontSize: '13px' }}>
-            Student Financial Assistance Program
-          </Text>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8c8c8c' }}>
-          <CalendarOutlined />
-          <Text type="secondary" style={{ fontSize: '13px' }}>
-            {new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </Text>
-        </div>
+    <div style={{ padding: '16px', minHeight: 'calc(100vh - 80px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Header with Filters */}
+      <div style={{ marginBottom: '16px' }}>
+        <Row justify="space-between" align="middle" gutter={[16, 16]}>
+          <Col>
+            <Title level={3} style={{ margin: 0, color: '#0032a0' }}>Dashboard</Title>
+            <Text type="secondary" style={{ fontSize: '13px' }}>
+              Student Financial Assistance Program
+            </Text>
+          </Col>
+          
+          <Col>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Filters */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f5f5f5', padding: '8px 12px', borderRadius: '8px' }}>
+                <FilterOutlined style={{ color: '#8c8c8c' }} />
+                <Select
+                  placeholder="Academic Year"
+                  value={filters.academic_year}
+                  onChange={(v) => handleFilterChange('academic_year', v)}
+                  allowClear
+                  style={{ width: 130 }}
+                  size="small"
+                >
+                  {filterOptions.academic_years.map(ay => (
+                    <Select.Option key={ay} value={ay}>{ay}</Select.Option>
+                  ))}
+                </Select>
+                <Select
+                  placeholder="Semester"
+                  value={filters.semester}
+                  onChange={(v) => handleFilterChange('semester', v)}
+                  allowClear
+                  style={{ width: 110 }}
+                  size="small"
+                >
+                  {filterOptions.semesters.map(sem => (
+                    <Select.Option key={sem} value={sem}>{sem}</Select.Option>
+                  ))}
+                </Select>
+                {(filters.semester || filters.academic_year) && (
+                  <a onClick={clearFilters} style={{ fontSize: '12px', color: '#ff4d4f' }}>Clear</a>
+                )}
+              </div>
+              
+              {/* Date */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#8c8c8c' }}>
+                <CalendarOutlined />
+                <Text type="secondary" style={{ fontSize: '13px' }}>
+                  {new Date().toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                  })}
+                </Text>
+              </div>
+            </div>
+          </Col>
+        </Row>
       </div>
+
+      {/* Data Quality Warnings */}
+      {getTotalWarnings() > 0 && (
+        <Collapse 
+          ghost 
+          style={{ marginBottom: '16px', background: '#fffbe6', borderRadius: '8px', border: '1px solid #ffe58f' }}
+        >
+          <Panel
+            header={
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <WarningOutlined style={{ color: '#faad14' }} />
+                <Text strong style={{ color: '#d48806' }}>
+                  Data Quality Warnings ({getTotalWarnings()} issues found)
+                </Text>
+              </div>
+            }
+            key="warnings"
+          >
+            <Row gutter={[16, 16]}>
+              {/* No UII Warning */}
+              {dashboardData.warnings.no_uii?.count > 0 && (
+                <Col xs={24} md={12}>
+                  <Card 
+                    size="small" 
+                    title={
+                      <span style={{ color: '#ff4d4f' }}>
+                        <ExclamationCircleOutlined /> Missing UII ({dashboardData.warnings.no_uii.count})
+                      </span>
+                    }
+                    style={{ borderColor: '#ffccc7' }}
+                  >
+                    <Table
+                      dataSource={dashboardData.warnings.no_uii.students.slice(0, 5)}
+                      columns={warningColumns.noUii}
+                      size="small"
+                      pagination={false}
+                      rowKey="seq"
+                    />
+                    {dashboardData.warnings.no_uii.count > 5 && (
+                      <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
+                        And {dashboardData.warnings.no_uii.count - 5} more...
+                      </Text>
+                    )}
+                  </Card>
+                </Col>
+              )}
+
+              {/* Duplicate Award Numbers */}
+              {dashboardData.warnings.duplicate_award_numbers?.count > 0 && (
+                <Col xs={24} md={12}>
+                  <Card 
+                    size="small" 
+                    title={
+                      <span style={{ color: '#fa8c16' }}>
+                        <ExclamationCircleOutlined /> Duplicate Award Numbers ({dashboardData.warnings.duplicate_award_numbers.count})
+                      </span>
+                    }
+                    style={{ borderColor: '#ffd591' }}
+                  >
+                    <Table
+                      dataSource={dashboardData.warnings.duplicate_award_numbers.students.slice(0, 6)}
+                      columns={warningColumns.duplicateAward}
+                      size="small"
+                      pagination={false}
+                      rowKey="seq"
+                    />
+                    {dashboardData.warnings.duplicate_award_numbers.students.length > 6 && (
+                      <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
+                        And more duplicates...
+                      </Text>
+                    )}
+                  </Card>
+                </Col>
+              )}
+
+              {/* No Authority Info */}
+              {dashboardData.warnings.no_authority?.count > 0 && (
+                <Col xs={24} md={12}>
+                  <Card 
+                    size="small" 
+                    title={
+                      <span style={{ color: '#1890ff' }}>
+                        <InfoCircleOutlined /> Missing Authority Info ({dashboardData.warnings.no_authority.count})
+                      </span>
+                    }
+                    style={{ borderColor: '#91d5ff' }}
+                  >
+                    <Table
+                      dataSource={dashboardData.warnings.no_authority.students.slice(0, 5)}
+                      columns={warningColumns.noAuthority}
+                      size="small"
+                      pagination={false}
+                      rowKey="seq"
+                    />
+                    {dashboardData.warnings.no_authority.count > 5 && (
+                      <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginTop: '8px' }}>
+                        And {dashboardData.warnings.no_authority.count - 5} more...
+                      </Text>
+                    )}
+                  </Card>
+                </Col>
+              )}
+
+              {/* Incomplete Info */}
+              {dashboardData.warnings.incomplete_info?.count > 0 && (
+                <Col xs={24} md={12}>
+                  <Alert
+                    type="info"
+                    showIcon
+                    message={`${dashboardData.warnings.incomplete_info.count} students have incomplete personal information`}
+                    description="Missing surname, first name, date of birth, or contact number"
+                  />
+                </Col>
+              )}
+            </Row>
+          </Panel>
+        </Collapse>
+      )}
 
       {/* Stats Cards Row */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
@@ -310,28 +559,25 @@ export default function Dashboard() {
       {/* Main Content Row */}
       <Row gutter={[12, 12]} style={{ flex: 1, minHeight: 0 }}>
         {/* Left Column - Charts */}
-        <Col xs={24} lg={16} style={{ display: 'flex', flexDirection: 'column' }}>
-          <Row gutter={[12, 12]} style={{ flex: 1 }}>
+        <Col xs={24} lg={16}>
+          <Row gutter={[12, 12]}>
             {/* Scholarship Status Pie Chart */}
-            <Col xs={24} md={12} style={{ display: 'flex' }}>
+            <Col xs={24} md={12}>
               <Card
                 title={<Text strong style={{ fontSize: '14px' }}>Scholarship Status</Text>}
                 style={{
                   borderRadius: '12px',
                   border: 'none',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
                 }}
                 headStyle={{ padding: '12px 16px', minHeight: 'auto' }}
-                bodyStyle={{ padding: 16, flex: 1 }}
+                bodyStyle={{ padding: 16 }}
               >
-                {dashboardData.scholarshipStatus.some(item => item.value > 0) ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                {dashboardData.statusDistribution.some(item => item.value > 0) ? (
+                  <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
                       <Pie
-                        data={dashboardData.scholarshipStatus.filter(item => item.value > 0)}
+                        data={dashboardData.statusDistribution.filter(item => item.value > 0)}
                         cx="50%"
                         cy="45%"
                         innerRadius="45%"
@@ -339,13 +585,13 @@ export default function Dashboard() {
                         paddingAngle={3}
                         dataKey="value"
                       >
-                        {dashboardData.scholarshipStatus
+                        {dashboardData.statusDistribution
                           .filter(item => item.value > 0)
                           .map((entry, index) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [value, 'Students']} />
+                      <RechartsTooltip formatter={(value, name) => [value, name]} />
                       <Legend 
                         verticalAlign="bottom"
                         wrapperStyle={{ fontSize: '12px', paddingTop: '8px' }}
@@ -355,59 +601,123 @@ export default function Dashboard() {
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 250 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
                     <Empty description="No data available" />
                   </div>
                 )}
               </Card>
             </Col>
 
-            {/* Students by Degree Level Bar Chart */}
-            <Col xs={24} md={12} style={{ display: 'flex' }}>
+            {/* Students by Scholarship Program */}
+            <Col xs={24} md={12}>
               <Card
-                title={<Text strong style={{ fontSize: '14px' }}>Students by Degree Level</Text>}
+                title={<Text strong style={{ fontSize: '14px' }}>By Scholarship Program</Text>}
                 style={{
                   borderRadius: '12px',
                   border: 'none',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                  flex: 1,
-                  display: 'flex',
-                  flexDirection: 'column',
                 }}
                 headStyle={{ padding: '12px 16px', minHeight: 'auto' }}
-                bodyStyle={{ padding: 16, flex: 1 }}
+                bodyStyle={{ padding: 16 }}
+              >
+                {dashboardData.scholarshipPrograms.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={dashboardData.scholarshipPrograms} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                      <XAxis type="number" tick={{ fill: '#8c8c8c', fontSize: 11 }} />
+                      <YAxis 
+                        type="category" 
+                        dataKey="program" 
+                        tick={{ fill: '#8c8c8c', fontSize: 10 }} 
+                        width={80}
+                        tickLine={false}
+                      />
+                      <RechartsTooltip />
+                      <Bar dataKey="count" fill="#0032a0" radius={[0, 4, 4, 0]} maxBarSize={20} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
+                    <Empty description="No data available" />
+                  </div>
+                )}
+              </Card>
+            </Col>
+
+            {/* Students by Degree Level */}
+            <Col xs={24} md={12}>
+              <Card
+                title={<Text strong style={{ fontSize: '14px' }}><BookOutlined /> By Degree Level</Text>}
+                style={{
+                  borderRadius: '12px',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                }}
+                headStyle={{ padding: '12px 16px', minHeight: 'auto' }}
+                bodyStyle={{ padding: 16 }}
               >
                 {dashboardData.degreeLevels.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
+                  <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={dashboardData.degreeLevels}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
                       <XAxis 
                         dataKey="level" 
-                        tick={{ fill: '#8c8c8c', fontSize: 11 }} 
+                        tick={{ fill: '#8c8c8c', fontSize: 10 }} 
                         tickLine={false}
                         axisLine={{ stroke: '#f0f0f0' }}
                         interval={0}
-                        angle={-20}
+                        angle={-15}
                         textAnchor="end"
-                        height={60}
+                        height={50}
                       />
-                      <YAxis 
-                        tick={{ fill: '#8c8c8c', fontSize: 11 }} 
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          borderRadius: '8px', 
-                          border: 'none', 
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)' 
-                        }}
-                      />
-                      <Bar dataKey="students" fill="#0032a0" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                      <YAxis tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <RechartsTooltip />
+                      <Bar dataKey="students" fill="#52c41a" radius={[4, 4, 0, 0]} maxBarSize={40} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 250 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
+                    <Empty description="No data available" />
+                  </div>
+                )}
+              </Card>
+            </Col>
+
+            {/* Students by Institution Type */}
+            <Col xs={24} md={12}>
+              <Card
+                title={<Text strong style={{ fontSize: '14px' }}><BankOutlined /> By Institution Type</Text>}
+                style={{
+                  borderRadius: '12px',
+                  border: 'none',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                }}
+                headStyle={{ padding: '12px 16px', minHeight: 'auto' }}
+                bodyStyle={{ padding: 16 }}
+              >
+                {dashboardData.institutionTypes.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={dashboardData.institutionTypes}
+                        cx="50%"
+                        cy="45%"
+                        outerRadius="70%"
+                        dataKey="count"
+                        nameKey="type"
+                        label={({ type, percent }) => `${type} ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {dashboardData.institutionTypes.map((entry, index) => {
+                          const colors = ['#0032a0', '#52c41a', '#faad14', '#722ed1', '#eb2f96']
+                          return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                        })}
+                      </Pie>
+                      <RechartsTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 220 }}>
                     <Empty description="No data available" />
                   </div>
                 )}
@@ -416,13 +726,13 @@ export default function Dashboard() {
           </Row>
         </Col>
 
-        {/* Right Column - Tables and Stats */}
-        <Col xs={24} lg={8} style={{ display: 'flex', flexDirection: 'column' }}>
-          {/* Recent Registrations Table */}
+        {/* Right Column - Recent & Overview */}
+        <Col xs={24} lg={8}>
+          {/* Recent Registrations */}
           <Card
             title={<Text strong style={{ fontSize: '14px' }}>Recent Registrations</Text>}
             extra={
-              <a href="/students" style={{ color: '#0032a0', fontSize: '12px', fontWeight: 500 }}>
+              <a onClick={() => navigate('/students')} style={{ color: '#0032a0', fontSize: '12px', fontWeight: 500 }}>
                 View All →
               </a>
             }
@@ -430,26 +740,45 @@ export default function Dashboard() {
               borderRadius: '12px',
               border: 'none',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
               marginBottom: 12,
             }}
             headStyle={{ padding: '12px 16px', minHeight: 'auto' }}
-            bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
+            bodyStyle={{ padding: 0 }}
           >
             <Table
-              columns={recentColumns}
+              columns={[
+                {
+                  title: 'Name',
+                  key: 'name',
+                  render: (_, record) => {
+                    const fullName = [record.first_name, record.surname].filter(Boolean).join(' ')
+                    return <Text strong style={{ fontSize: '12px' }}>{fullName || 'N/A'}</Text>
+                  },
+                },
+                {
+                  title: 'Status',
+                  dataIndex: 'scholarship_status',
+                  key: 'status',
+                  width: 80,
+                  render: (status) => {
+                    const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+                    return <Tag color={colorMap[status] || 'default'} style={{ fontSize: '10px' }}>{status || 'N/A'}</Tag>
+                  },
+                },
+              ]}
               dataSource={dashboardData.recentRegistrations}
               pagination={false}
               size="small"
               rowKey="student_id"
               locale={{ emptyText: 'No recent registrations' }}
-              scroll={{ y: 200 }}
+              onRow={(record) => ({
+                onClick: () => navigate(`/students/${record.student_id}`),
+                style: { cursor: 'pointer' }
+              })}
             />
           </Card>
 
-          {/* Quick Stats Summary */}
+          {/* Status Overview */}
           <Card
             title={<Text strong style={{ fontSize: '14px' }}>Status Overview</Text>}
             style={{
@@ -463,7 +792,7 @@ export default function Dashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <Text style={{ fontSize: '12px' }}>On-going</Text>
+                  <Text style={{ fontSize: '12px' }}>Active</Text>
                   <Text strong style={{ fontSize: '12px', color: '#52c41a' }}>
                     {dashboardData.stats.activeScholars} ({getPercentage(dashboardData.stats.activeScholars)}%)
                   </Text>
@@ -503,6 +832,22 @@ export default function Dashboard() {
                   size="small"
                 />
               </div>
+              {dashboardData.stats.others > 0 && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <Text style={{ fontSize: '12px' }}>Others</Text>
+                    <Text strong style={{ fontSize: '12px', color: '#faad14' }}>
+                      {dashboardData.stats.others} ({getPercentage(dashboardData.stats.others)}%)
+                    </Text>
+                  </div>
+                  <Progress 
+                    percent={parseFloat(getPercentage(dashboardData.stats.others))} 
+                    showInfo={false}
+                    strokeColor="#faad14"
+                    size="small"
+                  />
+                </div>
+              )}
             </div>
           </Card>
         </Col>

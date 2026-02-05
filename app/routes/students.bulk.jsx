@@ -20,6 +20,7 @@ const SEM_FIELDS = [
   { key: 'paymentAmount', label: 'PAYMENT AMOUNT', width: 160 },
   { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 160 },
   { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 160, type: 'date' },
+  { key: 'status', label: 'STATUS', width: 140 },
   { key: 'remarks', label: 'REMARKS', width: 200 },
 ]
 
@@ -112,6 +113,7 @@ const STATIC_SCHEMA = [
   { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 3, width: 100 },
   { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 3, width: 180 },
   { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3, width: 140 },
+  { key: 'learnerReferenceNumber', label: 'LEARNER REFERENCE NUMBER', rowSpan: 3, width: 200 },
   {
     label: 'NAME OF GRANTEE',
     colSpan: 4,
@@ -233,6 +235,7 @@ const FRONTEND_TO_BACKEND_MAP = {
   awardYear: 'award_year',
   scholarshipProgram: 'scholarship_program',
   awardNumber: 'award_number',
+  learnerReferenceNumber: 'learner_reference_number',
   surname: 'surname',
   firstName: 'first_name',
   middleName: 'middle_name',
@@ -310,6 +313,7 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
       paymentAmount: 'payment_amount',
       lddapNumber: 'lddap_number',
       disbursementDate: 'disbursement_date',
+      status: 'status',
       remarks: 'remarks',
     }
 
@@ -493,17 +497,23 @@ export default function ImportBulk() {
             return
           }
           const candidates = nextLeafFields.filter((f) => {
-            const matchesLabel = sanitize(f.label) === labelSan || sanitize(f.key) === labelSan
+            const fLabelSan = sanitize(f.label)
+            const fKeySan = sanitize(f.key)
+            const matchesLabel = fLabelSan === labelSan || fKeySan === labelSan
             const ayMatches = col.ayLabel
               ? mergedAys.find((ay) => ay.label === col.ayLabel)?.id === f.ayId
               : !f.ayId
             const semMatches = col.semester ? f.semester === col.semester : true
 
             // For CYL columns, allow loose match
-            const isCyl = f.key.endsWith('__cyl') || sanitize(f.label).includes('cyl')
+            const isCyl = f.key.endsWith('__cyl') || fLabelSan.includes('cyl')
             const cylMatch = isCyl && (labelSan.includes('cyl') || labelSan.includes('curriculum'))
 
-            return ayMatches && (semMatches && (matchesLabel || cylMatch))
+            // LDDAP headers often appear as just "LDDAP"; accept starts-with for LDDAP fields
+            const isLddapField = fLabelSan.includes('lddap') || fKeySan.includes('lddap')
+            const lddapMatch = isLddapField && labelSan.startsWith('lddap')
+
+            return ayMatches && (semMatches && (matchesLabel || cylMatch || lddapMatch))
           })
 
           if (candidates.length > 0) {
