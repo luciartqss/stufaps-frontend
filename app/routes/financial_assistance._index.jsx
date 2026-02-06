@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Typography, Card, Select, Progress } from 'antd'
 import { TeamOutlined, ContactsOutlined, UserOutlined } from '@ant-design/icons'
 import EditSlotsModal from '../components/EditSlotsModal'
+
 import UpdateSlotModal from '../components/UpdateSlotModal'
 
 const { Title, Text } = Typography
@@ -157,7 +158,7 @@ export default function Financial_AssistanceIndex() {
           )
         ]
 
-        setAcademicYears([ ...uniqueYears.sort()])
+        setAcademicYears([...uniqueYears.sort()])
         setLoading(false)
       })
       .catch(err => {
@@ -236,6 +237,7 @@ export default function Financial_AssistanceIndex() {
         <div>
           <button
             onClick={() => setOpenModalAddSlot(true)}
+            onUpdated={() => fetchPrograms()}
             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
           >
             Add Slots
@@ -243,6 +245,7 @@ export default function Financial_AssistanceIndex() {
 
           <button
             onClick={() => setOpenModalUpdateSlot(true)}
+            onUpdated={() => fetchPrograms()}
             className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
           >
             Update Slots
@@ -265,15 +268,28 @@ export default function Financial_AssistanceIndex() {
           <EditSlotsModal
             open={openModalAddSlot}
             onClose={() => setOpenModalAddSlot(false)}
-
+            onUpdated={(updatedProgram) => {
+              setFinancialAssistances(prev =>
+                // Replace the updated program if it exists, otherwise add it
+                prev.some(p => p.id === updatedProgram.id)
+                  ? prev.map(p => p.id === updatedProgram.id ? updatedProgram : p)
+                  : [...prev, updatedProgram]
+              )
+            }}
           />
 
           <UpdateSlotModal
             open={openModalUpdateSlot}
             onClose={() => setOpenModalUpdateSlot(false)}
-
+            onUpdated={(updatedProgram) => {
+              setFinancialAssistances(prev =>
+                // Replace the updated program if it exists, otherwise add it
+                prev.some(p => p.id === updatedProgram.id)
+                  ? prev.map(p => p.id === updatedProgram.id ? updatedProgram : p)
+                  : [...prev, updatedProgram]
+              )
+            }}
           />
-
         </div>
         <br />
         <StatsCards financialAssistances={filteredAssistances} />
