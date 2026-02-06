@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Drawer } from 'antd'
 import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -9,6 +9,16 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 const { Title } = Typography
 const { Search } = Input
 const { Option } = Select
+
+// Debounce hook for search
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value)
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(handler)
+  }, [value, delay])
+  return debouncedValue
+}
 
 // Shared schema copied from students.bulk for consistent Excel structure
 const SEM_FIELDS = [
@@ -284,7 +294,6 @@ export function meta() {
 
 export default function StudentsIndex() {
   const [students, setStudents] = useState([])
-  const [filteredStudents, setFilteredStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchValue, setSearchValue] = useState('')
   const [statusFilter, setStatusFilter] = useState(null)
@@ -292,7 +301,7 @@ export default function StudentsIndex() {
   const [academicYearFilter, setAcademicYearFilter] = useState(null)
   const [semesterFilter, setSemesterFilter] = useState(null)
   const [courseFilter, setCourseFilter] = useState(null)
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10 })
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
   const [modalVisible, setModalVisible] = useState(false)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const [regionFilter, setRegionFilter] = useState(null)
@@ -303,44 +312,52 @@ export default function StudentsIndex() {
   const [specialGroupFilter, setSpecialGroupFilter] = useState(null)
   const [authorityTypeFilter, setAuthorityTypeFilter] = useState(null)
   const [awardYearFilter, setAwardYearFilter] = useState(null)
+  const [filterOptions, setFilterOptions] = useState({})
   const navigate = useNavigate()
+  
+  // Debounced search value for API calls
+  const debouncedSearch = useDebounce(searchValue, 300)
 
   const academicYearsFromData = useMemo(() => {
     const labels = new Set()
-    filteredStudents.forEach((s) => {
+    students.forEach((s) => {
       (s.disbursements || []).forEach((d) => {
         if (d.academic_year) labels.add(d.academic_year)
       })
     })
     return sortAcademicYears(Array.from(labels).map((label) => ({ id: makeAyId(label), label })))
-  }, [filteredStudents])
+  }, [students])
 
   useEffect(() => {
+    fetchFilterOptions()
     fetchStudents()
   }, [])
 
-  const fetchStudents = async () => {
-    setLoading(true)
+  // Auto-search when debounced search value changes
+  useEffect(() => {
+    if (debouncedSearch !== undefined) {
+      fetchStudents({ search: debouncedSearch, page: 1 })
+    }
+  }, [debouncedSearch])
+
+  // Fetch filter options once on mount
+  const fetchFilterOptions = async () => {
     try {
-      const response = await fetch(`${API_BASE}/students`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch students')
+      const response = await fetch(`${API_BASE}/students/filter-options`)
+      if (response.ok) {
+        const data = await response.json()
+        setFilterOptions(data)
       }
-      const data = await response.json()
-      console.log('Fetched data:', data) // Debug log
-      const studentsData = Array.isArray(data) ? data : data.data || []
-      setStudents(studentsData)
-      setFilteredStudents(studentsData)
     } catch (error) {
-      console.error('Error fetching students:', error)
-      message.error('Failed to load students')
-    } finally {
-      setLoading(false)
+      console.error('Error fetching filter options:', error)
     }
   }
 
-  const applyAllFilters = (overrides = {}) => {
-    applyFilters({
+  // Build query params from current filters
+  const buildQueryParams = (overrides = {}) => {
+    const params = new URLSearchParams()
+    
+    const currentFilters = {
       search: overrides.search ?? searchValue,
       status: overrides.status ?? statusFilter,
       program: overrides.program ?? programFilter,
@@ -355,7 +372,45 @@ export default function StudentsIndex() {
       specialGroup: overrides.specialGroup ?? specialGroupFilter,
       authorityType: overrides.authorityType ?? authorityTypeFilter,
       awardYear: overrides.awardYear ?? awardYearFilter,
+      page: overrides.page ?? pagination.current,
+      pageSize: overrides.pageSize ?? pagination.pageSize,
+    }
+
+    Object.entries(currentFilters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        params.append(key, value)
+      }
     })
+
+    return params.toString()
+  }
+
+  const fetchStudents = async (overrides = {}) => {
+    setLoading(true)
+    try {
+      const queryString = buildQueryParams(overrides)
+      const response = await fetch(`${API_BASE}/students?${queryString}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch students')
+      }
+      const data = await response.json()
+      setStudents(data.data || [])
+      setPagination(prev => ({
+        ...prev,
+        current: data.page || 1,
+        total: data.total || 0,
+      }))
+    } catch (error) {
+      console.error('Error fetching students:', error)
+      message.error('Failed to load students')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const applyFilters = (overrides = {}) => {
+    // Reset to page 1 when filters change
+    fetchStudents({ ...overrides, page: 1 })
   }
 
   // Define table columns
@@ -530,18 +585,37 @@ export default function StudentsIndex() {
   }
 
   // Handle "Extract Excel" button click - build XLSX with merged headers like bulk import
-  const handleExtractExcel = () => {
-    if (filteredStudents.length === 0) {
-      message.info('No students to export')
-      return
-    }
+  const handleExtractExcel = async () => {
+    message.loading({ content: 'Preparing export...', key: 'export' })
+    
+    try {
+      // Fetch all filtered students for export (no pagination)
+      const queryString = buildQueryParams({ page: undefined, pageSize: undefined })
+      const response = await fetch(`${API_BASE}/students/export?${queryString}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch students for export')
+      }
+      const exportStudents = await response.json()
 
-    const academicYears = academicYearsFromData
-    const { leafFields } = buildHeaders(academicYears)
-    const { headerRows, merges } = buildHeaderRowsWithMerges(leafFields)
+      if (exportStudents.length === 0) {
+        message.info({ content: 'No students to export', key: 'export' })
+        return
+      }
 
-    const rows = buildExportRows(filteredStudents, academicYears, leafFields)
-    const dataRows = rows.map((r) => leafFields.map((f) => r[f.key] ?? ''))
+      // Build academic years from export data
+      const labels = new Set()
+      exportStudents.forEach((s) => {
+        (s.disbursements || []).forEach((d) => {
+          if (d.academic_year) labels.add(d.academic_year)
+        })
+      })
+      const academicYears = sortAcademicYears(Array.from(labels).map((label) => ({ id: makeAyId(label), label })))
+      
+      const { leafFields } = buildHeaders(academicYears)
+      const { headerRows, merges } = buildHeaderRowsWithMerges(leafFields)
+
+      const rows = buildExportRows(exportStudents, academicYears, leafFields)
+      const dataRows = rows.map((r) => leafFields.map((f) => r[f.key] ?? ''))
 
     const sheet = XLSX.utils.aoa_to_sheet([...headerRows, ...dataRows])
     sheet['!merges'] = merges
@@ -660,6 +734,11 @@ export default function StudentsIndex() {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, sheet, 'Students')
     XLSX.writeFile(wb, 'students-export.xlsx', { cellStyles: true })
+    message.success({ content: 'Export completed!', key: 'export' })
+    } catch (error) {
+      console.error('Error exporting:', error)
+      message.error({ content: 'Failed to export students', key: 'export' })
+    }
   }
 
   // Get color for status
@@ -679,22 +758,22 @@ export default function StudentsIndex() {
     }
   }
 
-  // Handle search
+  // Handle immediate search (on button click or enter)
   const handleSearch = (value) => {
     setSearchValue(value)
-    applyAllFilters({ search: value })
+    fetchStudents({ search: value, page: 1 })
   }
 
   // Handle status filter
   const handleStatusChange = (value) => {
     setStatusFilter(value)
-    applyAllFilters({ status: value })
+    applyFilters({ status: value })
   }
 
   // Handle program filter
   const handleProgramChange = (value) => {
     setProgramFilter(value)
-    applyAllFilters({ program: value })
+    applyFilters({ program: value })
   }
 
   const handleResetFilters = () => {
@@ -712,7 +791,7 @@ export default function StudentsIndex() {
     setSpecialGroupFilter(null)
     setAuthorityTypeFilter(null)
     setAwardYearFilter(null)
-    applyAllFilters({
+    fetchStudents({
       search: '',
       status: null,
       program: null,
@@ -727,123 +806,36 @@ export default function StudentsIndex() {
       specialGroup: null,
       authorityType: null,
       awardYear: null,
+      page: 1,
     })
     setFiltersDrawerOpen(false)
   }
 
   const handleApplyDrawerFilters = () => {
-    applyAllFilters()
+    applyFilters({})
     setFiltersDrawerOpen(false)
   }
 
-  // Apply filters and search
-  const applyFilters = ({
-    search,
-    status,
-    program,
-    academicYear,
-    semester,
-    course,
-    region,
-    province,
-    city,
-    school,
-    priority,
-    specialGroup,
-    authorityType,
-    awardYear,
-  }) => {
-    let filtered = [...students]
-
-    if (search) {
-      const searchLower = search.toLowerCase()
-      filtered = filtered.filter((student) => {
-        const fullName = `${student.surname || ''} ${student.first_name || ''} ${student.middle_name || ''} ${student.extension || ''}`.toLowerCase()
-        const scholarshipProgram = (student.scholarship_program || '').toLowerCase()
-        const awardNumber = (student.award_number || '').toLowerCase()
-        const contactNumber = (student.contact_number || '').toLowerCase()
-        const emailAddress = (student.email_address || '').toLowerCase()
-
-        return (
-          fullName.includes(searchLower) ||
-          scholarshipProgram.includes(searchLower) ||
-          awardNumber.includes(searchLower) ||
-          contactNumber.includes(searchLower) ||
-          emailAddress.includes(searchLower)
-        )
-      })
-    }
-
-    if (status) {
-      filtered = filtered.filter((student) => student.scholarship_status === status)
-    }
-
-    if (program) {
-      filtered = filtered.filter((student) => student.scholarship_program === program)
-    }
-
-    if (academicYear) {
-      filtered = filtered.filter((student) => student.academic_year === academicYear)
-    }
-
-    if (semester) {
-      filtered = filtered.filter((student) => student.semester === semester)
-    }
-
-    if (course) {
-      filtered = filtered.filter((student) => student.degree_program === course)
-    }
-
-    if (region) {
-      filtered = filtered.filter((student) => student.region === region)
-    }
-
-    if (province) {
-      filtered = filtered.filter((student) => student.province === province)
-    }
-
-    if (city) {
-      filtered = filtered.filter((student) => student.municipality_city === city)
-    }
-
-    if (school) {
-      filtered = filtered.filter((student) => student.name_of_institution === school)
-    }
-
-    if (priority !== null && priority !== undefined && priority !== '') {
-      const target = String(priority).toLowerCase()
-      filtered = filtered.filter((student) => String(student.is_priority || '').toLowerCase() === target)
-    }
-
-    if (specialGroup) {
-      filtered = filtered.filter((student) => student.special_group === specialGroup)
-    }
-
-    if (authorityType) {
-      filtered = filtered.filter((student) => student.authority_type === authorityType)
-    }
-
-    if (awardYear) {
-      filtered = filtered.filter((student) => student.award_year === awardYear)
-    }
-
-    setFilteredStudents(filtered)
+  // Handle pagination change
+  const handleTableChange = (page, pageSize) => {
+    setPagination(prev => ({ ...prev, current: page, pageSize }))
+    fetchStudents({ page, pageSize })
   }
 
-  // Get unique values for filters
-  const scholarshipPrograms = [...new Set(students.map((s) => s.scholarship_program))].filter(Boolean)
-  const academicYears = [...new Set(students.map((s) => s.academic_year))].filter(Boolean)
-  const semesters = [...new Set(students.map((s) => s.semester))].filter(Boolean)
-  const statusValues = [...new Set(students.map((s) => s.scholarship_status))].filter(Boolean)
-  const courses = [...new Set(students.map((s) => s.degree_program))].filter(Boolean)
-  const regions = [...new Set(students.map((s) => s.region))].filter(Boolean)
-  const provinces = [...new Set(students.map((s) => s.province))].filter(Boolean)
-  const cities = [...new Set(students.map((s) => s.municipality_city))].filter(Boolean)
-  const schools = [...new Set(students.map((s) => s.name_of_institution))].filter(Boolean)
-  const priorities = [...new Set(students.map((s) => s.is_priority))].filter((v) => v !== null && v !== undefined && v !== '')
-  const specialGroups = [...new Set(students.map((s) => s.special_group))].filter(Boolean)
-  const authorityTypes = [...new Set(students.map((s) => s.authority_type))].filter(Boolean)
-  const awardYears = [...new Set(students.map((s) => s.award_year))].filter(Boolean)
+  // Get unique values for filters from filter options
+  const scholarshipPrograms = filterOptions.scholarshipPrograms || []
+  const academicYears = filterOptions.academicYears || []
+  const semesters = filterOptions.semesters || []
+  const statusValues = filterOptions.statusValues || []
+  const courses = filterOptions.courses || []
+  const regions = filterOptions.regions || []
+  const provinces = filterOptions.provinces || []
+  const cities = filterOptions.cities || []
+  const schools = filterOptions.schools || []
+  const priorities = filterOptions.priorities || []
+  const specialGroups = filterOptions.specialGroups || []
+  const authorityTypes = filterOptions.authorityTypes || []
+  const awardYears = filterOptions.awardYears || []
 
   const searchInstructions = (
     <div style={{ maxWidth: 300 }}>
@@ -884,14 +876,37 @@ export default function StudentsIndex() {
     { label: 'Replacement Info', value: 'replacement_info' },
   ]
 
-  // Compute unique existing values for the selected field (defensive for missing keys)
-  const oldValues = [
-    ...new Set(
-      students
-        .map((s) => (s && s[field] !== undefined && s[field] !== null ? String(s[field]) : null))
-        .filter(Boolean)
-    ),
-  ]
+  // Fetch field values for bulk edit when field changes
+  const [bulkEditFieldValues, setBulkEditFieldValues] = useState([])
+  const [loadingFieldValues, setLoadingFieldValues] = useState(false)
+
+  useEffect(() => {
+    if (modalVisible && field) {
+      fetchFieldValues(field)
+    }
+  }, [modalVisible, field])
+
+  const fetchFieldValues = async (fieldName) => {
+    setLoadingFieldValues(true)
+    try {
+      const response = await fetch(`${API_BASE}/students/export?pageSize=9999`)
+      if (response.ok) {
+        const allStudents = await response.json()
+        const values = [...new Set(
+          allStudents
+            .map((s) => (s && s[fieldName] !== undefined && s[fieldName] !== null ? String(s[fieldName]) : null))
+            .filter(Boolean)
+        )]
+        setBulkEditFieldValues(values)
+      }
+    } catch (error) {
+      console.error('Error fetching field values:', error)
+    } finally {
+      setLoadingFieldValues(false)
+    }
+  }
+
+  const oldValues = bulkEditFieldValues
 
   // Update the handleSubmit for Bulk Edit to include logging
   const handleSubmit = async () => {
@@ -912,6 +927,7 @@ export default function StudentsIndex() {
     if (res.ok) {
       message.success(data.message)
       fetchStudents()
+      fetchFilterOptions() // Refresh filter options after bulk edit
       setModalVisible(false)
       setOldValue('')
       setNewValue('')
@@ -943,16 +959,12 @@ export default function StudentsIndex() {
               />
             </Popover>
             <Search
-              placeholder="Search"
+              placeholder="Search students..."
               allowClear
               enterButton="Search"
               size="middle"
               value={searchValue}
-              onChange={(e) => {
-                const next = e.target.value
-                setSearchValue(next)
-                if (next === '') applyAllFilters({ search: '' })
-              }}
+              onChange={(e) => setSearchValue(e.target.value)}
               onSearch={handleSearch}
               style={{ width: 300 }}
             />
@@ -1042,14 +1054,17 @@ export default function StudentsIndex() {
       <Table
         bordered
         loading={loading}
-        dataSource={filteredStudents}
+        dataSource={students}
         columns={columns}
         rowKey="seq"
         pagination={{
           current: pagination.current,
           pageSize: pagination.pageSize,
-          total: filteredStudents.length,
-          onChange: (page, pageSize) => setPagination({ current: page, pageSize }),
+          total: pagination.total,
+          showSizeChanger: true,
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} students`,
+          onChange: handleTableChange,
+          onShowSizeChange: handleTableChange,
         }}
       />
       <Modal 
@@ -1110,6 +1125,8 @@ export default function StudentsIndex() {
             style={{ width: '100%' }}
             placeholder="Select the existing value to replace"
             showSearch
+            loading={loadingFieldValues}
+            notFoundContent={loadingFieldValues ? 'Loading...' : 'No values found'}
           >
             {oldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
           </Select>
@@ -1166,10 +1183,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={academicYearFilter}
-                  onChange={(value) => {
-                    setAcademicYearFilter(value)
-                    applyAllFilters({ academicYear: value })
-                  }}
+                  onChange={(value) => setAcademicYearFilter(value)}
                 >
                   {academicYears.map((year) => (
                     <Option key={year} value={year}>{year}</Option>
@@ -1181,10 +1195,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={semesterFilter}
-                  onChange={(value) => {
-                    setSemesterFilter(value)
-                    applyAllFilters({ semester: value })
-                  }}
+                  onChange={(value) => setSemesterFilter(value)}
                 >
                   {semesters.map((sem) => (
                     <Option key={sem} value={sem}>{sem}</Option>
@@ -1199,10 +1210,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={awardYearFilter}
-                  onChange={(value) => {
-                    setAwardYearFilter(value)
-                    applyAllFilters({ awardYear: value })
-                  }}
+                  onChange={(value) => setAwardYearFilter(value)}
                 >
                   {awardYears.map((year) => (
                     <Option key={year} value={year}>{year}</Option>
@@ -1216,10 +1224,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={courseFilter}
-                onChange={(value) => {
-                  setCourseFilter(value)
-                  applyAllFilters({ course: value })
-                }}
+                onChange={(value) => setCourseFilter(value)}
               >
                 {courses.map((course) => (
                   <Option key={course} value={course}>{course}</Option>
@@ -1239,10 +1244,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={regionFilter}
-                  onChange={(value) => {
-                    setRegionFilter(value)
-                    applyAllFilters({ region: value })
-                  }}
+                  onChange={(value) => setRegionFilter(value)}
                 >
                   {regions.map((region) => (
                     <Option key={region} value={region}>{region}</Option>
@@ -1255,10 +1257,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={provinceFilter}
-                  onChange={(value) => {
-                    setProvinceFilter(value)
-                    applyAllFilters({ province: value })
-                  }}
+                  onChange={(value) => setProvinceFilter(value)}
                 >
                   {provinces.map((province) => (
                     <Option key={province} value={province}>{province}</Option>
@@ -1272,10 +1271,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={cityFilter}
-                onChange={(value) => {
-                  setCityFilter(value)
-                  applyAllFilters({ city: value })
-                }}
+                onChange={(value) => setCityFilter(value)}
               >
                 {cities.map((city) => (
                   <Option key={city} value={city}>{city}</Option>
@@ -1288,10 +1284,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={schoolFilter}
-                onChange={(value) => {
-                  setSchoolFilter(value)
-                  applyAllFilters({ school: value })
-                }}
+                onChange={(value) => setSchoolFilter(value)}
               >
                 {schools.map((school) => (
                   <Option key={school} value={school}>{school}</Option>
@@ -1310,10 +1303,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={priorityFilter}
-                  onChange={(value) => {
-                    setPriorityFilter(value)
-                    applyAllFilters({ priority: value })
-                  }}
+                  onChange={(value) => setPriorityFilter(value)}
                 >
                   {priorities.map((p) => (
                     <Option key={String(p)} value={p}>{String(p)}</Option>
@@ -1326,10 +1316,7 @@ export default function StudentsIndex() {
                   size="middle"
                   style={{ width: 185 }}
                   value={specialGroupFilter}
-                  onChange={(value) => {
-                    setSpecialGroupFilter(value)
-                    applyAllFilters({ specialGroup: value })
-                  }}
+                  onChange={(value) => setSpecialGroupFilter(value)}
                 >
                   {specialGroups.map((group) => (
                     <Option key={group} value={group}>{group}</Option>
@@ -1343,10 +1330,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={authorityTypeFilter}
-                onChange={(value) => {
-                  setAuthorityTypeFilter(value)
-                  applyAllFilters({ authorityType: value })
-                }}
+                onChange={(value) => setAuthorityTypeFilter(value)}
               >
                 {authorityTypes.map((type) => (
                   <Option key={type} value={type}>{type}</Option>
