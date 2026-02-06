@@ -70,19 +70,50 @@ const mergeAcademicYears = (current = [], labels = []) => {
 }
 
 const deriveAyLabelFromKey = (key = '') => {
-  const compact = key.match(/ay[_-]?(\d{4})[_-]?(\d{4})/)
+  if (!key) return null
+  const str = String(key).trim()
+  
+  // Pattern 1: ay_20212022 or ay-2021-2022 or AY 2021-2022
+  const compact = str.match(/ay[_\-\s]*(\d{4})[_\-\s]*(\d{4})/i)
   if (compact) {
     const start = Number(compact[1])
     const end = Number(compact[2])
-    if (end > start) return `${start}-${end}`
+    if (end > start && end - start <= 10) return `${start}-${end}`
   }
 
-  const pair = key.match(/(20\d{2})\D{0,2}(20\d{2})/)
+  // Pattern 2: 2021-2022 or 2021 - 2022 or 2021/2022 (allow any separator)
+  const pair = str.match(/(\d{4})\s*[-\/\s]+\s*(\d{4})/)
   if (pair) {
     const start = Number(pair[1])
     const end = Number(pair[2])
-    if (end > start) return `${start}-${end}`
+    if (end > start && end - start <= 10) return `${start}-${end}`
   }
+
+  // Pattern 3: Short year format like 2021-22 or 2021/22
+  const shortYear = str.match(/(\d{4})\s*[-\/]\s*(\d{2})(?!\d)/)
+  if (shortYear) {
+    const start = Number(shortYear[1])
+    const endShort = Number(shortYear[2])
+    const century = Math.floor(start / 100) * 100
+    const end = century + endShort
+    if (end > start && end - start <= 10) return `${start}-${end}`
+  }
+
+  // Pattern 4: Just "AY 2021" - assume it's 2021-2022
+  const singleYear = str.match(/ay\s*(\d{4})(?!\d)/i)
+  if (singleYear) {
+    const start = Number(singleYear[1])
+    return `${start}-${start + 1}`
+  }
+
+  // Pattern 5: Standalone year pair anywhere in string (more permissive)
+  const looseMatch = str.match(/(20\d{2})[^\d]*(20\d{2})/)
+  if (looseMatch) {
+    const start = Number(looseMatch[1])
+    const end = Number(looseMatch[2])
+    if (end > start && end - start <= 10) return `${start}-${end}`
+  }
+
   return null
 }
 
@@ -455,8 +486,12 @@ export default function ImportBulk() {
         // Grab first 3 header rows as arrays
         const headerRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
 
-        const fillForward = (row = []) => {
-          const filled = [...row]
+        // Find the maximum column count across all rows
+        const maxColCount = headerRows.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0)
+
+        const fillForward = (row = [], maxLen = maxColCount) => {
+          // Extend the array to maxLen first
+          const filled = Array.from({ length: maxLen }, (_, i) => row[i])
           for (let i = 0; i < filled.length; i += 1) {
             if (filled[i] === undefined || filled[i] === null || filled[i] === '') {
               filled[i] = i > 0 ? filled[i - 1] : filled[i]
@@ -469,37 +504,53 @@ export default function ImportBulk() {
         const midRowRaw = headerRows[1] || []
         const leafRow = headerRows[2] || []
 
-        const topRow = fillForward(topRowRaw)
-        const midRow = fillForward(midRowRaw)
+        // Extend leaf row to max length too (but don't fill forward - keep original values)
+        const leafRowExtended = Array.from({ length: maxColCount }, (_, i) => leafRow[i] ?? '')
 
-        // Detect AYs from the top row labels (flexible patterns)
-        const ayFromTop = topRow
+        const topRow = fillForward(topRowRaw, maxColCount)
+        const midRow = fillForward(midRowRaw, maxColCount)
+
+        // Detect AYs from all header rows (more thorough detection)
+        const detectAysFromRow = (row) => row
           .map((cell) => deriveAyLabelFromKey(String(cell || '')))
           .filter(Boolean)
-        const detectedAyLabels = Array.from(new Set(ayFromTop)).sort(
-          (a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10)
-        )
+        
+        const ayFromTop = detectAysFromRow(topRow)
+        const ayFromMid = detectAysFromRow(midRow)
+        const ayFromLeaf = detectAysFromRow(leafRow)
+        
+        const detectedAyLabels = Array.from(new Set([...ayFromTop, ...ayFromMid, ...ayFromLeaf]))
+          .sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
 
         const mergedAys = mergeAcademicYears(academicYears, detectedAyLabels)
         const { leafFields: nextLeafFields } = buildHeaders(mergedAys)
 
         // Build column mapping using header rows
-        const maxCols = Math.max(topRow.length, midRow.length, leafRow.length)
+        const maxCols = maxColCount
         const columnMeta = Array.from({ length: maxCols }).map((_, idx) => {
-          const leafLabel = leafRow[idx]
-          const fallback = midRow[idx] || topRow[idx] || ''
+          const leafLabel = leafRowExtended[idx]
+          const midLabel = midRow[idx]
+          const topLabel = topRow[idx]
+          const fallback = midLabel || topLabel || ''
           const label = leafLabel || fallback || ''
+          
+          // Check all three rows for AY label (more thorough detection)
           const ayLabel =
-            deriveAyLabelFromKey(String(topRow[idx] || '')) ||
-            deriveAyLabelFromKey(String(midRow[idx] || '')) ||
+            deriveAyLabelFromKey(String(topLabel || '')) ||
+            deriveAyLabelFromKey(String(midLabel || '')) ||
+            deriveAyLabelFromKey(String(leafLabel || '')) ||
             deriveAyLabelFromKey(String(label))
-          const semSan = sanitize(String(midRow[idx] || topRow[idx] || ''))
-          const semester = semSan.includes('first') || semSan.includes('1st')
-            ? 'First'
-            : semSan.includes('second') || semSan.includes('2nd')
-              ? 'Second'
-              : null
-          return { idx, label, ayLabel, semester, raw: { top: topRow[idx], mid: midRow[idx], leaf: leafLabel } }
+          
+          // Check all three rows for semester detection
+          const checkSemester = (str) => {
+            const san = sanitize(String(str || ''))
+            if (san.includes('first') || san.includes('1st') || san === '1stsem' || san === 'firstsem') return 'First'
+            if (san.includes('second') || san.includes('2nd') || san === '2ndsem' || san === 'secondsem') return 'Second'
+            return null
+          }
+          const semester = checkSemester(midLabel) || checkSemester(topLabel) || checkSemester(leafLabel)
+          
+          return { idx, label, ayLabel, semester, raw: { top: topLabel, mid: midLabel, leaf: leafLabel } }
         })
 
         // Map excel columns to leafFields
@@ -512,30 +563,54 @@ export default function ImportBulk() {
             unmappedCols.push(col)
             return
           }
+          
           const candidates = nextLeafFields.filter((f) => {
             const fLabelSan = sanitize(f.label)
             const fKeySan = sanitize(f.key)
             const matchesLabel = fLabelSan === labelSan || fKeySan === labelSan
-            const ayMatches = col.ayLabel
-              ? mergedAys.find((ay) => ay.label === col.ayLabel)?.id === f.ayId
-              : !f.ayId
-            const semMatches = col.semester ? f.semester === col.semester : true
+            
+            // For AY matching, be more flexible
+            let ayMatches = false
+            if (col.ayLabel) {
+              // Find the AY in merged list and check if field belongs to it
+              const matchedAy = mergedAys.find((ay) => ay.label === col.ayLabel)
+              ayMatches = matchedAy && f.ayId === matchedAy.id
+            } else {
+              // Column has no AY, field should also have no AY
+              ayMatches = !f.ayId
+            }
+            
+            // Semester matching - only check if both have semester info
+            const semMatches = !col.semester || !f.semester || f.semester === col.semester
 
             // For CYL columns, allow loose match
-            const isCyl = f.key.endsWith('__cyl') || fLabelSan.includes('cyl')
-            const cylMatch = isCyl && (labelSan.includes('cyl') || labelSan.includes('curriculum'))
+            const isCyl = f.key.endsWith('__cyl') || fLabelSan.includes('cyl') || fLabelSan.includes('curriculumyearlevel')
+            const cylMatch = isCyl && (labelSan.includes('cyl') || labelSan.includes('curriculum') || labelSan.includes('yearlevel'))
 
             // LDDAP headers often appear as just "LDDAP"; accept starts-with for LDDAP fields
             const isLddapField = fLabelSan.includes('lddap') || fKeySan.includes('lddap')
             const lddapMatch = isLddapField && labelSan.startsWith('lddap')
 
-            return ayMatches && (semMatches && (matchesLabel || cylMatch || lddapMatch))
+            // For AY fields, require AY to match; for static fields, require no AY
+            if (f.ayId) {
+              return ayMatches && semMatches && (matchesLabel || cylMatch || lddapMatch)
+            } else {
+              return ayMatches && (matchesLabel || cylMatch || lddapMatch)
+            }
           })
 
           if (candidates.length > 0) {
             colToField.set(col.idx, candidates[0])
           } else {
             unmappedCols.push(col)
+            // Debug: Log why this column wasn't mapped
+            console.log('Unmapped column:', {
+              idx: col.idx,
+              label: col.label,
+              ayLabel: col.ayLabel,
+              semester: col.semester,
+              raw: col.raw
+            })
           }
         })
 
@@ -632,9 +707,20 @@ export default function ImportBulk() {
         if (ignoredCount > 0) {
           const unmappedAyCols = unmappedCols.filter((c) => c.ayLabel)
           if (unmappedAyCols.length > 0) {
-            message.warning(`Some AY columns were not mapped: ${unmappedAyCols.map((c) => c.label || c.raw.leaf || c.raw.mid).join(', ')}`)
+            console.warn('Unmapped AY columns:', unmappedAyCols.map(c => ({
+              label: c.label,
+              ayLabel: c.ayLabel,
+              semester: c.semester,
+              raw: c.raw
+            })))
+            message.warning(`Some AY columns were not mapped: ${unmappedAyCols.map((c) => c.label || c.raw.leaf || c.raw.mid).slice(0, 5).join(', ')}${unmappedAyCols.length > 5 ? ` and ${unmappedAyCols.length - 5} more...` : ''}`)
           }
         }
+
+        // Debug: Log detected AYs and mapping summary
+        console.log('Detected Academic Years:', detectedAyLabels)
+        console.log('Merged Academic Years:', mergedAys.map(ay => ay.label))
+        console.log(`Column mapping: ${mappedCount} mapped, ${ignoredCount} ignored, ${unmappedCols.length} unmapped`)
 
         setAcademicYears(mergedAys)
         setData(normalized)

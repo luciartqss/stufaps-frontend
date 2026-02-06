@@ -84,7 +84,9 @@ export default function StudentsPdf() {
         const res = await fetch(`${API_BASE}/students`)
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
-        setStudents(Array.isArray(data) ? data : [])
+        // Handle paginated response (data.data) or direct array
+        const studentsArray = Array.isArray(data) ? data : (data.data || [])
+        setStudents(studentsArray)
       } catch (err) {
         console.error(err)
         message.error('Unable to load filter options')
@@ -429,7 +431,7 @@ export default function StudentsPdf() {
           </Space>
         }
         style={{ flex: 1, marginBottom: '24px', minHeight: '500px' }}
-        bodyStyle={{ padding: '16px', height: '500px', display: 'flex', flexDirection: 'column' }}
+        styles={{ body: { padding: '16px', height: '500px', display: 'flex', flexDirection: 'column' } }}
       >
         {loadingPreview ? (
           <div style={{ 

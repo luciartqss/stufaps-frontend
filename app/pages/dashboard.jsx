@@ -78,16 +78,19 @@ export default function Dashboard() {
     recentRegistrations: [],
     warnings: {
       no_uii: { count: 0, students: [] },
-      duplicate_award_numbers: { count: 0, duplicates: [], students: [] },
-      no_authority: { count: 0, students: [] },
+      no_lrn: { count: 0, students: [] },
+      duplicate_lrn: { count: 0, duplicates: [], students: [] },
+      no_award_number: { count: 0, students: [] },
+      duplicate_award_numbers: { count: 0, students: [] },
       incomplete_info: { count: 0, students: [] },
     },
   })
 
   // Paginated warning data states
   const [noUiiData, setNoUiiData] = useState({ students: [], total: 0, page: 1, loading: false })
+  const [noLrnData, setNoLrnData] = useState({ students: [], total: 0, page: 1, loading: false })
+  const [noAwardNumberData, setNoAwardNumberData] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incompleteInfoData, setIncompleteInfoData] = useState({ students: [], total: 0, page: 1, loading: false })
-  const [noAuthorityData, setNoAuthorityData] = useState({ students: [], total: 0, page: 1, loading: false })
 
   // Fetch paginated warning data
   const fetchNoUiiStudents = async (page = 1) => {
@@ -102,6 +105,30 @@ export default function Dashboard() {
     }
   }
 
+  const fetchNoLrnStudents = async (page = 1) => {
+    setNoLrnData(prev => ({ ...prev, loading: true }))
+    try {
+      const response = await fetch(`${API_URL}/dashboard/warnings/no-lrn?page=${page}&per_page=5`)
+      const data = await response.json()
+      setNoLrnData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
+    } catch (err) {
+      console.error('Failed to fetch no LRN students:', err)
+      setNoLrnData(prev => ({ ...prev, loading: false }))
+    }
+  }
+
+  const fetchNoAwardNumberStudents = async (page = 1) => {
+    setNoAwardNumberData(prev => ({ ...prev, loading: true }))
+    try {
+      const response = await fetch(`${API_URL}/dashboard/warnings/no-award-number?page=${page}&per_page=5`)
+      const data = await response.json()
+      setNoAwardNumberData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
+    } catch (err) {
+      console.error('Failed to fetch no award number students:', err)
+      setNoAwardNumberData(prev => ({ ...prev, loading: false }))
+    }
+  }
+
   const fetchIncompleteInfoStudents = async (page = 1) => {
     setIncompleteInfoData(prev => ({ ...prev, loading: true }))
     try {
@@ -111,18 +138,6 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Failed to fetch incomplete info students:', err)
       setIncompleteInfoData(prev => ({ ...prev, loading: false }))
-    }
-  }
-
-  const fetchNoAuthorityStudents = async (page = 1) => {
-    setNoAuthorityData(prev => ({ ...prev, loading: true }))
-    try {
-      const response = await fetch(`${API_URL}/dashboard/warnings/no-authority?page=${page}&per_page=5`)
-      const data = await response.json()
-      setNoAuthorityData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
-    } catch (err) {
-      console.error('Failed to fetch no authority students:', err)
-      setNoAuthorityData(prev => ({ ...prev, loading: false }))
     }
   }
 
@@ -184,8 +199,10 @@ export default function Dashboard() {
         recentRegistrations: data.recent_registrations || [],
         warnings: data.warnings || {
           no_uii: { count: 0, students: [] },
-          duplicate_award_numbers: { count: 0, duplicates: [], students: [] },
-          no_authority: { count: 0, students: [] },
+          no_lrn: { count: 0, students: [] },
+          duplicate_lrn: { count: 0, duplicates: [], students: [] },
+          no_award_number: { count: 0, students: [] },
+          duplicate_award_numbers: { count: 0, students: [] },
           incomplete_info: { count: 0, students: [] },
         },
       })
@@ -206,13 +223,16 @@ export default function Dashboard() {
     if (dashboardData.warnings.no_uii?.count > 0) {
       fetchNoUiiStudents(1)
     }
+    if (dashboardData.warnings.no_lrn?.count > 0) {
+      fetchNoLrnStudents(1)
+    }
+    if (dashboardData.warnings.no_award_number?.count > 0) {
+      fetchNoAwardNumberStudents(1)
+    }
     if (dashboardData.warnings.incomplete_info?.count > 0) {
       fetchIncompleteInfoStudents(1)
     }
-    if (dashboardData.warnings.no_authority?.count > 0) {
-      fetchNoAuthorityStudents(1)
-    }
-  }, [dashboardData.warnings.no_uii?.count, dashboardData.warnings.incomplete_info?.count, dashboardData.warnings.no_authority?.count])
+  }, [dashboardData.warnings.no_uii?.count, dashboardData.warnings.no_lrn?.count, dashboardData.warnings.no_award_number?.count, dashboardData.warnings.incomplete_info?.count])
 
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value }
@@ -254,8 +274,10 @@ export default function Dashboard() {
   const getTotalWarnings = () => {
     const w = dashboardData.warnings
     return (w.no_uii?.count || 0) + 
-           (w.duplicate_award_numbers?.count || 0) + 
-           (w.no_authority?.count || 0) + 
+           (w.no_lrn?.count || 0) + 
+           (w.duplicate_lrn?.count || 0) + 
+           (w.no_award_number?.count || 0) +
+           (w.duplicate_award_numbers?.count || 0) +
            (w.incomplete_info?.count || 0)
   }
 
@@ -268,7 +290,94 @@ export default function Dashboard() {
         render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
       },
       { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
-      { title: 'Institution', dataIndex: 'name_of_institution', key: 'institution', ellipsis: true },
+      {
+        title: 'Status',
+        dataIndex: 'scholarship_status',
+        key: 'status',
+        width: 90,
+        render: (status) => {
+          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
+        },
+      },
+      {
+        title: '',
+        key: 'action',
+        width: 60,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
+      },
+    ],
+    noLrn: [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
+      },
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
+      {
+        title: 'Status',
+        dataIndex: 'scholarship_status',
+        key: 'status',
+        width: 90,
+        render: (status) => {
+          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
+        },
+      },
+      {
+        title: '',
+        key: 'action',
+        width: 60,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
+      },
+    ],
+    duplicateLrn: [
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 120, ellipsis: true },
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
+      },
+      {
+        title: 'Status',
+        dataIndex: 'scholarship_status',
+        key: 'status',
+        width: 90,
+        render: (status) => {
+          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
+        },
+      },
+      {
+        title: '',
+        key: 'action',
+        width: 60,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
+        ),
+      },
+    ],
+    noAwardNumber: [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
+      },
+      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+      {
+        title: 'Status',
+        dataIndex: 'scholarship_status',
+        key: 'status',
+        width: 90,
+        render: (status) => {
+          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
+        },
+      },
       {
         title: '',
         key: 'action',
@@ -304,30 +413,29 @@ export default function Dashboard() {
         ),
       },
     ],
-    noAuthority: [
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      { title: 'UII', dataIndex: 'uii', key: 'uii', width: 80 },
-      { title: 'Institution', dataIndex: 'name_of_institution', key: 'institution', ellipsis: true },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
     incompleteInfo: [
       {
         title: 'Name',
         key: 'name',
         render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
       },
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
+      { 
+        title: 'Missing', 
+        dataIndex: 'missing_count', 
+        key: 'missing_count', 
+        width: 70,
+        render: (count) => <Tag color="orange">{count} fields</Tag>
+      },
+      {
+        title: 'Status',
+        dataIndex: 'scholarship_status',
+        key: 'status',
+        width: 90,
+        render: (status) => {
+          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
+        },
+      },
       {
         title: '',
         key: 'action',
@@ -490,16 +598,17 @@ export default function Dashboard() {
           </div>
           
           <Row gutter={[16, 16]}>
-            {/* Duplicate Award Numbers - Active Only */}
+            {/* Duplicate Award Numbers - Violations */}
             {dashboardData.warnings.duplicate_award_numbers?.count > 0 && (
               <Col xs={24} lg={12}>
                 <Card
                   size="small"
                   title={
                     <span style={{ color: '#ff4d4f' }}>
-                      <ExclamationCircleOutlined /> Duplicate Active Award Numbers ({dashboardData.warnings.duplicate_award_numbers.count})
+                      <ExclamationCircleOutlined /> Duplicate Award Numbers ({dashboardData.warnings.duplicate_award_numbers.count})
                     </span>
                   }
+                  extra={<Text type="secondary" style={{ fontSize: 11 }}>Multiple active or reused graduated</Text>}
                   style={{ borderColor: '#ffccc7' }}
                   bodyStyle={{ padding: 0 }}
                 >
@@ -514,6 +623,37 @@ export default function Dashboard() {
                     <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0' }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         And {dashboardData.warnings.duplicate_award_numbers.students.length - 6} more...
+                      </Text>
+                    </div>
+                  )}
+                </Card>
+              </Col>
+            )}
+
+            {/* Duplicate LRN */}
+            {dashboardData.warnings.duplicate_lrn?.count > 0 && (
+              <Col xs={24} lg={12}>
+                <Card
+                  size="small"
+                  title={
+                    <span style={{ color: '#ff4d4f' }}>
+                      <ExclamationCircleOutlined /> Duplicate LRN ({dashboardData.warnings.duplicate_lrn.count})
+                    </span>
+                  }
+                  style={{ borderColor: '#ffccc7' }}
+                  bodyStyle={{ padding: 0 }}
+                >
+                  <Table
+                    dataSource={dashboardData.warnings.duplicate_lrn.students?.slice(0, 6) || []}
+                    columns={warningColumns.duplicateLrn}
+                    size="small"
+                    pagination={false}
+                    rowKey="seq"
+                  />
+                  {(dashboardData.warnings.duplicate_lrn.students?.length || 0) > 6 && (
+                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0' }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        And {dashboardData.warnings.duplicate_lrn.students.length - 6} more...
                       </Text>
                     </div>
                   )}
@@ -564,40 +704,40 @@ export default function Dashboard() {
               </Col>
             )}
 
-            {/* Missing Authority */}
-            {dashboardData.warnings.no_authority?.count > 0 && (
+            {/* Missing LRN */}
+            {dashboardData.warnings.no_lrn?.count > 0 && (
               <Col xs={24} lg={12}>
                 <Card
                   size="small"
                   title={
-                    <span style={{ color: '#1890ff' }}>
-                      <InfoCircleOutlined /> Missing Authority Info ({dashboardData.warnings.no_authority.count})
+                    <span style={{ color: '#fa8c16' }}>
+                      <ExclamationCircleOutlined /> Missing LRN ({dashboardData.warnings.no_lrn.count})
                     </span>
                   }
-                  style={{ borderColor: '#91d5ff' }}
+                  style={{ borderColor: '#ffd591' }}
                   bodyStyle={{ padding: 0 }}
                 >
-                  <Spin spinning={noAuthorityData.loading} indicator={<LoadingOutlined />}>
+                  <Spin spinning={noLrnData.loading} indicator={<LoadingOutlined />}>
                     <Table
-                      dataSource={noAuthorityData.students}
-                      columns={warningColumns.noAuthority}
+                      dataSource={noLrnData.students}
+                      columns={warningColumns.noLrn}
                       size="small"
                       pagination={false}
                       rowKey="seq"
                       locale={{ emptyText: 'No data' }}
                     />
                   </Spin>
-                  {noAuthorityData.total > 5 && (
+                  {noLrnData.total > 5 && (
                     <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        Showing {((noAuthorityData.page - 1) * 5) + 1}-{Math.min(noAuthorityData.page * 5, noAuthorityData.total)} of {noAuthorityData.total}
+                        Showing {((noLrnData.page - 1) * 5) + 1}-{Math.min(noLrnData.page * 5, noLrnData.total)} of {noLrnData.total}
                       </Text>
                       <Pagination
                         size="small"
-                        current={noAuthorityData.page}
-                        total={noAuthorityData.total}
+                        current={noLrnData.page}
+                        total={noLrnData.total}
                         pageSize={5}
-                        onChange={(page) => fetchNoAuthorityStudents(page)}
+                        onChange={(page) => fetchNoLrnStudents(page)}
                         showSizeChanger={false}
                         simple
                       />
@@ -607,17 +747,61 @@ export default function Dashboard() {
               </Col>
             )}
 
-            {/* Incomplete Info */}
-            {dashboardData.warnings.incomplete_info?.count > 0 && (
+            {/* Missing Award Number */}
+            {dashboardData.warnings.no_award_number?.count > 0 && (
               <Col xs={24} lg={12}>
                 <Card
                   size="small"
                   title={
                     <span style={{ color: '#8c8c8c' }}>
-                      <InfoCircleOutlined /> Incomplete Personal Info ({dashboardData.warnings.incomplete_info.count})
+                      <InfoCircleOutlined /> Missing Award Number ({dashboardData.warnings.no_award_number.count})
                     </span>
                   }
                   style={{ borderColor: '#d9d9d9' }}
+                  bodyStyle={{ padding: 0 }}
+                >
+                  <Spin spinning={noAwardNumberData.loading} indicator={<LoadingOutlined />}>
+                    <Table
+                      dataSource={noAwardNumberData.students}
+                      columns={warningColumns.noAwardNumber}
+                      size="small"
+                      pagination={false}
+                      rowKey="seq"
+                      locale={{ emptyText: 'No data' }}
+                    />
+                  </Spin>
+                  {noAwardNumberData.total > 5 && (
+                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        Showing {((noAwardNumberData.page - 1) * 5) + 1}-{Math.min(noAwardNumberData.page * 5, noAwardNumberData.total)} of {noAwardNumberData.total}
+                      </Text>
+                      <Pagination
+                        size="small"
+                        current={noAwardNumberData.page}
+                        total={noAwardNumberData.total}
+                        pageSize={5}
+                        onChange={(page) => fetchNoAwardNumberStudents(page)}
+                        showSizeChanger={false}
+                        simple
+                      />
+                    </div>
+                  )}
+                </Card>
+              </Col>
+            )}
+
+            {/* Incomplete Information */}
+            {dashboardData.warnings.incomplete_info?.count > 0 && (
+              <Col xs={24} lg={12}>
+                <Card
+                  size="small"
+                  title={
+                    <span style={{ color: '#fa8c16' }}>
+                      <ExclamationCircleOutlined /> Incomplete Information ({dashboardData.warnings.incomplete_info.count})
+                    </span>
+                  }
+                  extra={<Text type="secondary" style={{ fontSize: 11 }}>Missing required fields</Text>}
+                  style={{ borderColor: '#ffd591' }}
                   bodyStyle={{ padding: 0 }}
                 >
                   <Spin spinning={incompleteInfoData.loading} indicator={<LoadingOutlined />}>

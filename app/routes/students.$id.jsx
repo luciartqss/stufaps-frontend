@@ -199,7 +199,7 @@ export default function StudentDetails() {
     
     // Compare relevant fields (excluding id, timestamps, etc.)
     const fieldsToCompare = [
-      'sex', 'date_of_birth', 'special_group', 'certification_number',
+      'sex', 'date_of_birth', 'special_group', 'certification_number', 'learner_reference_number',
       'surname', 'first_name', 'middle_name', 'extension',
       'contact_number', 'email_address', 'street_brgy', 'municipality_city',
       'province', 'congressional_district', 'zip_code', 'name_of_institution',
@@ -338,8 +338,8 @@ export default function StudentDetails() {
         ...values,
         disbursement_date: values.disbursement_date ? 
           dayjs(values.disbursement_date).format('YYYY-MM-DD') : null,
-        amount: values.amount ? parseFloat(values.amount) : null,
-        payment_amount: values.payment_amount ? parseFloat(values.payment_amount) : null,
+        amount: values.amount !== undefined && values.amount !== '' && values.amount !== null ? parseFloat(values.amount) : null,
+        payment_amount: values.payment_amount !== undefined && values.payment_amount !== '' && values.payment_amount !== null ? parseFloat(values.payment_amount) : null,
         // Ensure student_seq is included
         student_seq: values.student_seq || student?.seq,
       }
@@ -875,13 +875,13 @@ export default function StudentDetails() {
                 <Form.Item 
                   name="amount" 
                   label="Amount"
-                  rules={[{ required: true, message: 'Please enter amount' }]}
                 >
                   <Input 
                     type="number" 
                     step="0.01" 
                     prefix="₱" 
                     placeholder="0.00"
+                    min={0}
                   />
                 </Form.Item>
               </Col>
@@ -889,13 +889,13 @@ export default function StudentDetails() {
                 <Form.Item 
                   name="payment_amount" 
                   label="Payment Amount"
-                  rules={[{ required: true, message: 'Please enter payment amount' }]}
                 >
                   <Input 
                     type="number" 
                     step="0.01" 
                     prefix="₱" 
                     placeholder="0.00"
+                    min={0}
                   />
                 </Form.Item>
               </Col>
