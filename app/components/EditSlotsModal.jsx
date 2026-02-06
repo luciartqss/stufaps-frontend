@@ -7,6 +7,7 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [academicYear, setAcademicYear] = useState('')
   const [totalSlots, setTotalSlots] = useState(null)
+  const [warning, setWarning] = useState(null)
 
   // Fetch scholarship program records
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
         const program = res?.data?.program ?? res?.data ?? null
         if (onUpdated) onUpdated(program)
       })
-      .catch(() => message.error('Failed to insert scholarship program'))
+      .catch(() => message.error('This scholarship program with the same description and academic year already exists.'))
   }
 
   return (
