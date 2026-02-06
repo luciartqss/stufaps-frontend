@@ -31,6 +31,7 @@ const SEM_FIELDS = [
   { key: 'paymentAmount', label: 'PAYMENT AMOUNT' },
   { key: 'lddapNumber', label: 'LDDAP NUMBER' },
   { key: 'disbursementDate', label: 'DISBURSEMENT DATE' },
+  { key: 'status', label: 'STATUS' },
   { key: 'remarks', label: 'REMARKS' },
 ]
 
@@ -40,6 +41,7 @@ const STATIC_SCHEMA = [
   { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 3 },
   { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 3 },
   { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3 },
+  { key: 'learnerReferenceNumber', label: 'LEARNER REFERENCE NUMBER (LRN)', rowSpan: 3 },
   {
     label: 'NAME OF GRANTEE',
     colSpan: 4,
@@ -152,7 +154,7 @@ const buildHeaders = (academicYears) => {
       leafFields.push({ ...col, topLabel: col.label, midLabel: '', bottomLabel: '' })
     }
   })
-
+  
   academicYears.forEach((ay) => {
     const ayId = ay.id
     const semFirst = SEM_FIELDS.map(f => ({ ...f, key: `${ayId}__first__${f.key}`, semester: 'First', ayId }))
@@ -182,6 +184,7 @@ const STUDENT_TO_EXPORT = {
   awardYear: 'award_year',
   scholarshipProgram: 'scholarship_program',
   awardNumber: 'award_number',
+  learnerReferenceNumber: 'learner_reference_number',
   surname: 'surname',
   firstName: 'first_name',
   middleName: 'middle_name',
@@ -225,6 +228,7 @@ const DISB_FIELD_MAP = {
   paymentAmount: 'payment_amount',
   lddapNumber: 'lddap_number',
   disbursementDate: 'disbursement_date',
+  status: 'status',
   remarks: 'remarks',
 }
 
