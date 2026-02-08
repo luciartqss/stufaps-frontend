@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Modal, Drawer } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined } from '@ant-design/icons'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Modal, Drawer } from 'antd'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 
@@ -417,85 +417,158 @@ export default function StudentsIndex() {
     fetchStudents({ ...overrides, page: 1 })
   }
 
+  // Cell renderer: max 3 lines, auto-shrink font to fit — NO ellipsis
+  const ClampedCell = ({ text, empty = '—', maxLines = 3 }) => {
+    const val = text || ''
+    if (!val) return <span style={{ color: '#bfbfbf', fontSize: 13 }}>{empty}</span>
+    const len = val.length
+    // Shrink font based on length and allowed lines
+    let fontSize = 14
+    const threshold = maxLines * 25
+    if (len > threshold * 2) fontSize = 10
+    else if (len > threshold * 1.5) fontSize = 11
+    else if (len > threshold) fontSize = 12
+    return (
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: `${maxLines * 1.45}em`,
+        lineHeight: '1.45',
+        fontSize,
+        wordBreak: 'break-word',
+      }}>
+        {val}
+      </div>
+    )
+  }
+
+  // Uniform nowrap cell — single line, shrink font if needed
+  const NowrapCell = ({ text, empty = '—', bold = false, emptyColor = '#bfbfbf' }) => {
+    const val = text || ''
+    if (!val) return <span style={{ color: emptyColor, fontSize: 13 }}>{empty}</span>
+    let fontSize = 14
+    if (val.length > 30) fontSize = 12
+    else if (val.length > 20) fontSize = 13
+    return (
+      <span style={{ whiteSpace: 'nowrap', fontSize, fontWeight: bold ? 500 : 'normal' }}>
+        {val}
+      </span>
+    )
+  }
+
   // Define table columns
   const columns = [
     {
-      title: 'SEQ',
+      title: '#',
       key: 'seq',
       render: (_, __, index) => {
         const page = (pagination?.current || 1)
         const pageSize = (pagination?.pageSize || 10)
-        return (page - 1) * pageSize + index + 1
+        return <span style={{ fontSize: 13 }}>{(page - 1) * pageSize + index + 1}</span>
       },
-      width: 70,
+      width: 40,
       align: 'center',
     },
     {
-      title: 'Award Number',
+      title: 'Award No.',
       dataIndex: 'award_number',
       key: 'award_number',
+      width: 120,
+      render: (text) => <NowrapCell text={text} />,
     },
     {
       title: 'Full Name',
       key: 'full_name',
+      width: 210,
       render: (_, student) => {
         const surname = student.surname || ''
         const firstName = student.first_name || ''
         const middleName = student.middle_name || ''
         const extension = student.extension || ''
-        
         const otherParts = [firstName, middleName, extension].filter(Boolean).join(' ')
-        
-        if (surname && otherParts) {
-          return `${surname}, ${otherParts}`
-        }
-        return surname || otherParts
+        const name = surname && otherParts ? `${surname}, ${otherParts}` : (surname || otherParts)
+        return <NowrapCell text={name} bold />
       },
     },
     {
-      title: 'Contact Number',
-      dataIndex: 'contact_number',
-      key: 'contact_number',
-      render: (text) => text || 'N/A',
+      title: 'LRN',
+      dataIndex: 'learner_reference_number',
+      key: 'learner_reference_number',
+      width: 120,
+      render: (text) => <NowrapCell text={text} />,
     },
     {
-      title: 'Email Address',
+      title: 'Contact',
+      dataIndex: 'contact_number',
+      key: 'contact_number',
+      width: 130,
+      render: (text) => <NowrapCell text={text} />,
+    },
+    {
+      title: 'Email',
       dataIndex: 'email_address',
       key: 'email_address',
-      render: (text) => text || 'N/A',
+      width: 180,
+      render: (text) => <ClampedCell text={text} maxLines={2} />,
     },
     {
       title: 'School',
       dataIndex: 'name_of_institution',
       key: 'name_of_institution',
-      render: (text) => text || 'N/A',
+      width: 170,
+      render: (text) => <ClampedCell text={text} />,
     },
     {
       title: 'Degree Program',
       dataIndex: 'degree_program',
       key: 'degree_program',
+      width: 155,
+      render: (text) => <ClampedCell text={text} />,
     },
     {
-      title: 'Scholarship Program',
+      title: 'Program',
       dataIndex: 'scholarship_program',
       key: 'scholarship_program',
+      width: 85,
+      align: 'center',
+      render: (text) => <ClampedCell text={text} maxLines={2} />,
     },
     {
       title: 'Status',
       key: 'status',
+      width: 90,
+      align: 'center',
       render: (_, student) => (
-        <Tag color={getStatusColor(student.scholarship_status)}>
+        <Tag
+          color={getStatusColor(student.scholarship_status)}
+          style={{ margin: 0, fontSize: 12, lineHeight: '20px', padding: '1px 8px' }}
+        >
           {student.scholarship_status}
         </Tag>
       ),
     },
     {
-      title: 'Actions',
+      title: '',
       key: 'actions',
+      width: 100,
+      align: 'center',
       render: (_, student) => (
-        <Button type="primary" onClick={() => handleViewMore(student)}>
-          View More
-        </Button>
+        <Space size={4} split={<span style={{ color: '#d9d9d9' }}>|</span>}>
+          <Button size="small" type="link" style={{ fontSize: 13, padding: 0 }} onClick={() => handleViewMore(student)}>
+            View
+          </Button>
+          <Popconfirm
+            title="Delete student"
+            description="Are you sure you want to delete this student? This action cannot be undone."
+            onConfirm={() => handleDeleteStudent(student)}
+            okText="Delete"
+            cancelText="Cancel"
+            okButtonProps={{ danger: true }}
+          >
+            <Button size="small" type="link" danger style={{ fontSize: 13, padding: 0 }}>
+              Delete
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
@@ -503,6 +576,22 @@ export default function StudentsIndex() {
   // Handle "View More" button click
   const handleViewMore = (student) => {
     navigate(`/students/${student.seq}`) // Use `seq` as the unique identifier
+  }
+
+  // Handle delete student
+  const handleDeleteStudent = async (student) => {
+    try {
+      const response = await fetch(`${API_BASE}/students/${student.seq}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (!response.ok) throw new Error('Failed to delete student')
+      message.success('Student deleted successfully')
+      fetchStudents()
+    } catch (error) {
+      console.error('Error deleting student:', error)
+      message.error('Failed to delete student')
+    }
   }
 
   // Log action function
@@ -748,17 +837,15 @@ export default function StudentsIndex() {
   // Get color for status
   const getStatusColor = (status) => {
     switch (status) {
-      case 'On-going':
+      case 'Active':
+      case 'active':
         return 'green'
       case 'Graduated':
         return 'blue'
       case 'Terminated':
         return 'red'
-      case 'Active':
-      case 'active':
-        return 'green'
       default:
-        return 'default'
+        return 'orange'
     }
   }
 
@@ -948,10 +1035,30 @@ export default function StudentsIndex() {
     fetchStudents()
   }
 
+  // Build active filters list for the summary bar
+  const activeFilters = useMemo(() => {
+    const filters = []
+    if (searchValue) filters.push({ key: 'search', label: `Search: "${searchValue}"`, clear: () => { setSearchValue(''); applyFilters({ search: '' }) } })
+    if (statusFilter) filters.push({ key: 'status', label: `Status: ${statusFilter}`, clear: () => { setStatusFilter(null); applyFilters({ status: null }) } })
+    if (programFilter) filters.push({ key: 'program', label: `Program: ${programFilter}`, clear: () => { setProgramFilter(null); applyFilters({ program: null }) } })
+    if (academicYearFilter) filters.push({ key: 'ay', label: `AY: ${academicYearFilter}`, clear: () => { setAcademicYearFilter(null); applyFilters({ academicYear: null }) } })
+    if (semesterFilter) filters.push({ key: 'sem', label: `Semester: ${semesterFilter}`, clear: () => { setSemesterFilter(null); applyFilters({ semester: null }) } })
+    if (awardYearFilter) filters.push({ key: 'awardYear', label: `Award Year: ${awardYearFilter}`, clear: () => { setAwardYearFilter(null); applyFilters({ awardYear: null }) } })
+    if (courseFilter) filters.push({ key: 'course', label: `Course: ${courseFilter}`, clear: () => { setCourseFilter(null); applyFilters({ course: null }) } })
+    if (regionFilter) filters.push({ key: 'region', label: `Region: ${regionFilter}`, clear: () => { setRegionFilter(null); applyFilters({ region: null }) } })
+    if (provinceFilter) filters.push({ key: 'province', label: `Province: ${provinceFilter}`, clear: () => { setProvinceFilter(null); applyFilters({ province: null }) } })
+    if (cityFilter) filters.push({ key: 'city', label: `City: ${cityFilter}`, clear: () => { setCityFilter(null); applyFilters({ city: null }) } })
+    if (schoolFilter) filters.push({ key: 'school', label: `School: ${schoolFilter}`, clear: () => { setSchoolFilter(null); applyFilters({ school: null }) } })
+    if (priorityFilter) filters.push({ key: 'priority', label: `Priority: ${priorityFilter}`, clear: () => { setPriorityFilter(null); applyFilters({ priority: null }) } })
+    if (specialGroupFilter) filters.push({ key: 'specialGroup', label: `Special Group: ${specialGroupFilter}`, clear: () => { setSpecialGroupFilter(null); applyFilters({ specialGroup: null }) } })
+    if (authorityTypeFilter) filters.push({ key: 'authorityType', label: `Authority: ${authorityTypeFilter}`, clear: () => { setAuthorityTypeFilter(null); applyFilters({ authorityType: null }) } })
+    return filters
+  }, [searchValue, statusFilter, programFilter, academicYearFilter, semesterFilter, awardYearFilter, courseFilter, regionFilter, provinceFilter, cityFilter, schoolFilter, priorityFilter, specialGroupFilter, authorityTypeFilter])
+
   return (
-    <div style={{ padding: '24px' }}>
-      <Title level={2}>Students</Title>
-      <Space direction="vertical" style={{ width: '100%', marginBottom: '16px' }}>
+    <div style={{ padding: 0, margin: 0 }}>
+      <Title level={2} style={{ margin: '0 0 12px 0' }}>Students</Title>
+      <Space direction="vertical" style={{ width: '100%', marginBottom: '12px' }}>
         <Space style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <Space wrap>
             <Popover content={searchInstructions} title="How to use Search" trigger="click">
@@ -1055,18 +1162,139 @@ export default function StudentsIndex() {
           </Space>
         </Space>
       </Space>
+
+      {/* Active Filters Summary */}
+      {activeFilters.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '10px 14px',
+            marginBottom: 16,
+            background: '#f0f5ff',
+            border: '1px solid #adc6ff',
+            borderRadius: 8,
+            flexWrap: 'wrap',
+          }}
+        >
+          <FilterOutlined style={{ color: '#2f54eb', fontSize: 14 }} />
+          <span style={{ fontWeight: 600, color: '#1d39c4', fontSize: 13, marginRight: 4 }}>
+            Showing:
+          </span>
+          {activeFilters.map((f) => (
+            <Tag
+              key={f.key}
+              closable
+              onClose={(e) => {
+                e.preventDefault()
+                f.clear()
+              }}
+              style={{
+                fontSize: 13,
+                padding: '2px 10px',
+                borderRadius: 6,
+                background: '#ffffff',
+                border: '1px solid #d6e4ff',
+                color: '#1d39c4',
+              }}
+            >
+              {f.label}
+            </Tag>
+          ))}
+          <Button
+            type="link"
+            size="small"
+            onClick={handleResetFilters}
+            style={{ fontSize: 12, color: '#595959', marginLeft: 'auto' }}
+          >
+            Clear all
+          </Button>
+        </div>
+      )}
+
+      <style>{`
+        .students-table .ant-table {
+          font-size: 14px;
+        }
+        .students-table .ant-table-thead > tr > th {
+          font-size: 12px;
+          font-weight: 600;
+          padding: 10px 12px;
+          background: #fafafa;
+          color: #595959;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          white-space: nowrap;
+        }
+        .students-table .ant-table-tbody > tr > td {
+          padding: 10px 12px;
+          vertical-align: middle;
+          height: 54px;
+        }
+        .students-table .ant-table-tbody > tr {
+          transition: none;
+        }
+        .students-table .ant-table-cell {
+          border-color: #f0f0f0 !important;
+        }
+        .student-row-terminated td {
+          background: #fff1f0 !important;
+        }
+        .student-row-terminated td:first-child {
+          border-left: 3px solid #ff4d4f !important;
+        }
+        .student-row-terminated:hover td {
+          background: #ffccc7 !important;
+        }
+        .student-row-graduated td {
+          background: #f0f5ff !important;
+        }
+        .student-row-graduated td:first-child {
+          border-left: 3px solid #597ef7 !important;
+        }
+        .student-row-graduated:hover td {
+          background: #d6e4ff !important;
+        }
+        .student-row-active td:first-child {
+          border-left: 3px solid #52c41a !important;
+        }
+        .student-row-active:hover td {
+          background: #f6ffed !important;
+        }
+        .student-row-other td {
+          background: #fff7ed !important;
+        }
+        .student-row-other td:first-child {
+          border-left: 3px solid #fa8c16 !important;
+        }
+        .student-row-other:hover td {
+          background: #ffe7ba !important;
+        }
+      `}</style>
       <Table
+        className="students-table"
         bordered
         loading={loading}
         dataSource={students}
         columns={columns}
         rowKey="seq"
+        size="small"
+        scroll={{ x: 1400 }}
+        rowClassName={(record) => {
+          const status = (record.scholarship_status || '').toLowerCase()
+          if (status === 'terminated') return 'student-row-terminated'
+          if (status === 'graduated') return 'student-row-graduated'
+          if (status === 'active') return 'student-row-active'
+          return 'student-row-other'
+        }}
         pagination={{
           current: pagination.current,
           pageSize: pagination.pageSize,
           total: pagination.total,
           showSizeChanger: true,
-          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} students`,
+          size: 'small',
+          showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
           onChange: handleTableChange,
           onShowSizeChange: handleTableChange,
         }}
