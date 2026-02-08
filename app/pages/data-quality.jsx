@@ -5,7 +5,6 @@ import {
   InfoCircleOutlined,
   SearchOutlined,
   LoadingOutlined,
-  ArrowLeftOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -296,11 +295,6 @@ export default function DataQuality() {
       {/* Header */}
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
-            <a onClick={() => navigate('/dashboard')} style={{ color: '#8c8c8c', fontSize: 13 }}>
-              <ArrowLeftOutlined /> Dashboard
-            </a>
-          </div>
           <Title level={3} style={{ margin: 0, color: '#0032a0' }}>Data Quality</Title>
           <Text type="secondary">Review and fix data issues across student records</Text>
         </div>
