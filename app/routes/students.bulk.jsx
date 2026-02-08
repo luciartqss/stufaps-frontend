@@ -1,6 +1,6 @@
-import { useState, useRef, useMemo, useEffect } from 'react'
-import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined } from '@ant-design/icons'
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
+import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Progress, Modal } from 'antd'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -419,6 +419,10 @@ export default function ImportBulk() {
   const [ayInput, setAyInput] = useState('2024-2025')
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
+  const [duplicateMap, setDuplicateMap] = useState({}) // { rowIndex: { matches: [...], checking: false } }
+  const [duplicateChecking, setDuplicateChecking] = useState(false)
+  const duplicateCheckTimer = useRef(null)
+  const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done }
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
@@ -725,6 +729,9 @@ export default function ImportBulk() {
         setAcademicYears(mergedAys)
         setData(normalized)
 
+        // Trigger duplicate check after file upload
+        checkDuplicates(normalized)
+
         message.success(`File ${file.name} loaded - ${normalized.length} records | Mapped ${mappedCount}/${columnMeta.length} columns${ignoredCount > 0 ? `, ignored ${ignoredCount}` : ''}${detectedAyLabels.length > 0 ? ` | AY detected: ${detectedAyLabels.join(', ')}` : ''}`)
       } catch (error) {
         console.error(error)
@@ -739,6 +746,11 @@ export default function ImportBulk() {
     setData(prev => {
       const updated = [...prev]
       updated[rowIndex] = { ...updated[rowIndex], [field]: newValue }
+      // Trigger duplicate check on relevant field changes
+      const dupFields = ['surname', 'firstName', 'middleName', 'awardNumber', 'nameOfInstitution']
+      if (dupFields.includes(field)) {
+        triggerDuplicateCheck(updated)
+      }
       return updated
     })
   }
@@ -766,13 +778,142 @@ export default function ImportBulk() {
     })
   }
 
+  // --- Duplicate detection ---
+  const checkDuplicates = useCallback(async (rows) => {
+    if (!rows || rows.length === 0) {
+      setDuplicateMap({})
+      return
+    }
+
+    // Build candidates from rows that have at least a surname + first name
+    const candidates = rows.map((row) => ({
+      surname: row.surname || '',
+      first_name: row.firstName || '',
+      middle_name: row.middleName || '',
+      award_number: row.awardNumber || '',
+      name_of_institution: row.nameOfInstitution || '',
+    }))
+
+    // Only check rows that have at least a name
+    const hasData = candidates.some(c => c.surname || c.first_name)
+    if (!hasData) {
+      setDuplicateMap({})
+      return
+    }
+
+    setDuplicateChecking(true)
+    try {
+      const res = await fetch(`${API_BASE}/students/check-duplicates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidates }),
+      })
+      if (!res.ok) throw new Error('Duplicate check failed')
+      const json = await res.json()
+      const newMap = {}
+      ;(json.duplicates || []).forEach(d => {
+        newMap[d.row_index] = { matches: d.matches }
+      })
+
+      // Also detect duplicates within the import batch itself
+      const batchDupMap = {}
+      const nameKey = (r) => {
+        const s = (r.surname || '').trim().toLowerCase()
+        const f = (r.firstName || '').trim().toLowerCase()
+        const m = (r.middleName || '').trim().toLowerCase()
+        return s && f ? `${s}|${f}|${m}` : null
+      }
+      const awardKey = (r) => {
+        const a = (r.awardNumber || '').trim()
+        return a || null
+      }
+
+      // Group by name and award number
+      const nameGroups = {}
+      const awardGroups = {}
+      rows.forEach((row, idx) => {
+        const nk = nameKey(row)
+        if (nk) {
+          if (!nameGroups[nk]) nameGroups[nk] = []
+          nameGroups[nk].push(idx)
+        }
+        const ak = awardKey(row)
+        if (ak) {
+          if (!awardGroups[ak]) awardGroups[ak] = []
+          awardGroups[ak].push(idx)
+        }
+      })
+
+      // Mark batch duplicates
+      Object.values(nameGroups).filter(g => g.length > 1).forEach(group => {
+        group.forEach(idx => {
+          if (!batchDupMap[idx]) batchDupMap[idx] = []
+          const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
+          batchDupMap[idx].push({ match_type: 'batch_name', detail: `Same name as ${others.join(', ')}` })
+        })
+      })
+      Object.values(awardGroups).filter(g => g.length > 1).forEach(group => {
+        group.forEach(idx => {
+          if (!batchDupMap[idx]) batchDupMap[idx] = []
+          const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
+          batchDupMap[idx].push({ match_type: 'batch_award', detail: `Same award number as ${others.join(', ')}` })
+        })
+      })
+
+      // Merge batch duplicates into the map
+      Object.keys(batchDupMap).forEach(idx => {
+        const numIdx = Number(idx)
+        if (!newMap[numIdx]) newMap[numIdx] = { matches: [] }
+        batchDupMap[idx].forEach(bd => {
+          newMap[numIdx].matches.push({
+            match_type: bd.match_type,
+            name: bd.detail,
+            award_number: '',
+            institution: '',
+            program: '',
+          })
+        })
+      })
+
+      setDuplicateMap(newMap)
+    } catch (err) {
+      console.error('Duplicate check error:', err)
+    } finally {
+      setDuplicateChecking(false)
+    }
+  }, [])
+
+  // Debounced duplicate check
+  const triggerDuplicateCheck = useCallback((rows) => {
+    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current)
+    duplicateCheckTimer.current = setTimeout(() => {
+      checkDuplicates(rows)
+    }, 1000)
+  }, [checkDuplicates])
+
+  // Count total duplicates
+  const duplicateCount = useMemo(() => Object.keys(duplicateMap).length, [duplicateMap])
+
   // Clear data and reset input
   const handleClear = () => {
     setData([])
+    setDuplicateMap({})
     setInputKey(Date.now())
     setCurrentPage(1)
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
+
+  // Chunk an array into smaller arrays of a given size
+  const chunkArray = (arr, size) => {
+    const chunks = []
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size))
+    }
+    return chunks
+  }
+
+  const STUDENT_CHUNK_SIZE = 200
+  const DISBURSEMENT_CHUNK_SIZE = 500
 
   // Submit data
   const handleSubmitData = async () => {
@@ -782,39 +923,72 @@ export default function ImportBulk() {
     }
 
     const backendData = convertToBackendFormat(data)
+    const studentChunks = chunkArray(backendData, STUDENT_CHUNK_SIZE)
+    const totalStudents = backendData.length
+    const totalStudentChunks = studentChunks.length
+
+    // Total work units = students + disbursements (estimated) + 1 for slot update
+    const totalWork = totalStudents // will be updated once we know disbursement count
+    let uploaded = 0
 
     setLoading(true)
+    setUploadProgress({ current: 0, total: totalWork, done: false })
+
     try {
-      const response = await fetch(`${API_BASE}/students/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ students: backendData }),
-      })
+      // --- Phase 1: Upload students in chunks ---
+      const allCreatedStudents = []
 
-      if (!response.ok) throw new Error('Failed to import students')
+      for (let i = 0; i < totalStudentChunks; i++) {
+        const chunk = studentChunks[i]
+        setUploadProgress({ current: uploaded, total: totalWork, done: false })
 
-      // Get DB-assigned seq values from created students
-      const respJson = await response.json().catch(() => null)
-      const createdStudents = respJson?.data || []
-      const studentSeqByIndex = createdStudents.map((s) => s.seq)
+        const response = await fetch(`${API_BASE}/students/import`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ students: chunk }),
+        })
 
-      // Now convert disbursements using actual DB seq values
+        if (!response.ok) {
+          const errText = await response.text().catch(() => '')
+          throw new Error(`Failed to import students (batch ${i + 1}): ${errText || response.status}`)
+        }
+
+        const respJson = await response.json().catch(() => null)
+        const created = respJson?.data || []
+        allCreatedStudents.push(...created)
+        uploaded += chunk.length
+        setUploadProgress({ current: uploaded, total: totalWork, done: false })
+      }
+
+      // --- Phase 2: Upload disbursements in chunks ---
+      const studentSeqByIndex = allCreatedStudents.map((s) => s.seq)
       const backendDisbursements = convertDisbursementsToBackend(data, academicYears, studentSeqByIndex)
 
       if (backendDisbursements.length > 0) {
-        try {
-          const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ disbursements: backendDisbursements }),
-          })
-          if (!disbResponse.ok) {
-            const errText = await disbResponse.text()
-            message.warning(`Students saved, but disbursements failed: ${errText || disbResponse.status}`)
+        const disbChunks = chunkArray(backendDisbursements, DISBURSEMENT_CHUNK_SIZE)
+        const totalDisbursements = backendDisbursements.length
+        const totalDisbChunks = disbChunks.length
+        const grandTotal = totalStudents + totalDisbursements
+
+        for (let i = 0; i < totalDisbChunks; i++) {
+          const chunk = disbChunks[i]
+          setUploadProgress({ current: uploaded, total: grandTotal, done: false })
+
+          try {
+            const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ disbursements: chunk }),
+            })
+            if (!disbResponse.ok) {
+              const errText = await disbResponse.text()
+              console.warn(`Disbursement batch ${i + 1} failed:`, errText)
+            }
+          } catch (err) {
+            console.error(`Disbursement batch ${i + 1} error:`, err)
           }
-        } catch (err) {
-          console.error('Disbursement import error:', err)
-          message.warning('Students saved, but disbursements failed to upload')
+          uploaded += chunk.length
+          setUploadProgress({ current: uploaded, total: grandTotal, done: false })
         }
       }
 
@@ -824,15 +998,20 @@ export default function ImportBulk() {
 
       if (!slotResponse.ok) {
         message.warning('Students imported, but slot update failed')
-      } else {
-        message.success('Students imported and slots updated successfully')
       }
 
+      // --- Done ---
+      setUploadProgress(prev => ({ ...prev, done: true }))
+      await new Promise(r => setTimeout(r, 1000))
+
+      message.success('Import complete!')
       handleClear()
+      setUploadProgress(null)
       navigate('/students')
     } catch (error) {
       console.error('Error:', error)
       message.error(error.message || 'Something went wrong')
+      setUploadProgress(null)
     } finally {
       setLoading(false)
     }
@@ -968,6 +1147,14 @@ export default function ImportBulk() {
           {/* Right: Actions */}
           {data.length > 0 && (
             <Space>
+              {duplicateChecking && (
+                <Tag color="processing">Checking duplicates...</Tag>
+              )}
+              {!duplicateChecking && duplicateCount > 0 && (
+                <Tag color="warning" icon={<WarningOutlined />}>
+                  {duplicateCount} possible duplicate{duplicateCount > 1 ? 's' : ''}
+                </Tag>
+              )}
               <Text type="secondary">{data.length} records</Text>
               <Button
                 type="primary"
@@ -1028,6 +1215,14 @@ export default function ImportBulk() {
         
         {data.length > 0 && (
           <Space size="small">
+            <Button
+              size="small"
+              icon={<ExclamationCircleOutlined />}
+              onClick={() => checkDuplicates(data)}
+              loading={duplicateChecking}
+            >
+              Re-check Duplicates
+            </Button>
             <Text type="secondary">Rows:</Text>
             <Select
               value={pageSize}
@@ -1046,6 +1241,38 @@ export default function ImportBulk() {
           </Space>
         )}
       </div>
+
+      {/* Duplicate Warning Banner */}
+      {duplicateCount > 0 && data.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(90deg, #fffbe6 0%, #fff7e6 100%)',
+          padding: '8px 16px',
+          borderBottom: '1px solid #ffe58f',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexShrink: 0
+        }}>
+          <WarningOutlined style={{ color: '#faad14', fontSize: 16 }} />
+          <Text style={{ color: '#d48806', fontWeight: 500, fontSize: 13 }}>
+            {duplicateCount} row{duplicateCount > 1 ? 's' : ''} may be duplicate{duplicateCount > 1 ? 's' : ''} of existing records or within this batch. 
+            Click the <WarningOutlined style={{ color: '#faad14' }} /> icon on the SEQ column to see details.
+          </Text>
+          <Button
+            type="link"
+            size="small"
+            style={{ color: '#d48806', fontWeight: 500, padding: 0 }}
+            onClick={() => {
+              // Navigate to the first page with a duplicate
+              const firstDupIdx = Math.min(...Object.keys(duplicateMap).map(Number))
+              const targetPage = Math.floor(firstDupIdx / pageSize) + 1
+              setCurrentPage(targetPage)
+            }}
+          >
+            Go to first duplicate →
+          </Button>
+        </div>
+      )}
 
       {/* Table Container with Scroll */}
       <div style={{ 
@@ -1171,11 +1398,17 @@ export default function ImportBulk() {
             ) : (
               paginatedData.map((row, paginatedIndex) => {
                 const actualRowIndex = (currentPage - 1) * pageSize + paginatedIndex
+                const dupInfo = duplicateMap[actualRowIndex]
+                const isDuplicate = !!dupInfo && dupInfo.matches && dupInfo.matches.length > 0
+                const rowBg = isDuplicate 
+                  ? (paginatedIndex % 2 === 0 ? '#fff7e6' : '#fff2d6')
+                  : (paginatedIndex % 2 === 0 ? 'white' : '#fafafa')
                 return (
                   <tr
                     key={actualRowIndex}
                     style={{ 
-                      background: paginatedIndex % 2 === 0 ? 'white' : '#fafafa'
+                      background: rowBg,
+                      borderLeft: isDuplicate ? '3px solid #faad14' : 'none'
                     }}
                     className="hover:bg-blue-50"
                   >
@@ -1197,8 +1430,81 @@ export default function ImportBulk() {
                             textAlign: 'center',
                             fontSize: '13px',
                             fontWeight: 500,
-                            background: '#f5f5f5'
+                            background: isDuplicate ? '#fff1b8' : '#f5f5f5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 4
                           }}>
+                            {isDuplicate && (
+                              <Popover
+                                title={
+                                  <span style={{ color: '#d48806' }}>
+                                    <ExclamationCircleOutlined style={{ marginRight: 6 }} />
+                                    Possible Duplicate Detected
+                                  </span>
+                                }
+                                content={
+                                  <div style={{ maxWidth: 380, maxHeight: 250, overflowY: 'auto' }}>
+                                    {dupInfo.matches.map((m, mi) => (
+                                      <div 
+                                        key={mi} 
+                                        style={{ 
+                                          padding: '8px 12px',
+                                          background: mi % 2 === 0 ? '#fffbe6' : '#fff',
+                                          borderRadius: 6,
+                                          marginBottom: 8,
+                                          border: '1px solid #ffe58f',
+                                          fontSize: 13
+                                        }}
+                                      >
+                                        <div style={{ fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
+                                          {m.name}
+                                        </div>
+                                        {m.award_number && (
+                                          <div style={{ color: '#6b7280' }}>
+                                            <span style={{ fontWeight: 500 }}>Award #:</span> {m.award_number}
+                                          </div>
+                                        )}
+                                        {m.institution && (
+                                          <div style={{ color: '#6b7280' }}>
+                                            <span style={{ fontWeight: 500 }}>Institution:</span> {m.institution}
+                                          </div>
+                                        )}
+                                        {m.program && (
+                                          <div style={{ color: '#6b7280' }}>
+                                            <span style={{ fontWeight: 500 }}>Program:</span> {m.program}
+                                          </div>
+                                        )}
+                                        <Tag 
+                                          color={
+                                            m.match_type === 'full_name' ? 'red' :
+                                            m.match_type === 'award_number' ? 'orange' :
+                                            m.match_type === 'name_institution' ? 'volcano' :
+                                            m.match_type === 'batch_name' ? 'purple' :
+                                            m.match_type === 'batch_award' ? 'magenta' : 'default'
+                                          }
+                                          style={{ marginTop: 6, fontSize: 11 }}
+                                        >
+                                          {
+                                            m.match_type === 'full_name' ? 'Name match in DB' :
+                                            m.match_type === 'award_number' ? 'Award # match in DB' :
+                                            m.match_type === 'name_institution' ? 'Name + Institution match in DB' :
+                                            m.match_type === 'batch_name' ? 'Duplicate name in batch' :
+                                            m.match_type === 'batch_award' ? 'Duplicate award # in batch' :
+                                            m.match_type
+                                          }
+                                        </Tag>
+                                      </div>
+                                    ))}
+                                  </div>
+                                }
+                                trigger="click"
+                                placement="right"
+                              >
+                                <WarningOutlined style={{ color: '#faad14', cursor: 'pointer', fontSize: 14 }} />
+                              </Popover>
+                            )}
                             {row.seq}
                           </div>
                         ) : (
@@ -1216,7 +1522,9 @@ export default function ImportBulk() {
                         border: '1px solid #f0f0f0',
                         position: 'sticky',
                         right: 0,
-                        background: paginatedIndex % 2 === 0 ? 'white' : '#fafafa'
+                        background: isDuplicate 
+                          ? (paginatedIndex % 2 === 0 ? '#fff7e6' : '#fff2d6')
+                          : (paginatedIndex % 2 === 0 ? 'white' : '#fafafa')
                       }}
                     >
                       <Button
@@ -1258,6 +1566,37 @@ export default function ImportBulk() {
           />
         </div>
       )}
+
+      {/* Upload Progress Modal */}
+      <Modal
+        open={!!uploadProgress}
+        closable={false}
+        footer={null}
+        centered
+        maskClosable={false}
+        width={400}
+      >
+        {uploadProgress && (
+          <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
+            {uploadProgress.done ? (
+              <CheckCircleOutlined style={{ fontSize: 40, color: '#52c41a', marginBottom: 16 }} />
+            ) : (
+              <LoadingOutlined style={{ fontSize: 40, color: '#1890ff', marginBottom: 16 }} />
+            )}
+            <div style={{ fontSize: 24, fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
+              {uploadProgress.current} / {uploadProgress.total}
+            </div>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {uploadProgress.done ? 'Done!' : 'Uploading records...'}
+            </Text>
+            <Progress
+              percent={uploadProgress.total > 0 ? Math.round((uploadProgress.current / uploadProgress.total) * 100) : 0}
+              status={uploadProgress.done ? 'success' : 'active'}
+              style={{ marginTop: 16 }}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
