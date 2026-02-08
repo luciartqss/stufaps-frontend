@@ -6,6 +6,7 @@ import {
   CalendarOutlined,
   BarChartOutlined,
   FileTextOutlined,
+  WarningOutlined,
 } from '@ant-design/icons'
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
@@ -26,6 +27,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       key: '/students',
       icon: <TeamOutlined />,
       label: <NavLink to="/students">Students</NavLink>,
+    },
+    {
+      key: '/data-quality',
+      icon: <WarningOutlined />,
+      label: <NavLink to="/data-quality">Data Quality</NavLink>,
     },
     {
       key: '/logs',

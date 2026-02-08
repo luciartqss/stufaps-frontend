@@ -1,4 +1,4 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Progress, Select, Statistic, Divider, Pagination } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Progress, Select, Statistic, Divider } from 'antd'
 import {
   TeamOutlined,
   CheckCircleOutlined,
@@ -8,10 +8,9 @@ import {
   CalendarOutlined,
   WarningOutlined,
   ExclamationCircleOutlined,
-  InfoCircleOutlined,
   FilterOutlined,
   UserOutlined,
-  LoadingOutlined,
+  RightOutlined,
 } from '@ant-design/icons'
 import {
   PieChart,
@@ -85,61 +84,6 @@ export default function Dashboard() {
       incomplete_info: { count: 0, students: [] },
     },
   })
-
-  // Paginated warning data states
-  const [noUiiData, setNoUiiData] = useState({ students: [], total: 0, page: 1, loading: false })
-  const [noLrnData, setNoLrnData] = useState({ students: [], total: 0, page: 1, loading: false })
-  const [noAwardNumberData, setNoAwardNumberData] = useState({ students: [], total: 0, page: 1, loading: false })
-  const [incompleteInfoData, setIncompleteInfoData] = useState({ students: [], total: 0, page: 1, loading: false })
-
-  // Fetch paginated warning data
-  const fetchNoUiiStudents = async (page = 1) => {
-    setNoUiiData(prev => ({ ...prev, loading: true }))
-    try {
-      const response = await fetch(`${API_URL}/dashboard/warnings/no-uii?page=${page}&per_page=5`)
-      const data = await response.json()
-      setNoUiiData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
-    } catch (err) {
-      console.error('Failed to fetch no UII students:', err)
-      setNoUiiData(prev => ({ ...prev, loading: false }))
-    }
-  }
-
-  const fetchNoLrnStudents = async (page = 1) => {
-    setNoLrnData(prev => ({ ...prev, loading: true }))
-    try {
-      const response = await fetch(`${API_URL}/dashboard/warnings/no-lrn?page=${page}&per_page=5`)
-      const data = await response.json()
-      setNoLrnData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
-    } catch (err) {
-      console.error('Failed to fetch no LRN students:', err)
-      setNoLrnData(prev => ({ ...prev, loading: false }))
-    }
-  }
-
-  const fetchNoAwardNumberStudents = async (page = 1) => {
-    setNoAwardNumberData(prev => ({ ...prev, loading: true }))
-    try {
-      const response = await fetch(`${API_URL}/dashboard/warnings/no-award-number?page=${page}&per_page=5`)
-      const data = await response.json()
-      setNoAwardNumberData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
-    } catch (err) {
-      console.error('Failed to fetch no award number students:', err)
-      setNoAwardNumberData(prev => ({ ...prev, loading: false }))
-    }
-  }
-
-  const fetchIncompleteInfoStudents = async (page = 1) => {
-    setIncompleteInfoData(prev => ({ ...prev, loading: true }))
-    try {
-      const response = await fetch(`${API_URL}/dashboard/warnings/incomplete-info?page=${page}&per_page=5`)
-      const data = await response.json()
-      setIncompleteInfoData({ students: data.students || [], total: data.total || 0, page: data.page || 1, loading: false })
-    } catch (err) {
-      console.error('Failed to fetch incomplete info students:', err)
-      setIncompleteInfoData(prev => ({ ...prev, loading: false }))
-    }
-  }
 
   const fetchDashboardData = async (currentFilters = filters) => {
     try {
@@ -218,22 +162,6 @@ export default function Dashboard() {
     fetchDashboardData()
   }, [])
 
-  // Fetch paginated warnings when counts are available
-  useEffect(() => {
-    if (dashboardData.warnings.no_uii?.count > 0) {
-      fetchNoUiiStudents(1)
-    }
-    if (dashboardData.warnings.no_lrn?.count > 0) {
-      fetchNoLrnStudents(1)
-    }
-    if (dashboardData.warnings.no_award_number?.count > 0) {
-      fetchNoAwardNumberStudents(1)
-    }
-    if (dashboardData.warnings.incomplete_info?.count > 0) {
-      fetchIncompleteInfoStudents(1)
-    }
-  }, [dashboardData.warnings.no_uii?.count, dashboardData.warnings.no_lrn?.count, dashboardData.warnings.no_award_number?.count, dashboardData.warnings.incomplete_info?.count])
-
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value }
     setFilters(newFilters)
@@ -279,172 +207,6 @@ export default function Dashboard() {
            (w.no_award_number?.count || 0) +
            (w.duplicate_award_numbers?.count || 0) +
            (w.incomplete_info?.count || 0)
-  }
-
-  // Warning table columns
-  const warningColumns = {
-    noUii: [
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
-    noLrn: [
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
-    duplicateLrn: [
-      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 120, ellipsis: true },
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
-    noAwardNumber: [
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
-    duplicateAward: [
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 120 },
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
-    incompleteInfo: [
-      {
-        title: 'Name',
-        key: 'name',
-        render: (_, r) => `${r.surname || ''}, ${r.first_name || ''}`.trim() || 'N/A',
-      },
-      { 
-        title: 'Missing', 
-        dataIndex: 'missing_count', 
-        key: 'missing_count', 
-        width: 70,
-        render: (count) => <Tag color="orange">{count} fields</Tag>
-      },
-      {
-        title: 'Status',
-        dataIndex: 'scholarship_status',
-        key: 'status',
-        width: 90,
-        render: (status) => {
-          const colorMap = { 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
-          return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
-        },
-      },
-      {
-        title: '',
-        key: 'action',
-        width: 60,
-        render: (_, r) => (
-          <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
-        ),
-      },
-    ],
   }
 
   if (loading && !dashboardData.stats.totalStudents) {
@@ -584,256 +346,43 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* Data Quality Warnings */}
+      {/* Data Quality Summary */}
       {getTotalWarnings() > 0 && (
         <Card
-          style={{ ...cardStyle, marginBottom: 24, borderColor: '#ffe58f', backgroundColor: '#fffbe6' }}
-          bodyStyle={{ padding: 16 }}
+          style={{ ...cardStyle, marginBottom: 24, borderColor: '#ffe58f', cursor: 'pointer' }}
+          bodyStyle={{ padding: '12px 16px' }}
+          onClick={() => navigate('/data-quality')}
+          hoverable
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <WarningOutlined style={{ color: '#faad14', fontSize: 18 }} />
-            <Text strong style={{ color: '#d48806', fontSize: 15 }}>
-              Data Quality Issues ({getTotalWarnings()} found)
-            </Text>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <WarningOutlined style={{ color: '#faad14', fontSize: 18 }} />
+              <Text strong style={{ color: '#d48806', fontSize: 14 }}>
+                {getTotalWarnings()} Data Quality Issues
+              </Text>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {dashboardData.warnings.duplicate_award_numbers?.count > 0 && (
+                  <Tag color="red">{dashboardData.warnings.duplicate_award_numbers.count} Dup. Award #</Tag>
+                )}
+                {dashboardData.warnings.duplicate_lrn?.count > 0 && (
+                  <Tag color="red">{dashboardData.warnings.duplicate_lrn.count} Dup. LRN</Tag>
+                )}
+                {dashboardData.warnings.no_uii?.count > 0 && (
+                  <Tag color="orange">{dashboardData.warnings.no_uii.count} Missing UII</Tag>
+                )}
+                {dashboardData.warnings.no_lrn?.count > 0 && (
+                  <Tag color="orange">{dashboardData.warnings.no_lrn.count} Missing LRN</Tag>
+                )}
+                {dashboardData.warnings.no_award_number?.count > 0 && (
+                  <Tag>{dashboardData.warnings.no_award_number.count} Missing Award #</Tag>
+                )}
+                {dashboardData.warnings.incomplete_info?.count > 0 && (
+                  <Tag color="orange">{dashboardData.warnings.incomplete_info.count} Incomplete</Tag>
+                )}
+              </div>
+            </div>
+            <RightOutlined style={{ color: '#8c8c8c' }} />
           </div>
-          
-          <Row gutter={[16, 16]}>
-            {/* Duplicate Award Numbers - Violations */}
-            {dashboardData.warnings.duplicate_award_numbers?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#ff4d4f' }}>
-                      <ExclamationCircleOutlined /> Duplicate Award Numbers ({dashboardData.warnings.duplicate_award_numbers.count})
-                    </span>
-                  }
-                  extra={<Text type="secondary" style={{ fontSize: 11 }}>Multiple active or reused graduated</Text>}
-                  style={{ borderColor: '#ffccc7' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Table
-                    dataSource={dashboardData.warnings.duplicate_award_numbers.students?.slice(0, 6) || []}
-                    columns={warningColumns.duplicateAward}
-                    size="small"
-                    pagination={false}
-                    rowKey="seq"
-                  />
-                  {(dashboardData.warnings.duplicate_award_numbers.students?.length || 0) > 6 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        And {dashboardData.warnings.duplicate_award_numbers.students.length - 6} more...
-                      </Text>
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-
-            {/* Duplicate LRN */}
-            {dashboardData.warnings.duplicate_lrn?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#ff4d4f' }}>
-                      <ExclamationCircleOutlined /> Duplicate LRN ({dashboardData.warnings.duplicate_lrn.count})
-                    </span>
-                  }
-                  style={{ borderColor: '#ffccc7' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Table
-                    dataSource={dashboardData.warnings.duplicate_lrn.students?.slice(0, 6) || []}
-                    columns={warningColumns.duplicateLrn}
-                    size="small"
-                    pagination={false}
-                    rowKey="seq"
-                  />
-                  {(dashboardData.warnings.duplicate_lrn.students?.length || 0) > 6 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        And {dashboardData.warnings.duplicate_lrn.students.length - 6} more...
-                      </Text>
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-
-            {/* Missing UII */}
-            {dashboardData.warnings.no_uii?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#fa8c16' }}>
-                      <ExclamationCircleOutlined /> Missing UII ({dashboardData.warnings.no_uii.count})
-                    </span>
-                  }
-                  style={{ borderColor: '#ffd591' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Spin spinning={noUiiData.loading} indicator={<LoadingOutlined />}>
-                    <Table
-                      dataSource={noUiiData.students}
-                      columns={warningColumns.noUii}
-                      size="small"
-                      pagination={false}
-                      rowKey="seq"
-                      locale={{ emptyText: 'No data' }}
-                    />
-                  </Spin>
-                  {noUiiData.total > 5 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Showing {((noUiiData.page - 1) * 5) + 1}-{Math.min(noUiiData.page * 5, noUiiData.total)} of {noUiiData.total}
-                      </Text>
-                      <Pagination
-                        size="small"
-                        current={noUiiData.page}
-                        total={noUiiData.total}
-                        pageSize={5}
-                        onChange={(page) => fetchNoUiiStudents(page)}
-                        showSizeChanger={false}
-                        simple
-                      />
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-
-            {/* Missing LRN */}
-            {dashboardData.warnings.no_lrn?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#fa8c16' }}>
-                      <ExclamationCircleOutlined /> Missing LRN ({dashboardData.warnings.no_lrn.count})
-                    </span>
-                  }
-                  style={{ borderColor: '#ffd591' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Spin spinning={noLrnData.loading} indicator={<LoadingOutlined />}>
-                    <Table
-                      dataSource={noLrnData.students}
-                      columns={warningColumns.noLrn}
-                      size="small"
-                      pagination={false}
-                      rowKey="seq"
-                      locale={{ emptyText: 'No data' }}
-                    />
-                  </Spin>
-                  {noLrnData.total > 5 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Showing {((noLrnData.page - 1) * 5) + 1}-{Math.min(noLrnData.page * 5, noLrnData.total)} of {noLrnData.total}
-                      </Text>
-                      <Pagination
-                        size="small"
-                        current={noLrnData.page}
-                        total={noLrnData.total}
-                        pageSize={5}
-                        onChange={(page) => fetchNoLrnStudents(page)}
-                        showSizeChanger={false}
-                        simple
-                      />
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-
-            {/* Missing Award Number */}
-            {dashboardData.warnings.no_award_number?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#8c8c8c' }}>
-                      <InfoCircleOutlined /> Missing Award Number ({dashboardData.warnings.no_award_number.count})
-                    </span>
-                  }
-                  style={{ borderColor: '#d9d9d9' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Spin spinning={noAwardNumberData.loading} indicator={<LoadingOutlined />}>
-                    <Table
-                      dataSource={noAwardNumberData.students}
-                      columns={warningColumns.noAwardNumber}
-                      size="small"
-                      pagination={false}
-                      rowKey="seq"
-                      locale={{ emptyText: 'No data' }}
-                    />
-                  </Spin>
-                  {noAwardNumberData.total > 5 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Showing {((noAwardNumberData.page - 1) * 5) + 1}-{Math.min(noAwardNumberData.page * 5, noAwardNumberData.total)} of {noAwardNumberData.total}
-                      </Text>
-                      <Pagination
-                        size="small"
-                        current={noAwardNumberData.page}
-                        total={noAwardNumberData.total}
-                        pageSize={5}
-                        onChange={(page) => fetchNoAwardNumberStudents(page)}
-                        showSizeChanger={false}
-                        simple
-                      />
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-
-            {/* Incomplete Information */}
-            {dashboardData.warnings.incomplete_info?.count > 0 && (
-              <Col xs={24} lg={12}>
-                <Card
-                  size="small"
-                  title={
-                    <span style={{ color: '#fa8c16' }}>
-                      <ExclamationCircleOutlined /> Incomplete Information ({dashboardData.warnings.incomplete_info.count})
-                    </span>
-                  }
-                  extra={<Text type="secondary" style={{ fontSize: 11 }}>Missing required fields</Text>}
-                  style={{ borderColor: '#ffd591' }}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  <Spin spinning={incompleteInfoData.loading} indicator={<LoadingOutlined />}>
-                    <Table
-                      dataSource={incompleteInfoData.students}
-                      columns={warningColumns.incompleteInfo}
-                      size="small"
-                      pagination={false}
-                      rowKey="seq"
-                      locale={{ emptyText: 'No data' }}
-                    />
-                  </Spin>
-                  {incompleteInfoData.total > 5 && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Showing {((incompleteInfoData.page - 1) * 5) + 1}-{Math.min(incompleteInfoData.page * 5, incompleteInfoData.total)} of {incompleteInfoData.total}
-                      </Text>
-                      <Pagination
-                        size="small"
-                        current={incompleteInfoData.page}
-                        total={incompleteInfoData.total}
-                        pageSize={5}
-                        onChange={(page) => fetchIncompleteInfoStudents(page)}
-                        showSizeChanger={false}
-                        simple
-                      />
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )}
-          </Row>
         </Card>
       )}
 
