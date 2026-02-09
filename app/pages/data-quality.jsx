@@ -1,9 +1,10 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination, Divider } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
   LoadingOutlined,
+  SwapOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -267,6 +268,39 @@ export default function DataQuality() {
     ],
   }), [nameCol, statusCol, institutionCol, viewCol, missingTag])
 
+  // Group duplicate students by shared value for visual clarity
+  const groupedDupAward = useMemo(() => {
+    const groups = {}
+    dupAward.students.forEach(s => {
+      if (!groups[s.award_number]) groups[s.award_number] = []
+      groups[s.award_number].push(s)
+    })
+    return Object.entries(groups).map(([award, students]) => ({ award, students }))
+  }, [dupAward.students])
+
+  const groupedDupLrn = useMemo(() => {
+    const groups = {}
+    dupLrn.students.forEach(s => {
+      if (!groups[s.learner_reference_number]) groups[s.learner_reference_number] = []
+      groups[s.learner_reference_number].push(s)
+    })
+    return Object.entries(groups).map(([lrn, students]) => ({ lrn, students }))
+  }, [dupLrn.students])
+
+  const [dupAwardPage, setDupAwardPage] = useState(1)
+  const [dupLrnPage, setDupLrnPage] = useState(1)
+  const GROUPS_PER_PAGE = 5
+
+  const pagedDupAward = useMemo(() => {
+    const start = (dupAwardPage - 1) * GROUPS_PER_PAGE
+    return groupedDupAward.slice(start, start + GROUPS_PER_PAGE)
+  }, [groupedDupAward, dupAwardPage])
+
+  const pagedDupLrn = useMemo(() => {
+    const start = (dupLrnPage - 1) * GROUPS_PER_PAGE
+    return groupedDupLrn.slice(start, start + GROUPS_PER_PAGE)
+  }, [groupedDupLrn, dupLrnPage])
+
   const getTabData = useCallback((tabKey) => {
     const map = {
       duplicate_award: { data: dupAward, paginated: false },
@@ -382,35 +416,113 @@ export default function DataQuality() {
           }
         >
           <Spin spinning={tabData.loading} indicator={<LoadingOutlined />}>
-            <Table
-              dataSource={displayData}
-              columns={columnSets[activeTab] || []}
-              size="middle"
-              pagination={false}
-              rowKey="seq"
-              locale={{ emptyText: <Empty description="No issues found" /> }}
-            />
-            {tabData.total > PAGE_SIZE && (
-              <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  {tabData.total} total records
-                </Text>
-                <Pagination
-                  size="small"
-                  current={tabData.page}
-                  total={tabData.total}
-                  pageSize={PAGE_SIZE}
-                  onChange={(page) => {
-                    if (paginated) {
-                      fetchPaginated(endpoint, setter, page)
-                    } else {
-                      if (activeTab === 'duplicate_award') setDupAward(prev => ({ ...prev, page }))
-                      if (activeTab === 'duplicate_lrn') setDupLrn(prev => ({ ...prev, page }))
-                    }
-                  }}
-                  showSizeChanger={false}
-                />
+            {(activeTab === 'duplicate_award' || activeTab === 'duplicate_lrn') ? (
+              <div style={{ padding: '16px' }}>
+                {(() => {
+                  const groups = activeTab === 'duplicate_award' ? groupedDupAward : groupedDupLrn
+                  const pagedGroups = activeTab === 'duplicate_award' ? pagedDupAward : pagedDupLrn
+                  const page = activeTab === 'duplicate_award' ? dupAwardPage : dupLrnPage
+                  const setPage = activeTab === 'duplicate_award' ? setDupAwardPage : setDupLrnPage
+
+                  if (groups.length === 0) return <Empty description="No issues found" />
+
+                  return (
+                    <>
+                      {pagedGroups.map((group, idx) => {
+                        const sharedValue = activeTab === 'duplicate_award' ? group.award : group.lrn
+                        const label = activeTab === 'duplicate_award' ? 'Award No.' : 'LRN'
+                        return (
+                          <div
+                            key={sharedValue}
+                            style={{
+                              border: '1px solid #ffe0e0',
+                              borderRadius: 10,
+                              marginBottom: idx < pagedGroups.length - 1 ? 16 : 0,
+                              overflow: 'hidden',
+                              background: '#fff',
+                            }}
+                          >
+                            <div style={{
+                              background: '#fff1f0',
+                              padding: '10px 16px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              borderBottom: '1px solid #ffe0e0',
+                            }}>
+                              <SwapOutlined style={{ color: '#ff4d4f', fontSize: 14 }} />
+                              <Text style={{ fontSize: 13, color: '#8c8c8c' }}>{label}:</Text>
+                              <Text strong style={{ color: '#ff4d4f', fontSize: 14 }}>{sharedValue}</Text>
+                              <Tag color="red" style={{ marginLeft: 'auto', fontSize: 12 }}>
+                                {group.students.length} students share this {label.toLowerCase()}
+                              </Tag>
+                            </div>
+                            <Table
+                              dataSource={group.students}
+                              columns={[
+                                nameCol,
+                                { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+                                statusCol,
+                                viewCol,
+                              ]}
+                              size="small"
+                              pagination={false}
+                              rowKey="seq"
+                              showHeader={idx === 0}
+                              style={{ borderRadius: 0 }}
+                            />
+                          </div>
+                        )
+                      })}
+                      {groups.length > GROUPS_PER_PAGE && (
+                        <div style={{ padding: '12px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text type="secondary" style={{ fontSize: 13 }}>
+                            {groups.length} duplicate groups &middot; {getCountForTab(activeTab)} students total
+                          </Text>
+                          <Pagination
+                            size="small"
+                            current={page}
+                            total={groups.length}
+                            pageSize={GROUPS_PER_PAGE}
+                            onChange={setPage}
+                            showSizeChanger={false}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
+            ) : (
+              <>
+                <Table
+                  dataSource={displayData}
+                  columns={columnSets[activeTab] || []}
+                  size="middle"
+                  pagination={false}
+                  rowKey="seq"
+                  locale={{ emptyText: <Empty description="No issues found" /> }}
+                />
+                {tabData.total > PAGE_SIZE && (
+                  <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {tabData.total} total records
+                    </Text>
+                    <Pagination
+                      size="small"
+                      current={tabData.page}
+                      total={tabData.total}
+                      pageSize={PAGE_SIZE}
+                      onChange={(page) => {
+                        if (paginated) {
+                          fetchPaginated(endpoint, setter, page)
+                        }
+                      }}
+                      showSizeChanger={false}
+                    />
+                  </div>
+                )}
+              </>
             )}
           </Spin>
         </Card>

@@ -319,7 +319,7 @@ export default function StudentDetails() {
       ...record,
       disbursement_date: record.disbursement_date ? dayjs(record.disbursement_date) : null,
       amount: record.amount,
-      payment_amount: record.payment_amount,
+      grant: record.grant,
     })
   }
 
@@ -351,7 +351,7 @@ export default function StudentDetails() {
         disbursement_date: values.disbursement_date ? 
           dayjs(values.disbursement_date).format('YYYY-MM-DD') : null,
         amount: values.amount !== undefined && values.amount !== '' && values.amount !== null ? parseFloat(values.amount) : null,
-        payment_amount: values.payment_amount !== undefined && values.payment_amount !== '' && values.payment_amount !== null ? parseFloat(values.payment_amount) : null,
+        grant: values.grant !== undefined && values.grant !== '' && values.grant !== null ? parseFloat(values.grant) : null,
         // Ensure student_seq is included
         student_seq: values.student_seq || student?.seq,
       }
@@ -411,9 +411,9 @@ export default function StudentDetails() {
       width: 160,
     },
     {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
+      title: 'Grant',
+      dataIndex: 'grant',
+      key: 'grant',
       width: 140,
       align: 'right',
       render: (amount) => formatCurrency(amount),
@@ -438,9 +438,9 @@ export default function StudentDetails() {
       render: (text) => text || 'N/A',
     },
     {
-      title: 'Payment Amount',
-      dataIndex: 'payment_amount',
-      key: 'payment_amount',
+      title: 'Amount',
+      dataIndex: 'amount',
+      key: 'amount',
       width: 150,
       align: 'right',
       render: (amount) => formatCurrency(amount),
@@ -936,8 +936,8 @@ export default function StudentDetails() {
               </Col>
               <Col span={12}>
                 <Form.Item 
-                  name="amount" 
-                  label="Amount"
+                  name="grant" 
+                  label="Grant"
                 >
                   <Input 
                     type="number" 
@@ -950,8 +950,8 @@ export default function StudentDetails() {
               </Col>
               <Col span={12}>
                 <Form.Item 
-                  name="payment_amount" 
-                  label="Payment Amount"
+                  name="amount" 
+                  label="Amount"
                 >
                   <Input 
                     type="number" 
