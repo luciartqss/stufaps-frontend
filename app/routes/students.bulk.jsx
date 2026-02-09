@@ -423,6 +423,7 @@ export default function ImportBulk() {
   const [duplicateChecking, setDuplicateChecking] = useState(false)
   const duplicateCheckTimer = useRef(null)
   const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done }
+  const [fileLoading, setFileLoading] = useState(false)
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
@@ -479,8 +480,11 @@ export default function ImportBulk() {
     const file = event.target.files?.[0]
     if (!file) return
 
+    setFileLoading(true)
     const reader = new FileReader()
     reader.onload = (e) => {
+      // Use setTimeout to let React render the loading modal before heavy parsing
+      setTimeout(() => {
       try {
         const buffer = new Uint8Array(e.target.result)
         const workbook = XLSX.read(buffer, { type: 'array' })
@@ -557,106 +561,58 @@ export default function ImportBulk() {
           return { idx, label, ayLabel, semester, raw: { top: topLabel, mid: midLabel, leaf: leafLabel } }
         })
 
-        // Map excel columns to leafFields
+        // Map excel columns to leafFields using POSITIONAL mapping as primary strategy.
+        // Each Excel column index maps to the leaf field at the same index in the structure.
+        // Name-based matching is used only to validate and log confidence.
         const colToField = new Map()
         const unmappedCols = []
-        const assignedFieldKeys = new Set() // Track which leaf fields are already mapped
 
+        for (let i = 0; i < Math.min(maxCols, nextLeafFields.length); i++) {
+          colToField.set(i, nextLeafFields[i])
+        }
+
+        // Log name vs position mismatches for debugging
+        const positionMatches = []
+        const positionMismatches = []
         columnMeta.forEach((col) => {
+          const posField = colToField.get(col.idx)
+          if (!posField) return
           const labelSan = sanitize(col.label)
-          if (!labelSan) {
-            unmappedCols.push(col)
-            return
-          }
-          
-          const candidates = nextLeafFields.filter((f) => {
-            // Skip fields already assigned to another column
-            if (assignedFieldKeys.has(f.key)) return false
-
-            const fLabelSan = sanitize(f.label)
-            const fKeySan = sanitize(f.key)
-            const matchesLabel = fLabelSan === labelSan || fKeySan === labelSan
-            
-            // For AY matching, be more flexible
-            let ayMatches = false
-            if (col.ayLabel) {
-              // Find the AY in merged list and check if field belongs to it
-              const matchedAy = mergedAys.find((ay) => ay.label === col.ayLabel)
-              ayMatches = matchedAy && f.ayId === matchedAy.id
-            } else {
-              // Column has no AY, field should also have no AY
-              ayMatches = !f.ayId
-            }
-            
-            // Semester matching - only check if both have semester info
-            const semMatches = !col.semester || !f.semester || f.semester === col.semester
-
-            // For CYL columns, allow loose match
-            const isCyl = f.key.endsWith('__cyl') || fLabelSan.includes('cyl') || fLabelSan.includes('curriculumyearlevel')
-            const cylMatch = isCyl && (labelSan.includes('cyl') || labelSan.includes('curriculum') || labelSan.includes('yearlevel'))
-
-            // LDDAP headers often appear as just "LDDAP"; accept starts-with for LDDAP fields
-            const isLddapField = fLabelSan.includes('lddap') || fKeySan.includes('lddap')
-            const lddapMatch = isLddapField && labelSan.startsWith('lddap')
-
-            // For AY fields, require AY to match; for static fields, require no AY
-            if (f.ayId) {
-              return ayMatches && semMatches && (matchesLabel || cylMatch || lddapMatch)
-            } else {
-              return ayMatches && (matchesLabel || cylMatch || lddapMatch)
-            }
-          })
-
-          if (candidates.length > 0) {
-            colToField.set(col.idx, candidates[0])
-            assignedFieldKeys.add(candidates[0].key)
+          if (!labelSan) return
+          const fLabelSan = sanitize(posField.label)
+          const fKeySan = sanitize(posField.key)
+          if (fLabelSan === labelSan || fKeySan === labelSan) {
+            positionMatches.push(col.idx)
           } else {
-            unmappedCols.push(col)
-            // Debug: Log why this column wasn't mapped
-            console.log('Unmapped column:', {
-              idx: col.idx,
-              label: col.label,
-              ayLabel: col.ayLabel,
-              semester: col.semester,
-              raw: col.raw
-            })
+            positionMismatches.push({ col: col.idx, expected: posField.label, got: col.label })
           }
         })
 
-        // Positional fallback for unmapped columns:
-        // If a column couldn't be matched by name (e.g. duplicate header names),
-        // map it to the leaf field at that position if the field is still unassigned
-        if (unmappedCols.length > 0) {
-          const positionFilled = []
-          unmappedCols.forEach((col) => {
-            const posField = nextLeafFields[col.idx]
-            if (posField && !assignedFieldKeys.has(posField.key)) {
-              colToField.set(col.idx, posField)
-              assignedFieldKeys.add(posField.key)
-              positionFilled.push({ col: col.idx, label: col.label, field: posField.key })
-            }
+        // Validate structure: reject if the Excel doesn't match the expected column order
+        const nonEmptyHeaders = columnMeta.filter(c => sanitize(c.label)).length
+        const matchRate = nonEmptyHeaders > 0 ? positionMatches.length / nonEmptyHeaders : 0
+
+        if (nonEmptyHeaders > 0 && matchRate < 0.5) {
+          console.error('Structure validation failed:', {
+            matchRate: `${Math.round(matchRate * 100)}%`,
+            matched: positionMatches.length,
+            mismatched: positionMismatches.length,
+            totalHeaders: nonEmptyHeaders,
+            mismatches: positionMismatches.slice(0, 10),
           })
-          if (positionFilled.length > 0) {
-            console.log('Positional fallback mapped:', positionFilled)
-          }
+          message.error(
+            `Excel structure does not match the expected format. Only ${positionMatches.length}/${nonEmptyHeaders} columns matched. ` +
+            `Please use the correct template with columns in the right order.`
+          )
+          setFileLoading(false)
+          return
         }
 
-        // Full fallback: if name-based mapping is very poor overall, use pure positional mapping
-        const mappedFieldKeys = new Set(Array.from(colToField.values()).map(f => f.key))
-        const staticFieldCount = nextLeafFields.filter(f => !f.ayId).length
-        const mappedStaticCount = nextLeafFields.filter(f => !f.ayId && mappedFieldKeys.has(f.key)).length
-
-        if (mappedStaticCount < staticFieldCount * 0.4) {
-          // Name-based mapping failed for most columns — fall back to full positional mapping
-          console.log(`Name-based mapping poor (${mappedStaticCount}/${staticFieldCount} static fields). Falling back to full structural position mapping.`)
-          colToField.clear()
-          unmappedCols.length = 0
-
-          for (let i = 0; i < Math.min(maxCols, nextLeafFields.length); i++) {
-            colToField.set(i, nextLeafFields[i])
-          }
-
-          message.info('Column headers not recognized — mapped by structural position instead')
+        if (positionMismatches.length > 0) {
+          console.log(`Structure check: ${positionMatches.length} matched, ${positionMismatches.length} mismatched out of ${nonEmptyHeaders} headers`)
+          positionMismatches.forEach(m => {
+            console.log(`  Col ${m.col}: expected "${m.expected}", got "${m.got}"`)
+          })
         }
 
         // Data rows start after the first 3 header rows
@@ -744,6 +700,7 @@ export default function ImportBulk() {
         const missingCritical = ['surname', 'firstName'].filter((req) => !mappedKeys.includes(req))
         if (missingCritical.length > 0) {
           message.error(`Missing required column(s): ${missingCritical.join(', ')}`)
+          setFileLoading(false)
           return
         }
 
@@ -777,7 +734,10 @@ export default function ImportBulk() {
       } catch (error) {
         console.error(error)
         message.error('Error parsing file')
+      } finally {
+        setFileLoading(false)
       }
+      }, 50) // end setTimeout
     }
     reader.readAsArrayBuffer(file)
   }
@@ -1607,6 +1567,26 @@ export default function ImportBulk() {
           />
         </div>
       )}
+
+      {/* File Loading Modal */}
+      <Modal
+        open={fileLoading}
+        closable={false}
+        footer={null}
+        centered
+        maskClosable={false}
+        width={360}
+      >
+        <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
+          <LoadingOutlined style={{ fontSize: 40, color: '#1890ff', marginBottom: 16 }} />
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
+            Processing File
+          </div>
+          <Text type="secondary" style={{ fontSize: 13 }}>
+            Parsing and validating Excel data...
+          </Text>
+        </div>
+      </Modal>
 
       {/* Upload Progress Modal */}
       <Modal
