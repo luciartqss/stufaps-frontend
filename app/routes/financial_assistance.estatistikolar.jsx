@@ -131,6 +131,9 @@ export default function FinancialAssistanceEstatistikolar() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  const [programFilter, setProgramFilter] = useState('All')
+  const [programs, setPrograms] = useState([])
+
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
   const [academicYears, setAcademicYears] = useState([])
 
@@ -153,6 +156,16 @@ export default function FinancialAssistanceEstatistikolar() {
             programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
           )
         ]
+
+        const uniquePrograms = [ 
+            ...new Set( 
+              programsData 
+              .filter(p => p.description === 'Statistics-focused scholarship') 
+              .map(p => p.scholarship_program_name) 
+              .filter(Boolean) 
+            ) ]
+
+        setPrograms([...uniquePrograms.sort()])
         setAcademicYears([ ...uniqueYears.sort()])
         setLoading(false)
       })
@@ -163,7 +176,15 @@ export default function FinancialAssistanceEstatistikolar() {
       })
   }, [])
 
-  const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+  const handleAcademicYearChange = value => 
+  { 
+    setAcademicYearFilter(value || 'All') 
+  } 
+
+  const handleProgramChange = value => 
+  { 
+    setProgramFilter(value) 
+  } 
 
   if (loading) return <div className="p-8">Loading...</div>
   if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
@@ -171,14 +192,43 @@ export default function FinancialAssistanceEstatistikolar() {
     return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
   }
 
-  const filteredestatistikolar = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    if (p?.scholarship_program_name?.toUpperCase() !== 'ESTATISTIKOLAR') return false
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      return (p.academic_year || p.Academic_year) === academicYearFilter
+  const allowedPrograms = 
+    [
+      'FULLESTAT',
+      'HALFESTAT',
+      'ESTATISTIKOLAR'
+    ];
+
+  const formatProgramName = name => {
+    if (!name) return '';
+    return name
+      .replace(/ESTAT/g, ' ESTAT')       // turn FULLSSP → FULL SSP
+      .replace(/HALF/g, ' ESTAT')   // turn FULLPESFA → FULL PESFA
+      .trim();
+  };
+
+
+  const filteredestatistikolar = (Array.isArray(financialAssistances) ? financialAssistances : []).filter
+  (p => {
+  
+    const programName = p?.scholarship_program_name?.toUpperCase().trim();
+
+    // Only keep allowed programs
+    if (!allowedPrograms.includes(programName)) return false;
+
+    // Apply program filter if not "All"
+    if (programFilter && programFilter !== 'All') {
+      if (programName !== programFilter.toUpperCase().trim()) return false;
     }
-    // Only keep the "All" row when filter is All
-    return (p.academic_year || p.Academic_year) === 'All'
-  })
+
+    // Apply academic year filter if not "All"
+    if (academicYearFilter && academicYearFilter !== 'All') {
+      return (p.academic_year || p.Academic_year) === academicYearFilter;
+    }
+
+    // Default: keep "All" row when year filter is All
+    return (p.academic_year || p.Academic_year) === 'All';
+  });
 
   const sucPrograms = [
     {
@@ -305,6 +355,7 @@ export default function FinancialAssistanceEstatistikolar() {
   return (
     <div className="min-h-screen">
       <main>
+
         <Select
           value={academicYearFilter}
           allowClear
@@ -314,6 +365,20 @@ export default function FinancialAssistanceEstatistikolar() {
         >
           {academicYears.map(year => (
             <Option key={year} value={year}>{year}</Option>
+          ))}
+        </Select>
+
+        <Select
+          value={programFilter}
+          allowClear
+          size="middle"
+          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
+          onChange={handleProgramChange}
+        >
+          {programs.map(program => (
+            <Option key={program} value={program}>
+              {formatProgramName(program)}
+            </Option>
           ))}
         </Select>
 
