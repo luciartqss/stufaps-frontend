@@ -547,7 +547,7 @@ export default function StudentDetails() {
   const getIncompleteCount = () => getMissingFields().length
 
   return (
-    <div style={{ background: '#f5f5f5', minHeight: '100vh' }}>
+    <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
       {/* Header */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e8eaed', padding: '20px 24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

@@ -1,19 +1,18 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Tabs, Input, Pagination, Badge, Statistic } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
-  SearchOutlined,
   LoadingOutlined,
 } from '@ant-design/icons'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 const { Title, Text } = Typography
 
 const API_URL = 'http://localhost:8000/api'
 
-// Human-readable field labels
+// Human-readable field labels — aligned with backend DashboardController $requiredFields
 const fieldLabels = {
   surname: 'Surname',
   first_name: 'First Name',
@@ -46,6 +45,16 @@ const fieldLabels = {
 
 const PAGE_SIZE = 15
 
+// Issue types in requested order
+const ISSUE_TYPES = [
+  { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
+  { key: 'no_award', label: 'Missing Award No.', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
+  { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
+  { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
+]
+
 export default function DataQuality() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -57,9 +66,9 @@ export default function DataQuality() {
     duplicate_award_numbers: 0,
     incomplete_info: 0,
   })
+  const [totalStudents, setTotalStudents] = useState(0)
   const [activeTab, setActiveTab] = useState('duplicate_award')
 
-  // Paginated data for each warning type
   const [dupAward, setDupAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [dupLrn, setDupLrn] = useState({ students: [], total: 0, page: 1, loading: false })
   const [noUii, setNoUii] = useState({ students: [], total: 0, page: 1, loading: false })
@@ -67,14 +76,14 @@ export default function DataQuality() {
   const [noAward, setNoAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incomplete, setIncomplete] = useState({ students: [], total: 0, page: 1, loading: false })
 
-  // Fetch overall counts from dashboard stats
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     try {
       setLoading(true)
       const res = await fetch(`${API_URL}/dashboard/stats`)
       if (!res.ok) throw new Error('Failed to load')
       const data = await res.json()
       const w = data.warnings || {}
+      setTotalStudents(data.stats?.totalStudents || 0)
       setCounts({
         no_uii: w.no_uii?.count || 0,
         no_lrn: w.no_lrn?.count || 0,
@@ -83,158 +92,146 @@ export default function DataQuality() {
         duplicate_award_numbers: w.duplicate_award_numbers?.count || 0,
         incomplete_info: w.incomplete_info?.count || 0,
       })
-
-      // For duplicate types that come inline with stats, store them directly
       if (w.duplicate_award_numbers?.students) {
-        setDupAward({
-          students: w.duplicate_award_numbers.students,
-          total: w.duplicate_award_numbers.students.length,
-          page: 1,
-          loading: false,
-        })
+        setDupAward({ students: w.duplicate_award_numbers.students, total: w.duplicate_award_numbers.students.length, page: 1, loading: false })
       }
       if (w.duplicate_lrn?.students) {
-        setDupLrn({
-          students: w.duplicate_lrn.students,
-          total: w.duplicate_lrn.students.length,
-          page: 1,
-          loading: false,
-        })
+        setDupLrn({ students: w.duplicate_lrn.students, total: w.duplicate_lrn.students.length, page: 1, loading: false })
       }
     } catch (err) {
       console.error('Failed to fetch counts:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  // Generic paginated fetcher
-  const fetchPaginated = async (endpoint, setter, page = 1) => {
+  const fetchPaginated = useCallback(async (endpoint, setter, page = 1) => {
     setter(prev => ({ ...prev, loading: true }))
     try {
       const res = await fetch(`${API_URL}/dashboard/warnings/${endpoint}?page=${page}&per_page=${PAGE_SIZE}`)
       const data = await res.json()
-      setter({
-        students: data.students || [],
-        total: data.total || 0,
-        page: data.page || page,
-        loading: false,
-      })
+      setter({ students: data.students || [], total: data.total || 0, page: data.page || page, loading: false })
     } catch (err) {
       console.error(`Failed to fetch ${endpoint}:`, err)
       setter(prev => ({ ...prev, loading: false }))
     }
-  }
-
-  useEffect(() => {
-    fetchCounts()
   }, [])
 
-  // Fetch data for the active tab when it changes or counts load
+  useEffect(() => { fetchCounts() }, [fetchCounts])
+
   useEffect(() => {
     if (loading) return
-    switch (activeTab) {
-      case 'no_uii':
-        if (counts.no_uii > 0 && noUii.students.length === 0) fetchPaginated('no-uii', setNoUii, 1)
-        break
-      case 'no_lrn':
-        if (counts.no_lrn > 0 && noLrn.students.length === 0) fetchPaginated('no-lrn', setNoLrn, 1)
-        break
-      case 'no_award':
-        if (counts.no_award_number > 0 && noAward.students.length === 0) fetchPaginated('no-award-number', setNoAward, 1)
-        break
-      case 'incomplete':
-        if (counts.incomplete_info > 0 && incomplete.students.length === 0) fetchPaginated('incomplete-info', setIncomplete, 1)
-        break
+    const tabConfig = {
+      no_uii: { count: counts.no_uii, data: noUii, endpoint: 'no-uii', setter: setNoUii },
+      no_lrn: { count: counts.no_lrn, data: noLrn, endpoint: 'no-lrn', setter: setNoLrn },
+      no_award: { count: counts.no_award_number, data: noAward, endpoint: 'no-award-number', setter: setNoAward },
+      incomplete: { count: counts.incomplete_info, data: incomplete, endpoint: 'incomplete-info', setter: setIncomplete },
+    }
+    const cfg = tabConfig[activeTab]
+    if (cfg && cfg.count > 0 && cfg.data.students.length === 0) {
+      fetchPaginated(cfg.endpoint, cfg.setter, 1)
     }
   }, [activeTab, loading])
 
-  const totalIssues = Object.values(counts).reduce((sum, c) => sum + c, 0)
+  const totalIssues = useMemo(() => Object.values(counts).reduce((sum, c) => sum + c, 0), [counts])
 
-  // Common column helpers
-  const nameCol = {
+  const getCountForTab = useCallback((key) => {
+    const map = {
+      duplicate_award: counts.duplicate_award_numbers,
+      duplicate_lrn: counts.duplicate_lrn,
+      no_uii: counts.no_uii,
+      no_lrn: counts.no_lrn,
+      no_award: counts.no_award_number,
+      incomplete: counts.incomplete_info,
+    }
+    return map[key] || 0
+  }, [counts])
+
+  // Memoized column helpers
+  const nameCol = useMemo(() => ({
     title: 'Name',
     key: 'name',
     render: (_, r) => {
       const name = `${r.surname || ''}, ${r.first_name || ''}`.trim()
-      return <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>{name || 'N/A'}</a>
+      return <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
     },
-  }
-  const statusCol = {
+  }), [navigate])
+
+  const statusCol = useMemo(() => ({
     title: 'Status',
     dataIndex: 'scholarship_status',
     key: 'status',
-    width: 110,
+    width: 120,
     render: (status) => {
-      const colorMap = { 'On-going': 'green', 'Active': 'green', 'Graduated': 'blue', 'Terminated': 'red' }
+      const colorMap = { 'On-going': 'green', Active: 'green', Graduated: 'blue', Terminated: 'red' }
       return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
     },
-  }
-  const institutionCol = {
+  }), [])
+
+  const institutionCol = useMemo(() => ({
     title: 'Institution',
     dataIndex: 'name_of_institution',
     key: 'institution',
     ellipsis: true,
-  }
-  const viewCol = {
+  }), [])
+
+  const viewCol = useMemo(() => ({
     title: '',
     key: 'action',
     width: 60,
     render: (_, r) => (
-      <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontSize: 12 }}>View</a>
+      <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontSize: 13 }}>View</a>
     ),
-  }
+  }), [navigate])
 
-  // Missing field indicator column
-  const missingCol = (fieldName, label) => ({
-    title: 'Missing',
+  const missingTag = useCallback((label) => ({
+    title: 'Issue',
     key: 'missing',
-    width: 130,
+    width: 150,
     render: () => (
       <Tag color="orange" style={{ fontSize: 12 }}>
         <WarningOutlined style={{ marginRight: 4 }} />{label}
       </Tag>
     ),
-  })
+  }), [])
 
-  // Tab-specific columns
-  const columnSets = {
+  const columnSets = useMemo(() => ({
     duplicate_award: [
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 140,
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150,
         render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
       { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       statusCol,
       viewCol,
     ],
-    duplicate_lrn: [
-      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 160, ellipsis: true,
-        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
+    no_award: [
       nameCol,
+      missingTag('Award No.'),
+      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       institutionCol,
       statusCol,
       viewCol,
     ],
-    no_uii: [
+    duplicate_lrn: [
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 180,
+        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
-      missingCol('uii', 'UII'),
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
       institutionCol,
       statusCol,
       viewCol,
     ],
     no_lrn: [
       nameCol,
-      missingCol('learner_reference_number', 'LRN'),
+      missingTag('LRN'),
       { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
       institutionCol,
       statusCol,
       viewCol,
     ],
-    no_award: [
+    no_uii: [
       nameCol,
-      missingCol('award_number', 'Award No.'),
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+      missingTag('UII'),
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
       institutionCol,
       statusCol,
       viewCol,
@@ -242,13 +239,13 @@ export default function DataQuality() {
     incomplete: [
       nameCol,
       {
-        title: 'Missing',
+        title: 'Count',
         dataIndex: 'missing_count',
         key: 'missing_count',
         width: 80,
         align: 'center',
         render: (count) => (
-          <Tag color="orange" style={{ fontWeight: 600, minWidth: 40, textAlign: 'center' }}>{count}</Tag>
+          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
         ),
       },
       {
@@ -268,153 +265,155 @@ export default function DataQuality() {
       statusCol,
       viewCol,
     ],
-  }
+  }), [nameCol, statusCol, institutionCol, viewCol, missingTag])
 
-  // Get data + config for current tab
-  const getTabData = (tabKey) => {
-    switch (tabKey) {
-      case 'duplicate_award': return { data: dupAward, paginated: false }
-      case 'duplicate_lrn': return { data: dupLrn, paginated: false }
-      case 'no_uii': return { data: noUii, paginated: true, endpoint: 'no-uii', setter: setNoUii }
-      case 'no_lrn': return { data: noLrn, paginated: true, endpoint: 'no-lrn', setter: setNoLrn }
-      case 'no_award': return { data: noAward, paginated: true, endpoint: 'no-award-number', setter: setNoAward }
-      case 'incomplete': return { data: incomplete, paginated: true, endpoint: 'incomplete-info', setter: setIncomplete }
-      default: return { data: { students: [], total: 0, page: 1, loading: false }, paginated: false }
+  const getTabData = useCallback((tabKey) => {
+    const map = {
+      duplicate_award: { data: dupAward, paginated: false },
+      duplicate_lrn: { data: dupLrn, paginated: false },
+      no_uii: { data: noUii, paginated: true, endpoint: 'no-uii', setter: setNoUii },
+      no_lrn: { data: noLrn, paginated: true, endpoint: 'no-lrn', setter: setNoLrn },
+      no_award: { data: noAward, paginated: true, endpoint: 'no-award-number', setter: setNoAward },
+      incomplete: { data: incomplete, paginated: true, endpoint: 'incomplete-info', setter: setIncomplete },
     }
-  }
+    return map[tabKey] || { data: { students: [], total: 0, page: 1, loading: false }, paginated: false }
+  }, [dupAward, dupLrn, noUii, noLrn, noAward, incomplete])
 
-  const renderTable = (tabKey) => {
-    const { data, paginated, endpoint, setter } = getTabData(tabKey)
-    const columns = columnSets[tabKey] || []
-    const displayData = paginated ? data.students : data.students.slice((data.page - 1) * PAGE_SIZE, data.page * PAGE_SIZE)
-
-    return (
-      <Spin spinning={data.loading} indicator={<LoadingOutlined />}>
-        <Table
-          dataSource={displayData}
-          columns={columns}
-          size="small"
-          pagination={false}
-          rowKey="seq"
-          locale={{ emptyText: <Empty description="No issues found" /> }}
-          style={{ marginBottom: data.total > PAGE_SIZE ? 0 : 16 }}
-        />
-        {data.total > PAGE_SIZE && (
-          <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {data.total} total records
-            </Text>
-            <Pagination
-              size="small"
-              current={data.page}
-              total={data.total}
-              pageSize={PAGE_SIZE}
-              onChange={(page) => {
-                if (paginated) {
-                  fetchPaginated(endpoint, setter, page)
-                } else {
-                  // For inline data (duplicates), just change page locally
-                  if (tabKey === 'duplicate_award') setDupAward(prev => ({ ...prev, page }))
-                  if (tabKey === 'duplicate_lrn') setDupLrn(prev => ({ ...prev, page }))
-                }
-              }}
-              showSizeChanger={false}
-            />
-          </div>
-        )}
-      </Spin>
-    )
-  }
-
-  const issueTypes = [
-    { key: 'duplicate_award', label: 'Duplicate Award #', count: counts.duplicate_award_numbers, color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
-    { key: 'duplicate_lrn', label: 'Duplicate LRN', count: counts.duplicate_lrn, color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
-    { key: 'no_uii', label: 'Missing UII', count: counts.no_uii, color: '#fa8c16', icon: <WarningOutlined /> },
-    { key: 'no_lrn', label: 'Missing LRN', count: counts.no_lrn, color: '#fa8c16', icon: <WarningOutlined /> },
-    { key: 'no_award', label: 'Missing Award #', count: counts.no_award_number, color: '#8c8c8c', icon: <InfoCircleOutlined /> },
-    { key: 'incomplete', label: 'Incomplete Info', count: counts.incomplete_info, color: '#fa8c16', icon: <WarningOutlined /> },
-  ]
+  const activeIssue = ISSUE_TYPES.find(t => t.key === activeTab)
 
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
         <Spin size="large" />
-        <Text style={{ marginLeft: 16 }}>Loading data quality report...</Text>
+        <Text style={{ marginLeft: 16, fontSize: 15 }}>Loading data quality report...</Text>
       </div>
     )
   }
 
+  const { data: tabData, paginated, endpoint, setter } = getTabData(activeTab)
+  const displayData = paginated
+    ? tabData.students
+    : tabData.students.slice((tabData.page - 1) * PAGE_SIZE, tabData.page * PAGE_SIZE)
+
   return (
-    <div style={{ padding: 24 }}>
-      {/* Header */}
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <Title level={3} style={{ margin: 0, color: '#0032a0' }}>Data Quality</Title>
-          <Text type="secondary">Review and fix data issues across student records</Text>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <Statistic
-            title="Total Issues"
-            value={totalIssues}
-            valueStyle={{ color: totalIssues > 0 ? '#ff4d4f' : '#52c41a', fontSize: 28 }}
-          />
+    <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
+      {/* Header — matches dashboard */}
+      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>Data Quality</Title>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>Review and fix data issues across student records</Text>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 32, fontWeight: 700, color: totalIssues > 0 ? '#ff4d4f' : '#52c41a', lineHeight: 1 }}>
+              {totalIssues}
+            </div>
+            <Text style={{ color: '#6b7280', fontSize: 13 }}>Total Issues</Text>
+          </div>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <Row gutter={[12, 12]} style={{ marginBottom: 24 }}>
-        {issueTypes.map(item => (
-          <Col xs={12} sm={8} md={4} key={item.key}>
-            <Card
-              size="small"
-              style={{
-                borderRadius: 8,
-                cursor: 'pointer',
-                borderColor: activeTab === item.key ? item.color : '#f0f0f0',
-                borderWidth: activeTab === item.key ? 2 : 1,
-                background: activeTab === item.key ? `${item.color}08` : 'white',
-              }}
-              bodyStyle={{ padding: '12px 16px', textAlign: 'center' }}
-              onClick={() => setActiveTab(item.key)}
-            >
-              <div style={{ fontSize: 22, fontWeight: 700, color: item.count > 0 ? item.color : '#52c41a' }}>
-                {item.count}
-              </div>
-              <Text style={{ fontSize: 11, color: '#8c8c8c' }}>{item.label}</Text>
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      {/* Issue Summary Cards with Progress */}
+      <div style={{ padding: '24px', background: '#fff', borderBottom: '1px solid #e8eaed' }}>
+        <Row gutter={[16, 16]}>
+          {ISSUE_TYPES.map(item => {
+            const count = getCountForTab(item.key)
+            const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0
+            const isActive = activeTab === item.key
+            return (
+              <Col xs={12} sm={8} md={4} key={item.key}>
+                <Card
+                  size="small"
+                  hoverable
+                  style={{
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    borderColor: isActive ? item.color : '#f0f2f5',
+                    borderWidth: isActive ? 2 : 1,
+                    background: isActive ? `${item.color}08` : '#fff',
+                    boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
+                    transition: 'all 0.2s ease',
+                  }}
+                  bodyStyle={{ padding: '16px' }}
+                  onClick={() => setActiveTab(item.key)}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span style={{ color: item.color, fontSize: 14 }}>{item.icon}</span>
+                    <Text style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.2 }}>{item.label}</Text>
+                  </div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
+                    {count}
+                  </div>
+                </Card>
+              </Col>
+            )
+          })}
+        </Row>
+      </div>
 
-      {/* Active Tab Content */}
-      <Card
-        style={{ borderRadius: 8, border: '1px solid #f0f0f0' }}
-        bodyStyle={{ padding: 0 }}
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {issueTypes.find(t => t.key === activeTab)?.icon}
-            <span>{issueTypes.find(t => t.key === activeTab)?.label}</span>
-            <Badge
-              count={issueTypes.find(t => t.key === activeTab)?.count || 0}
-              style={{ backgroundColor: issueTypes.find(t => t.key === activeTab)?.color }}
+      {/* Table Section */}
+      <div style={{ padding: '24px' }}>
+        <Card
+          style={{
+            borderRadius: 12,
+            border: '1px solid #e8eaed',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+          bodyStyle={{ padding: 0 }}
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>
+              <span style={{ fontSize: 16, fontWeight: 600 }}>{activeIssue?.label}</span>
+              <Tag
+                style={{
+                  backgroundColor: activeIssue?.color,
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontWeight: 600,
+                  padding: '0 10px',
+                  lineHeight: '22px',
+                }}
+              >
+                {getCountForTab(activeTab)}
+              </Tag>
+            </div>
+          }
+        >
+          <Spin spinning={tabData.loading} indicator={<LoadingOutlined />}>
+            <Table
+              dataSource={displayData}
+              columns={columnSets[activeTab] || []}
+              size="middle"
+              pagination={false}
+              rowKey="seq"
+              locale={{ emptyText: <Empty description="No issues found" /> }}
             />
-          </div>
-        }
-      >
-        {renderTable(activeTab)}
-      </Card>
-
-      {/* Legend */}
-      <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
-        <Text type="secondary" style={{ fontSize: 12 }}>Legend:</Text>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Tag color="#ff4d4f" style={{ fontSize: 11, margin: 0 }}>Duplicate</Tag>
-          <Text type="secondary" style={{ fontSize: 11 }}>Duplicate values (critical)</Text>
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <Tag color="orange" style={{ fontSize: 11, margin: 0 }}>Missing</Tag>
-          <Text type="secondary" style={{ fontSize: 11 }}>Empty or missing data</Text>
-        </div>
+            {tabData.total > PAGE_SIZE && (
+              <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  {tabData.total} total records
+                </Text>
+                <Pagination
+                  size="small"
+                  current={tabData.page}
+                  total={tabData.total}
+                  pageSize={PAGE_SIZE}
+                  onChange={(page) => {
+                    if (paginated) {
+                      fetchPaginated(endpoint, setter, page)
+                    } else {
+                      if (activeTab === 'duplicate_award') setDupAward(prev => ({ ...prev, page }))
+                      if (activeTab === 'duplicate_lrn') setDupLrn(prev => ({ ...prev, page }))
+                    }
+                  }}
+                  showSizeChanger={false}
+                />
+              </div>
+            )}
+          </Spin>
+        </Card>
       </div>
     </div>
   )
