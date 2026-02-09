@@ -13,6 +13,37 @@ const { Title, Text } = Typography
 
 const API_URL = 'http://localhost:8000/api'
 
+// Human-readable field labels
+const fieldLabels = {
+  surname: 'Surname',
+  first_name: 'First Name',
+  sex: 'Sex',
+  date_of_birth: 'Date of Birth',
+  contact_number: 'Contact No.',
+  email_address: 'Email',
+  street_brgy: 'Street/Brgy',
+  municipality_city: 'City/Municipality',
+  province: 'Province',
+  congressional_district: 'District',
+  zip_code: 'ZIP Code',
+  name_of_institution: 'Institution',
+  uii: 'UII',
+  institutional_type: 'Inst. Type',
+  region: 'Region',
+  degree_program: 'Degree Program',
+  program_degree_level: 'Degree Level',
+  in_charge: 'In-Charge',
+  award_year: 'Award Year',
+  scholarship_program: 'Scholarship Program',
+  award_number: 'Award No.',
+  authority_type: 'Authority Type',
+  authority_number: 'Authority No.',
+  series: 'Series',
+  scholarship_status: 'Status',
+  learner_reference_number: 'LRN',
+  basis_cmo: 'Basis (CMO)',
+}
+
 const PAGE_SIZE = 15
 
 export default function DataQuality() {
@@ -154,17 +185,31 @@ export default function DataQuality() {
     ),
   }
 
+  // Missing field indicator column
+  const missingCol = (fieldName, label) => ({
+    title: 'Missing',
+    key: 'missing',
+    width: 130,
+    render: () => (
+      <Tag color="orange" style={{ fontSize: 12 }}>
+        <WarningOutlined style={{ marginRight: 4 }} />{label}
+      </Tag>
+    ),
+  })
+
   // Tab-specific columns
   const columnSets = {
     duplicate_award: [
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 140 },
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 140,
+        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
       { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       statusCol,
       viewCol,
     ],
     duplicate_lrn: [
-      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 160, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 160, ellipsis: true,
+        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
       institutionCol,
       statusCol,
@@ -172,6 +217,7 @@ export default function DataQuality() {
     ],
     no_uii: [
       nameCol,
+      missingCol('uii', 'UII'),
       { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
       institutionCol,
       statusCol,
@@ -179,6 +225,7 @@ export default function DataQuality() {
     ],
     no_lrn: [
       nameCol,
+      missingCol('learner_reference_number', 'LRN'),
       { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
       institutionCol,
       statusCol,
@@ -186,6 +233,7 @@ export default function DataQuality() {
     ],
     no_award: [
       nameCol,
+      missingCol('award_number', 'Award No.'),
       { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       institutionCol,
       statusCol,
@@ -194,21 +242,27 @@ export default function DataQuality() {
     incomplete: [
       nameCol,
       {
-        title: 'Missing Fields',
+        title: 'Missing',
         dataIndex: 'missing_count',
         key: 'missing_count',
-        width: 110,
-        render: (count) => <Tag color="orange">{count} fields</Tag>,
+        width: 80,
+        align: 'center',
+        render: (count) => (
+          <Tag color="orange" style={{ fontWeight: 600, minWidth: 40, textAlign: 'center' }}>{count}</Tag>
+        ),
       },
       {
-        title: 'Details',
+        title: 'Missing Fields',
         dataIndex: 'missing_fields',
         key: 'missing_fields',
-        ellipsis: true,
         render: (fields) => (
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {(fields || []).join(', ')}
-          </Text>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {(fields || []).map(f => (
+              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
+                {fieldLabels[f] || f}
+              </Tag>
+            ))}
+          </div>
         ),
       },
       statusCol,
@@ -349,6 +403,19 @@ export default function DataQuality() {
       >
         {renderTable(activeTab)}
       </Card>
+
+      {/* Legend */}
+      <div style={{ marginTop: 16, display: 'flex', gap: 16, alignItems: 'center' }}>
+        <Text type="secondary" style={{ fontSize: 12 }}>Legend:</Text>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Tag color="#ff4d4f" style={{ fontSize: 11, margin: 0 }}>Duplicate</Tag>
+          <Text type="secondary" style={{ fontSize: 11 }}>Duplicate values (critical)</Text>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Tag color="orange" style={{ fontSize: 11, margin: 0 }}>Missing</Tag>
+          <Text type="secondary" style={{ fontSize: 11 }}>Empty or missing data</Text>
+        </div>
+      </div>
     </div>
   )
 }
