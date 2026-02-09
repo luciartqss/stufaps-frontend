@@ -94,7 +94,11 @@ export default function FinancialAssistanceCmsp() {
   const [error, setError] = useState(null)
   const [expandedSUC, setExpandedSUC] = useState(null)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [programFilter, setProgramFilter] = useState('All')
+
   const [academicYears, setAcademicYears] = useState([])
+  const [programs, setPrograms] = useState([])
+
   const [expandedPrivate, setExpandedPrivate] = useState(null)
 
   useEffect(() => {
@@ -114,6 +118,15 @@ export default function FinancialAssistanceCmsp() {
           )
         ]
 
+        const uniquePrograms = [ 
+            ...new Set( 
+              programsData 
+              .filter(p => p.description === 'CHED Merit Scholarship Program') 
+              .map(p => p.scholarship_program_name) 
+              .filter(Boolean) 
+            ) ]
+
+        setPrograms([...uniquePrograms.sort()])
         setAcademicYears([...uniqueYears.sort()])
         setLoading(false)
       })
@@ -124,19 +137,53 @@ export default function FinancialAssistanceCmsp() {
       })
   }, [])
 
-  const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+  const handleAcademicYearChange = value => 
+  { 
+    setAcademicYearFilter(value || 'All') 
+  } 
+
+  const handleProgramChange = value => 
+  { 
+    setProgramFilter(value) 
+  } 
 
   if (loading) return <div>Loading CMSP data...</div>
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>
 
+  const allowedPrograms = [
+  'FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD',
+  'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
+  ];
+
+  // helper function to format program names
+  const formatProgramName = name => {
+    if (!name) return '';
+    return name
+      .replace(/SSP/g, ' SSP')       // turn FULLSSP → FULL SSP
+      .replace(/PESFA/g, ' PESFA')   // turn FULLPESFA → FULL PESFA
+      .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
+      .trim();
+  };
+
   const filteredCms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    if (p?.scholarship_program_name?.toUpperCase() !== 'CMSP') return false
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      return (p.academic_year || p.Academic_year) === academicYearFilter
+    const programName = p?.scholarship_program_name?.toUpperCase().trim();
+
+    // Only keep allowed programs
+    if (!allowedPrograms.includes(programName)) return false;
+
+    // Apply program filter if not "All"
+    if (programFilter && programFilter !== 'All') {
+      if (programName !== programFilter.toUpperCase().trim()) return false;
     }
-    // Only keep the "All" row when filter is All
-    return (p.academic_year || p.Academic_year) === 'All'
-  })
+
+    // Apply academic year filter if not "All"
+    if (academicYearFilter && academicYearFilter !== 'All') {
+      return (p.academic_year || p.Academic_year) === academicYearFilter;
+    }
+
+    // Default: keep "All" row when year filter is All
+    return (p.academic_year || p.Academic_year) === 'All';
+  });
 
   const sucPrograms = [
     {
@@ -255,6 +302,9 @@ export default function FinancialAssistanceCmsp() {
   return (
     <div className="min-h-screen">
       <main>
+
+      {/* dropdown*/}
+
         <Select
           value={academicYearFilter}
           allowClear
@@ -264,6 +314,20 @@ export default function FinancialAssistanceCmsp() {
         >
           {academicYears.map(year => (
             <Option key={year} value={year}>{year}</Option>
+          ))}
+        </Select>
+
+        <Select
+          value={programFilter}
+          allowClear
+          size="middle"
+          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
+          onChange={handleProgramChange}
+        >
+          {programs.map(program => (
+            <Option key={program} value={program}>
+              {formatProgramName(program)}
+            </Option>
           ))}
         </Select>
 

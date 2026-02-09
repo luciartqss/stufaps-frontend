@@ -186,45 +186,52 @@ export default function Financial_AssistanceIndex() {
       )
 
   const getProgramTotals = (assistances, programName) => {
-    const filtered = assistances.filter(p => p.scholarship_program_name === programName)
+  const filtered = Array.isArray(programName)
+    ? assistances.filter(p => programName.includes(p.scholarship_program_name))
+    : assistances.filter(p => p.scholarship_program_name === programName)
 
-    if (
-      filtered.length === 1 &&
-      (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
-    ) {
-      // Use backend values directly for the "All" row
-      const row = filtered[0]
-      return {
-        totalSlots: Number(row?.total_slot) || 0,
-        totalFilled: Number(row?.total_students) || 0,
-        totalUnfilled: Number(row?.unfilled_slot) || 0,
-        percentage:
-          row?.total_slot > 0
-            ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
-            : 0,
-      }
-    } else {
-      // Sum across rows for a specific year
-      const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
-      const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
-      const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
+  if (
+    filtered.length === 1 &&
+    (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
+  ) {
+    const row = filtered[0]
+    return {
+      totalSlots: Number(row?.total_slot) || 0,
+      totalFilled: Number(row?.total_students) || 0,
+      totalUnfilled: Number(row?.unfilled_slot) || 0,
+      percentage:
+        row?.total_slot > 0
+          ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
+          : 0,
+    }
+  } else {
+    const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
+    const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
+    const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
 
-      return {
-        totalSlots,
-        totalFilled,
-        totalUnfilled,
-        percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
-      }
+    return {
+      totalSlots,
+      totalFilled,
+      totalUnfilled,
+      percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
     }
   }
-  const cmsTotals = getProgramTotals(filteredAssistances, "CMSP")
-  const estatistikolarTotals = getProgramTotals(filteredAssistances, "Estatistikolar")
-  const CoSchoTotals = getProgramTotals(filteredAssistances, "CoScho")
+}
+
+  const cmsTotals = getProgramTotals(filteredAssistances, 
+  [
+    'FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD',
+    'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
+  ]);
+
+  const estatistikolarTotals = getProgramTotals(filteredAssistances, ['FULLESTAT','HALFESTAT', 'ESTATISTIKOLAR'])
+
+  const CoSchoTotals = getProgramTotals(filteredAssistances, "COSCHO")
   const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
-  const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDA-SGP")
-  const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEF-GIAHEP")
-  const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTP-SP")
-  const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMS-SUCs")
+  const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDASGP")
+  const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEFGIAHEP")
+  const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTPSP")
+  const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMSSUCS")
   const SNPLPTotals = getProgramTotals(filteredAssistances, "SNPLP")
 
   return (
