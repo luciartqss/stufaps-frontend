@@ -54,17 +54,26 @@ const api = {
 // Simple field display with proper input types - moved outside to prevent focus loss
 const Field = ({ label, value, field, span = 12, type = 'text', editMode, formData, handleChange, options = [], required = false }) => {
   const isEmpty = !value || value === '—' || value === 'N/A'
+  const editFieldEmpty = editMode && required && field && (!formData?.[field] || formData[field] === '')
   const showWarning = required && isEmpty && !editMode
+  const highlightStyle = editFieldEmpty ? {
+    background: '#fffbe6',
+    border: '1px solid #faad14',
+    borderRadius: 6,
+    padding: '8px 10px',
+  } : { marginBottom: '16px' }
   return (
     <Col span={span}>
-      <div style={{ marginBottom: '16px' }}>
-        <Text strong style={{ fontSize: '13px', color: showWarning ? '#d97706' : '#6b7280', display: 'block', marginBottom: '4px' }}>
-          {label} {showWarning && <span style={{ color: '#ef4444', fontSize: 11 }}>(missing)</span>}
+      <div style={{ marginBottom: '16px', ...highlightStyle }}>
+        <Text strong style={{ fontSize: '13px', color: editFieldEmpty ? '#d97706' : showWarning ? '#d97706' : '#6b7280', display: 'block', marginBottom: '4px' }}>
+          {label} {editFieldEmpty && <span style={{ color: '#d97706', fontSize: 11 }}>(incomplete)</span>}
+          {showWarning && <span style={{ color: '#ef4444', fontSize: 11 }}>(missing)</span>}
         </Text>
         {editMode && field ? (
           type === 'date' ? (
             <DatePicker
               style={{ width: '100%' }}
+              status={editFieldEmpty ? 'warning' : undefined}
               value={formData?.[field] ? dayjs(formData[field]) : null}
               onChange={(date) => handleChange(field, date ? date.format('YYYY-MM-DD') : null)}
               format="YYYY-MM-DD"
@@ -72,6 +81,7 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           ) : type === 'email' ? (
             <Input
               type="email"
+              status={editFieldEmpty ? 'warning' : undefined}
               value={formData?.[field] ?? ''}
               onChange={(e) => handleChange(field, e.target.value)}
             />
@@ -81,6 +91,7 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
               onChange={(v) => handleChange(field, v)}
               placeholder={`Select ${label.toLowerCase()}`}
               style={{ width: '100%' }}
+              status={editFieldEmpty ? 'warning' : undefined}
               allowClear
             >
               {options.map(option => (
@@ -92,6 +103,7 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           ) : type === 'textarea' ? (
             <Input.TextArea
               value={formData?.[field] ?? ''}
+              status={editFieldEmpty ? 'warning' : undefined}
               onChange={(e) => handleChange(field, e.target.value)}
               rows={3}
               placeholder={`Enter ${label.toLowerCase()}`}
@@ -99,6 +111,7 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           ) : (
             <Input
               value={formData?.[field] ?? ''}
+              status={editFieldEmpty ? 'warning' : undefined}
               onChange={(e) => handleChange(field, e.target.value)}
             />
           )
@@ -549,7 +562,7 @@ export default function StudentDetails() {
   return (
     <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
       {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '1px solid #e8eaed', padding: '20px 24px' }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #e8eaed', padding: '20px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
             <Button 

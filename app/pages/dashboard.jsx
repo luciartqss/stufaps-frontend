@@ -399,6 +399,12 @@ export default function Dashboard() {
                     {dashboardData.warnings.no_lrn?.count > 0 && (
                       <Tag color="orange">{dashboardData.warnings.no_lrn.count} Missing LRN</Tag>
                     )}
+                    {dashboardData.warnings.incomplete_info?.count > 0 && (
+                      <Tag color="volcano">{dashboardData.warnings.incomplete_info.count} Incomplete Info</Tag>
+                    )}
+                    {dashboardData.warnings.no_award_number?.count > 0 && (
+                      <Tag color="orange">{dashboardData.warnings.no_award_number.count} Missing Award #</Tag>
+                    )}
                   </div>
                 </div>
               </div>
