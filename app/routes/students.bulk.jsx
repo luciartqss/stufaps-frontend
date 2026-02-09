@@ -13,11 +13,11 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 const SEM_FIELDS = [
   { key: 'nta', label: 'NTA', width: 150 },
   { key: 'fundSource', label: 'FUND SOURCE', width: 180 },
-  { key: 'amount', label: 'AMOUNT', width: 150 },
+  { key: 'grant', label: 'GRANT', width: 150 },
   { key: 'voucherNumber', label: 'VOUCHER NUMBER', width: 180 },
   { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 180, type: 'select', options: ['ATM', 'Cheque', 'Through the HEI', ''] },
   { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.', width: 180 },
-  { key: 'paymentAmount', label: 'PAYMENT AMOUNT', width: 160 },
+  { key: 'amount', label: 'AMOUNT', width: 160 },
   { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 160 },
   { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 160, type: 'date' },
   { key: 'status', label: 'STATUS', width: 140 },
@@ -336,12 +336,12 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
 
     const semFieldMap = {
       nta: 'nta',
+      grant: 'grant',
       fundSource: 'fund_source',
       amount: 'amount',
       voucherNumber: 'voucher_number',
       modeOfPayment: 'mode_of_payment',
       accountCheckNo: 'account_check_no',
-      paymentAmount: 'payment_amount',
       lddapNumber: 'lddap_number',
       disbursementDate: 'disbursement_date',
       status: 'status',
@@ -384,7 +384,7 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
             
             if (val !== '' && val !== null && val !== undefined) {
               hasData = true
-              if (backendK === 'amount' || backendK === 'payment_amount') {
+              if (backendK === 'grant' || backendK === 'amount') {
                 const num = Number(String(val).replace(/,/g, ''))
                 payload[backendK] = Number.isFinite(num) ? num : val
               } else {
@@ -560,6 +560,7 @@ export default function ImportBulk() {
         // Map excel columns to leafFields
         const colToField = new Map()
         const unmappedCols = []
+        const assignedFieldKeys = new Set() // Track which leaf fields are already mapped
 
         columnMeta.forEach((col) => {
           const labelSan = sanitize(col.label)
@@ -569,6 +570,9 @@ export default function ImportBulk() {
           }
           
           const candidates = nextLeafFields.filter((f) => {
+            // Skip fields already assigned to another column
+            if (assignedFieldKeys.has(f.key)) return false
+
             const fLabelSan = sanitize(f.label)
             const fKeySan = sanitize(f.key)
             const matchesLabel = fLabelSan === labelSan || fKeySan === labelSan
@@ -605,6 +609,7 @@ export default function ImportBulk() {
 
           if (candidates.length > 0) {
             colToField.set(col.idx, candidates[0])
+            assignedFieldKeys.add(candidates[0].key)
           } else {
             unmappedCols.push(col)
             // Debug: Log why this column wasn't mapped
@@ -617,6 +622,42 @@ export default function ImportBulk() {
             })
           }
         })
+
+        // Positional fallback for unmapped columns:
+        // If a column couldn't be matched by name (e.g. duplicate header names),
+        // map it to the leaf field at that position if the field is still unassigned
+        if (unmappedCols.length > 0) {
+          const positionFilled = []
+          unmappedCols.forEach((col) => {
+            const posField = nextLeafFields[col.idx]
+            if (posField && !assignedFieldKeys.has(posField.key)) {
+              colToField.set(col.idx, posField)
+              assignedFieldKeys.add(posField.key)
+              positionFilled.push({ col: col.idx, label: col.label, field: posField.key })
+            }
+          })
+          if (positionFilled.length > 0) {
+            console.log('Positional fallback mapped:', positionFilled)
+          }
+        }
+
+        // Full fallback: if name-based mapping is very poor overall, use pure positional mapping
+        const mappedFieldKeys = new Set(Array.from(colToField.values()).map(f => f.key))
+        const staticFieldCount = nextLeafFields.filter(f => !f.ayId).length
+        const mappedStaticCount = nextLeafFields.filter(f => !f.ayId && mappedFieldKeys.has(f.key)).length
+
+        if (mappedStaticCount < staticFieldCount * 0.4) {
+          // Name-based mapping failed for most columns — fall back to full positional mapping
+          console.log(`Name-based mapping poor (${mappedStaticCount}/${staticFieldCount} static fields). Falling back to full structural position mapping.`)
+          colToField.clear()
+          unmappedCols.length = 0
+
+          for (let i = 0; i < Math.min(maxCols, nextLeafFields.length); i++) {
+            colToField.set(i, nextLeafFields[i])
+          }
+
+          message.info('Column headers not recognized — mapped by structural position instead')
+        }
 
         // Data rows start after the first 3 header rows
         const dataRowsRaw = headerRows.slice(3)
@@ -636,7 +677,7 @@ export default function ImportBulk() {
           'programdiscipline', 'programdegreelevel', 'authoritytype', 'authoritynumber',
           'series', 'priority', 'basiscmo', 'scholarshipstatus', 'replacementinfo',
           'terminationreason', 'cyl', 'curriculumyearlevel', 'nta', 'fundsource',
-          'amount', 'vouchernumber', 'modeofpayment', 'accountcheckno', 'paymentamount',
+          'amount', 'vouchernumber', 'modeofpayment', 'accountcheckno', 'grant',
           'lddapnumber', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
           'semester', 'ay', 'academicyear',
           // Abbreviated versions from Excel (SCHO_PROG, AW_YR, S_NAME, F_NAME, etc.)
