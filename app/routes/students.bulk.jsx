@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
+import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
 import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Progress, Modal } from 'antd'
 import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
@@ -413,6 +413,37 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
   }
 }
 
+// Optimized text input — manages local state, commits on blur/Enter
+// Prevents re-rendering entire table on every keystroke
+const DebouncedInput = memo(function DebouncedInput({ value: externalValue, onChange, ...props }) {
+  const [localValue, setLocalValue] = useState(externalValue ?? '')
+  const committed = useRef(externalValue ?? '')
+
+  useEffect(() => {
+    if (externalValue !== committed.current) {
+      setLocalValue(externalValue ?? '')
+      committed.current = externalValue ?? ''
+    }
+  }, [externalValue])
+
+  const commit = useCallback(() => {
+    if (localValue !== committed.current) {
+      committed.current = localValue
+      onChange(localValue)
+    }
+  }, [localValue, onChange])
+
+  return (
+    <Input
+      {...props}
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={commit}
+      onPressEnter={commit}
+    />
+  )
+})
+
 export default function ImportBulk() {
   const navigate = useNavigate()
   const [data, setData] = useState([])
@@ -436,6 +467,13 @@ export default function ImportBulk() {
     [academicYears]
   )
 
+  // O(1) field config lookup instead of .find() per cell
+  const fieldConfigMap = useMemo(() => {
+    const map = new Map()
+    leafFields.forEach(f => map.set(f.key, f))
+    return map
+  }, [leafFields])
+
   // Paginated data slice
   const paginatedData = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize
@@ -451,19 +489,20 @@ export default function ImportBulk() {
   }, [data.length, pageSize, currentPage])
 
   useEffect(() => {
-    setData((prev) =>
-      prev.map((row, idx) => {
+    setData((prev) => {
+      const leafKeySet = new Set(leafFields.map(f => f.key))
+      return prev.map((row, idx) => {
         const next = { ...row }
         leafFields.forEach(f => {
           if (next[f.key] === undefined) next[f.key] = ''
         })
         Object.keys(next).forEach(k => {
-          if (!leafFields.find(f => f.key === k) && k !== 'seq') delete next[k]
+          if (!leafKeySet.has(k) && k !== 'seq') delete next[k]
         })
         if (!next.seq) next.seq = String(idx + 1)
         return next
       })
-    )
+    })
   }, [leafFields])
 
   // Normalize parsed rows to include all fields in order
@@ -594,31 +633,10 @@ export default function ImportBulk() {
           }
         })
 
-        // Validate structure: reject if the Excel doesn't match the expected column order
+        // Log structure info (positional mapping — no name-based rejection)
         const nonEmptyHeaders = columnMeta.filter(c => sanitize(c.label)).length
-        const matchRate = nonEmptyHeaders > 0 ? positionMatches.length / nonEmptyHeaders : 0
-
-        if (nonEmptyHeaders > 0 && matchRate < 0.5) {
-          console.error('Structure validation failed:', {
-            matchRate: `${Math.round(matchRate * 100)}%`,
-            matched: positionMatches.length,
-            mismatched: positionMismatches.length,
-            totalHeaders: nonEmptyHeaders,
-            mismatches: positionMismatches.slice(0, 10),
-          })
-          message.error(
-            `Excel structure does not match the expected format. Only ${positionMatches.length}/${nonEmptyHeaders} columns matched. ` +
-            `Please use the correct template with columns in the right order.`
-          )
-          setFileLoading(false)
-          return
-        }
-
         if (positionMismatches.length > 0) {
-          console.log(`Structure check: ${positionMatches.length} matched, ${positionMismatches.length} mismatched out of ${nonEmptyHeaders} headers`)
-          positionMismatches.forEach(m => {
-            console.log(`  Col ${m.col}: expected "${m.expected}", got "${m.got}"`)
-          })
+          console.info(`Positional mapping: ${positionMatches.length} name-matched, ${positionMismatches.length} differ out of ${nonEmptyHeaders} headers (OK — using position)`)
         }
 
         // Data rows start after the first 3 header rows
@@ -1027,7 +1045,7 @@ export default function ImportBulk() {
 
   // Render cell input based on field type
   const renderCellInput = (row, rowIndex, field) => {
-    const config = getFieldConfig(field.key, leafFields)
+    const config = fieldConfigMap.get(field.key) || field
     const value = row[field.key] ?? ''
 
     if (config.type === 'select' && config.options) {
@@ -1063,9 +1081,9 @@ export default function ImportBulk() {
     }
 
     return (
-      <Input
+      <DebouncedInput
         value={value}
-        onChange={(e) => handleCellEdit(rowIndex, field.key, e.target.value)}
+        onChange={(val) => handleCellEdit(rowIndex, field.key, val)}
         size="small"
         className="!border-0 !shadow-none hover:!bg-blue-50 focus:!bg-blue-50 !rounded-none !px-2"
         style={{ minWidth: config.width - 16 }}
