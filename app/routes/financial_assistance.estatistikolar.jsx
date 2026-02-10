@@ -203,7 +203,6 @@ export default function FinancialAssistanceEstatistikolar() {
     if (!name) return '';
     return name
       .replace(/ESTAT/g, ' ESTAT')       // turn FULLSSP → FULL SSP
-      .replace(/HALF/g, ' ESTAT')   // turn FULLPESFA → FULL PESFA
       .trim();
   };
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select } from 'antd'
+import { Card, Typography, Select,  Row, Col  } from 'antd'
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
 const { Text } = Typography
 const { Option } = Select
@@ -12,6 +12,7 @@ export function meta() {
     { name: 'description', content: 'Manage CMSP records' },
   ]
 }
+
 
 function StatsCards({ financialAssistances = [] }) {
   let totals;
@@ -35,14 +36,14 @@ function StatsCards({ financialAssistances = [] }) {
 
   const statsConfig = [
     {
-      title: 'Total Slots',
+      title: 'Total Slots: ',
       value: totals.totalSlots,
       icon: <ContactsOutlined />,
       color: '#1890ff',
       bgColor: '#e6f7ff',
     },
     {
-      title: 'Filled Slots',
+      title: 'Filled Slots: ',
       value: totals.totalFilled,
       icon: <TeamOutlined />,
       color: '#52c41a',
@@ -50,7 +51,7 @@ function StatsCards({ financialAssistances = [] }) {
       percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
     },
     {
-      title: 'Unfilled Slots',
+      title: 'Unfilled Slots: ',
       value: totals.totalUnfilled,
       icon: <UserOutlined />,
       color: '#faad14',
@@ -60,32 +61,57 @@ function StatsCards({ financialAssistances = [] }) {
   ]
 
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-      {statsConfig.map((stat, index) => (
-        <Card key={index} style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', height: 96 }}
-          bodyStyle={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}
-        >
-          <div style={{ overflow: 'hidden', flex: 1 }}>
-            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-              {stat.title}
-            </Text>
-            <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-              {(stat.value ?? 0).toLocaleString()}
-            </Text>
-            {stat.percentage && (
-              <>
-                <Progress percent={parseFloat(stat.percentage)} showInfo={false} strokeColor={stat.color} style={{ marginBottom: 8 }} />
-                <Text style={{ fontSize: 12, color: stat.color }}>{stat.percentage}% of total</Text>
-              </>
-            )}
-          </div>
-          <div style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: stat.bgColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: stat.color }}>
+  <div className="stats-cards">
+    {statsConfig.map((stat, index) => (
+      <div
+        key={index}
+        className="stat-row"
+        style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}
+      >
+        {/* icon on the left */}
+        
+
+        {/* info block on the right */}
+        <div className="stat-info" style={{ flex: 1 }}>
+
+          <div
+            className="stat-icon"
+            style={{ display: 'flex', alignItems: 'center',marginBottom: 8 , gap: 8, fontSize: 20, color: stat.color }}
+          >
             {stat.icon}
+            <Text type="secondary">
+              {stat.title}: <Text strong style={{ color: stat.color }}>
+                {(stat.value ?? 0).toLocaleString()}
+              </Text>
+            </Text>
+
           </div>
-        </Card>
-      ))}
-    </div>
-  )
+
+          {/* Percentage text */}
+          {stat.percentage && (
+            <Text style={{ color: stat.color, display: 'block', marginTop: 4 }}>
+              {stat.percentage}% of total
+            </Text>
+          )}
+
+          {/* Progress bar beneath */}
+          {stat.percentage && (
+            <Progress
+              percent={parseFloat(stat.percentage)}
+              showInfo={false}
+              strokeColor={stat.color}
+              style={{ marginTop: 8 }}
+            />
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+
+
+
 }
 
 export default function FinancialAssistanceCmsp() {
@@ -299,6 +325,17 @@ export default function FinancialAssistanceCmsp() {
     </div>
   );
 
+  const cards = [
+    { title: 'Card 1', content: 'Content 1' },
+    { title: 'Card 2', content: 'Content 2' },
+    { title: 'Card 3', content: 'Content 3' },
+    { title: 'Card 4', content: 'Content 4' },
+    { title: 'Card 5', content: 'Content 5' },
+    { title: 'Card 6', content: 'Content 6' },
+    { title: 'Card 7', content: 'Content 7' },
+    { title: 'Card 8', content: 'Content 8' },
+  ]
+
   return (
     <div className="min-h-screen">
       <main>
@@ -331,7 +368,21 @@ export default function FinancialAssistanceCmsp() {
           ))}
         </Select>
 
-        <StatsCards financialAssistances={filteredCms} />
+        <Row gutter={[16, 16]}>
+  {allowedPrograms.map((program, index) => {
+    // find the data for this program from filteredCms
+    const programData = filteredCms.filter(p => p.scholarship_program_name === program);
+
+    return (
+      <Col key={index} span={6}>
+        <Card title={program} bordered={false}>
+          <StatsCards financialAssistances={programData} />
+        </Card>
+      </Col>
+    );
+  })}
+</Row>
+
 
         <div className="container mx-auto p-4 sm:p-6 lg:p-8">
           <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">

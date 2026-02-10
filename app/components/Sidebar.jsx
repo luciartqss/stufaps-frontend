@@ -3,7 +3,7 @@ import {
   DashboardOutlined,
   TeamOutlined,
   DollarOutlined,
-  CalendarOutlined,
+  InfoCircleOutlined,
   BarChartOutlined,
   FileTextOutlined,
   WarningOutlined,
@@ -47,6 +47,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       key: '/financial_assistance',
       icon: <BarChartOutlined />,
       label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
+    },
+    {
+      key: '/about_us',
+      icon: <InfoCircleOutlined />,
+      label: <NavLink to="/about_us">About us</NavLink>,
     },
   ]
 
