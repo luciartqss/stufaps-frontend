@@ -13,12 +13,15 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 const SEM_FIELDS = [
   { key: 'nta', label: 'NTA', width: 150 },
   { key: 'fundSource', label: 'FUND SOURCE', width: 180 },
-  { key: 'grant', label: 'GRANT', width: 150 },
-  { key: 'voucherNumber', label: 'VOUCHER NUMBER', width: 180 },
-  { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 180, type: 'select', options: ['ATM', 'Cheque', 'Through the HEI', ''] },
+  { key: 'voucherTrackingNo', label: 'VOUCHER TRACKING NO.', width: 200 },
+  { key: 'modeOfPayment', label: 'MODE OF PAYMENT', width: 180 },
+  { key: 'atmAccountNo', label: 'ATM ACCOUNT NO.', width: 180 },
+  { key: 'dateProcess', label: 'DATE PROCESS', width: 160, type: 'date' },
+  { key: 'voucherNo', label: 'VOUCHER NO.', width: 180 },
+  { key: 'voucherDate', label: 'VOUCHER DATE', width: 160, type: 'date' },
   { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.', width: 180 },
   { key: 'amount', label: 'AMOUNT', width: 160 },
-  { key: 'lddapNumber', label: 'LDDAP NUMBER', width: 160 },
+  { key: 'lddapNo', label: 'LDDAP NO.', width: 160 },
   { key: 'disbursementDate', label: 'DISBURSEMENT DATE', width: 160, type: 'date' },
   { key: 'status', label: 'STATUS', width: 140 },
   { key: 'remarks', label: 'REMARKS', width: 200 },
@@ -336,13 +339,16 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
 
     const semFieldMap = {
       nta: 'nta',
-      grant: 'grant',
       fundSource: 'fund_source',
-      amount: 'amount',
-      voucherNumber: 'voucher_number',
+      voucherTrackingNo: 'voucher_tracking_no',
       modeOfPayment: 'mode_of_payment',
+      atmAccountNo: 'atm_account_no',
+      dateProcess: 'date_process',
+      voucherNo: 'voucher_no',
+      voucherDate: 'voucher_date',
       accountCheckNo: 'account_check_no',
-      lddapNumber: 'lddap_number',
+      amount: 'amount',
+      lddapNo: 'lddap_no',
       disbursementDate: 'disbursement_date',
       status: 'status',
       remarks: 'remarks',
@@ -384,7 +390,7 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
             
             if (val !== '' && val !== null && val !== undefined) {
               hasData = true
-              if (backendK === 'grant' || backendK === 'amount') {
+              if (backendK === 'amount') {
                 const num = Number(String(val).replace(/,/g, ''))
                 payload[backendK] = Number.isFinite(num) ? num : val
               } else {
@@ -633,8 +639,9 @@ export default function ImportBulk() {
           'programdiscipline', 'programdegreelevel', 'authoritytype', 'authoritynumber',
           'series', 'priority', 'basiscmo', 'scholarshipstatus', 'replacementinfo',
           'terminationreason', 'cyl', 'curriculumyearlevel', 'nta', 'fundsource',
-          'amount', 'vouchernumber', 'modeofpayment', 'accountcheckno', 'grant',
-          'lddapnumber', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
+          'amount', 'vouchertrackingno', 'modeofpayment', 'atmaccountno', 'dateprocess',
+          'voucherno', 'voucherdate', 'accountcheckno',
+          'lddapno', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
           'semester', 'ay', 'academicyear',
           // Abbreviated versions from Excel (SCHO_PROG, AW_YR, S_NAME, F_NAME, etc.)
           'awyr', 'schoprog', 'awno', 'sname', 'fname', 'mname', 'ename',
