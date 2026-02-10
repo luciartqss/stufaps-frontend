@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Select, InputNumber, Button, message } from 'antd'
+import { Modal, Select, InputNumber, Button, message, Alert } from 'antd'
+import { WarningOutlined } from '@ant-design/icons'
 import axios from 'axios'
 
-export default function EditSlotsModal({ open, onClose, onUpdated }) {
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+
+export default function UpdateSlotModal({ open, onClose, onUpdated }) {
   const [records, setRecords] = useState([])
   const [academicYears, setAcademicYears] = useState([])
   const [selectedRecord, setSelectedRecord] = useState(null)
+  const [selectedYearData, setSelectedYearData] = useState(null)
   const [academicYear, setAcademicYear] = useState('')
   const [totalSlots, setTotalSlots] = useState(null)
-  const [unfilledSlot, setUnfilledSlot] = useState(null)
 
-
-  // Fetch scholarship program records
   useEffect(() => {
     if (open) {
-      axios.get('http://localhost:8000/api/scholarship_program_records/grouped')
+      axios.get(`${API_BASE}/scholarship_program_records/grouped`)
         .then(res => {
-          console.log('API Response:', res.data)
           const payload = res?.data?.programs ?? []
           setRecords(Array.isArray(payload) ? payload : [])
         })
@@ -24,152 +24,137 @@ export default function EditSlotsModal({ open, onClose, onUpdated }) {
     }
   }, [open])
 
-  // Reset fields when modal opens
   useEffect(() => {
     if (open) {
       setSelectedRecord(null)
+      setSelectedYearData(null)
       setAcademicYear('')
       setTotalSlots(null)
       setAcademicYears([])
-      setTotalSlots([])
-      setUnfilledSlot([])
     }
   }, [open])
 
-  // When a program is selected, build its academic years list
-  const handleProgramChange = id => {
-    const rec = records.find(r => r.id === id)
+  const handleProgramChange = (value) => {
+    const rec = records.find(r => r.scholarship_program_name === value)
     if (!rec) return
-
     setSelectedRecord(rec)
-
-    const years = records
-      .filter(r => r.scholarship_program_name === rec.scholarship_program_name)
-      .map(r => r.Academic_year)
-      .filter(Boolean)
-
-    setAcademicYears([...new Set(years)])
-    setAcademicYear(rec.Academic_year || '')
-    setTotalSlots(rec.total_slot || null)
+    setAcademicYears(rec.years?.map(y => y.Academic_year) || [])
+    setAcademicYear('')
+    setTotalSlots(null)
+    setSelectedYearData(null)
   }
 
-  // When year changes, update slots automatically
-  const handleYearChange = value => {
+  const handleYearChange = (value) => {
     setAcademicYear(value)
-    if (selectedRecord) {
-      const match = records.find(
-        r =>
-          r.scholarship_program_name === selectedRecord.scholarship_program_name &&
-          r.Academic_year === value
-      )
-      if (match) {
-        setTotalSlots(match.total_slot)
-      } else {
-        setTotalSlots(null)
-      }
-    }
+    const match = selectedRecord?.years?.find(y => y.Academic_year === value)
+    setSelectedYearData(match || null)
+    setTotalSlots(match ? match.total_slot : null)
   }
+
+  const exceeded = selectedYearData && totalSlots !== null && totalSlots < selectedYearData.total_students
 
   const handleSave = () => {
-    if (!selectedRecord || !academicYear) {
-      message.warning('Please select a scholarship and enter an academic year')
+    if (!selectedYearData || !academicYear) {
+      message.warning('Please select a scholarship program and academic year')
       return
     }
 
-    const payload = {
-      id: selectedRecord.id,
-      scholarship_program_name: selectedRecord.scholarship_program_name,
-      description: selectedRecord.description,
-      Academic_year: academicYear,
+    axios.put(`${API_BASE}/scholarship_program_records/updateSlots`, {
+      id: selectedYearData.id,
       total_slot: Number(totalSlots || 0),
-      total_students: selectedRecord.totalstudents,
-    }
-
-    axios.put('http://localhost:8000/api/scholarship_program_records/updateSlots', payload)
+    })
       .then(res => {
-        message.success('Scholarship program updated successfully!')
+        message.success('Slot count updated successfully!')
         onClose()
-        const program = res?.data?.program ?? res?.data ?? null
-        if (onUpdated) onUpdated(program)
+        if (onUpdated) onUpdated(res?.data?.program ?? res?.data ?? null)
       })
-      .catch(() => message.error('Failed to update scholarship program'))
+      .catch(() => message.error('Failed to update slot count'))
   }
+
   return (
     <Modal
-      title="Update Slot Count for Scholarship Program"
+      title="Update Slot Count"
       open={open}
       onCancel={onClose}
       footer={null}
     >
-      {/* Scholarship Program Name */}
-      <Select
-        style={{ width: '100%', marginBottom: 12 }}
-        placeholder="Select a scholarship program"
-        value={selectedRecord ? selectedRecord.scholarship_program_name : undefined}
-        onChange={value => {
-          const rec = records.find(r => r.scholarship_program_name === value)
-          if (!rec) return
-          setSelectedRecord(rec)
-          setAcademicYears(rec.years.map(y => y.Academic_year)) // ✅ pull from nested years
-          setAcademicYear('')
-          setTotalSlots('')
-          setUnfilledSlot(match ? match.unfilled_slot : null) // ✅
-        }}
-      >
-        {records.map(r => (
-          <Select.Option key={r.scholarship_program_name} value={r.scholarship_program_name}>
-            {r.scholarship_program_name} — {r.description}
-          </Select.Option>
-        ))}
-      </Select>
-
-      {/* Academic Year */}
-      <Select
-        style={{ width: '100%', marginBottom: 12 }}
-        placeholder="Select Academic Year"
-        value={academicYear}
-        onChange={value => {
-          setAcademicYear(value)
-          const match = selectedRecord?.years.find(y => y.Academic_year === value)
-          setTotalSlots(match ? match.total_slot : null)
-          setUnfilledSlot(match ? match.unfilled_slot : 0) // ✅ set here
-        }}
-      >
-        {academicYears.map(year => (
-          <Select.Option key={year} value={year}>
-            {year}
-          </Select.Option>
-        ))}
-      </Select>
-
-      {/* Total Slots */}
-      <InputNumber
-        style={{ width: '100%', marginBottom: 12 }}
-        placeholder="Total slots"
-        value={totalSlots}
-        onChange={value => setTotalSlots(value)}
-        min={0}
-      />
-
-      {academicYear && (
-        <p style={{
-          width: '100%',
-          marginBottom: 12,
-          marginLeft: 12,
-          fontStyle: 'italic'
-        }}
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#595959', marginBottom: 4 }}>
+          Scholarship Program
+        </label>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Select a scholarship program"
+          value={selectedRecord?.scholarship_program_name || undefined}
+          onChange={handleProgramChange}
         >
-          You selected <strong>{academicYear}</strong>
-          <br />
-          Unfilled slots are <strong>{unfilledSlot}</strong>
+          {records.map(r => (
+            <Select.Option key={r.scholarship_program_name} value={r.scholarship_program_name}>
+              {r.scholarship_program_name} — {r.description}
+            </Select.Option>
+          ))}
+        </Select>
+      </div>
 
-        </p>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#595959', marginBottom: 4 }}>
+          Academic Year
+        </label>
+        <Select
+          style={{ width: '100%' }}
+          placeholder="Select academic year"
+          value={academicYear || undefined}
+          onChange={handleYearChange}
+          disabled={!selectedRecord}
+        >
+          {academicYears.map(year => (
+            <Select.Option key={year} value={year}>{year}</Select.Option>
+          ))}
+        </Select>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', fontSize: 13, color: '#595959', marginBottom: 4 }}>
+          Total Slots
+        </label>
+        <InputNumber
+          style={{ width: '100%' }}
+          placeholder="Total slots"
+          value={totalSlots}
+          onChange={value => setTotalSlots(value)}
+          min={0}
+          disabled={!selectedYearData}
+        />
+      </div>
+
+      {selectedYearData && (
+        <div style={{
+          background: '#fafafa',
+          borderRadius: 8,
+          padding: '10px 14px',
+          marginBottom: 16,
+          fontSize: 13,
+          color: '#595959',
+        }}>
+          <div>Students using slots: <strong>{selectedYearData.total_students}</strong></div>
+          <div>Current unfilled: <strong>{selectedYearData.unfilled_slot}</strong></div>
+        </div>
       )}
 
-      <Button type="primary" block onClick={handleSave}>
-        Update Slot to Scholarship Program
+      {exceeded && (
+        <Alert
+          type="warning"
+          icon={<WarningOutlined />}
+          showIcon
+          message="Slots will be exceeded"
+          description={`${selectedYearData.total_students} students currently use slots but you are setting the total to ${totalSlots}.`}
+          style={{ marginBottom: 16, borderRadius: 8 }}
+        />
+      )}
+
+      <Button type="primary" block onClick={handleSave} disabled={!selectedYearData}>
+        Update Slot Count
       </Button>
     </Modal>
-
   )
 }

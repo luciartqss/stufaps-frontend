@@ -1,13 +1,18 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { Typography, Card, Select, Progress } from 'antd'
-import { TeamOutlined, ContactsOutlined, UserOutlined } from '@ant-design/icons'
+import { useEffect, useState, useMemo } from 'react'
+import { Typography, Card, Select, Progress, Spin, Tag, Row, Col, Button, Space } from 'antd'
+import {
+  TeamOutlined, ContactsOutlined, UserOutlined,
+  WarningOutlined, PlusOutlined, EditOutlined,
+  RightOutlined, QuestionCircleOutlined,
+} from '@ant-design/icons'
 import EditSlotsModal from '../components/EditSlotsModal'
-
 import UpdateSlotModal from '../components/UpdateSlotModal'
 
 const { Title, Text } = Typography
 const { Option } = Select
+
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 export function meta() {
   return [
@@ -16,434 +21,405 @@ export function meta() {
   ]
 }
 
-function StatsCards({ financialAssistances }) {
-  let totals;
+/* ─── Program definitions ─── */
+const PROGRAMS = [
+  {
+    key: 'cmsp',
+    label: 'CMSP',
+    fullName: 'CHED Merit Scholarship Program',
+    link: '/financial_assistance/cmsp',
+    codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'],
+    color: '#1890ff',
+  },
+  {
+    key: 'estatistikolar',
+    label: 'Estatistikolar',
+    fullName: 'Statistics-focused Scholarship',
+    link: '/financial_assistance/estatistikolar',
+    codes: ['FULLESTAT', 'HALFESTAT', 'ESTATISTIKOLAR'],
+    color: '#722ed1',
+  },
+  {
+    key: 'coscho',
+    label: 'CoScho',
+    fullName: 'College Scholarship Program',
+    link: '/financial_assistance/CoScho',
+    codes: ['COSCHO'],
+    color: '#13c2c2',
+  },
+  {
+    key: 'msrs',
+    label: 'MSRS',
+    fullName: 'Medical Scholarship & Return Service',
+    link: '/financial_assistance/msrs',
+    codes: ['MSRS'],
+    color: '#eb2f96',
+  },
+  {
+    key: 'sida_sgp',
+    label: 'SIDA-SGP',
+    fullName: 'Sugarcane Industry Dev\'t. Act',
+    link: '/financial_assistance/Sida_Sgp',
+    codes: ['SIDASGP'],
+    color: '#fa8c16',
+  },
+  {
+    key: 'acef_giahep',
+    label: 'ACEF-GIAHEP',
+    fullName: 'Agricultural Competitiveness Enhancement Fund',
+    link: '/financial_assistance/Acef_Giahep',
+    codes: ['ACEFGIAHEP'],
+    color: '#52c41a',
+  },
+  {
+    key: 'mtp_sp',
+    label: 'MTP-SP',
+    fullName: 'Maritime Training Program',
+    link: '/financial_assistance/Mtp_Sp',
+    codes: ['MTPSP'],
+    color: '#2f54eb',
+  },
+  {
+    key: 'cgms_sucs',
+    label: 'CGMS-SUCs',
+    fullName: 'College Grant for Meritorious Students in SUCs',
+    link: '/financial_assistance/Cgms_Sucs',
+    codes: ['CGMSSUCS'],
+    color: '#f5222d',
+  },
+  {
+    key: 'snplp',
+    label: 'SNPLP',
+    fullName: 'Student Loan Program',
+    link: '/financial_assistance/Snplp',
+    codes: ['SNPLP'],
+    color: '#a0d911',
+  },
+]
 
-  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-    // Use backend values directly for the "All" row
-    const row = financialAssistances[0];
-    totals = {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-    };
-  } else {
-    // Sum across rows for a specific year
-    totals = {
-      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
-      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
-      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
-    };
+/* ─── Helpers ─── */
+function getTotals(assistances, codes) {
+  const filtered = assistances.filter(p => codes.includes(p.scholarship_program_name))
+
+  if (filtered.length === 1 && (filtered[0].Academic_year === 'All' || filtered[0].academic_year === 'All')) {
+    const r = filtered[0]
+    return {
+      slots: Number(r?.total_slot) || 0,
+      filled: Number(r?.total_students) || 0,
+      unfilled: Number(r?.unfilled_slot) || 0,
+    }
   }
 
-  const statsConfig = [
-    {
-      title: 'Total Slots',
-      value: totals.totalSlots,
-      icon: <ContactsOutlined />,
-      color: '#1890ff',
-      bgColor: '#e6f7ff',
-    },
-    {
-      title: 'Total Filled Slots',
-      value: totals.totalFilled,
-      icon: <TeamOutlined />,
-      color: '#52c41a',
-      bgColor: '#f6ffed',
-      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-    {
-      title: 'Total Unfilled Slots',
-      value: totals.totalUnfilled,
-      icon: <UserOutlined />,
-      color: '#faad14',
-      bgColor: '#fffbe6',
-      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
+  return {
+    slots: filtered.reduce((s, p) => s + (Number(p?.total_slot) || 0), 0),
+    filled: filtered.reduce((s, p) => s + (Number(p?.total_students) || 0), 0),
+    unfilled: filtered.reduce((s, p) => s + (Number(p?.unfilled_slot) || 0), 0),
+  }
+}
+
+function pct(part, whole) {
+  return whole > 0 ? ((part / whole) * 100).toFixed(1) : '0.0'
+}
+
+/* ─── Components ─── */
+function SummaryCards({ data }) {
+  const cards = [
+    { title: 'Total Slots', value: data.slots, icon: <ContactsOutlined />, color: '#1890ff', bg: '#e6f7ff' },
+    { title: 'Filled Slots', value: data.filled, icon: <TeamOutlined />, color: '#52c41a', bg: '#f6ffed', pct: pct(data.filled, data.slots) },
+    { title: 'Unfilled Slots', value: data.unfilled, icon: <UserOutlined />, color: '#faad14', bg: '#fffbe6', pct: pct(data.unfilled, data.slots) },
   ]
 
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-      {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: 1, minWidth: 0 }}>
+    <Row gutter={16} style={{ marginBottom: 24 }}>
+      {cards.map((c, i) => (
+        <Col xs={24} sm={8} key={i}>
           <Card
-            style={{
-              borderRadius: 12,
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: 96,
-            }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              height: '100%',
-            }}
+            style={{ borderRadius: 12, border: 'none', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+            bodyStyle={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                {stat.title}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.value.toLocaleString()}
-              </Text>
-              {stat.percentage && (
+            <div style={{ flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>{c.title}</Text>
+              <div style={{ fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1.3 }}>
+                {c.value.toLocaleString()}
+              </div>
+              {c.pct && (
                 <>
-                  <Text style={{ fontSize: 11, color: '#8c8c8c' }}
-                  >
-                    {stat.percentage}% of total
-                  </Text>
-
-                  <Progress
-                    percent={parseFloat(stat.percentage)}
-                    size="small"
-                    strokeColor={stat.color}
-                    showInfo={false} // hide the number since you already show it above
-                    style={{ marginTop: 4 }}
-                  />
+                  <Progress percent={parseFloat(c.pct)} size="small" strokeColor={c.color} showInfo={false} style={{ margin: '4px 0 2px' }} />
+                  <Text style={{ fontSize: 11, color: '#8c8c8c' }}>{c.pct}% of total</Text>
                 </>
               )}
             </div>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: stat.bgColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: stat.color,
-                flexShrink: 0,
-              }}
-            > {stat.icon}
-            </div>
+            <div style={{
+              width: 42, height: 42, borderRadius: 10, background: c.bg,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, color: c.color, flexShrink: 0,
+            }}>{c.icon}</div>
           </Card>
-        </div>
+        </Col>
       ))}
-    </div>
+    </Row>
   )
 }
 
-export default function Financial_AssistanceIndex() {
+function ProgramCard({ program, totals }) {
+  const exceeded = totals.filled > totals.slots && totals.slots > 0
+  const fillPct = parseFloat(pct(totals.filled, totals.slots))
+
+  return (
+    <Link to={program.link} style={{ textDecoration: 'none' }}>
+      <Card
+        hoverable
+        style={{
+          borderRadius: 12,
+          border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
+          boxShadow: exceeded ? '0 2px 8px rgba(255,77,79,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+          height: '100%',
+          transition: 'all 0.2s ease',
+        }}
+        bodyStyle={{ padding: 20 }}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>{program.label}</Text>
+              {exceeded && (
+                <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
+                  Exceeded
+                </Tag>
+              )}
+            </div>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2 }}>{program.fullName}</Text>
+          </div>
+          <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
+        </div>
+
+        {/* Progress */}
+        <Progress
+          percent={Math.min(fillPct, 100)}
+          size="small"
+          strokeColor={exceeded ? '#ff4d4f' : program.color}
+          trailColor="#f0f0f0"
+          showInfo={false}
+          style={{ marginBottom: 12 }}
+        />
+
+        {/* Stats row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.slots}</div>
+            <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.filled}</div>
+            <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.unfilled}</div>
+            <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+            <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  )
+}
+
+/* ─── Main Page ─── */
+export default function FinancialAssistanceIndex() {
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
   const [openModalAddSlot, setOpenModalAddSlot] = useState(false)
   const [openModalUpdateSlot, setOpenModalUpdateSlot] = useState(false)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
   const [academicYears, setAcademicYears] = useState([])
+  const [othersData, setOthersData] = useState({ total: 0, programs: [] })
 
   const fetchPrograms = () => {
     setLoading(true)
-    fetch('http://localhost:8000/api/scholarship_program_records')
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
-        return res.json()
-      })
+    Promise.all([
+      fetch(`${API_BASE}/scholarship_program_records`).then(r => r.json()),
+      fetch(`${API_BASE}/scholarship_program_records/others`).then(r => r.json()).catch(() => ({ total: 0, programs: [] })),
+    ]).then(([data, others]) => {
+      const programsData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
+      setFinancialAssistances(programsData)
 
-      .then(data => {
-        console.log('API Response:', data)
-        const programsData = Array.isArray(data?.data)
-          ? data.data
-          : Array.isArray(data)
-            ? data
-            : []
-        setFinancialAssistances(programsData)
-
-        const uniqueYears = [
-          ...new Set(
-            programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
-          )
-        ]
-
-        setAcademicYears([...uniqueYears.sort()])
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error('Fetch Error:', err)
-        setError(err.message)
-        setLoading(false)
-      })
+      const uniqueYears = [...new Set(
+        programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
+      )]
+      setAcademicYears([...uniqueYears.sort()])
+      setOthersData(others)
+    }).catch(err => {
+      console.error('Fetch Error:', err)
+    }).finally(() => setLoading(false))
   }
 
-  useEffect(() => {
-    fetchPrograms()
-  }, [])
+  useEffect(() => { fetchPrograms() }, [])
 
-  const handleAcademicYearChange = value => {
-    setAcademicYearFilter(value || null) // default back to All if cleared 
-  }
-
-  const filteredAssistances =
-    academicYearFilter && academicYearFilter !== 'All'
-      ? financialAssistances.filter(
+  const filteredAssistances = useMemo(() => {
+    if (academicYearFilter && academicYearFilter !== 'All') {
+      return financialAssistances.filter(
         p => (p.academic_year || p.Academic_year) === academicYearFilter
       )
-      : financialAssistances.filter(
-        p => (p.academic_year || p.Academic_year) === 'All'
-      )
-
-  const getProgramTotals = (assistances, programName) => {
-  const filtered = Array.isArray(programName)
-    ? assistances.filter(p => programName.includes(p.scholarship_program_name))
-    : assistances.filter(p => p.scholarship_program_name === programName)
-
-  if (
-    filtered.length === 1 &&
-    (filtered[0].academic_year === 'All' || filtered[0].Academic_year === 'All')
-  ) {
-    const row = filtered[0]
-    return {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-      percentage:
-        row?.total_slot > 0
-          ? ((Number(row?.total_students) / Number(row?.total_slot)) * 100).toFixed(1)
-          : 0,
     }
-  } else {
-    const totalSlots = filtered.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0)
-    const totalFilled = filtered.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0)
-    const totalUnfilled = filtered.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0)
+    return financialAssistances.filter(
+      p => (p.academic_year || p.Academic_year) === 'All'
+    )
+  }, [financialAssistances, academicYearFilter])
 
-    return {
-      totalSlots,
-      totalFilled,
-      totalUnfilled,
-      percentage: totalSlots > 0 ? ((totalFilled / totalSlots) * 100).toFixed(1) : 0,
-    }
+  // Grand totals for summary cards
+  const grandTotals = useMemo(() => {
+    const allCodes = PROGRAMS.flatMap(p => p.codes)
+    return getTotals(filteredAssistances, allCodes)
+  }, [filteredAssistances])
+
+  // Exceeded programs list for warning banner
+  const exceededPrograms = useMemo(() => {
+    return PROGRAMS.filter(p => {
+      const t = getTotals(filteredAssistances, p.codes)
+      return t.filled > t.slots && t.slots > 0
+    })
+  }, [filteredAssistances])
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
+        <Spin size="large" />
+        <Text style={{ marginLeft: 16, fontSize: 15 }}>Loading financial assistance data...</Text>
+      </div>
+    )
   }
-}
-
-  const cmsTotals = getProgramTotals(filteredAssistances, 
-  [
-    'FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD',
-    'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
-  ]);
-
-  const estatistikolarTotals = getProgramTotals(filteredAssistances, ['FULLESTAT','HALFESTAT', 'ESTATISTIKOLAR'])
-
-  const CoSchoTotals = getProgramTotals(filteredAssistances, "COSCHO")
-  const MSRSTotals = getProgramTotals(filteredAssistances, "MSRS")
-  const SIDA_SGPTotals = getProgramTotals(filteredAssistances, "SIDASGP")
-  const ACEF_GIAHEPTotals = getProgramTotals(filteredAssistances, "ACEFGIAHEP")
-  const Mtp_SpTotals = getProgramTotals(filteredAssistances, "MTPSP")
-  const CGMS_SUCsTotals = getProgramTotals(filteredAssistances, "CGMSSUCS")
-  const SNPLPTotals = getProgramTotals(filteredAssistances, "SNPLP")
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <div style={{ padding: '24px' }}>
-        <Title level={2}>Financial Assistance Management</Title>
+    <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
+      {/* Header */}
+      <div style={{ padding: 24, background: '#fff', borderBottom: '1px solid #e8eaed' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Title level={2} style={{ margin: 0, fontWeight: 600 }}>Financial Assistance</Title>
+            <Text type="secondary" style={{ fontSize: 14 }}>Manage scholarship programs, slots, and allocations</Text>
+          </div>
+          <Space>
+            <Select
+              value={academicYearFilter}
+              onChange={v => setAcademicYearFilter(v || 'All')}
+              style={{ width: 150 }}
+              allowClear={false}
+            >
+              <Option value="All">All Years</Option>
+              {academicYears.filter(y => y !== 'All').map(y => (
+                <Option key={y} value={y}>{y}</Option>
+              ))}
+            </Select>
+            <Button icon={<PlusOutlined />} onClick={() => setOpenModalAddSlot(true)}>
+              Add Slots
+            </Button>
+            <Button icon={<EditOutlined />} onClick={() => setOpenModalUpdateSlot(true)}>
+              Update Slots
+            </Button>
+          </Space>
+        </div>
       </div>
 
-      <main className="flex-1 p-8">
-        <div>
-          <button
-            onClick={() => setOpenModalAddSlot(true)}
-            onUpdated={() => fetchPrograms()}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
-          >
-            Add Slots
-          </button>
-
-          <button
-            onClick={() => setOpenModalUpdateSlot(true)}
-            onUpdated={() => fetchPrograms()}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
-          >
-            Update Slots
-          </button>
-
-          <Select
-            placeholder="Academic Year"
-            allowClear
-            size="middle"
-            style={{ width: 130, marginLeft: 12 }}
-            onChange={handleAcademicYearChange}
-          >
-            {academicYears.map(year => (
-              <Option key={year} value={year}>
-                {year}
-              </Option>
-            ))}
-          </Select>
-
-          <EditSlotsModal
-            open={openModalAddSlot}
-            onClose={() => setOpenModalAddSlot(false)}
-            onUpdated={(updatedProgram) => {
-              setFinancialAssistances(prev =>
-                // Replace the updated program if it exists, otherwise add it
-                prev.some(p => p.id === updatedProgram.id)
-                  ? prev.map(p => p.id === updatedProgram.id ? updatedProgram : p)
-                  : [...prev, updatedProgram]
-              )
-            }}
-          />
-
-          <UpdateSlotModal
-            open={openModalUpdateSlot}
-            onClose={() => setOpenModalUpdateSlot(false)}
-            onUpdated={(updatedProgram) => {
-              setFinancialAssistances(prev =>
-                // Replace the updated program if it exists, otherwise add it
-                prev.some(p => p.id === updatedProgram.id)
-                  ? prev.map(p => p.id === updatedProgram.id ? updatedProgram : p)
-                  : [...prev, updatedProgram]
-              )
-            }}
-          />
-        </div>
-        <br />
-        <StatsCards financialAssistances={filteredAssistances} />
-
-        {/* Priority Section */}
-        <div className="space-y-8">
-
-          {/* Top Card */}
-
-
-          <Link to="/financial_assistance/cmsp">
-            <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-              <div>
-                <h3 className="text-lg font-bold text-red-700">CMSP</h3>
-                <p className="text-sm text-red-600">CHED Merit Scholarship Program</p>
-              </div>
-              <div className="mt-6 space-y-2 text-sm text-gray-700">
-                <div>Slots: {cmsTotals.totalSlots}</div>
-                <div>Filled: {cmsTotals.totalFilled}</div>
-                <div>Unfilled: {cmsTotals.totalUnfilled}</div>
-                <div>% of total: {cmsTotals.percentage}%</div>
-              </div>
-            </div>
-          </Link>
-
-
-          {/* Grid of 8 Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            {/* Column 1 */}
-
-            <div className="space-y-6">
-              <Link to="/financial_assistance/estatistikolar">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">Estatistikolar</h3>
-                  <p className="text-sm text-red-600">Statistics-focused scholarship</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {estatistikolarTotals.totalSlots}</div>
-                    <div>Filled: {estatistikolarTotals.totalFilled}</div>
-                    <div>Unfilled: {estatistikolarTotals.totalUnfilled}</div>
-                    <div>% of total: {estatistikolarTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-
-              <Link to="/financial_assistance/CoScho">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">CoScho</h3>
-                  <p className="text-sm text-red-600">College Scholarship Program</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {CoSchoTotals.totalSlots}</div>
-                    <div>Filled: {CoSchoTotals.totalFilled}</div>
-                    <div>Unfilled: {CoSchoTotals.totalUnfilled}</div>
-                    <div>% of total: {CoSchoTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-
-              <Link to="/financial_assistance/msrs">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">MSRS</h3>
-                  <p className="text-sm text-red-600">Medical Scholarship and Return Service</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {MSRSTotals.totalSlots}</div>
-                    <div>Filled: {MSRSTotals.totalFilled}</div>
-                    <div>Unfilled: {MSRSTotals.totalUnfilled}</div>
-                    <div>% of total: {MSRSTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/financial_assistance/Acef_Giahep">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">ACEF-GIAHEP</h3>
-                  <p className="text-sm text-red-600">Agricultural Competitiveness Enhancement Fund</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {ACEF_GIAHEPTotals.totalSlots}</div>
-                    <div>Filled: {ACEF_GIAHEPTotals.totalFilled}</div>
-                    <div>Unfilled: {ACEF_GIAHEPTotals.totalUnfilled}</div>
-                    <div>% of total: {ACEF_GIAHEPTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-            </div>
-
-            {/* Column 2 */}
-            <div className="space-y-6">
-
-              <Link to="/financial_assistance/Sida_Sgp">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">SIDA-SGP</h3>
-                  <p className="text-sm text-red-600">Sugarcane Industry Devt. Act</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {SIDA_SGPTotals.totalSlots}</div>
-                    <div>Filled: {SIDA_SGPTotals.totalFilled}</div>
-                    <div>Unfilled: {SIDA_SGPTotals.totalUnfilled}</div>
-                    <div>% of total: {SIDA_SGPTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/financial_assistance/Mtp_Sp">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">MTP-SP</h3>
-                  <p className="text-sm text-red-600">Maritime Training Program</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {Mtp_SpTotals.totalSlots}</div>
-                    <div>Filled: {Mtp_SpTotals.totalFilled}</div>
-                    <div>Unfilled: {Mtp_SpTotals.totalUnfilled}</div>
-                    <div>% of total: {Mtp_SpTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/financial_assistance/Cgms_Sucs">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">CGMS-SUCs</h3>
-                  <p className="text-sm text-red-600">Cultural and General Management Scholarship for Students</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {CGMS_SUCsTotals.totalSlots}</div>
-                    <div>Filled: {CGMS_SUCsTotals.totalFilled}</div>
-                    <div>Unfilled: {CGMS_SUCsTotals.totalUnfilled}</div>
-                    <div>% of total: {CGMS_SUCsTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
-              <Link to="/financial_assistance/Snplp">
-                <div className="max-w-sm rounded-lg shadow-lg border border-gray-200 p-6 bg-white">
-                  <h3 className="text-lg font-bold text-red-700">SNLP</h3>
-                  <p className="text-sm text-red-600">Student Loan Program</p>
-                  <div className="mt-6 space-y-2 text-sm text-gray-700">
-                    <div>Slots: {SNPLPTotals.totalSlots}</div>
-                    <div>Filled: {SNPLPTotals.totalFilled}</div>
-                    <div>Unfilled: {SNPLPTotals.totalUnfilled}</div>
-                    <div>% of total: {SNPLPTotals.percentage}%</div>
-                  </div>
-                </div>
-              </Link>
-
+      <div style={{ padding: 24 }}>
+        {/* Exceeded warning banner */}
+        {exceededPrograms.length > 0 && (
+          <div style={{
+            background: '#fff2f0',
+            border: '1px solid #ffccc7',
+            borderRadius: 10,
+            padding: '12px 16px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+          }}>
+            <WarningOutlined style={{ color: '#ff4d4f', fontSize: 18 }} />
+            <div>
+              <Text strong style={{ color: '#cf1322' }}>Slots Exceeded</Text>
+              <Text style={{ color: '#cf1322', marginLeft: 8, fontSize: 13 }}>
+                {exceededPrograms.map(p => p.label).join(', ')} — filled slots exceed total allocated slots for the selected period.
+              </Text>
             </div>
           </div>
-        </div>
-      </main>
+        )}
+
+        {/* Summary */}
+        <SummaryCards data={grandTotals} />
+
+        {/* Program Grid */}
+        <Row gutter={[16, 16]}>
+          {PROGRAMS.map(prog => {
+            const totals = getTotals(filteredAssistances, prog.codes)
+            return (
+              <Col xs={24} sm={12} lg={8} key={prog.key}>
+                <ProgramCard program={prog} totals={totals} />
+              </Col>
+            )
+          })}
+
+          {/* Others card */}
+          <Col xs={24} sm={12} lg={8}>
+            <Card
+              style={{
+                borderRadius: 12,
+                border: '1px dashed #d9d9d9',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                height: '100%',
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <QuestionCircleOutlined style={{ color: '#8c8c8c', fontSize: 16 }} />
+                    <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>Others</Text>
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2 }}>
+                    Unclassified scholarship programs
+                  </Text>
+                </div>
+                <Tag color="default" style={{ fontSize: 13, fontWeight: 600, padding: '2px 10px' }}>
+                  {othersData.total}
+                </Tag>
+              </div>
+
+              {othersData.total > 0 ? (
+                <div style={{ maxHeight: 100, overflowY: 'auto' }}>
+                  {othersData.programs?.map((p, i) => (
+                    <div key={i} style={{
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                      padding: '4px 0', borderBottom: i < othersData.programs.length - 1 ? '1px solid #f5f5f5' : 'none',
+                    }}>
+                      <Text style={{ fontSize: 12, color: '#595959' }}>{p.scholarship_program || 'Blank'}</Text>
+                      <Tag style={{ fontSize: 11, margin: 0 }}>{p.student_count}</Tag>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', textAlign: 'center', padding: '16px 0' }}>
+                  All students matched to known programs
+                </Text>
+              )}
+            </Card>
+          </Col>
+        </Row>
+      </div>
+
+      {/* Modals */}
+      <EditSlotsModal
+        open={openModalAddSlot}
+        onClose={() => setOpenModalAddSlot(false)}
+        onUpdated={() => fetchPrograms()}
+      />
+      <UpdateSlotModal
+        open={openModalUpdateSlot}
+        onClose={() => setOpenModalUpdateSlot(false)}
+        onUpdated={() => fetchPrograms()}
+      />
     </div>
   )
 }
-
