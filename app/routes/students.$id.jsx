@@ -640,7 +640,13 @@ export default function StudentDetails() {
               <Button 
                 type="primary" 
                 icon={<EditOutlined />} 
-                onClick={() => setEditMode(true)}
+                onClick={() => {
+                  setEditMode(true)
+                  // Auto-fill UII and related fields when entering edit mode if missing
+                  if (formData.name_of_institution && !formData.uii) {
+                    lookupAndFillFields(formData)
+                  }
+                }}
               >
                 Edit Record
               </Button>
