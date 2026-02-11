@@ -82,7 +82,7 @@ export default function DisbursementsIndex() {
   const handleSearch = (value) => {
     const filtered = disbursements.filter((d) => {
       const studentName = `${d.student_surname}, ${d.student_first_name}`.toLowerCase()
-      const voucherNumber = d.voucher_number?.toLowerCase() || ''
+      const voucherNumber = d.voucher_no?.toLowerCase() || ''
       const ntaNumber = d.nta?.toLowerCase() || ''
       
       return (
@@ -163,8 +163,8 @@ export default function DisbursementsIndex() {
     },
     {
       title: 'Voucher Number',
-      dataIndex: 'voucher_number',
-      key: 'voucher_number',
+      dataIndex: 'voucher_no',
+      key: 'voucher_no',
       width: 150,
     },
     {

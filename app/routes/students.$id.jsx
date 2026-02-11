@@ -331,8 +331,9 @@ export default function StudentDetails() {
     disbursementForm.setFieldsValue({
       ...record,
       disbursement_date: record.disbursement_date ? dayjs(record.disbursement_date) : null,
+      date_process: record.date_process ? dayjs(record.date_process) : null,
+      voucher_date: record.voucher_date ? dayjs(record.voucher_date) : null,
       amount: record.amount,
-      grant: record.grant,
     })
   }
 
@@ -363,8 +364,11 @@ export default function StudentDetails() {
         ...values,
         disbursement_date: values.disbursement_date ? 
           dayjs(values.disbursement_date).format('YYYY-MM-DD') : null,
+        date_process: values.date_process ? 
+          dayjs(values.date_process).format('YYYY-MM-DD') : null,
+        voucher_date: values.voucher_date ? 
+          dayjs(values.voucher_date).format('YYYY-MM-DD') : null,
         amount: values.amount !== undefined && values.amount !== '' && values.amount !== null ? parseFloat(values.amount) : null,
-        grant: values.grant !== undefined && values.grant !== '' && values.grant !== null ? parseFloat(values.grant) : null,
         // Ensure student_seq is included
         student_seq: values.student_seq || student?.seq,
       }
@@ -424,24 +428,45 @@ export default function StudentDetails() {
       width: 160,
     },
     {
-      title: 'Grant',
-      dataIndex: 'grant',
-      key: 'grant',
-      width: 140,
-      align: 'right',
-      render: (amount) => formatCurrency(amount),
+      title: 'Voucher Tracking No.',
+      dataIndex: 'voucher_tracking_no',
+      key: 'voucher_tracking_no',
+      width: 180,
+      render: (text) => text || 'N/A',
     },
     {
       title: 'Voucher No.',
-      dataIndex: 'voucher_number',
-      key: 'voucher_number',
+      dataIndex: 'voucher_no',
+      key: 'voucher_no',
       width: 160,
+      render: (text) => text || 'N/A',
+    },
+    {
+      title: 'Voucher Date',
+      dataIndex: 'voucher_date',
+      key: 'voucher_date',
+      width: 140,
+      render: (date) => formatDate(date),
     },
     {
       title: 'Mode of Payment',
       dataIndex: 'mode_of_payment',
       key: 'mode_of_payment',
       width: 180,
+    },
+    {
+      title: 'ATM Account No.',
+      dataIndex: 'atm_account_no',
+      key: 'atm_account_no',
+      width: 160,
+      render: (text) => text || 'N/A',
+    },
+    {
+      title: 'Date Process',
+      dataIndex: 'date_process',
+      key: 'date_process',
+      width: 140,
+      render: (date) => formatDate(date),
     },
     {
       title: 'Account/Check No.',
@@ -460,8 +485,8 @@ export default function StudentDetails() {
     },
     {
       title: 'LDDAP No.',
-      dataIndex: 'lddap_number',
-      key: 'lddap_number',
+      dataIndex: 'lddap_no',
+      key: 'lddap_no',
       width: 140,
       render: (text) => text || 'N/A',
     },
@@ -955,20 +980,6 @@ export default function StudentDetails() {
               </Col>
               <Col span={12}>
                 <Form.Item 
-                  name="grant" 
-                  label="Grant"
-                >
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    prefix="₱" 
-                    placeholder="0.00"
-                    min={0}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item 
                   name="amount" 
                   label="Amount"
                 >
@@ -991,8 +1002,21 @@ export default function StudentDetails() {
             </Text>
             <Row gutter={16}>
               <Col span={12}>
-                <Form.Item name="voucher_number" label="Voucher Number">
+                <Form.Item name="voucher_tracking_no" label="Voucher Tracking No.">
                   <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="voucher_no" label="Voucher No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="voucher_date" label="Voucher Date">
+                  <DatePicker 
+                    style={{ width: '100%' }}
+                    placeholder="Select date"
+                  />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -1005,12 +1029,25 @@ export default function StudentDetails() {
                 </Form.Item>
               </Col>
               <Col span={12}>
+                <Form.Item name="atm_account_no" label="ATM Account No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="date_process" label="Date Process">
+                  <DatePicker 
+                    style={{ width: '100%' }}
+                    placeholder="Select date"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
                 <Form.Item name="account_check_no" label="Account/Check No.">
                   <Input />
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="lddap_number" label="LDDAP Number">
+                <Form.Item name="lddap_no" label="LDDAP No.">
                   <Input />
                 </Form.Item>
               </Col>

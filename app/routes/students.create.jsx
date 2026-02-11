@@ -96,7 +96,7 @@ export default function CreateStudent() {
 
       if (studentSeq && disbursementEntries.length > 0) {
         const validDisbursements = disbursementEntries
-          .filter(d => d && (d.academic_year || d.semester || d.grant || d.amount))
+          .filter(d => d && (d.academic_year || d.semester || d.amount))
           .map(d => ({
             student_seq: studentSeq,
             academic_year: d.academic_year || null,
@@ -104,12 +104,15 @@ export default function CreateStudent() {
             curriculum_year_level: d.curriculum_year_level || null,
             nta: d.nta || null,
             fund_source: d.fund_source || null,
-            grant: d.grant ? parseFloat(d.grant) : null,
-            voucher_number: d.voucher_number || null,
+            voucher_tracking_no: d.voucher_tracking_no || null,
+            voucher_no: d.voucher_no || null,
+            voucher_date: d.voucher_date ? dayjs(d.voucher_date).format('YYYY-MM-DD') : null,
             mode_of_payment: d.mode_of_payment || null,
+            atm_account_no: d.atm_account_no || null,
+            date_process: d.date_process ? dayjs(d.date_process).format('YYYY-MM-DD') : null,
             account_check_no: d.account_check_no || null,
             amount: d.amount ? parseFloat(d.amount) : null,
-            lddap_number: d.lddap_number || null,
+            lddap_no: d.lddap_no || null,
             disbursement_date: d.disbursement_date ? dayjs(d.disbursement_date).format('YYYY-MM-DD') : null,
             status: d.status || null,
             remarks: d.remarks || null,
@@ -506,18 +509,23 @@ export default function CreateStudent() {
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
-                      <Form.Item label="Grant" name={`disb_${index}_grant`}>
-                        <Input type="number" prefix="₱" placeholder="0.00" />
-                      </Form.Item>
-                    </Col>
-                    <Col xs={24} sm={8} md={6}>
                       <Form.Item label="Amount" name={`disb_${index}_amount`}>
                         <Input type="number" prefix="₱" placeholder="0.00" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
-                      <Form.Item label="Voucher No." name={`disb_${index}_voucher_number`}>
+                      <Form.Item label="Voucher Tracking No." name={`disb_${index}_voucher_tracking_no`}>
                         <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8} md={6}>
+                      <Form.Item label="Voucher No." name={`disb_${index}_voucher_no`}>
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8} md={6}>
+                      <Form.Item label="Voucher Date" name={`disb_${index}_voucher_date`}>
+                        <DatePicker style={{ width: '100%' }} placeholder="Select date" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
@@ -530,12 +538,22 @@ export default function CreateStudent() {
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
+                      <Form.Item label="ATM Account No." name={`disb_${index}_atm_account_no`}>
+                        <Input />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8} md={6}>
+                      <Form.Item label="Date Process" name={`disb_${index}_date_process`}>
+                        <DatePicker style={{ width: '100%' }} placeholder="Select date" />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={24} sm={8} md={6}>
                       <Form.Item label="Account/Check No." name={`disb_${index}_account_check_no`}>
                         <Input />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
-                      <Form.Item label="LDDAP No." name={`disb_${index}_lddap_number`}>
+                      <Form.Item label="LDDAP No." name={`disb_${index}_lddap_no`}>
                         <Input />
                       </Form.Item>
                     </Col>
