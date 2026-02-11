@@ -1208,6 +1208,8 @@ export default function ImportBulk() {
         const totalDisbChunks = disbChunks.length
         const grandTotal = totalStudents + totalDisbursements
 
+        let totalDisbInserted = 0
+
         for (let i = 0; i < totalDisbChunks; i++) {
           const chunk = disbChunks[i]
           setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
@@ -1218,9 +1220,15 @@ export default function ImportBulk() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ disbursements: chunk }),
             })
+            const disbJson = await disbResponse.json().catch(() => null)
             if (!disbResponse.ok) {
-              const errText = await disbResponse.text()
-              console.warn(`Disbursement batch ${i + 1} failed:`, errText)
+              console.warn(`Disbursement batch ${i + 1} failed:`, disbJson)
+              message.warning(`Disbursement batch ${i + 1} had errors`)
+            } else {
+              totalDisbInserted += disbJson?.created_count || 0
+              if (disbJson?.error_count > 0) {
+                console.warn(`Disbursement batch ${i + 1} partial errors:`, disbJson.errors)
+              }
             }
           } catch (err) {
             console.error(`Disbursement batch ${i + 1} error:`, err)
@@ -1228,6 +1236,10 @@ export default function ImportBulk() {
           uploaded += chunk.length
           setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
         }
+
+        console.log(`[DISB] Total disbursements inserted: ${totalDisbInserted}`)
+      } else {
+        console.warn('[DISB] No disbursements generated from data')
       }
 
       setUploadProgress(prev => ({ ...prev, phase: 'Updating scholarship slots...' }))
