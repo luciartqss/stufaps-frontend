@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
 import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Progress, Modal } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -139,6 +139,110 @@ const excelDateToISO = (value) => {
 }
 
 const isAmountKey = (key = '') => /amount/.test(String(key).toLowerCase())
+
+// Derive scholarship program from award number prefix (mirrors the Excel IFS formula)
+const deriveScholarshipProgram = (awardNumber = '') => {
+  const s = String(awardNumber || '').trim().toUpperCase()
+  if (s.startsWith('FSSP'))  return 'FULL SSP'
+  if (s.startsWith('HSSP'))  return 'HALF SSP'
+  if (s.startsWith('FSGAD')) return 'FULL SSP-GAD'
+  if (s.startsWith('HSGAD')) return 'HALF SSP-GAD'
+  if (s.startsWith('FPESFA')) return 'FULL PESFA'
+  if (s.startsWith('HPESFA')) return 'HALF PESFA'
+  if (s.startsWith('FPGAD')) return 'FULL PESFA-GAD'
+  if (s.startsWith('HPGAD')) return 'HALF PESFA-GAD'
+  return ''
+}
+
+// Name-based alias map: student field key → array of sanitized aliases
+const STUDENT_FIELD_ALIASES = {
+  seq: ['seq'],
+  inCharge: ['incharge'],
+  awardYear: ['awardyear', 'awyr'],
+  scholarshipProgram: ['scholarshipprogram', 'schoprog'],
+  awardNumber: ['awardnumber', 'awno'],
+  learnerReferenceNumber: ['learnerreferencenumber', 'lrn'],
+  surname: ['surname', 'sname'],
+  firstName: ['firstname', 'fname'],
+  middleName: ['middlename', 'mname'],
+  extension: ['extension', 'ename', 'ext', 'nameextension'],
+  sex: ['sex', 'gender'],
+  dateOfBirth: ['dateofbirth', 'birthday', 'dob', 'birthdate'],
+  contactNumber: ['contactnumber', 'contno'],
+  emailAddress: ['emailaddress', 'emladd', 'email'],
+  streetBrgy: ['streetbrgy', 'stbrgy'],
+  municipalityCity: ['municipalitycity', 'muncity'],
+  province: ['province', 'prov'],
+  congressionalDistrict: ['congressionaldistrict', 'congdist'],
+  zipCode: ['zipcode', 'zip'],
+  specialGroup: ['specialgroup', 'spgrp'],
+  certificationNumber: ['certificationnumber', 'certno', 'certificationnumberifapplicable'],
+  nameOfInstitution: ['nameofinstitution', 'hei', 'institution'],
+  uii: ['uii'],
+  institutionalType: ['institutionaltype', 'insttype'],
+  regionSchoolLocated: ['regionwheretheschoolislocated', 'region', 'regionschool'],
+  degreeProgram: ['degreeprogram', 'progname'],
+  programMajor: ['programmajor', 'progmjr'],
+  programDiscipline: ['programdiscipline', 'progdiscp'],
+  programDegreeLevel: ['programdegreelevel', 'proglvl', 'degreelevel'],
+  authorityType: ['authoritytype', 'gprtype'],
+  authorityNumber: ['authoritynumber', 'gprno'],
+  series: ['series', 'gprseries'],
+  priority: ['priority', 'prio'],
+  basisCmo: ['basiscmo', 'priobasis', 'basiscmo'],
+  scholarshipStatus: ['scholarshipstatus', 'schostatus'],
+  replacement: ['replacement', 'remarks1'],
+  reason: ['reason', 'remarks2'],
+}
+
+// Semester field aliases (used inside AY blocks)
+const SEM_FIELD_ALIASES = {
+  nta: ['nta'],
+  fundSource: ['fundsource'],
+  voucherTrackingNo: ['vouchertrackingno', 'vouchertracking'],
+  modeOfPayment: ['modeofpayment'],
+  atmAccountNo: ['atmaccountno', 'atmaccount'],
+  dateProcess: ['dateprocess'],
+  voucherNo: ['voucherno', 'vouchernumber'],
+  voucherDate: ['voucherdate'],
+  accountCheckNo: ['accountcheckno'],
+  amount: ['amount'],
+  lddapNo: ['lddapno', 'lddapnumber'],
+  disbursementDate: ['disbursementdate'],
+  status: ['status'],
+  remarks: ['remarks'],
+}
+
+// CYL aliases
+const CYL_ALIASES = ['curriculumyearlevel', 'cyl', 'yearlevel']
+
+// Build reverse lookup: sanitized alias string → field key
+const buildAliasLookup = (aliasMap) => {
+  const lookup = new Map()
+  Object.entries(aliasMap).forEach(([fieldKey, aliases]) => {
+    aliases.forEach((alias) => lookup.set(alias, fieldKey))
+  })
+  return lookup
+}
+const STUDENT_ALIAS_LOOKUP = buildAliasLookup(STUDENT_FIELD_ALIASES)
+const SEM_ALIAS_LOOKUP = buildAliasLookup(SEM_FIELD_ALIASES)
+
+// Count how many cells in a row match known student/semester field aliases
+const countHeaderMatches = (row) => {
+  if (!Array.isArray(row)) return { total: 0, studentKeys: new Set(), semKeys: new Set() }
+  const studentKeys = new Set()
+  const semKeys = new Set()
+  row.forEach((cell) => {
+    const san = sanitize(String(cell || ''))
+    if (!san) return
+    const sk = STUDENT_ALIAS_LOOKUP.get(san)
+    if (sk) studentKeys.add(sk)
+    const semk = SEM_ALIAS_LOOKUP.get(san)
+    if (semk) semKeys.add(semk)
+    if (CYL_ALIASES.includes(san)) studentKeys.add('__cyl__')
+  })
+  return { total: studentKeys.size + semKeys.size, studentKeys, semKeys }
+}
 
 // Static student schema (2-tier max)
 const STATIC_SCHEMA = [
@@ -459,8 +563,8 @@ export default function ImportBulk() {
   const [duplicateMap, setDuplicateMap] = useState({}) // { rowIndex: { matches: [...], checking: false } }
   const [duplicateChecking, setDuplicateChecking] = useState(false)
   const duplicateCheckTimer = useRef(null)
-  const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done }
-  const [fileLoading, setFileLoading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done, phase }
+  const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
@@ -525,25 +629,77 @@ export default function ImportBulk() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setFileLoading(true)
+    // Reset input so the same file can be re-uploaded
+    event.target.value = ''
+
+    setFileLoadingState({ phase: 'Reading file...', detail: file.name })
     const reader = new FileReader()
     reader.onload = (e) => {
-      // Use setTimeout to let React render the loading modal before heavy parsing
-      setTimeout(() => {
+      (async () => {
       try {
+        await new Promise(r => requestAnimationFrame(() => setTimeout(r, 80)))
+        setFileLoadingState({ phase: 'Parsing Excel...', detail: file.name })
+        await new Promise(r => setTimeout(r, 0))
+
         const buffer = new Uint8Array(e.target.result)
         const workbook = XLSX.read(buffer, { type: 'array' })
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
 
-        // Grab first 3 header rows as arrays
-        const headerRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
+        const allRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
 
-        // Find the maximum column count across all rows
-        const maxColCount = headerRows.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0)
+        // ── Step 1: Find the header row by NAME matching ──
+        // Scan the first 30 rows (headers are never deeper than that).
+        let bestIdx = -1
+        let bestScore = 0
+        const scanLimit = Math.min(allRows.length, 30)
 
-        const fillForward = (row = [], maxLen = maxColCount) => {
-          // Extend the array to maxLen first
+        for (let i = 0; i < scanLimit; i += 1) {
+          const { total } = countHeaderMatches(allRows[i] || [])
+          if (total > bestScore) {
+            bestScore = total
+            bestIdx = i
+          }
+        }
+
+        // Also try combining 3 consecutive rows (merged header blocks)
+        for (let i = 0; i < scanLimit - 2; i += 1) {
+          const combined = []
+          const r0 = allRows[i] || []
+          const r1 = allRows[i + 1] || []
+          const r2 = allRows[i + 2] || []
+          const len = Math.max(r0.length, r1.length, r2.length)
+          for (let c = 0; c < len; c += 1) {
+            combined.push(r2[c] || r1[c] || r0[c] || '')
+          }
+          const { total } = countHeaderMatches(combined)
+          if (total > bestScore) {
+            bestScore = total
+            bestIdx = i
+          }
+        }
+
+        if (bestIdx < 0 || bestScore < 5) {
+          message.error('Column headers not recognized – the file does not match the expected template.')
+          setFileLoadingState(null)
+          return
+        }
+
+        // Determine header block: could be 1, 2, or 3 rows.
+        // We look at 3 rows starting at bestIdx (if available).
+        const topRowRaw = allRows[bestIdx] || []
+        const midRowRaw = bestIdx + 1 < allRows.length ? (allRows[bestIdx + 1] || []) : []
+        const leafRowRaw = bestIdx + 2 < allRows.length ? (allRows[bestIdx + 2] || []) : []
+
+        const maxColCount = Math.max(topRowRaw.length, midRowRaw.length, leafRowRaw.length)
+        if (maxColCount <= 0) {
+          message.error('Header rows are empty.')
+          setFileLoadingState(null)
+          return
+        }
+
+        // Fill-forward helper (for merged cells in parent rows)
+        const fillForward = (row = [], maxLen) => {
           const filled = Array.from({ length: maxLen }, (_, i) => row[i])
           for (let i = 0; i < filled.length; i += 1) {
             if (filled[i] === undefined || filled[i] === null || filled[i] === '') {
@@ -553,216 +709,248 @@ export default function ImportBulk() {
           return filled
         }
 
-        const topRowRaw = headerRows[0] || []
-        const midRowRaw = headerRows[1] || []
-        const leafRow = headerRows[2] || []
-
-        // Extend leaf row to max length too (but don't fill forward - keep original values)
-        const leafRowExtended = Array.from({ length: maxColCount }, (_, i) => leafRow[i] ?? '')
-
         const topRow = fillForward(topRowRaw, maxColCount)
         const midRow = fillForward(midRowRaw, maxColCount)
+        const leafRow = Array.from({ length: maxColCount }, (_, i) => leafRowRaw[i] ?? '')
 
-        // Detect AYs from all header rows (more thorough detection)
-        const detectAysFromRow = (row) => row
-          .map((cell) => deriveAyLabelFromKey(String(cell || '')))
-          .filter(Boolean)
-        
-        const ayFromTop = detectAysFromRow(topRow)
-        const ayFromMid = detectAysFromRow(midRow)
-        const ayFromLeaf = detectAysFromRow(leafRow)
-        
-        const detectedAyLabels = Array.from(new Set([...ayFromTop, ...ayFromMid, ...ayFromLeaf]))
+        // ── Step 2: Determine how many header rows were used ──
+        // Check if rows bestIdx+1 and bestIdx+2 are also part of the header
+        // (contain sub-headers / group labels rather than data).
+        const headerRowCount = (() => {
+          // If the combined 3-row score was the best, use 3
+          const { total: scoreRow0 } = countHeaderMatches(topRowRaw)
+          if (scoreRow0 === bestScore) {
+            // Single row was enough – but check if next rows are sub-headers
+            const { total: s1 } = countHeaderMatches(midRowRaw)
+            const { total: s2 } = countHeaderMatches(leafRowRaw)
+            if (s1 >= 3 || s2 >= 3) return 3
+            if (s1 >= 1) return 2
+            return 1
+          }
+          return 3
+        })()
+
+        // ── Step 3: Build effective label per column (bottom-up priority) ──
+        // For each column, the effective label = first non-empty from leaf → mid → top
+        const effectiveLabels = Array.from({ length: maxColCount }, (_, c) => {
+          const lf = sanitize(String(leafRow[c] || ''))
+          const md = sanitize(String(midRow[c] || ''))
+          const tp = sanitize(String(topRow[c] || ''))
+          return lf || md || tp || ''
+        })
+
+        // ── Step 4: Map static student columns by name ──
+        const colToFieldKey = new Map() // colIdx → field key (string)
+        const usedStudentFields = new Set()
+
+        for (let c = 0; c < maxColCount; c += 1) {
+          const label = effectiveLabels[c]
+          if (!label) continue
+          const fieldKey = STUDENT_ALIAS_LOOKUP.get(label)
+          if (fieldKey && !usedStudentFields.has(fieldKey)) {
+            usedStudentFields.add(fieldKey)
+            colToFieldKey.set(c, { type: 'student', key: fieldKey })
+          }
+        }
+
+        // ── Step 5: Detect AY labels from parent rows ──
+        const colAyLabel = new Map()
+        for (let c = 0; c < maxColCount; c += 1) {
+          const ay =
+            deriveAyLabelFromKey(String(topRow[c] || '')) ||
+            deriveAyLabelFromKey(String(midRow[c] || '')) ||
+            deriveAyLabelFromKey(String(leafRow[c] || ''))
+          if (ay) colAyLabel.set(c, ay)
+        }
+        const detectedAyLabels = Array.from(new Set(colAyLabel.values()))
           .sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
 
-        const mergedAys = mergeAcademicYears(academicYears, detectedAyLabels)
-        const { leafFields: nextLeafFields } = buildHeaders(mergedAys)
+        // ── Step 6: Detect semester context from parent rows ──
+        const colSemester = new Map()
+        const checkSem = (str) => {
+          const san = sanitize(String(str || ''))
+          if (san.includes('first') || san.includes('1st')) return 'First'
+          if (san.includes('second') || san.includes('2nd')) return 'Second'
+          return null
+        }
+        for (let c = 0; c < maxColCount; c += 1) {
+          const sem = checkSem(midRow[c]) || checkSem(topRow[c]) || checkSem(leafRow[c])
+          if (sem) colSemester.set(c, sem)
+        }
 
-        // Build column mapping using header rows
-        const maxCols = maxColCount
-        const columnMeta = Array.from({ length: maxCols }).map((_, idx) => {
-          const leafLabel = leafRowExtended[idx]
-          const midLabel = midRow[idx]
-          const topLabel = topRow[idx]
-          const fallback = midLabel || topLabel || ''
-          const label = leafLabel || fallback || ''
-          
-          // Check all three rows for AY label (more thorough detection)
-          const ayLabel =
-            deriveAyLabelFromKey(String(topLabel || '')) ||
-            deriveAyLabelFromKey(String(midLabel || '')) ||
-            deriveAyLabelFromKey(String(leafLabel || '')) ||
-            deriveAyLabelFromKey(String(label))
-          
-          // Check all three rows for semester detection
-          const checkSemester = (str) => {
-            const san = sanitize(String(str || ''))
-            if (san.includes('first') || san.includes('1st') || san === '1stsem' || san === 'firstsem') return 'First'
-            if (san.includes('second') || san.includes('2nd') || san === '2ndsem' || san === 'secondsem') return 'Second'
-            return null
+        // ── Step 7: Map AY disbursement columns by name ──
+        // For each unmapped column that has an AY context:
+        //   - check if it's CYL
+        //   - check if its name matches a semester field alias
+        const fileAys = detectedAyLabels.length > 0
+          ? detectedAyLabels.map((label) => ({ id: makeAyId(label), label }))
+          : academicYears
+
+        // Track used semester fields per AY+semester to avoid double mapping
+        const usedAySemFields = new Map() // 'ayLabel__sem__fieldKey' → true
+
+        for (let c = 0; c < maxColCount; c += 1) {
+          if (colToFieldKey.has(c)) continue
+          const label = effectiveLabels[c]
+          if (!label) continue
+
+          const ayLabel = colAyLabel.get(c)
+          if (!ayLabel) continue
+
+          const ayObj = fileAys.find(a => a.label === ayLabel)
+          if (!ayObj) continue
+
+          // Check CYL
+          if (CYL_ALIASES.includes(label)) {
+            const cylKey = `${ayObj.id}__cyl`
+            colToFieldKey.set(c, { type: 'cyl', key: cylKey, ayLabel })
+            continue
           }
-          const semester = checkSemester(midLabel) || checkSemester(topLabel) || checkSemester(leafLabel)
-          
-          return { idx, label, ayLabel, semester, raw: { top: topLabel, mid: midLabel, leaf: leafLabel } }
-        })
 
-        // Map excel columns to leafFields using POSITIONAL mapping as primary strategy.
-        // Each Excel column index maps to the leaf field at the same index in the structure.
-        // Name-based matching is used only to validate and log confidence.
+          // Check semester field
+          const semFieldKey = SEM_ALIAS_LOOKUP.get(label)
+          if (semFieldKey) {
+            const sem = colSemester.get(c) || null
+            if (sem) {
+              const semPrefix = sem === 'First' ? 'first' : 'second'
+              const fullKey = `${ayObj.id}__${semPrefix}__${semFieldKey}`
+              const trackKey = `${ayLabel}__${semPrefix}__${semFieldKey}`
+              if (!usedAySemFields.has(trackKey)) {
+                usedAySemFields.set(trackKey, true)
+                colToFieldKey.set(c, { type: 'semester', key: fullKey, ayLabel, semester: sem })
+              }
+            }
+          }
+        }
+
+        // ── Step 8: Validate minimum required fields ──
+        const hasSurname = usedStudentFields.has('surname')
+        const hasFirstName = usedStudentFields.has('firstName')
+        if (!hasSurname && !hasFirstName) {
+          message.error('Could not find surname/first name columns – please check the file format.')
+          setFileLoadingState(null)
+          return
+        }
+
+        // Build the actual AY list for the table
+        const { leafFields: nextLeafFields } = buildHeaders(fileAys)
+
+        // Build a quick lookup: field key → leafField config
+        const leafFieldMap = new Map()
+        nextLeafFields.forEach(f => leafFieldMap.set(f.key, f))
+
+        // Build final colIdx → leafField mapping
         const colToField = new Map()
-        const unmappedCols = []
-
-        for (let i = 0; i < Math.min(maxCols, nextLeafFields.length); i++) {
-          colToField.set(i, nextLeafFields[i])
-        }
-
-        // Log name vs position mismatches for debugging
-        const positionMatches = []
-        const positionMismatches = []
-        columnMeta.forEach((col) => {
-          const posField = colToField.get(col.idx)
-          if (!posField) return
-          const labelSan = sanitize(col.label)
-          if (!labelSan) return
-          const fLabelSan = sanitize(posField.label)
-          const fKeySan = sanitize(posField.key)
-          if (fLabelSan === labelSan || fKeySan === labelSan) {
-            positionMatches.push(col.idx)
-          } else {
-            positionMismatches.push({ col: col.idx, expected: posField.label, got: col.label })
+        let mappedCount = 0
+        colToFieldKey.forEach(({ key }, colIdx) => {
+          const lf = leafFieldMap.get(key)
+          if (lf) {
+            colToField.set(colIdx, lf)
+            mappedCount += 1
           }
         })
 
-        // Log structure info (positional mapping — no name-based rejection)
-        const nonEmptyHeaders = columnMeta.filter(c => sanitize(c.label)).length
-        if (positionMismatches.length > 0) {
-          console.info(`Positional mapping: ${positionMatches.length} name-matched, ${positionMismatches.length} differ out of ${nonEmptyHeaders} headers (OK — using position)`)
-        }
+        setFileLoadingState({ phase: 'Mapping columns...', detail: `${mappedCount} columns mapped${detectedAyLabels.length > 0 ? `, ${detectedAyLabels.length} AY` : ''}` })
+        await new Promise(r => setTimeout(r, 0))
 
-        // Data rows start after the first 3 header rows
-        const dataRowsRaw = headerRows.slice(3)
-        
-        // Build set of known header tokens from all header rows
-        const headerSanSet = new Set([...topRow, ...midRow, ...leafRow].map((v) => sanitize(String(v || ''))).filter(Boolean))
-        
-        // Additional common header tokens that should be filtered (including abbreviated versions)
-        const knownHeaderTokens = [
-          // Full names
-          'seq', 'incharge', 'awardyear', 'scholarshipprogram', 'awardnumber',
-          'surname', 'firstname', 'middlename', 'extension', 'sex', 'birthday',
-          'dateofbirth', 'contactnumber', 'email', 'emailaddress', 'address',
-          'streetbrgy', 'municipalitycity', 'province', 'congressionaldistrict',
-          'zipcode', 'specialgroup', 'certificationnumber', 'nameofinstitution',
-          'uii', 'institutionaltype', 'region', 'degreeprogram', 'programmajor',
-          'programdiscipline', 'programdegreelevel', 'authoritytype', 'authoritynumber',
-          'series', 'priority', 'basiscmo', 'scholarshipstatus', 'replacementinfo',
-          'terminationreason', 'cyl', 'curriculumyearlevel', 'nta', 'fundsource',
-          'amount', 'vouchertrackingno', 'modeofpayment', 'atmaccountno', 'dateprocess',
-          'voucherno', 'voucherdate', 'accountcheckno',
-          'lddapno', 'disbursementdate', 'remarks', 'firstsemester', 'secondsemester',
-          'semester', 'ay', 'academicyear',
-          // Abbreviated versions from Excel (SCHO_PROG, AW_YR, S_NAME, F_NAME, etc.)
-          'awyr', 'schoprog', 'awno', 'sname', 'fname', 'mname', 'ename',
-          'contno', 'emladd', 'stbrgy', 'muncity', 'congdist', 'spgrp',
-          'certno', 'hei', 'insttype', 'progname', 'progmjr', 'progdiscp',
-          'proglvl', 'gprtype', 'gprno', 'gprseries', 'priobasis', 'schostatus',
-          'remarks1', 'remarks2', 'nameofgrantee', 'contactdetails', 'completeaddress',
-          'governmentauthority', 'priorityprogram'
-        ]
-        knownHeaderTokens.forEach(t => headerSanSet.add(t))
+        // ── Step 9: Extract data rows ──
+        // Data starts after the header block
+        const dataStartIdx = bestIdx + headerRowCount
+        const dataRowsRaw = allRows.slice(dataStartIdx)
 
-        const isHeaderLikeRow = (row = []) => {
-          const tokens = row.map((cell) => sanitize(String(cell || ''))).filter(Boolean)
-          if (tokens.length === 0) return true
-          const hits = tokens.filter((t) => headerSanSet.has(t)).length
-          // If more than 25% of non-empty cells match header tokens, skip this row
-          // Lowered threshold to catch more header variants
-          return hits / tokens.length >= 0.25
-        }
+        // Build set of known header tokens to filter out stray header-like rows in data
+        const headerSanSet = new Set()
+        ;[topRow, midRow, leafRow].forEach(r => r.forEach(v => {
+          const s = sanitize(String(v || ''))
+          if (s) headerSanSet.add(s)
+        }))
+        // Add all known aliases
+        STUDENT_ALIAS_LOOKUP.forEach((_, alias) => headerSanSet.add(alias))
+        SEM_ALIAS_LOOKUP.forEach((_, alias) => headerSanSet.add(alias))
+        CYL_ALIASES.forEach(a => headerSanSet.add(a))
+        ;['nameofgrantee', 'contactdetails', 'completeaddress', 'governmentauthority',
+          'priorityprogram', 'firstsemester', 'secondsemester', 'academicyear'
+        ].forEach(t => headerSanSet.add(t))
 
         const dataRows = dataRowsRaw.filter((row) => {
           if (!Array.isArray(row)) return false
-          const hasValue = row.some((cell) => sanitize(String(cell || '')) !== '')
-          if (!hasValue) return false
-          if (isHeaderLikeRow(row)) return false
+          const nonEmpty = row.filter(cell => {
+            const s = String(cell ?? '').trim()
+            return s !== ''
+          })
+          if (nonEmpty.length === 0) return false
+          // Skip row if >40% of its non-empty cells are known header tokens
+          const tokens = nonEmpty.map(cell => sanitize(String(cell || ''))).filter(Boolean)
+          if (tokens.length > 0) {
+            const hits = tokens.filter(t => headerSanSet.has(t)).length
+            if (hits / tokens.length >= 0.4) return false
+          }
           return true
         })
+
+        setFileLoadingState({ phase: `Processing ${dataRows.length} rows...`, detail: `${mappedCount} columns mapped` })
+        await new Promise(r => setTimeout(r, 0))
+
+        // ── Step 10: Normalize data rows ──
         const normalized = dataRows.map((row, idx) => {
           const normalizedRow = {}
-
-          nextLeafFields.forEach((f) => {
-            normalizedRow[f.key] = ''
-          })
+          nextLeafFields.forEach(f => { normalizedRow[f.key] = '' })
           normalizedRow.seq = String(idx + 1)
 
-          row.forEach((value, colIdx) => {
-            const field = colToField.get(colIdx)
-            if (!field) return
-            let cellVal = value
-            if (cellVal === null || cellVal === undefined) cellVal = ''
+          if (Array.isArray(row)) {
+            row.forEach((value, colIdx) => {
+              const field = colToField.get(colIdx)
+              if (!field) return
+              let cellVal = value
+              if (cellVal === null || cellVal === undefined) cellVal = ''
 
-            if (typeof cellVal === 'number') {
-              if (field.type === 'date') {
+              if (typeof cellVal === 'number' && field.type === 'date') {
                 cellVal = excelDateToISO(cellVal)
               }
-            }
 
-            if (typeof cellVal === 'string') {
-              cellVal = cellVal.trim()
-              if (isAmountKey(field.key)) {
-                cellVal = cellVal.replace(/,/g, '')
+              if (typeof cellVal === 'string') {
+                cellVal = cellVal.trim()
+                if (isAmountKey(field.key)) cellVal = cellVal.replace(/,/g, '')
               }
-            }
 
-            normalizedRow[field.key] = cellVal === undefined || cellVal === null ? '' : cellVal
-          })
+              normalizedRow[field.key] = cellVal === undefined || cellVal === null ? '' : cellVal
+            })
+          }
 
           return normalizedRow
         })
 
-        // Validation: required columns
-        const mappedKeys = Array.from(colToField.values()).map((f) => f.key)
-        const missingCritical = ['surname', 'firstName'].filter((req) => !mappedKeys.includes(req))
-        if (missingCritical.length > 0) {
-          message.error(`Missing required column(s): ${missingCritical.join(', ')}`)
-          setFileLoading(false)
-          return
-        }
-
-        const mappedCount = colToField.size
-        const ignoredCount = columnMeta.length - mappedCount
-        if (ignoredCount > 0) {
-          const unmappedAyCols = unmappedCols.filter((c) => c.ayLabel)
-          if (unmappedAyCols.length > 0) {
-            console.warn('Unmapped AY columns:', unmappedAyCols.map(c => ({
-              label: c.label,
-              ayLabel: c.ayLabel,
-              semester: c.semester,
-              raw: c.raw
-            })))
-            message.warning(`Some AY columns were not mapped: ${unmappedAyCols.map((c) => c.label || c.raw.leaf || c.raw.mid).slice(0, 5).join(', ')}${unmappedAyCols.length > 5 ? ` and ${unmappedAyCols.length - 5} more...` : ''}`)
+        // ── Step 11: Derive scholarship program from award number ──
+        // LibreOffice doesn't cache formula results or doesn't support IFS(),
+        // so cells come through as empty, #NAME?, #VALUE!, etc.
+        // Fill them from the award number prefix.
+        const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
+        normalized.forEach((row) => {
+          if ((!row.scholarshipProgram || isExcelError(row.scholarshipProgram)) && row.awardNumber) {
+            row.scholarshipProgram = deriveScholarshipProgram(row.awardNumber)
           }
-        }
+        })
 
-        // Debug: Log detected AYs and mapping summary
-        console.log('Detected Academic Years:', detectedAyLabels)
-        console.log('Merged Academic Years:', mergedAys.map(ay => ay.label))
-        console.log(`Column mapping: ${mappedCount} mapped, ${ignoredCount} ignored, ${unmappedCols.length} unmapped`)
+        // Log mapping summary
+        console.log('Name-based mapping:', mappedCount, 'columns mapped')
+        console.log('Student fields found:', Array.from(usedStudentFields))
+        console.log('Detected AYs:', detectedAyLabels)
 
-        setAcademicYears(mergedAys)
+        setFileLoadingState({ phase: `Loaded ${normalized.length} records`, detail: 'Checking for duplicates...' })
+        await new Promise(r => setTimeout(r, 0))
+
+        setAcademicYears(fileAys)
         setData(normalized)
-
-        // Trigger duplicate check after file upload
         checkDuplicates(normalized)
 
-        message.success(`File ${file.name} loaded - ${normalized.length} records | Mapped ${mappedCount}/${columnMeta.length} columns${ignoredCount > 0 ? `, ignored ${ignoredCount}` : ''}${detectedAyLabels.length > 0 ? ` | AY detected: ${detectedAyLabels.join(', ')}` : ''}`)
+        message.success(`Loaded ${normalized.length} records from ${file.name} | ${mappedCount} columns mapped${detectedAyLabels.length > 0 ? ` | AY: ${detectedAyLabels.join(', ')}` : ''}`)
       } catch (error) {
         console.error(error)
         message.error('Error parsing file')
       } finally {
-        setFileLoading(false)
+        setFileLoadingState(null)
       }
-      }, 50) // end setTimeout
+      })()
     }
     reader.readAsArrayBuffer(file)
   }
@@ -917,8 +1105,32 @@ export default function ImportBulk() {
     }, 1000)
   }, [checkDuplicates])
 
-  // Count total duplicates
+  // Count total duplicates, split by type
   const duplicateCount = useMemo(() => Object.keys(duplicateMap).length, [duplicateMap])
+  const { dbDupCount, batchDupCount, bothDupCount } = useMemo(() => {
+    let db = 0, batch = 0, both = 0
+    Object.values(duplicateMap).forEach(({ matches = [] }) => {
+      const hasDb = matches.some(m => !m.match_type.startsWith('batch_'))
+      const hasBatch = matches.some(m => m.match_type.startsWith('batch_'))
+      if (hasDb && hasBatch) both++
+      else if (hasDb) db++
+      else if (hasBatch) batch++
+    })
+    return { dbDupCount: db + both, batchDupCount: batch + both, bothDupCount: both }
+  }, [duplicateMap])
+
+  // Clear all duplicate rows
+  const handleClearDuplicates = useCallback(() => {
+    const dupIndices = new Set(Object.keys(duplicateMap).map(Number))
+    if (dupIndices.size === 0) return
+    setData(prev => {
+      const filtered = prev.filter((_, idx) => !dupIndices.has(idx))
+      return filtered.map((row, idx) => ({ ...row, seq: String(idx + 1) }))
+    })
+    setDuplicateMap({})
+    setCurrentPage(1)
+    message.success(`Removed ${dupIndices.size} duplicate row${dupIndices.size > 1 ? 's' : ''}`)
+  }, [duplicateMap])
 
   // Clear data and reset input
   const handleClear = () => {
@@ -958,7 +1170,7 @@ export default function ImportBulk() {
     let uploaded = 0
 
     setLoading(true)
-    setUploadProgress({ current: 0, total: totalWork, done: false })
+    setUploadProgress({ current: 0, total: totalWork, done: false, phase: 'Uploading students...' })
 
     try {
       // --- Phase 1: Upload students in chunks ---
@@ -966,7 +1178,7 @@ export default function ImportBulk() {
 
       for (let i = 0; i < totalStudentChunks; i++) {
         const chunk = studentChunks[i]
-        setUploadProgress({ current: uploaded, total: totalWork, done: false })
+        setUploadProgress({ current: uploaded, total: totalWork, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
 
         const response = await fetch(`${API_BASE}/students/import`, {
           method: 'POST',
@@ -983,7 +1195,7 @@ export default function ImportBulk() {
         const created = respJson?.data || []
         allCreatedStudents.push(...created)
         uploaded += chunk.length
-        setUploadProgress({ current: uploaded, total: totalWork, done: false })
+        setUploadProgress({ current: uploaded, total: totalWork, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
       }
 
       // --- Phase 2: Upload disbursements in chunks ---
@@ -998,7 +1210,7 @@ export default function ImportBulk() {
 
         for (let i = 0; i < totalDisbChunks; i++) {
           const chunk = disbChunks[i]
-          setUploadProgress({ current: uploaded, total: grandTotal, done: false })
+          setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
 
           try {
             const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
@@ -1014,10 +1226,11 @@ export default function ImportBulk() {
             console.error(`Disbursement batch ${i + 1} error:`, err)
           }
           uploaded += chunk.length
-          setUploadProgress({ current: uploaded, total: grandTotal, done: false })
+          setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
         }
       }
 
+      setUploadProgress(prev => ({ ...prev, phase: 'Updating scholarship slots...' }))
       const slotResponse = await fetch(`${API_BASE}/scholarship_programs/update-slots`, {
         method: 'POST',
       })
@@ -1176,10 +1389,25 @@ export default function ImportBulk() {
               {duplicateChecking && (
                 <Tag color="processing">Checking duplicates...</Tag>
               )}
-              {!duplicateChecking && duplicateCount > 0 && (
-                <Tag color="warning" icon={<WarningOutlined />}>
-                  {duplicateCount} possible duplicate{duplicateCount > 1 ? 's' : ''}
+              {!duplicateChecking && dbDupCount > 0 && (
+                <Tag color="orange" icon={<WarningOutlined />}>
+                  {dbDupCount} DB match{dbDupCount > 1 ? 'es' : ''}
                 </Tag>
+              )}
+              {!duplicateChecking && batchDupCount > 0 && (
+                <Tag color="purple" icon={<WarningOutlined />}>
+                  {batchDupCount} batch dup{batchDupCount > 1 ? 's' : ''}
+                </Tag>
+              )}
+              {!duplicateChecking && duplicateCount > 0 && (
+                <Button
+                  size="small"
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={handleClearDuplicates}
+                >
+                  Clear Duplicates ({duplicateCount})
+                </Button>
               )}
               <Text type="secondary">{data.length} records</Text>
               <Button
@@ -1268,34 +1496,68 @@ export default function ImportBulk() {
         )}
       </div>
 
-      {/* Duplicate Warning Banner */}
-      {duplicateCount > 0 && data.length > 0 && (
+      {/* Duplicate Warning Banners */}
+      {dbDupCount > 0 && data.length > 0 && (
         <div style={{
-          background: 'linear-gradient(90deg, #fffbe6 0%, #fff7e6 100%)',
+          background: 'linear-gradient(90deg, #fff7e6 0%, #fff2e8 100%)',
           padding: '8px 16px',
-          borderBottom: '1px solid #ffe58f',
+          borderBottom: '1px solid #ffbb96',
           display: 'flex',
           alignItems: 'center',
           gap: 12,
           flexShrink: 0
         }}>
-          <WarningOutlined style={{ color: '#faad14', fontSize: 16 }} />
-          <Text style={{ color: '#d48806', fontWeight: 500, fontSize: 13 }}>
-            {duplicateCount} row{duplicateCount > 1 ? 's' : ''} may be duplicate{duplicateCount > 1 ? 's' : ''} of existing records or within this batch. 
-            Click the <WarningOutlined style={{ color: '#faad14' }} /> icon on the SEQ column to see details.
+          <WarningOutlined style={{ color: '#fa8c16', fontSize: 16 }} />
+          <Text style={{ color: '#d46b08', fontWeight: 500, fontSize: 13 }}>
+            {dbDupCount} row{dbDupCount > 1 ? 's' : ''} match existing records in the database.
+            {bothDupCount > 0 && ` (${bothDupCount} also duplicated within the batch)`}
           </Text>
           <Button
             type="link"
             size="small"
-            style={{ color: '#d48806', fontWeight: 500, padding: 0 }}
+            style={{ color: '#d46b08', fontWeight: 500, padding: 0 }}
             onClick={() => {
-              // Navigate to the first page with a duplicate
-              const firstDupIdx = Math.min(...Object.keys(duplicateMap).map(Number))
-              const targetPage = Math.floor(firstDupIdx / pageSize) + 1
-              setCurrentPage(targetPage)
+              const dbDupIndices = Object.entries(duplicateMap)
+                .filter(([, v]) => v.matches.some(m => !m.match_type.startsWith('batch_')))
+                .map(([k]) => Number(k))
+              if (dbDupIndices.length === 0) return
+              const firstIdx = Math.min(...dbDupIndices)
+              setCurrentPage(Math.floor(firstIdx / pageSize) + 1)
             }}
           >
-            Go to first duplicate →
+            Go to first →
+          </Button>
+        </div>
+      )}
+      {batchDupCount > 0 && data.length > 0 && (
+        <div style={{
+          background: 'linear-gradient(90deg, #f9f0ff 0%, #efdbff 100%)',
+          padding: '8px 16px',
+          borderBottom: '1px solid #d3adf7',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          flexShrink: 0
+        }}>
+          <WarningOutlined style={{ color: '#722ed1', fontSize: 16 }} />
+          <Text style={{ color: '#531dab', fontWeight: 500, fontSize: 13 }}>
+            {batchDupCount} row{batchDupCount > 1 ? 's' : ''} are duplicated within this upload batch.
+            {bothDupCount > 0 && ` (${bothDupCount} also match DB records)`}
+          </Text>
+          <Button
+            type="link"
+            size="small"
+            style={{ color: '#531dab', fontWeight: 500, padding: 0 }}
+            onClick={() => {
+              const batchDupIndices = Object.entries(duplicateMap)
+                .filter(([, v]) => v.matches.some(m => m.match_type.startsWith('batch_')))
+                .map(([k]) => Number(k))
+              if (batchDupIndices.length === 0) return
+              const firstIdx = Math.min(...batchDupIndices)
+              setCurrentPage(Math.floor(firstIdx / pageSize) + 1)
+            }}
+          >
+            Go to first →
           </Button>
         </div>
       )}
@@ -1426,15 +1688,24 @@ export default function ImportBulk() {
                 const actualRowIndex = (currentPage - 1) * pageSize + paginatedIndex
                 const dupInfo = duplicateMap[actualRowIndex]
                 const isDuplicate = !!dupInfo && dupInfo.matches && dupInfo.matches.length > 0
-                const rowBg = isDuplicate 
-                  ? (paginatedIndex % 2 === 0 ? '#fff7e6' : '#fff2d6')
-                  : (paginatedIndex % 2 === 0 ? 'white' : '#fafafa')
+                const hasDbDup = isDuplicate && dupInfo.matches.some(m => !m.match_type.startsWith('batch_'))
+                const hasBatchDup = isDuplicate && dupInfo.matches.some(m => m.match_type.startsWith('batch_'))
+                const hasBoth = hasDbDup && hasBatchDup
+                const alt = paginatedIndex % 2 === 0
+                const rowBg = hasBoth
+                  ? (alt ? '#fff1f0' : '#ffe7e6') // red tint for both
+                  : hasDbDup
+                    ? (alt ? '#fff7e6' : '#fff2d6') // orange for DB
+                    : hasBatchDup
+                      ? (alt ? '#f9f0ff' : '#f0e5ff') // purple for batch
+                      : (alt ? 'white' : '#fafafa')
+                const borderColor = hasBoth ? '#ff4d4f' : hasDbDup ? '#fa8c16' : hasBatchDup ? '#722ed1' : 'transparent'
                 return (
                   <tr
                     key={actualRowIndex}
                     style={{ 
                       background: rowBg,
-                      borderLeft: isDuplicate ? '3px solid #faad14' : 'none'
+                      borderLeft: isDuplicate ? `3px solid ${borderColor}` : 'none'
                     }}
                     className="hover:bg-blue-50"
                   >
@@ -1456,7 +1727,7 @@ export default function ImportBulk() {
                             textAlign: 'center',
                             fontSize: '13px',
                             fontWeight: 500,
-                            background: isDuplicate ? '#fff1b8' : '#f5f5f5',
+                            background: hasBoth ? '#ffccc7' : hasDbDup ? '#fff1b8' : hasBatchDup ? '#efdbff' : '#f5f5f5',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1465,9 +1736,9 @@ export default function ImportBulk() {
                             {isDuplicate && (
                               <Popover
                                 title={
-                                  <span style={{ color: '#d48806' }}>
+                                  <span style={{ color: hasBoth ? '#cf1322' : hasDbDup ? '#d46b08' : '#531dab' }}>
                                     <ExclamationCircleOutlined style={{ marginRight: 6 }} />
-                                    Possible Duplicate Detected
+                                    {hasBoth ? 'DB Match + Batch Duplicate' : hasDbDup ? 'Matches Existing Record in DB' : 'Duplicate Within Batch'}
                                   </span>
                                 }
                                 content={
@@ -1528,7 +1799,7 @@ export default function ImportBulk() {
                                 trigger="click"
                                 placement="right"
                               >
-                                <WarningOutlined style={{ color: '#faad14', cursor: 'pointer', fontSize: 14 }} />
+                                <WarningOutlined style={{ color: hasBoth ? '#ff4d4f' : hasDbDup ? '#fa8c16' : '#722ed1', cursor: 'pointer', fontSize: 14 }} />
                               </Popover>
                             )}
                             {row.seq}
@@ -1548,9 +1819,7 @@ export default function ImportBulk() {
                         border: '1px solid #f0f0f0',
                         position: 'sticky',
                         right: 0,
-                        background: isDuplicate 
-                          ? (paginatedIndex % 2 === 0 ? '#fff7e6' : '#fff2d6')
-                          : (paginatedIndex % 2 === 0 ? 'white' : '#fafafa')
+                        background: rowBg
                       }}
                     >
                       <Button
@@ -1595,22 +1864,26 @@ export default function ImportBulk() {
 
       {/* File Loading Modal */}
       <Modal
-        open={fileLoading}
+        open={!!fileLoadingState}
         closable={false}
         footer={null}
         centered
         maskClosable={false}
         width={360}
       >
-        <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
-          <LoadingOutlined style={{ fontSize: 40, color: '#1890ff', marginBottom: 16 }} />
-          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
-            Processing File
+        {fileLoadingState && (
+          <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
+            <LoadingOutlined style={{ fontSize: 40, color: '#1890ff', marginBottom: 16 }} />
+            <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
+              {fileLoadingState.phase}
+            </div>
+            {fileLoadingState.detail && (
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                {fileLoadingState.detail}
+              </Text>
+            )}
           </div>
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            Parsing and validating Excel data...
-          </Text>
-        </div>
+        )}
       </Modal>
 
       {/* Upload Progress Modal */}
@@ -1633,7 +1906,7 @@ export default function ImportBulk() {
               {uploadProgress.current} / {uploadProgress.total}
             </div>
             <Text type="secondary" style={{ fontSize: 13 }}>
-              {uploadProgress.done ? 'Done!' : 'Uploading records...'}
+              {uploadProgress.done ? 'Done!' : (uploadProgress.phase || 'Uploading records...')}
             </Text>
             <Progress
               percent={uploadProgress.total > 0 ? Math.round((uploadProgress.current / uploadProgress.total) * 100) : 0}
