@@ -175,7 +175,7 @@ export default function FinancialAssistanceMTP() {
   const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
 
   const filteredMTP_SP = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    if (p?.scholarship_program_name?.toUpperCase() !== 'MTP-SP') return false
+    if (p?.scholarship_program_name?.toUpperCase() !== 'MTPSP') return false
     if (academicYearFilter && academicYearFilter !== 'All') {
       return (p.academic_year || p.Academic_year) === academicYearFilter
     }

@@ -177,7 +177,7 @@ export default function FinancialAssistancescgms_sucs() {
     const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
 
     const filteredCgms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-        if (p?.scholarship_program_name?.toUpperCase() !== 'CGMS-SUCS') return false
+        if (p?.scholarship_program_name?.toUpperCase() !== 'CGMSSUCS') return false
         if (academicYearFilter && academicYearFilter !== 'All') {
             return (p.academic_year || p.Academic_year) === academicYearFilter
         }
