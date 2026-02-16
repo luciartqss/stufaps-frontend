@@ -1,8 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select,  Row, Col  } from 'antd'
-import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
-const { Text } = Typography
+import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
+import {
+  ContactsOutlined,
+  RightOutlined,    //
+  TeamOutlined,
+  FilterOutlined,
+  UserOutlined,
+  ProjectOutlined,
+  FundOutlined,
+  FundProjectionScreenOutlined,
+  FileExcelOutlined,
+  FileProtectOutlined,
+  SwitcherOutlined,
+  ReadOutlined,
+  ExclamationOutlined,
+  ReconciliationOutlined,
+  DollarOutlined,
+  FieldTimeOutlined,
+  InteractionOutlined,
+  ProfileOutlined,
+  FileSearchOutlined,
+  UserSwitchOutlined,
+  SolutionOutlined,
+  DeliveredProcedureOutlined,
+  AuditOutlined
+} from '@ant-design/icons'
+const { Text, Title } = Typography
 const { Option } = Select
 import { Progress } from 'antd'
 
@@ -17,8 +41,11 @@ export function meta() {
 function StatsCards({ financialAssistances = [] }) {
   let totals;
 
-  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-    // Use backend values directly for the "All" row
+  if (
+    financialAssistances.length === 1 &&
+    (financialAssistances[0].academic_year === 'All' ||
+      financialAssistances[0].Academic_year === 'All')
+  ) {
     const row = financialAssistances[0];
     totals = {
       totalSlots: Number(row?.total_slot) || 0,
@@ -26,7 +53,6 @@ function StatsCards({ financialAssistances = [] }) {
       totalUnfilled: Number(row?.unfilled_slot) || 0,
     };
   } else {
-    // Sum across rows for a specific year
     totals = {
       totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
       totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
@@ -34,85 +60,79 @@ function StatsCards({ financialAssistances = [] }) {
     };
   }
 
-  const statsConfig = [
-    {
-      title: 'Total Slots: ',
-      value: totals.totalSlots,
-      icon: <ContactsOutlined />,
-      color: '#1890ff',
-      bgColor: '#e6f7ff',
-    },
-    {
-      title: 'Filled Slots: ',
-      value: totals.totalFilled,
-      icon: <TeamOutlined />,
-      color: '#52c41a',
-      bgColor: '#f6ffed',
-      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-    {
-      title: 'Unfilled Slots: ',
-      value: totals.totalUnfilled,
-      icon: <UserOutlined />,
-      color: '#faad14',
-      bgColor: '#fffbe6',
-      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-  ]
+  const fillPct = totals.totalSlots > 0 ? Math.round((totals.totalFilled / totals.totalSlots) * 100) : 0;
+  const exceeded = totals.totalFilled > totals.totalSlots;
+
+  const formatProgramName = name => {
+    if (!name) return '';
+    return name
+      .replace(/SSP/g, ' SSP')       // turn FULLSSP → FULL SSP
+      .replace(/PESFA/g, ' PESFA')   // turn FULLPESFA → FULL PESFA
+      .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
+      .trim();
+  };
 
   return (
-  <div className="stats-cards">
-    {statsConfig.map((stat, index) => (
-      <div
-        key={index}
-        className="stat-row"
-        style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}
-      >
-        {/* icon on the left */}
-        
-
-        {/* info block on the right */}
-        <div className="stat-info" style={{ flex: 1 }}>
-
-          <div
-            className="stat-icon"
-            style={{ display: 'flex', alignItems: 'center',marginBottom: 8 , gap: 8, fontSize: 20, color: stat.color }}
-          >
-            {stat.icon}
-            <Text type="secondary">
-              {stat.title}: <Text strong style={{ color: stat.color }}>
-                {(stat.value ?? 0).toLocaleString()}
-              </Text>
+    <Card
+      hoverable
+      style={{
+        borderRadius: 12,
+        border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
+        height: '100%',
+        transition: 'all 0.2s ease',
+      }}
+      bodyStyle={{ padding: 20 }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>
+              {formatProgramName(financialAssistances[0]?.scholarship_program_name)}
             </Text>
-
+            {exceeded && (
+              <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
+                Exceeded
+              </Tag>
+            )}
           </div>
+        </div>
+        <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
+      </div>
 
-          {/* Percentage text */}
-          {stat.percentage && (
-            <Text style={{ color: stat.color, display: 'block', marginTop: 4 }}>
-              {stat.percentage}% of total
-            </Text>
-          )}
+      {/* Progress */}
+      <Progress
+        percent={Math.min(fillPct, 100)}
+        size="small"
+        strokeColor={exceeded ? '#ff4d4f' : '#1890ff'}
+        trailColor="#f0f0f0"
+        showInfo={false}
+        style={{ marginBottom: 5 }}
+      />
 
-          {/* Progress bar beneath */}
-          {stat.percentage && (
-            <Progress
-              percent={parseFloat(stat.percentage)}
-              showInfo={false}
-              strokeColor={stat.color}
-              style={{ marginTop: 8 }}
-            />
-          )}
+      {/* Stats row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.totalSlots}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.totalFilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.totalUnfilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
         </div>
       </div>
-    ))}
-  </div>
-);
-
-
-
-
+    </Card>
+  );
 }
+
 
 export default function FinancialAssistanceCmsp() {
   const [financialAssistances, setFinancialAssistances] = useState([])
@@ -144,13 +164,13 @@ export default function FinancialAssistanceCmsp() {
           )
         ]
 
-        const uniquePrograms = [ 
-            ...new Set( 
-              programsData 
-              .filter(p => p.description === 'CHED Merit Scholarship Program') 
-              .map(p => p.scholarship_program_name) 
-              .filter(Boolean) 
-            ) ]
+        const uniquePrograms = [
+          ...new Set(
+            programsData
+              .filter(p => p.description === 'CHED Merit Scholarship Program')
+              .map(p => p.scholarship_program_name)
+              .filter(Boolean)
+          )]
 
         setPrograms([...uniquePrograms.sort()])
         setAcademicYears([...uniqueYears.sort()])
@@ -163,33 +183,22 @@ export default function FinancialAssistanceCmsp() {
       })
   }, [])
 
-  const handleAcademicYearChange = value => 
-  { 
-    setAcademicYearFilter(value || 'All') 
-  } 
+  const handleAcademicYearChange = value => {
+    setAcademicYearFilter(value || 'All')
+  }
 
-  const handleProgramChange = value => 
-  { 
-    setProgramFilter(value) 
-  } 
+  const handleProgramChange = value => {
+    setProgramFilter(value)
+  }
 
   if (loading) return <div>Loading CMSP data...</div>
   if (error) return <div style={{ color: 'red' }}>Error: {error}</div>
 
   const allowedPrograms = [
-  'FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD',
-  'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
+    'FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD',
+    'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
   ];
 
-  // helper function to format program names
-  const formatProgramName = name => {
-    if (!name) return '';
-    return name
-      .replace(/SSP/g, ' SSP')       // turn FULLSSP → FULL SSP
-      .replace(/PESFA/g, ' PESFA')   // turn FULLPESFA → FULL PESFA
-      .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
-      .trim();
-  };
 
   const filteredCms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
     const programName = p?.scholarship_program_name?.toUpperCase().trim();
@@ -211,473 +220,784 @@ export default function FinancialAssistanceCmsp() {
     return (p.academic_year || p.Academic_year) === 'All';
   });
 
-  const sucPrograms = [
-    {
-      id: "full-ssp",
-      name: "Full-SSP",
-      rows: [
-        { label: "TOSF: Free Higher Education (FHE)", perSem: "-", perAY: "-" },
-        { label: "Stipend (₱7,000 × 5 months)", perSem: "₱35,000.00", perAY: "₱70,000.00" },
-        { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
-      ],
-      total: { perSem: "₱40,000.00", perAY: "₱80,000.00" },
-    },
-    {
-      id: "half-ssp",
-      name: "Half-SSP",
-      rows: [
-        { label: "TOSF: FHE", perSem: "-", perAY: "-" },
-        { label: "Stipend (₱3,500 × 5 months)", perSem: "₱17,500.00", perAY: "₱35,000.00" },
-        { label: "Book/Connectivity Allowance", perSem: "₱2,500.00", perAY: "₱5,000.00" },
-      ],
-      total: { perSem: "₱20,000.00", perAY: "₱40,000.00" },
-    },
-  ];
+  return (
+    <div style={{ background: '#fafbfc', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
-  const privatePrograms = [
-    {
-      id: "full-pesfa",
-      name: "Full-PESFA",
-      rows: [
-        { label: "TOSF", perSem: "₱20,000.00", perAY: "₱40,000.00" },
-        { label: "Stipend (₱7,000 × 5 months)", perSem: "₱35,000.00", perAY: "₱70,000.00" },
-        { label: "Book/Connectivity Allowance", perSem: "₱5,000.00", perAY: "₱10,000.00" },
-      ],
-      total: { perSem: "₱60,000.00", perAY: "₱120,000.00" },
-    },
-    {
-      id: "half-pesfa",
-      name: "Half-PESFA",
-      rows: [
-        { label: "TOSF", perSem: "₱10,000.00", perAY: "₱20,000.00" },
-        { label: "Stipend (₱7,000 × 5 months)", perSem: "₱17,500.00", perAY: "₱35,000.00" },
-        { label: "Book/Connectivity Allowance", perSem: "₱2,500.00", perAY: "₱5,000.00" },
-      ],
-      total: { perSem: "₱30,000.00", perAY: "₱60,000.00" },
-    },
-  ];
-
-  const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
-        {title}
-      </h2>
-      <div className="space-y-4">
-        {programs.map((program) => (
-          <div key={program.id} className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <button
-              onClick={() => setExpandedId(expandedId === program.id ? null : program.id)}
-              className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
-            >
-              <span className="font-bold text-gray-800">{program.name}</span>
-              <span className="text-red-600 text-xl transition-transform duration-200" style={{
-                transform: expandedId === program.id ? 'rotate(180deg)' : 'rotate(0deg)'
-              }}>
-                ▼
-              </span>
-            </button>
-
-            {expandedId === program.id && (
-              <div className="p-4 animate-in fade-in duration-200">
-                <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">Item</th>
-                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">Per Sem</th>
-                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">Per AY</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-
-                    {program.rows.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50 transition-colors duration-100">
-                        <td className="border border-gray-400 p-3 text-left text-gray-700">
-                          {row.label}
-                        </td>
-                        <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                          {row.perSem}
-                        </td>
-                        <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                          {row.perAY}
-                        </td>
-                      </tr>
-                    ))}
-
-                    <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
-                      <td className="border border-gray-400 p-3 text-left text-gray-800">
-                        Total
-                      </td>
-                      <td className="border border-gray-400 p-3 text-center text-gray-800 w-28">
-                        {program.total.perSem}
-                      </td>
-                      <td className="border border-gray-400 p-3 text-center text-gray-800 w-28">
-                        {program.total.perAY}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <div>
+            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>CMSP</Title>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>CHED Merit Scholarship Program</Text>
 
           </div>
-        ))}
+
+          {/* dropdown*/}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Space size={12}>
+              <FilterOutlined style={{ color: '#6b7280' }} />
+
+              <Select
+                value={academicYearFilter}
+                allowClear
+                size="middle"
+                style={{ width: 160 }}
+                onChange={handleAcademicYearChange}
+              >
+                {academicYears.map(year => (
+                  <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+        </div>
       </div>
-    </div>
-  );
 
-  const cards = [
-    { title: 'Card 1', content: 'Content 1' },
-    { title: 'Card 2', content: 'Content 2' },
-    { title: 'Card 3', content: 'Content 3' },
-    { title: 'Card 4', content: 'Content 4' },
-    { title: 'Card 5', content: 'Content 5' },
-    { title: 'Card 6', content: 'Content 6' },
-    { title: 'Card 7', content: 'Content 7' },
-    { title: 'Card 8', content: 'Content 8' },
-  ]
-
-  return (
-    <div className="min-h-screen">
-      <main>
-
-      {/* dropdown*/}
-
-        <Select
-          value={academicYearFilter}
-          allowClear
-          size="middle"
-          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-          onChange={handleAcademicYearChange}
-        >
-          {academicYears.map(year => (
-            <Option key={year} value={year}>{year}</Option>
-          ))}
-        </Select>
-
-        <Select
-          value={programFilter}
-          allowClear
-          size="middle"
-          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-          onChange={handleProgramChange}
-        >
-          {programs.map(program => (
-            <Option key={program} value={program}>
-              {formatProgramName(program)}
-            </Option>
-          ))}
-        </Select>
+      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
 
         <Row gutter={[16, 16]}>
-  {allowedPrograms.map((program, index) => {
-    // find the data for this program from filteredCms
-    const programData = filteredCms.filter(p => p.scholarship_program_name === program);
+          {allowedPrograms.map((program, index) => {
+            const programData = filteredCms.filter(p => p.scholarship_program_name === program);
 
-    return (
-      <Col key={index} span={6}>
-        <Card title={program} bordered={false}>
-          <StatsCards financialAssistances={programData} />
-        </Card>
-      </Col>
-    );
-  })}
-</Row>
+            return (
+              <Col key={index} span={6}>
+                <StatsCards financialAssistances={programData} />
+              </Col>
+            );
+          })}
+        </Row>
 
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            CHED Merit Scholarship Program (CMSP)
-          </h1>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            The CHED Merit Scholarship Program (CMSP) is a competitive grant by the
-            Commission on Higher Education for academically talented Filipino students.
-            It is open to incoming or current first-year…
-          </p>
+      </div>
+
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>
+              The CHED Merit Scholarship Program (CMSP) is a competitive grant by the
+              Commission on Higher Education for academically talented Filipino students.
+              It is open to incoming or current first-year.
+            </Text>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Scope & Coverage
-          </h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            The CMSP is open to all incoming or current first-year students regardless of background or status.
-            Additional ranking points are granted to applicants from special equity groups under the following laws:
-            RA 7279 (Urban Development and Housing Act of 1992), RA 11291 (Magna Carta of the Poor),
-            RA 7277 (Magna Carta for Persons with Disabilities), as amended, RA 11861 (Expanded Solo Parents Welfare Act), as amended,
-            RA 9994 (Expanded Senior Citizens Act of 2010), and
-            RA 8371 (Indigenous Peoples’ Rights Act of 1997), as well as other relevant legislation prioritizing marginalized sectors, including first-generation college students.
-          </p>
-        </div>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+            <div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Application Process (Eligible Applicant)
-          </h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            Filipino citizen, Graduate of a Senior High School in the Philippines with a minimum GWA of 93% or its equivalent, Combined annual gross income of parents or legal guardians must not exceed ₱500,000.00.
-          </p>
-        </div>
+              <Space size={12}>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Ineligible Applicant
-          </h2>
+                <ProjectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Scope & Coverage
+                </Title>
 
-          <ul className="bg-red-50 border border-red-200 rounded-lg p-6 list-disc list-inside space-y-3 text-gray-700">
-            <li className="font-medium">Foreign students</li>
-            <li>Applicants who are not incoming or current first-year undergraduate students</li>
-            <li>Applicants who will or are enrolled in priority programs but not granted government recognition or certification by CHED</li>
-            <li>Applicants who will or intend to enroll in a non-priority program</li>
-            <li>Transferees and shiftees with credited units as determined by admitting HEIs</li>
-            <li>Existing recipients of any nationally government-funded scholarships or grants (TES, TDP); grantees under the One-time Grants are exempted</li>
-            <li>Applicants who have completed an undergraduate degree program or are second-course takers</li>
-            <li>Applicants who submitted tampered and/or falsified application documents</li>
-          </ul>
-        </div>
+              </Space>
 
-        {/* Financial Assistance Tables */}
-        <div >
-          <div>
-            <div className="px-4 sm:px-6 lg:px-8">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-1 px-4 sm:px-6 lg:px-8">
-                SUCs/LUCs
-              </h2>
-            </div>
-            <div className="px-4 sm:px-6 lg:px-8">
-              <TableSection title="" programs={sucPrograms} expandedId={expandedSUC} setExpandedId={setExpandedSUC} />
+              <Space size={12}>
+                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                  The CMSP is open to all incoming or current first-year students regardless of background or status.
+                  Additional ranking points are granted to applicants from special equity groups under the following laws:
+                  RA 7279 (Urban Development and Housing Act of 1992), RA 11291 (Magna Carta of the Poor),
+                  RA 7277 (Magna Carta for Persons with Disabilities), as amended, RA 11861 (Expanded Solo Parents Welfare Act), as amended,
+                  RA 9994 (Expanded Senior Citizens Act of 2010), and
+                  RA 8371 (Indigenous Peoples’ Rights Act of 1997), as well as other relevant legislation prioritizing marginalized sectors, including first-generation college students.
+                </Text>
+              </Space>
             </div>
           </div>
         </div>
+      </div>
 
-        <div>
-          <div>
-            <div className="px-4 sm:px-6 lg:px-8">
-              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-1 px-4 sm:px-6 lg:px-8">
-                Private HEIs
-              </h2>
-            </div>
 
-            <div className="px-4 sm:px-6 lg:px-8">
-              <TableSection title="" programs={privatePrograms} expandedId={expandedPrivate} setExpandedId={setExpandedPrivate} />
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+            <div>
 
-              <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                <p className="text-sm md:text-base text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <strong>Note:</strong> For HEIs with trimester or quarter systems, the total amount of financial assistance shall be distributed proportionately based on the scholarship type under this CMO.
-                </p>
-              </div>
+              <Space size={12}>
+                <FileProtectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Application Process (Eligible Applicant)
+                </Title>
+              </Space>
+
+              <Space>
+                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                  Filipino citizen, Graduate of a Senior High School in the Philippines with a minimum GWA of 93% or its equivalent,
+                  Combined annual gross income of parents or legal guardians must not exceed ₱500,000.00.
+                </Text>
+              </Space>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Direct Payment to Scholars
-          </h1>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+            <div>
 
-          <ul className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-[lower-alpha] list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>HEI has no Memorandum of Agreement (MOA) Annex J with CHEDRO;</li>
-            <li>HEI has fewer than ten (10) scholars;</li>
-            <li>HEI has unliquidated balances or transferred funds; or</li>
-            <li>HEI has verified StuFAPs-related complaints/issues</li>
-          </ul>
+              <Space size={12}>
+                <FileExcelOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Ineligible Applicant
+                </Title>
+              </Space>
+              <br />
+              <Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                  <ul >
+                    <li className="font-medium">Foreign students</li>
+                    <li>Applicants who are not incoming or current first-year undergraduate students</li>
+                    <li>Applicants who will or are enrolled in priority programs but not granted government recognition or certification by CHED</li>
+                    <li>Applicants who will or intend to enroll in a non-priority program</li>
+                    <li>Transferees and shiftees with credited units as determined by admitting HEIs</li>
+                    <li>Existing recipients of any nationally government-funded scholarships or grants (TES, TDP); grantees under the One-time Grants are exempted</li>
+                    <li>Applicants who have completed an undergraduate degree program or are second-course takers</li>
+                    <li>Applicants who submitted tampered and/or falsified application documents</li>
+                  </ul>
+                </Typography>
+              </Space>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Initial Payment/Requirements
-          </h1>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            Payment Type
-          </p>
+      {/* Financial Assistance Tables */}
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', borderBottom: '1px solid #e8eaed' }}>
 
-          <ul className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>Certified true copy of Certificate of Registration/Enrollment (COR/COE)
-              or system-generated registration document signed by registrar/authorized official</li>
-            <li>College ID or any government-issued ID with signature, certification from the school</li>
-            <li>Photocopy of active Landbank ATM card</li>
-          </ul>
+            <div>
+
+              <Space size={12}>
+                <FundOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  SUCs/LUCs
+                </Title>
+              </Space>
+              <br />
+              <Typography level={5} style={{ fontWeight: 500, }}>
+
+                <Row gutter={[24]}>
+                  <Col span={12}>
+                    <Card style={
+                      {
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        transition: 'all 0.3s ease',
+                      }
+                    }
+                      title="Full-SSP"
+                    >
+
+                      <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                          <tr>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Item</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per Sem</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per AY</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>TOSF</td>
+                            <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>Free Higher Education (FHE)</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (₱7,000 × 5 months)</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱35,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱70,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Book/Connectivity Allowance</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
+                          </tr>
+
+                        </tbody>
+
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱20,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱80,000.00</td>
+                          </tr>
+                        </tfoot>
+
+                      </table>
+                    </Card>
+                  </Col>
+
+                  <Col span={12}>
+                    <Card style={
+                      {
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        transition: 'all 0.3s ease',
+                      }
+                    }
+                      title="Half-SSP"
+                    >
+
+
+                      <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                          <tr>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Item</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per Sem</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per AY</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>TOSF</td>
+                            <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>Free Higher Education (FHE)</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (₱7,500 × 5 months)</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱17,500.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱35,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Book/Connectivity Allowance</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱2,500.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00</td>
+                          </tr>
+
+                        </tbody>
+
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱20,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱40,000.00</td>
+                          </tr>
+                        </tfoot>
+
+                      </table>
+                    </Card>
+                  </Col>
+                </Row>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Succeeding Payment/Requirements
-          </h1>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', borderBottom: '1px solid #e8eaed' }}>
 
-          <ul className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>
-              Certified true copy of Certificate of Registration/Enrollment (COR/COE) or
-              system-generated registration document signed by registrar/authorized official
-            </li>
-            <li>
-              Certified true copy of grades with GWA from previous semester/term signed by
-              registrar/authorized official; Certification from HEI that the scholar is not a
-              recipient of other national-funded scholarships for the current academic year
-              (signed by Scholarship Coordinator or Registrar; submitted every start of the
-              academic year)
-            </li>
-          </ul>
+            <div>
+              <Space size={12}>
+                <FundProjectionScreenOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Private HEIs
+                </Title>
+              </Space>
+              <br />
+
+              <Typography level={5} style={{ color: '#1a1a1a', fontWeight: 500, }}>
+
+                <Row gutter={[24, 24]}>
+                  <Col span={12}>
+                    <Card style={
+                      {
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        transition: 'all 0.3s ease',
+                      }
+                    }
+                      title="Full-PESFA"
+                    >
+
+
+                      <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                          <tr>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Item</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per Sem</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per AY</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>TOSF</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱20,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱40,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (₱7,000 × 5 months)</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱35,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱70,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Book/Connectivity Allowance</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
+                          </tr>
+
+                        </tbody>
+
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱60,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱120,000.00</td>
+                          </tr>
+                        </tfoot>
+
+                      </table>
+                    </Card>
+                  </Col>
+
+                  <Col span={12}>
+                    <Card style={
+                      {
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        transition: 'all 0.3s ease',
+                      }
+                    }
+                      title="Half-PESFA"
+                    >
+
+
+                      <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                          <tr>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Item</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per Sem</th>
+                            <th style={{ border: '1px solid #000', padding: '8px' }}>Per AY</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>TOSF</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱20,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (₱7,500 × 5 months)</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱17,500.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱35,000.00</td>
+                          </tr>
+
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Book/Connectivity Allowance</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱2,500.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00</td>
+                          </tr>
+
+                        </tbody>
+
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tr>
+                            <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱30,000.00</td>
+                            <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱60,000.00</td>
+                          </tr>
+                        </tfoot>
+
+                      </table>
+                    </Card>
+                  </Col>
+                </Row>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Responsibilities of Scholars
-          </h1>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
 
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>Adhere to the provisions of the scholarship contract (Annex B-2)</li>
-            <li>Enroll in CHED-identified priority programs of PHEIs with GR, SUCs, or LUCs with COPC</li>
-            <li>Maintain a GWA of at least 85% (full scholars) or 80% (half scholars);</li>
-            <li>Enroll the required regular academic load per semester/trimester/term, except when only a few subjects remain to complete the program;</li>
-            <li>Complete the degree within the prescribed period in the curriculum;</li>
-            <li>
-              Secure written approval from CHEDRO (Annex H) before:
-              <ol className="list-[lower-alpha] list-inside ml-6 space-y-1">
-                <li>Transferring to another HEI;</li>
-                <li>Shifting to another recognized/certified priority program; or</li>
-                <li>Filing a Leave of Absence (LOA) — allowed only once for one (1) academic year, without financial benefits during the LOA;</li>
-              </ol>
-            </li>
-            <li>Refund to CHED all financial benefits if the scholarship is terminated for reasons under Section 26;</li>
-            <li>Exhibit good moral character and follow CHED/HEI rules and regulations;</li>
-            <li>Inform CHEDRO of any changes in status, program, HEI, or personal circumstances affecting eligibility;</li>
-            <li>Submit required reports/documents within the deadlines;</li>
-            <li>Submit an accomplished graduate exit form (Annex I).</li>
-          </ol>
+            <div>
+              <Space size={12}>
+                <DollarOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Direct Payment to Scholars
+                </Title>
+              </Space>
+              <br />
+              <Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                  <ul>
+                    <li>HEI has no Memorandum of Agreement (MOA) Annex J with CHEDRO;</li>
+                    <li>HEI has fewer than ten (10) scholars;</li>
+                    <li>HEI has unliquidated balances or transferred funds; or</li>
+                    <li>HEI has verified StuFAPs-related complaints/issues</li>
+                  </ul>
+                </Typography>
+              </Space>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Grounds for Scholarship Termination
-          </h2>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>Any violation of the provisions of these guidelines;</li>
-            <li>Breach of contract;</li>
-            <li>Availment of another National Government funded scholarship program;</li>
-            <li>Enrollment in non-recognized program of PHEIs or SUCs or non-certified program of LUCs;</li>
-            <li>Enrollment in non-priority programs;</li>
-            <li>Failure to maintain the required GWA;</li>
-            <li>Failure to enroll the required regular load based on approved curriculum of the HEI;</li>
-            <li>Dropping out;</li>
-            <li>LOA of scholar must not be more than one (1) academic year;</li>
-            <li>Shifting to another program or transferring to another HEI without approval from concerned CHEDRO;</li>
-            <li>Any acts inimical to the government and/or CHED;</li>
-            <li>Prima facie evidence of participation or involvement in hazing related activities; and</li>
-            <li>
-              Transfer of HEI that involves a change of scholarship program from: Full-SSP to Full-PESFA, or vice versa,
-              shall result in the automatic termination of the scholarship.
-            </li>
-          </ol>
+              <Space size={12}>
+                <SwitcherOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Initial Payment/Requirements
+                </Title>
+              </Space>
+              <br />
+              <Text className="font-medium" style={{ color: '#6b7280', fontSize: 16 }}>Payment Type</Text>
+
+              <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                <ul className="list-decimal">
+                  <li>Certified true copy of Certificate of Registration/Enrollment (COR/COE)
+                    or system-generated registration document signed by registrar/authorized official</li>
+                  <li>College ID or any government-issued ID with signature, certification from the school</li>
+                  <li>Photocopy of active Landbank ATM card</li>
+                </ul>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Appeal
-          </h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            A scholar may submit a written appeal for reconsideration within seven (7) working days from receipt of the termination notice.
-          </p>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            The appeal must include reasons and supporting documents
-          </p>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+
+              <Space size={12}>
+                <ReconciliationOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Succeeding Payment/Requirements
+                </Title>
+              </Space>
+
+              <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                <ul className="list-decimal">
+                  <li>
+                    Certified true copy of Certificate of Registration/Enrollment (COR/COE) or
+                    system-generated registration document signed by registrar/authorized official
+                  </li>
+                  <li>
+                    Certified true copy of grades with GWA from previous semester/term signed by
+                    registrar/authorized official; Certification from HEI that the scholar is not a
+                    recipient of other national-funded scholarships for the current academic year
+                    (signed by Scholarship Coordinator or Registrar; submitted every start of the
+                    academic year)
+                  </li>
+                </ul>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Procedures for Appeal
-          </h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            CHEDRO shall review and decide on the appeal within fifteen (15) days and update the database (Annex E-2).
-          </p>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+
+              <Space size={12}>
+                <ReadOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Responsibilities of Scholars
+                </Title>
+              </Space>
+
+              <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                <ol className="list-decimal">
+                  <li>Adhere to the provisions of the scholarship contract (Annex B-2)</li>
+                  <li>Enroll in CHED-identified priority programs of PHEIs with GR, SUCs, or LUCs with COPC</li>
+                  <li>Maintain a GWA of at least 85% (full scholars) or 80% (half scholars);</li>
+                  <li>Enroll the required regular academic load per semester/trimester/term, except when only a few subjects remain to complete the program;</li>
+                  <li>Complete the degree within the prescribed period in the curriculum;</li>
+                  <li>
+                    <strong>Secure written approval from CHEDRO (Annex H) before: </strong>
+                    <ol className="list-[lower-alpha]">
+                      <li>Transferring to another HEI;</li>
+                      <li>Shifting to another recognized/certified priority program; or</li>
+                      <li>Filing a Leave of Absence (LOA) — allowed only once for one (1) academic year, without financial benefits during the LOA;</li>
+                    </ol>
+                  </li>
+                  <li>Refund to CHED all financial benefits if the scholarship is terminated for reasons under Section 26;</li>
+                  <li>Exhibit good moral character and follow CHED/HEI rules and regulations;</li>
+                  <li>Inform CHEDRO of any changes in status, program, HEI, or personal circumstances affecting eligibility;</li>
+                  <li>Submit required reports/documents within the deadlines;</li>
+                  <li>Submit an accomplished graduate exit form (Annex I).</li>
+                </ol>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Replacement
-          </h2>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            Scholars who fail to confirm their Notice of Award (NOA) within fifteen (15) working days will be replaced by applicants from the Official Ranklist. Terminated scholars may also be replaced by the next eligible applicant with a GWA of at least 85% (Full) or 80% (Half).
-          </p>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+
+            <div>
+
+              <Space size={12}>
+                <ExclamationOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Grounds for Scholarship Termination
+                </Title>
+              </Space>
+              <br />
+              <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                <ol className="list-decimal">
+                  <li>Any violation of the provisions of these guidelines;</li>
+                  <li>Breach of contract;</li>
+                  <li>Availment of another National Government funded scholarship program;</li>
+                  <li>Enrollment in non-recognized program of PHEIs or SUCs or non-certified program of LUCs;</li>
+                  <li>Enrollment in non-priority programs;</li>
+                  <li>Failure to maintain the required GWA;</li>
+                  <li>Failure to enroll the required regular load based on approved curriculum of the HEI;</li>
+                  <li>Dropping out;</li>
+                  <li>LOA of scholar must not be more than one (1) academic year;</li>
+                  <li>Shifting to another program or transferring to another HEI without approval from concerned CHEDRO;</li>
+                  <li>Any acts inimical to the government and/or CHED;</li>
+                  <li>Prima facie evidence of participation or involvement in hazing related activities; and</li>
+                  <li>
+                    Transfer of HEI that involves a change of scholarship program from: Full-SSP to Full-PESFA, or vice versa,
+                    shall result in the automatic termination of the scholarship.
+                  </li>
+                </ol>
+              </Typography>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Leave of Absence (LOA) Guidelines
-          </h2>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <ul className="mt-4 list-disc list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <p>A scholar may apply for LOA for a maximum of one (1) academic year.
-              Valid reasons include illness, family emergencies, or force majeure.
-              The request and documents must be submitted to CHEDRO for approval (Annex H).
-              No financial benefits are granted during LOA.</p>
-          </ul>
+              <Space size={12}>
+                <FieldTimeOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Appeal
+                </Title>
+              </Space>
+              <br />
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                A scholar may submit a written appeal for reconsideration within seven (7) working days from receipt of the termination notice.
+                The appeal must include reasons and supporting documents
+              </Text>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Transferee/Shiftee
-          </h2>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <ul className="mt-4 list-disc list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <p>Scholars who transfer or shift with CHEDRO approval may continue their scholarship.
-              If enrolled with reduced units, they must take a full load in the next semester to retain eligibility.
-              or proven participation or involvement in hazing-related activities.
-            </p>
-          </ul>
+              <Space size={12}>
+                <DeliveredProcedureOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ color: '#1a1a1a', fontWeight: 600 }}>
+                  Procedures for Appeal
+                </Title>
+              </Space>
+              <br />
+
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                CHEDRO shall review and decide on the appeal within fifteen (15) days and update the database (Annex E-2).
+              </Text>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Refund
-          </h2>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <ul className="mt-4 list-disc list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <p>Scholars are required to refund all financial grants received under the scholarship program if their
-              scholarship is terminated due to specific grounds, including enrollment in non-recognized or non
-              priority programs, engagement in acts that are inimical to the government or CHED
-            </p>
-          </ul>
+              <Space size={12}>
+                <UserSwitchOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Replacement
+                </Title>
+              </Space>
+              <br />
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                Scholars who fail to confirm their Notice of Award (NOA) within fifteen (15) working days will be replaced by applicants from the Official Ranklist. Terminated scholars may also be replaced by the next eligible applicant with a GWA of at least 85% (Full) or 80% (Half).
+              </Text>
+
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            Procedures for Refund
-          </h2>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <ul className="mt-4 list-disc list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <p>After due process, scholars are required to refund all financial benefits received under the
-              scholarship within sixty (60) days from the date of the notice of demand issued by CHEDRO.
-              Failure to comply with this requirement will result in CHEDRO endorsing the case to higher
-              authorities for appropriate action.</p>
-          </ul>
+              <Space size={12}>
+                <SolutionOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Leave of Absence (LOA) Guidelines
+                </Title>
+              </Space>
+              <br />
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                A scholar may apply for LOA for a maximum of one (1) academic year.
+                Valid reasons include illness, family emergencies, or force majeure.
+                The request and documents must be submitted to CHEDRO for approval (Annex H).
+                No financial benefits are granted during LOA.
+              </Text>
+            </div>
+          </div>
         </div>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <p>
-            Maintaining GWA Full
-            Full-SSP & Full PESFA
-            At least 85% or 2.00
-          </p>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
 
-          <p>
-            Maintaining GWA Half
-            Half-SSP & Half PESFA
-            At least 80% or 2.5
-          </p>
+              <Space size={12}>
+                <ProfileOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Transferee/Shiftee
+                </Title>
+              </Space>
+              <br />
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                Scholars who transfer or shift with CHEDRO approval may continue their scholarship.
+                If enrolled with reduced units, they must take a full load in the next semester to retain eligibility.
+                or proven participation or involvement in hazing-related activities.
+              </Text>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="bg-gray-800 text-white text-center py-4">
-        <div>
-          <p className="text-sm">
-            CMO-NO.-13-S.-2025
-          </p>
-          <p className="text-sm">
+      </div>
 
-            © {new Date().getFullYear()} CMO. All rights reserved.
-          </p>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+
+              <Space size={12}>
+                <InteractionOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Refund
+                </Title>
+              </Space>
+              <br />
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                Scholars are required to refund all financial grants received under the scholarship program if their
+                scholarship is terminated due to specific grounds, including enrollment in non-recognized or non
+                priority programs, engagement in acts that are inimical to the government or CHED.
+              </Text>
+            </div>
+          </div>
         </div>
+      </div>
 
-      </footer>
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+            <div>
+
+              <Space size={12}>
+                <FileSearchOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Procedures for Refund
+                </Title>
+              </Space>
+              <br />
+
+              <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                Scholarship within sixty (60) days from the date of the notice of demand issued by CHEDRO.
+                Failure to comply with this requirement will result in CHEDRO endorsing the case to higher
+                authorities for appropriate action.
+              </Text>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: '#fff' }}>
+        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+          <div style={{ paddingBottom: '24px', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+            <div>
+
+              <Space size={12}>
+                <AuditOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                  Maintaining GWA
+                </Title>
+              </Space>
+              <br />
+              <Row gutter={[24]}>
+                <Col span={24}>
+                  <Card style={
+                    {
+                      borderRadius: 12,
+                      border: '1px solid #f0f2f5',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                      transition: 'all 0.3s ease',
+                    }
+                  }>
+                    <table style={{ width: '100%', textAlign: 'center' }}>
+                      <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                        <th style={{ border: '1px solid #000', padding: '8px' }}>Program</th>
+                        <th style={{ border: '1px solid #000', padding: '8px' }}>Maintaining Average</th>
+                      </thead>
+                      <tbody style={{ background: '#CED4DA' }}>
+                        <tr>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>Full-SSP & Full PESFA</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>At least <strong>85%</strong> or <strong>2.00</strong></td>
+                        </tr>
+                        <tr>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>Half-SSP & Half PESFA</td>
+                          <td style={{ border: '1px solid #000', padding: '8px' }}>At least <strong>80%</strong> or <strong>2.50</strong></td>
+                        </tr>
+
+                        <tr>
+
+                        </tr>
+                      </tbody>
+                    </table>
+
+                  </Card>
+                </Col>
+              </Row>
+
+
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

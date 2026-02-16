@@ -1,10 +1,39 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select } from 'antd'
-import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
-const { Text } = Typography
+import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
+import {
+    ContactsOutlined,
+    RightOutlined,    //
+    TeamOutlined,
+    FileSyncOutlined, //not used yet
+    FilterOutlined,
+    UserOutlined,
+    EyeOutlined,
+    GiftOutlined,
+    ProjectOutlined,
+    ExceptionOutlined,
+    FundOutlined,
+    FundProjectionScreenOutlined,
+    FileExcelOutlined,
+    FileProtectOutlined,
+    SwitcherOutlined,
+    ReadOutlined,
+    ExclamationOutlined,
+    ReconciliationOutlined,
+    DollarOutlined,
+    FieldTimeOutlined,
+    InteractionOutlined,
+    ProfileOutlined,
+    FileSearchOutlined,
+    UserSwitchOutlined,
+    SolutionOutlined,
+    DeliveredProcedureOutlined,
+    AuditOutlined
+} from '@ant-design/icons'
+const { Text, Title } = Typography
 const { Option } = Select
 import { Progress } from 'antd'
+
 
 export function meta() {
     return [
@@ -155,7 +184,7 @@ export default function FinancialAssistanceMSRS() {
                         programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
                     )
                 ]
-                setAcademicYears([ ...uniqueYears.sort()])
+                setAcademicYears([...uniqueYears.sort()])
                 setLoading(false)
             })
             .catch(err => {
@@ -183,164 +212,297 @@ export default function FinancialAssistanceMSRS() {
     })
 
     return (
-        <div className="min-h-screen">
-            <main>
 
-                <Select
-                    value={academicYearFilter}
-                    allowClear
-                    size="middle"
-                    style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-                    onChange={handleAcademicYearChange}
-                >
-                    {academicYears.map(year => (
-                        <Option key={year} value={year}>{year}</Option>
-                    ))}
-                </Select>
+                
+                <div style={{ background: '#fafbfc', minHeight: '100vh' }}>
+                      {/* Header */}
+                      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                
+                          <div>
+                            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>MSRS</Title>
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>Medical Scholarship and Return Service</Text>
+                
+                          </div>
+                
+                          {/* dropdown*/}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                            <Space size={12}>
+                              <FilterOutlined style={{ color: '#6b7280' }} />
+                              <Select
+                                value={academicYearFilter}
+                                allowClear
+                                size="middle"
+                                style={{ width: 160 }}
+                                onChange={handleAcademicYearChange}
+                              >
+                                {academicYears.map(year => (
+                                  <Option key={year} value={year}>{year}</Option>
+                                ))}
+                              </Select>
+                            </Space>
+                          </div>
+                        </div>
+                      </div>
+                
+                      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
+                        <StatsCards financialAssistances={filteredMSRS} />
+                      </div>
 
-                <StatsCards financialAssistances={filteredMSRS} />
+                    <div style={{ background: '#fff' }}>
+                        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                These Implementing Rules and Regulations (IRR) of Republic Act No. 11509, or the "Doktor Para sa Bayan" Act, 
+                                establish a medical scholarship and return service program for deserving students pursuing medicine.
+                            </Text>
+                        </div>
+                        </div>
+                    </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Medical Scholarship and Return Service (MSRS)</h1>
+                    <div style={{ background: '#fff' }}>
+                        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                            <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                                <div>
+                                    <Space size={12}>
+                                        <EyeOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                        <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                        Overview
+                                        </Title>
+                                    </Space>
+                                    <br />
+                                    <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                        Scholars shall serve in government health offices or hospitals in their hometowns or underserved municipalities as 
+                                        part of their integration into the public health system. The program aims to ensure the availability of doctors 
+                                        providing basic, promotive quality, preventive, and curative health services in all municipalities, 
+                                        especially in remote, disadvantaged, and conflict-affected areas.
+                                    </Text>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
 
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        These Implementing Rules and Regulations (IRR) of Republic Act No. 11509, or the "Doktor Para sa Bayan" Act, establish a medical scholarship and return service program for deserving students pursuing medicine.
-                    </p>
-                </div>
+                    <div style={{ background: '#fff' }}>
+                        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                            <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                                <div>
+                                <Space size={12}>
+                                    <ProjectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                    <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Scope and Coverage
+                                    </Title>
+                                </Space>
+                                <br />
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    The Medical Scholarship and Return Service (MSRS) Program under
+                                    Republic Act No. 11509 shall be available to deserving Filipino students
+                                    pursuing a Doctor of Medicine degree. The program covers the entire duration of medical education, 
+                                    including the Summer Immersion Program (SIP) or Community Orientation Summer Workshop (COSW), one (1) 
+                                    year of post-graduate internship, the Physician Licensure Examination, and the completion of the return 
+                                    service agreement. Priority shall be given to applicants
+                                    from areas without government physicians to ensure that
+                                    every municipality has a doctor.
+                                </Text>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Overview</h1>
+                                    <br />
+                                    <br />
 
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Scholars shall serve in government health offices or hospitals in their hometowns or underserved municipalities as part of their integration into the public health system. The program aims to ensure the availability of doctors providing basic, promotive quality,
-                        preventive, and curative health services in all municipalities, especially in remote, disadvantaged, and conflict-affected areas.
-                    </p>
-                </div>
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <strong>Student financial assistance under the MSRS Program includes:</strong>
+                                </Text>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Scope and Coverage</h1>
+                                <br />
 
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The Medical Scholarship and Return Service (MSRS) Program under
-                        Republic Act No. 11509 shall be available to deserving Filipino students
-                        pursuing a Doctor of Medicine degree.
-                        The program covers the entire duration of medical education, including the Summer Immersion Program (SIP) or Community Orientation Summer Workshop (COSW), one (1) year of post-graduate internship, the Physician Licensure Examination, and the completion of the return service agreement. Priority shall be given to applicants
-                        from areas without government physicians to ensure that
-                        every municipality has a doctor.
-                    </p>
+                                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <ol className="list-[lower-alpha]">
+                                        <li>Free tuition and other school fees</li>
+                                        <li>Allowances for books, supplies, uniforms, accommodation, and transportation</li>
+                                        <li>Internship and board review fees</li> <li>Licensure fees</li>
+                                        <li>Annual medical, PHIC, and accident insurance</li>
+                                        <li>Other education-related living allowances</li>
+                                    </ol>
+                                </Typography>
 
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Student financial assistance under the MSRS Program includes:
-                    </p>
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    The CHED, in coordination with the DOH, shall set mechanisms to determine financial assistance 
+                                    amounts per scholar based on budget and program costs. For private higher education institutions (PHEIs), 
+                                    CHED shall establish standard fees, and PHEIs shall provide counterpart funding for scholars’ 
+                                    tuition and other fees.
+                                </Text>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>  
+
+                    <div style={{ background: '#fff' }}>
+                        <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                            <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                                <div>
+                                <Space size={12}>
+                                    <GiftOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                    <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Coverage and Benefit Package
+                                    </Title>
+                                </Space>
+                                <br />
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    The Medical Scholarship and Return Service (MSRS) Program under
+                                    Republic Act No. 11509 shall be available to deserving Filipino students
+                                    pursuing a Doctor of Medicine degree. The program covers the entire duration of medical education, 
+                                    including the Summer Immersion Program (SIP) or Community Orientation Summer Workshop (COSW), one (1) 
+                                    year of post-graduate internship, the Physician Licensure Examination, and the completion of the return 
+                                    service agreement. Priority shall be given to applicants
+                                    from areas without government physicians to ensure that
+                                    every municipality has a doctor.
+                                </Text>
+
+                                    <br />
+                                    <br />
+
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    The MSRS Program under the Act shall be open to deserving Filipino students pursuing a Doctor of Medicine degree. 
+                                    It covers the full duration of medical education, including the Summer Immersion Program (SIP) 
+                                    or Community Orientation Summer Workshop (COSW), one (1) year of post-graduate internship, the Physician Licensure Examination,
+                                    and the return service period. Priority shall be given to applicants from areas without government physicians to ensure a 
+                                    doctor in every municipality.
+                                </Text>
+
+                                <br />
+                                <br />
+
+                                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <ol className="list-decimal">
+                                        <li>Free tuition and other school fees</li>
+                                        <li>Allowance for prescribed books, supplies and equipment</li>
+                                        <li>Clothing or uniform allowance</li>
+                                        <li>Allowance for dormitory or boarding house accommodation</li>
+                                        <li>Transportation allowance</li>
+                                        <li>Internship fees including financial assistance during mandatory internship</li>
+                                        <li>Medical board review fees</li>
+                                        <li>Licensure fees</li>
+                                        <li>Annual medical insurance; PHIC enrolment and accident insurance</li>
+                                        <li>Other education-related miscellaneous subsistence or living allowances</li>
+                                    </ol>
+                                </Typography>
+                            </div>
+                        </div>
+                    </div>
+                </div>      
+
+                <div style={{ background: '#fff' }}>
+                    <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                        <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                            
+                            <div>
+                                <Space size={12}>
+                                    <ReconciliationOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                    <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Qualification Process
+                                    </Title>
+                                </Space>
+
+                                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <ol className="list-decimal">
+                                        <li>Must be a Filipino citizen residing in the Philippines</li>
+                                        <li>
+                                            Must be a graduating student or a graduate of an appropriate undergraduate program identified as a prerequisite for a Doctor of Medicine degree, from any HEI duly recognized by the CHED, including a direct entrant to the Integrated Liberal Arts and Medicine (INTARMED) Program who satisfactorily completes the first two (2) years of the Program. Provided, that deserving incoming second year medical students and those in the higher year levels of the Doctor of Medicine Program shall also be covered under this Act, as long as they have complied with the academic requirements and retention policies of the school in the past terms preceding their scholarship application
+                                        </li>
+                                        <li>
+                                            Must have passed the entrance examinations and complied with other related requirements for admission into a Doctor of Medicine degree in the SUC or PHEI where the scholar intends to enroll as well as the other requirements of the CHED and the DOH
+                                        </li>
+                                        <li>
+                                            Must obtain a National Medical Admission Test (NMAT) score mandated by the CHED and required by the SUC or PHEI where the student intends to enroll in
+                                        </li>
+                                    </ol>
+                                </Typography>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+
+                <div style={{ background: '#fff' }}>
+                    <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                        <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                            
+                            <div>
+                                <Space size={12}>
+                                    <ExceptionOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                    <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Documentary Requirements
+                                    </Title>
+                                </Space>
+
+                                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                <ol className="list-decimal">
+                                        <li>
+                                            Proof of Filipino citizenship such as any government-issued document showing proof of Filipino citizenship, including, but not limited to certified true copy of birth certificate, PHILSYS ID
+                                        </li>
+                                        <li>Certificate of Good Moral Character</li>
+                                        <li>
+                                            Additional requirements for priority groups (as applicable):
+                                            <ol className="list-[lower-alpha]">
+                                                <li>Certificate of Residency from Barangay</li>
+                                                <li>
+                                                    Certification as members of indigenous people or minority group / National Commission on Indigenous People (NCIP) certificate
+                                                </li>
+                                                <li>
+                                                    Tax Exemption / Tax Declaration (from BIR) or social case study duly signed by a registered social worker where the applicant resides
+                                                </li>
+                                            </ol>
+                                        </li>
+                                    </ol>
+                                </Typography>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+
+                <div style={{ background: '#fff' }}>
+                    <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                        <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                            <div>
+                                <Space size={12}>
+                                    <FileProtectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                    <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Application Process
+                                    </Title>
+                                </Space>
+                                <br />
+                                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <ol className="list-decimal">
+                                        <li>
+                                            Applicants shall apply in the SUCs and PHEIs of their choice within or near the province or region of residence. Applicants shall undergo screening and selection process as defined by the SUCs or PHEIs for admission to the Medical Program/Course
+                                        </li>
+                                        <li>
+                                            The SUCs and PHEIs shall endorse the list of scholarship applicants to CHED for evaluation and validation
+                                        </li>
+                                        <li>
+                                            CHED shall validate the results from the SUCs and PHEIs and priority shall be given to deserving applicants from, but not limited to, the groups in the following order of priority:
+                                            <ol type="a" className="list-[lower-alpha]">
+                                                <li>Those residing in a municipality without government physicians</li>
+                                                <li>
+                                                    Those residing in geographically isolated and disadvantaged areas (GIDA) or from the top twenty (20) percent provinces and/or municipalities as identified by the PSA, calamity-prone and conflict areas
+                                                </li>
+                                                <li>
+                                                    Those belonging to the ethnic group or indigenous population/communities as certified by respective local government units and the National Commission on Indigenous Peoples (NCIP)
+                                                </li>
+                                                <li>Those dependents of Community health volunteers</li>
+                                                <li>Those residing in low income class municipalities with high poverty incidence</li>
+                                                <li>Those whose combined annual family income of less than Php 450,000.00</li>
+                                                <li>
+                                                    CHED shall endorse the list of approved/accepted scholars to the concerned SUCs and PHEIs to facilitate the enrolment of the scholars
+                                                </li>
+                                            </ol>
+                                        </li>
+                                    </ol>
+                                </Typography>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
 
 
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-[lower-alpha] list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Free tuition and other school fees</li>
-                        <li>Allowances for books, supplies, uniforms, accommodation, and transportation</li>
-                        <li>Internship and board review fees</li> <li>Licensure fees</li>
-                        <li>Annual medical, PHIC, and accident insurance</li>
-                        <li>Other education-related living allowances</li>
-                    </ol>
-
-
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The CHED, in coordination with the DOH, shall set mechanisms to determine financial assistance amounts per scholar based on budget and program costs. For private higher education institutions (PHEIs), CHED shall establish standard fees, and PHEIs shall provide counterpart funding for scholars’ tuition and other fees.
-                    </p>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Coverage and Benefit Package</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The MSRS Program under the Act shall be open to deserving Filipino students
-                        pursuing a Doctor of Medicine degree. It covers the full duration of medical education, including the Summer Immersion Program (SIP) or Community Orientation Summer Workshop (COSW), one (1) year of post-graduate internship, the Physician Licensure Examination, and the return service period. Priority shall be given to applicants from areas without government physicians to ensure a doctor in every municipality.
-                    </p>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Free tuition and other school fees</li>
-                        <li>Allowance for prescribed books, supplies and equipment</li>
-                        <li>Clothing or uniform allowance</li>
-                        <li>Allowance for dormitory or boarding house accommodation</li>
-                        <li>Transportation allowance</li>
-                        <li>Internship fees including financial assistance during mandatory internship</li>
-                        <li>Medical board review fees</li>
-                        <li>Licensure fees</li>
-                        <li>Annual medical insurance; PHIC enrolment and accident insurance</li>
-                        <li>Other education-related miscellaneous subsistence or living allowances</li>
-                    </ol>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Qualification Process</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Must be a Filipino citizen residing in the Philippines</li>
-                        <li>
-                            Must be a graduating student or a graduate of an appropriate undergraduate program identified as a prerequisite for a Doctor of Medicine degree, from any HEI duly recognized by the CHED, including a direct entrant to the Integrated Liberal Arts and Medicine (INTARMED) Program who satisfactorily completes the first two (2) years of the Program. Provided, that deserving incoming second year medical students and those in the higher year levels of the Doctor of Medicine Program shall also be covered under this Act, as long as they have complied with the academic requirements and retention policies of the school in the past terms preceding their scholarship application
-                        </li>
-                        <li>
-                            Must have passed the entrance examinations and complied with other related requirements for admission into a Doctor of Medicine degree in the SUC or PHEI where the scholar intends to enroll as well as the other requirements of the CHED and the DOH
-                        </li>
-                        <li>
-                            Must obtain a National Medical Admission Test (NMAT) score mandated by the CHED and required by the SUC or PHEI where the student intends to enroll in
-                        </li>
-                    </ol>
-
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirements</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>
-                            Proof of Filipino citizenship such as any government-issued document showing proof of Filipino citizenship, including, but not limited to certified true copy of birth certificate, PHILSYS ID
-                        </li>
-                        <li>Certificate of Good Moral Character</li>
-                        <li>
-                            Additional requirements for priority groups (as applicable):
-                            <ol className="list-inside list-[lower-alpha] pl-6 space-y-1 mt-2">
-                                <li>Certificate of Residency from Barangay</li>
-                                <li>
-                                    Certification as members of indigenous people or minority group / National Commission on Indigenous People (NCIP) certificate
-                                </li>
-                                <li>
-                                    Tax Exemption / Tax Declaration (from BIR) or social case study duly signed by a registered social worker where the applicant resides
-                                </li>
-                            </ol>
-                        </li>
-                    </ol>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Process</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>
-                            Applicants shall apply in the SUCs and PHEIs of their choice within or near the province or region of residence. Applicants shall undergo screening and selection process as defined by the SUCs or PHEIs for admission to the Medical Program/Course
-                        </li>
-                        <li>
-                            The SUCs and PHEIs shall endorse the list of scholarship applicants to CHED for evaluation and validation
-                        </li>
-                        <li>
-                            CHED shall validate the results from the SUCs and PHEIs and priority shall be given to deserving applicants from, but not limited to, the groups in the following order of priority:
-                            <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                <li>Those residing in a municipality without government physicians</li>
-                                <li>
-                                    Those residing in geographically isolated and disadvantaged areas (GIDA) or from the top twenty (20) percent provinces and/or municipalities as identified by the PSA, calamity-prone and conflict areas
-                                </li>
-                                <li>
-                                    Those belonging to the ethnic group or indigenous population/communities as certified by respective local government units and the National Commission on Indigenous Peoples (NCIP)
-                                </li>
-                                <li>Those dependents of Community health volunteers</li>
-                                <li>Those residing in low income class municipalities with high poverty incidence</li>
-                                <li>Those whose combined annual family income of less than Php 450,000.00</li>
-                                <li>
-                                    CHED shall endorse the list of approved/accepted scholars to the concerned SUCs and PHEIs to facilitate the enrolment of the scholars
-                                </li>
-                            </ol>
-                        </li>
-                    </ol>
-
-                </div>
 
                 <div className="container mx-auto p-4 sm:p-6 lg:p-8">
                     <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Conditions for the Grant of Scholarship</h1>
@@ -513,19 +675,7 @@ export default function FinancialAssistanceMSRS() {
                     </p>
                 </div>
 
-            </main>
-            <footer className="bg-gray-800 text-white text-center py-4">
-                <div>
-                    <p className="text-sm">
-                        CMO-NO.-11-S.-2024
-                    </p>
-                    <p className="text-sm">
 
-                        © {new Date().getFullYear()} CMO. All rights reserved.
-                    </p>
-                </div>
-
-            </footer>
         </div>
     );
 }

@@ -177,7 +177,7 @@ export default function FinancialAssistanceSida_Sgp() {
     const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
 
     const filteredSida_Sgp = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-        if (p?.scholarship_program_name?.toUpperCase() !== 'SIDA-SGP') return false
+        if (p?.scholarship_program_name?.toUpperCase() !== 'SIDASGP') return false
         if (academicYearFilter && academicYearFilter !== 'All') {
             return (p.academic_year || p.Academic_year) === academicYearFilter
         }

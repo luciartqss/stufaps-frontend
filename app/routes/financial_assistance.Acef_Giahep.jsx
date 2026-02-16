@@ -174,7 +174,7 @@ export default function FinancialAssistanceAcef_giahep() {
     }
 
     const filteredAcef_Giahep = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-        if (p?.scholarship_program_name?.toUpperCase() !== 'ACEF-GIAHEP') return false
+        if (p?.scholarship_program_name?.toUpperCase() !== 'ACEFGIAHEP') return false
         if (academicYearFilter && academicYearFilter !== 'All') {
             return (p.academic_year || p.Academic_year) === academicYearFilter
         }
