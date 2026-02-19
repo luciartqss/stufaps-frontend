@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, Select, InputNumber, Button, message, Alert } from 'antd'
 import { WarningOutlined } from '@ant-design/icons'
 import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { API_BASE } from '../lib/config'
 
 export default function UpdateSlotModal({ open, onClose, onUpdated }) {
   const [records, setRecords] = useState([])

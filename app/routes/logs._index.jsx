@@ -4,7 +4,7 @@ import { UndoOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography
 
-const API_URL = 'http://localhost:8000/api'
+import { API_BASE as API_URL } from '../lib/config'
 
 export function meta() {
   return [

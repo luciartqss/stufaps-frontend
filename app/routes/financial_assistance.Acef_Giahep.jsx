@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE } from '../lib/config'
 
 import {
     Card,
@@ -175,7 +176,7 @@ export default function FinancialAssistanceAcef_giahep() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/scholarship_program_records')
+        fetch(`${API_BASE}/scholarship_program_records`)
             .then(res => {
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`)

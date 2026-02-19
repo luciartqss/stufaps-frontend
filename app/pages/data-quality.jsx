@@ -8,10 +8,9 @@ import {
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { API_BASE as API_URL } from '../lib/config'
 
 const { Title, Text } = Typography
-
-const API_URL = 'http://localhost:8000/api'
 
 // Human-readable field labels — aligned with backend DashboardController $requiredFields
 const fieldLabels = {

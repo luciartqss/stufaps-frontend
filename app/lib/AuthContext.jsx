@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { API_BASE } from './config'
 
 const AuthContext = createContext(null)
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
