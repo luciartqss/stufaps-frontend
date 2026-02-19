@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -17,9 +17,8 @@ const { Text } = Typography
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation()
-  const navigate = useNavigate()
   const [openKeys, setOpenKeys] = useState(() => {
-    return location.pathname.startsWith('/data-quality') ? ['/data-quality'] : []
+    return location.pathname.startsWith('/data-quality') ? ['sub-data-quality'] : []
   })
 
   const menuItems = [
@@ -34,16 +33,12 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       label: <NavLink to="/students">Students</NavLink>,
     },
     {
-      key: '/data-quality',
+      key: 'sub-data-quality',
       icon: <WarningOutlined />,
       label: 'Data Quality',
-      onTitleClick: () => {
-        navigate('/data-quality')
-        setOpenKeys(prev => prev.includes('/data-quality') ? prev : ['/data-quality'])
-      },
       children: [
         {
-          key: '/data-quality',
+          key: '/data-quality/stufaps',
           label: <NavLink to="/data-quality">StuFAPs</NavLink>,
         },
         {
@@ -77,10 +72,10 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     const path = location.pathname
     if (path === '/') return '/'
     // Exact match for /data-quality (StuFAPs)
-    if (path === '/data-quality') return '/data-quality'
+    if (path === '/data-quality') return '/data-quality/stufaps'
     for (const item of menuItems) {
       if (item.children) {
-        const child = item.children.find(c => c.key !== '/data-quality' && path.startsWith(c.key))
+        const child = item.children.find(c => path.startsWith(c.key))
         if (child) return child.key
       }
       if (!item.children && item.key !== '/' && path.startsWith(item.key)) return item.key
@@ -94,7 +89,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
   const handleMenuClick = ({ key }) => {
     // Collapse submenu when clicking a non-data-quality item
-    if (!key.startsWith('/data-quality')) {
+    if (!key.startsWith('/data-quality') && key !== 'sub-data-quality') {
       setOpenKeys([])
     }
   }

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Select, Input, InputNumber, Button, message } from 'antd'
 import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { API_BASE } from '../lib/config'
 
 export default function EditSlotsModal({ open, onClose, onUpdated }) {
   const [records, setRecords] = useState([])

@@ -15,9 +15,9 @@ import {
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const { Title, Text } = Typography
+import { API_BASE } from '../lib/config'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const { Title, Text } = Typography
 
 // ─── Human-readable field labels ───
 const FIELD_LABELS = {

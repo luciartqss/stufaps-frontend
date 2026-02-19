@@ -3,8 +3,7 @@ import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover,
 import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { API_BASE } from '../lib/config'
 
 const { Title } = Typography
 const { Search } = Input

@@ -8,10 +8,10 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 
+import { API_BASE } from '../lib/config'
+
 const { Title, Text } = Typography
 const { Option } = Select
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 // Fields tracked by data quality — missing ones trigger a warning on submit (not a block)
 const DATA_QUALITY_FIELDS = {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Card, Typography } from 'antd'
 import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+import { API_BASE } from '../lib/config'
 const { Text } = Typography
 import { Progress } from 'antd'
 
@@ -121,7 +122,7 @@ export default function FinancialAssistanceSida_Sgp() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/scholarship_program_records')
+    fetch(`${API_BASE}/scholarship_program_records`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`)

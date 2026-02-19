@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Form, Space, Badge, Tooltip } from 'antd'
 import { DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, FilterOutlined, PrinterOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
 

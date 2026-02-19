@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
 import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
 
 // API utility functions
 const api = {
   async request(url, options = {}) {
-    const response = await fetch(`http://localhost:8000/api${url}`, {
+    const response = await fetch(`${API_BASE}${url}`, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',

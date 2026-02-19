@@ -5,9 +5,9 @@ import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 
-const { Title, Text } = Typography
+import { API_BASE } from '../lib/config'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const { Title, Text } = Typography
 
 // Semester detail fields (shared for First/Second)
 const SEM_FIELDS = [
