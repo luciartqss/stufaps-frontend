@@ -1160,25 +1160,78 @@ export default function ImportBulk() {
       return
     }
 
-    const backendData = convertToBackendFormat(data)
-    const studentChunks = chunkArray(backendData, STUDENT_CHUNK_SIZE)
-    const totalStudents = backendData.length
-    const totalStudentChunks = studentChunks.length
+    // Block if batch duplicates exist
+    if (batchDupCount > 0) {
+      message.error('Please resolve batch duplicates before submitting (rows duplicated within your file)')
+      return
+    }
 
-    // Total work units = students + disbursements (estimated) + 1 for slot update
-    const totalWork = totalStudents // will be updated once we know disbursement count
-    let uploaded = 0
+    const backendData = convertToBackendFormat(data)
+
+    // Build disbursements with _import_index for resolve tracking
+    // Use dummy seq array since we don't have real ones yet — backend will handle this
+    const dummySeqs = backendData.map((_, i) => `__pending_${i}__`)
+    const allDisbursements = convertDisbursementsToBackend(data, academicYears, dummySeqs)
+    // Tag each disbursement with its import index
+    const taggedDisb = allDisbursements.map(d => {
+      const idx = dummySeqs.indexOf(d.student_seq)
+      return { ...d, _import_index: idx >= 0 ? idx : null, student_seq: undefined }
+    })
 
     setLoading(true)
-    setUploadProgress({ current: 0, total: totalWork, done: false, phase: 'Uploading students...' })
+    setUploadProgress({ current: 0, total: 1, done: false, phase: 'Checking for duplicates...' })
 
     try {
+      // --- Phase 0: Resolve check ---
+      const resolveRes = await fetch(`${API_BASE}/students/resolve-import`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students: backendData, disbursements: taggedDisb }),
+      })
+
+      if (!resolveRes.ok) {
+        const errText = await resolveRes.text().catch(() => '')
+        throw new Error(`Resolve check failed: ${errText || resolveRes.status}`)
+      }
+
+      const resolveData = await resolveRes.json()
+      const { summary } = resolveData
+
+      // If any duplicates found, go to resolution page
+      if (summary.duplicate_count > 0) {
+        setUploadProgress(null)
+        setLoading(false)
+
+        // Build clean disbursements (for newly created students)
+        const cleanDisbursements = taggedDisb.filter(d => {
+          const cleanIndices = new Set(resolveData.clean.map(c => c.import_index))
+          return cleanIndices.has(d._import_index)
+        })
+
+        navigate('/students/bulk/resolve', {
+          state: {
+            resolveData,
+            cleanDisbursements,
+            rawData: data,
+            academicYears,
+          },
+        })
+        return
+      }
+
+      // --- All clean: proceed with direct import ---
+      setUploadProgress({ current: 0, total: backendData.length, done: false, phase: 'Uploading students...' })
+
+      const studentChunks = chunkArray(backendData, STUDENT_CHUNK_SIZE)
+      const totalStudents = backendData.length
+      const totalStudentChunks = studentChunks.length
+      let uploaded = 0
       // --- Phase 1: Upload students in chunks ---
       const allCreatedStudents = []
 
       for (let i = 0; i < totalStudentChunks; i++) {
         const chunk = studentChunks[i]
-        setUploadProgress({ current: uploaded, total: totalWork, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
+        setUploadProgress({ current: uploaded, total: totalStudents, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
 
         const response = await fetch(`${API_BASE}/students/import`, {
           method: 'POST',
@@ -1195,7 +1248,7 @@ export default function ImportBulk() {
         const created = respJson?.data || []
         allCreatedStudents.push(...created)
         uploaded += chunk.length
-        setUploadProgress({ current: uploaded, total: totalWork, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
+        setUploadProgress({ current: uploaded, total: totalStudents, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
       }
 
       // --- Phase 2: Upload disbursements in chunks ---
@@ -1424,11 +1477,13 @@ export default function ImportBulk() {
               <Text type="secondary">{data.length} records</Text>
               <Button
                 type="primary"
-                icon={<SendOutlined />}
+                icon={dbDupCount > 0 ? <WarningOutlined /> : <SendOutlined />}
                 onClick={handleSubmitData}
                 loading={loading}
+                danger={dbDupCount > 0}
+                style={dbDupCount > 0 ? { background: '#fa8c16', borderColor: '#fa8c16' } : {}}
               >
-                Submit All
+                {dbDupCount > 0 ? 'Resolve Conflicts' : 'Submit All'}
               </Button>
               <Button
                 danger
