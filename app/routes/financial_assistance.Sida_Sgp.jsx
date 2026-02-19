@@ -1,9 +1,48 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select } from 'antd'
-import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
+import {
+    ContactsOutlined,
+    RightOutlined,    //
+    TeamOutlined,
+    FilePptOutlined,
+    ContainerOutlined,
+    FileAddOutlined,
+    FileDoneOutlined,
+    MedicineBoxOutlined,
+    IdcardOutlined,
+    FileSyncOutlined, //not used yet
+    WarningOutlined,
+    FilterOutlined,
+    SnippetsOutlined,
+    UserOutlined,
+    EyeOutlined,
+    GiftOutlined,
+    ProjectOutlined,
+    ExceptionOutlined,
+    RedEnvelopeOutlined,
+    FormOutlined,
+    FundOutlined,
+    FundProjectionScreenOutlined,
+    FileExcelOutlined,
+    FileProtectOutlined,
+    SwitcherOutlined,
+    ReadOutlined,
+    ExclamationOutlined,
+    ReconciliationOutlined,
+    DollarOutlined,
+    CreditCardOutlined,
+    FieldTimeOutlined,
+    InteractionOutlined,
+    ProfileOutlined,
+    FileSearchOutlined,
+    UserSwitchOutlined,
+    SolutionOutlined,
+    DeliveredProcedureOutlined,
+    AuditOutlined
+} from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
-const { Text } = Typography
+const { Text, Title } = Typography
 const { Option } = Select
 import { Progress } from 'antd'
 
@@ -159,7 +198,7 @@ export default function FinancialAssistanceSida_Sgp() {
                     )
                 ]
 
-                setAcademicYears([ ...uniqueYears.sort()])
+                setAcademicYears([...uniqueYears.sort()])
                 setLoading(false)
             })
             .catch(err => {
@@ -435,416 +474,546 @@ export default function FinancialAssistanceSida_Sgp() {
 
     return (
 
-        <div className="min-h-screen bg-gray-100">
+        <div style={{ background: '#fafbfc', minHeight: '100vh' }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
 
-            <main>
+                    <div>
+                        <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>SIDA-SGP</Title>
+                        <Text style={{ color: '#6b7280', fontSize: 16 }}>Scholarship Grant Program for Children and Dependents of Sugarcane Industry Workers and Small Sugarcane Farmers</Text>
 
-                <Select
-                    value={academicYearFilter}
-                    allowClear
-                    size="middle"
-                    style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-                    onChange={handleAcademicYearChange}
-                >
-                    {academicYears.map(year => (
-                        <Option key={year} value={year}>{year}</Option>
-                    ))}
-                </Select>
+                    </div>
 
+                    {/* dropdown*/}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <Space size={12}>
+                            <FilterOutlined style={{ color: '#6b7280' }} />
+                            <Select
+                                value={academicYearFilter}
+                                allowClear
+                                size="middle"
+                                style={{ width: 160 }}
+                                onChange={handleAcademicYearChange}
+                            >
+                                {academicYears.map(year => (
+                                    <Option key={year} value={year}>{year}</Option>
+                                ))}
+                            </Select>
+                        </Space>
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
                 <StatsCards financialAssistances={filteredSida_Sgp} />
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-                        SCHOLARSHIP GRANT PROGRAM FOR CHILDREN AND DEPENDENTS
-                        OF SUGARCANE INDUSTRY WORKERSAND SMALL SUGARCANE FARMERS
-                        (SIDA-SGP)
-                    </h1>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                            To provide scholarship grant to children and dependents of sugarcane industry workers
+                            and small sugarcane farmers duly certified by the Sugar Regulatory Administration (SRA).
+                        </Text>
+                    </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">SIDA-SGP</h3>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        To provide scholarship grant to children and dependents of sugarcane industry workers
-                        and small sugarcane farmers duly certified by the Sugar Regulatory Administration (SRA).
-                    </p>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <EyeOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Overview
+                                </Title>
+                            </Space>
+                            <br />
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                Administered in partnership with the Sugar Regulatory Administration (SRA),
+                                the program is designed to assist children and dependents of sugarcane industry workers and
+                                small sugarcane farmers in accessing quality higher education.
+
+                            </Text>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Overview</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Administered in partnership with the Sugar Regulatory Administration (SRA), the program is designed to assist children and dependents of sugarcane industry workers and small sugarcane farmers in accessing quality higher education.
-                    </p>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <ProjectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Scope and Coverage
+                                </Title>
+                            </Space>
+                            <br />
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                The scholarship grant program is open to qualified and deserving children and
+                                dependents of sugarcane industry workers and small sugarcane farmers. This
+                                program shall cover both undergraduate and graduate students who will enroll or are
+                                currently enrolled in agriculture, agricultural engineering and mechanics, and
+                                chemical engineering/sugar technology as identified in Sec. 6.b of R.A. 10659 in any
+                                identified State Universities and Colleges (SUCs). Slot allocation per concerned region will be determined and recommended by Sugar
+                                Regulatory Administration (SRA).
+                            </Text>
+
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Scope and Coverage</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The scholarship grant program is open to qualified and deserving children and
-                        dependents of sugarcane industry workers and small sugarcane farmers. This
-                        program shall cover both undergraduate and graduate students who will enroll or are
-                        currently enrolled in agriculture, agricultural engineering and mechanics, and
-                        chemical engineering/sugar technology as identified in Sec. 6.b of R.A. 10659 in any
-                        identified State Universities and Colleges (SUCs). Slot allocation per concerned region will be determined and recommended by Sugar
-                        Regulatory Administration (SRA).
-                    </p>
-                </div>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <FileProtectOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Application Process
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Process</h1>
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <strong>Undergraduate Program</strong>
+                                </Text>
+                                <br />
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Undergraduate Program
-                        </h1>
-
-                        <ol className="mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>
-                                For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
-                            </li>
-                            <li>
-                                For Lifelong Learners eligible for college – High School Report Card
-                            </li>
-                            <li>
-                                For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
-                            </li>
-                            <li>
-                                For other Applicants:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
-                                    <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                                <ol className="list-decimal">
+                                    <li>
+                                        For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
+                                    </li>
+                                    <li>
+                                        For Lifelong Learners eligible for college – High School Report Card
+                                    </li>
+                                    <li>
+                                        For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
+                                    </li>
+                                    <li>
+                                        <strong>For other Applicants:</strong>
+                                        <br />
+                                        <br />
+                                        <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+                                            <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
+                                            <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                                        </ol>
+                                    </li>
+                                    <li>
+                                        Certificate of Good Moral Character from the last school attended
+                                    </li>
+                                    <li>
+                                        Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
+                                    </li>
+                                    <li>
+                                        Notice of admission from the SUC
+                                    </li>
                                 </ol>
-                            </li>
-                            <li>
-                                Certificate of Good Moral Character from the last school attended
-                            </li>
-                            <li>
-                                Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
-                            </li>
-                            <li>
-                                Notice of admission from the SUC
-                            </li>
-                        </ol>
+                            </Typography>
+                        </div>
                     </div>
                 </div>
+            </div>
 
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <ExceptionOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Documentary Requirements
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Program</h1>
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <strong>Undergraduate Program</strong>
+                                </Text>
+                                <br />
 
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Must be a Filipino Citizen</li>
-                        <li>
-                            With related undergraduate degree program and must pass the entry level requirements of identified SUC for master and doctoral degree programs
-                        </li>
-                        <li>
-                            Duly certified by SRA as Sugarcane Industry Workers and Small Sugarcane Farmers' children and dependents
-                        </li>
-                        <li>
-                            Applicant and/or spouse must have a combined annual gross income of not to exceed Php 500,000.00
-                        </li>
-                    </ol>
-                </div>
+                                <ol className="list-decimal">
+                                    <li>
+                                        For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
+                                    </li>
+                                    <li>
+                                        For Lifelong Learners eligible for college – High School Report Card
+                                    </li>
+                                    <li>
+                                        For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
+                                    </li>
+                                    <li>
+                                        <strong>For other Applicants:</strong>
 
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirements</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Undergraduate Program
-                        </h1>
-
-                        <ol className="mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>
-                                For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
-                            </li>
-                            <li>
-                                For Lifelong Learners eligible for college – High School Report Card
-                            </li>
-                            <li>
-                                For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
-                            </li>
-                            <li>
-                                For other Applicants:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
-                                    <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                                        <ol type="a" className="list-[lower-alpha]">
+                                            <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
+                                            <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                                        </ol>
+                                    </li>
+                                    <li>
+                                        Certificate of Good Moral Character from the last school attended
+                                    </li>
+                                    <li>
+                                        Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
+                                    </li>
+                                    <li>
+                                        Notice of admission from the SUC
+                                    </li>
+                                    <li>
+                                        <strong>Proof of Income – any one (1) of the following:</strong>
+                                        <ol type="a" className="list-[lower-alpha]">
+                                            <li>Latest Income Tax Return (ITR) of parents/guardians if employed</li>
+                                            <li>Certificate of Tax Exemption from the Bureau of Internal Revenue (BIR)</li>
+                                            <li>Certificate of No Income from BIR</li>
+                                            <li>Certificate of Indigence from their barangay</li>
+                                            <li>Certificate/Case Study from Department of Social Welfare and Development (DSWD)</li>
+                                            <li>For Children of OFW and Seafarers, a latest copy of contract or proof of income may be considered</li>
+                                        </ol>
+                                    </li>
                                 </ol>
-                            </li>
-                            <li>
-                                Certificate of Good Moral Character from the last school attended
-                            </li>
-                            <li>
-                                Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
-                            </li>
-                            <li>
-                                Notice of admission from the SUC
-                            </li>
-                            <li>
-                                Proof of Income – any one (1) of the following:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>Latest Income Tax Return (ITR) of parents/guardians if employed</li>
-                                    <li>Certificate of Tax Exemption from the Bureau of Internal Revenue (BIR)</li>
-                                    <li>Certificate of No Income from BIR</li>
-                                    <li>Certificate of Indigence from their barangay</li>
-                                    <li>Certificate/Case Study from Department of Social Welfare and Development (DSWD)</li>
-                                    <li>For Children of OFW and Seafarers, a latest copy of contract or proof of income may be considered</li>
+                            </Typography>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <FormOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Graduate Program
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+
+                                <ol className="list-decimal">
+                                    <li>
+                                        Diploma and Transcript of Records (TOR) of baccalaureate/master's thesis/dissertation proposal approved and endorsed by the Technical Working Group (TWG) for grant
+                                    </li>
+                                    <li>
+                                        Certificate of Good Moral Character from the last school attended
+                                    </li>
+                                    <li>
+                                        Certification from SRA as children and dependents of Sugarcane Industry Workers and Small Sugarcane Farmers
+                                    </li>
+                                    <li>
+                                        Notice of admission from the SUC
+                                    </li>
+                                    <li>
+                                        <strong>Proof of Income – any one (1) of the following:</strong>
+                                        <ol type="a" className="list-[lower-alpha] ">
+                                            <li>Latest ITR</li>
+                                            <li>Certificate of Tax Exemption from the BIR</li>
+                                            <li>Certificate of No Income from BIR</li>
+                                            <li>Certificate of Indigence from their barangay</li>
+                                            <li>Certificate/Case Study from DSWD</li>
+                                        </ol>
+                                    </li>
                                 </ol>
-                            </li>
-                        </ol>
+                            </Typography>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <RedEnvelopeOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Modes of Payment
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+
+                                <Text style={{ color: '#6b7280', fontSize: 25 }}>
+                                    <strong>Mode 1</strong>
+                                </Text>
+                                <br />
+
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <strong>CHEDROs release financial benefits directly to beneficiaries through checks or authorized banks;</strong>
+                                </Text>
+                                <br />
+
+                                <Text style={{ color: '#6b7280', fontSize: 25 }}>
+                                    <strong>Mode 2</strong>
+                                </Text>
+                                <br />
+
+                                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                    <strong>CHEDROs transfer financial benefits to beneficiaries through SUCs.</strong>
+                                </Text>
 
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Program</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>
-                            Diploma and Transcript of Records (TOR) of baccalaureate/master's thesis/dissertation proposal approved and endorsed by the Technical Working Group (TWG) for grant
-                        </li>
-                        <li>
-                            Certificate of Good Moral Character from the last school attended
-                        </li>
-                        <li>
-                            Certification from SRA as children and dependents of Sugarcane Industry Workers and Small Sugarcane Farmers
-                        </li>
-                        <li>
-                            Notice of admission from the SUC
-                        </li>
-                        <li>
-                            Proof of Income – any one (1) of the following:
-                            <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                <li>Latest ITR</li>
-                                <li>Certificate of Tax Exemption from the BIR</li>
-                                <li>Certificate of No Income from BIR</li>
-                                <li>Certificate of Indigence from their barangay</li>
-                                <li>Certificate/Case Study from DSWD</li>
-                            </ol>
-                        </li>
-                    </ol>
-
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Modes of Payment</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 1
-                        </h1>
-
-                        <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                            CHEDROs release financial benefits directly to
-                            beneficiaries through checks or authorized banks; and
-                        </p>
-
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 2
-                        </h1>
-
-                        <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                            CHEDROs transfer financial benefits to beneficiaries through SUCs.
-                        </p>
-
+                            </Typography>
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <ContainerOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Modes of Payment
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+
+                                <Text style={{ color: '#6b7280', fontSize: 25 }}>
+                                    <strong>Mode 1</strong>
+                                </Text>
+                                <br />
+
+                                <ol className="list-decimal">
+                                    <li>Copy of Notice of Award (NOA) – Annex A</li>
+                                    <li>Copy of Certificate of Enrollment (COE) or Certificate of Registration (COR)</li>
+                                    <li>Certified True Copy of Grades of the previous term issued by the school</li>
+                                    <li>Copy of valid school ID</li>
+                                    <li>Copy of ATM card as applicable</li>
+                                </ol>
+
+                                <Text style={{ color: '#6b7280', fontSize: 25 }}>
+                                    <strong>Mode 2</strong>
+                                </Text>
+                                <br />
+
+                                <ol className="list-decimal">
+                                    <li>Billing Statement from SUC</li>
+                                    <li>Memorandum of Agreement between CHEDRO and SUC</li>
+                                </ol>
 
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Regular Allowance</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 1
-                        </h1>
-
-                        <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>Copy of Notice of Award (NOA) – Annex A</li>
-                            <li>Copy of Certificate of Enrollment (COE) or Certificate of Registration (COR)</li>
-                            <li>Certified True Copy of Grades of the previous term issued by the school</li>
-                            <li>Copy of valid school ID</li>
-                            <li>Copy of ATM card as applicable</li>
-                        </ol>
-
-
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 2
-                        </h1>
-
-                        <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>Billing Statement from SUC</li>
-                            <li>Memorandum of Agreement between CHEDRO and SUC</li>
-                        </ol>
-
-
+                            </Typography>
+                        </div>
                     </div>
                 </div>
+            </div>
 
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <Space size={12}>
+                                <FileAddOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Documentary Requirement for Thesis/Dissertation Allowance
+                                </Title>
+                            </Space>
+                            <br />
+                            <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                                Hardbound copy of Thesis/Dissertation with signed approval
+                                sheet or certification from SUC of completion of the study, to be
+                                submitted to CHED Central Office through CHEDRO.
+                            </Text>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Thesis/Dissertation Allowance</h1>
-
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Hardbound copy of Thesis/Dissertation with signed approval
-                        sheet or certification from SUC of completion of the study, to be
-                        submitted to CHED Central Office through CHEDRO.
-                    </p>
-
-
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for On-the-Job Training (OJT) Allowance</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Copy of Narrative Report</li>
-                        <li>Copy of Grades to be submitted to CHED Central Office through CHEDRO</li>
-                    </ol>
-
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Attendance to Local Conference/Fora</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>
-                            Invitation to a local conference/fora or brochure providing details of the conference and/or seminar attended
-                        </li>
-                        <li>
-                            Letter of endorsement/recommendation by the Dean or Head of the institution where applicant is enrolled
-                        </li>
-                        <li>
-                            Proof of acceptance
-                        </li>
-                        <li>
-                            Certificate of appearance or participation
-                        </li>
-                    </ol>
-
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Procedure</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>
-                            Student applicant shall submit to the SRA Mill District all documentary requirements to secure SRA certification
-                        </li>
-                        <li>
-                            The SRA Mill District shall submit the completed documents, which includes SRA Board Secretary Certificate among others, to the concerned CHEDRO
-                        </li>
-                        <li>
-                            CHEDROs shall evaluate and rank student applicants
-                        </li>
-                        <li>
-                            OSDS shall validate the rank list and approve the list of qualified beneficiaries for funding purposes
-                        </li>
-                    </ol>
-
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Financial Benefits</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <TableSection
-                            title="Undergraduate Programs"
-                            programs={sucPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                        <CompressedTableSection
-                            title="Others"
-                            programs={otherPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                    </div >
-
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Programs</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <TableSection
-                            title="Graduate Programs"
-                            programs={gradPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                        <CompressedTableSection
-                            title="Others"
-                            programs={grad_otherPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
+                        </div>
                     </div>
                 </div>
+            </div>
 
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Conditions of the Scholarship Program</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Accept and sign the NOA</li>
-                        <li>Enroll only in identified priority programs in the concerned SUCs following the conditions of the NOA</li>
-                        <li>Carry a full load as prescribed in the curriculum of the study program of the concerned SUCs</li>
-                        <li>Pass all subjects enrolled for the continuance of the program</li>
-                        <li>Maintain a GWA of at least 2.5 for baccalaureate and 2.0 for graduate</li>
-                        <li>Execute and conform with the Scholarship Service Contract (SSC) (Annex B) in consideration of the scholarship grant</li>
-                        <li>Transfer only to concerned SUCs or shift to priority programs upon written approval of CHEDRO</li>
-                        <li>
-                            Complete the degree program enrolled within its prescribed duration.
-                            In case of delayed completion due to acceptable and valid reasons, one semester extension may be granted but without stipend
-                        </li>
-                        <li>
-                            Avail of only one government-funded financial assistance program.
-                            Beneficiaries may benefit from another financial assistance program from a separate government entity provided there is no duplication of financial benefits mentioned under Section V of this amendatory CMO, unless a later law indicates otherwise
-                        </li>
-                    </ol>
-
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <Space size={12}>
+                                <SolutionOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Documentary Requirement for On-the-Job Training (OJT) Allowance
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                <ol className="list-decimal">
+                                    <li>Copy of Narrative Report</li>
+                                    <li>Copy of Grades to be submitted to CHED Central Office through CHEDRO</li>
+                                </ol>
+                            </Typography>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Administrative Cost</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The Administrative Cost (AC) shall be 5% of the total budget allocated for the program
-                        and shall be distributed as follows: 2.5% for Office of the Student Development and
-                        Services (OSDS), CHED, 1.25% for the concerned CHEDROs and 1.25% for the
-                        SUCs. The utilization of AC should be in accordance with the existing government
-                        accounting and auditing rules and regulations.
-                    </p>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <IdcardOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Documentary Requirement for Attendance to Local Conference/Fora
+                                </Title>
+                            </Space>
+                            <br />
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                <ol className="list-decimal">
+                                    <li>
+                                        Invitation to a local conference/fora or brochure providing details of the conference and/or seminar attended
+                                    </li>
+                                    <li>
+                                        Letter of endorsement/recommendation by the Dean or Head of the institution where applicant is enrolled
+                                    </li>
+                                    <li>
+                                        Proof of acceptance
+                                    </li>
+                                    <li>
+                                        Certificate of appearance or participation
+                                    </li>
+                                </ol>
+                            </Typography>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">AC shall be used for related expenses such as but not limited to:</h1>
+            <div style={{ background: '#fff' }}>
+                <div style={{ paddingRight: '24px', paddingTop: '12px', paddingLeft: '24px' }}>
+                    <div style={{ paddingBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e8eaed' }}>
+                        <div>
+                            <Space size={12}>
+                                <FileDoneOutlined style={{ paddingBottom: '10px', fontSize: 24, color: '#6b7280' }} />
+                                <Title level={2} style={{ paddingBottom: '1px', color: '#1a1a1a', fontWeight: 600 }}>
+                                    Application Procedure
+                                </Title>
+                            </Space>
+                            <br />
 
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                        <li>Office supplies and materials</li>
-                        <li>Communication</li>
-                        <li>Transportation/travel</li>
-                        <li>Monitoring</li>
-                        <li>Maintenance/repair of equipment</li>
-                        <li>Meetings and conferences</li>
-                        <li>Printing</li>
-                        <li>Sourcing of job order services</li>
-                        <li>Overtime services</li>
-                        <li>Other incidental expenses</li>
-                    </ol>
-
+                            <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                                <ol className="list-decimal">
+                                    <li>
+                                        Student applicant shall submit to the SRA Mill District all documentary requirements to secure SRA certification
+                                    </li>
+                                    <li>
+                                        The SRA Mill District shall submit the completed documents, which includes SRA Board Secretary Certificate among others, to the concerned CHEDRO
+                                    </li>
+                                    <li>
+                                        CHEDROs shall evaluate and rank student applicants
+                                    </li>
+                                    <li>
+                                        OSDS shall validate the rank list and approve the list of qualified beneficiaries for funding purposes
+                                    </li>
+                                </ol>
+                            </Typography>
+                        </div>
+                    </div>
                 </div>
-            </main>
+            </div>
+
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Financial Benefits</h1>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <TableSection
+                        title="Undergraduate Programs"
+                        programs={sucPrograms}
+                        expandedId={expandedId}
+                        setExpandedId={setExpandedId}
+                    />
+
+                    <CompressedTableSection
+                        title="Others"
+                        programs={otherPrograms}
+                        expandedId={expandedId}
+                        setExpandedId={setExpandedId}
+                    />
+
+                </div >
+
+            </div>
+
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Programs</h1>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                    <TableSection
+                        title="Graduate Programs"
+                        programs={gradPrograms}
+                        expandedId={expandedId}
+                        setExpandedId={setExpandedId}
+                    />
+
+                    <CompressedTableSection
+                        title="Others"
+                        programs={grad_otherPrograms}
+                        expandedId={expandedId}
+                        setExpandedId={setExpandedId}
+                    />
+                </div>
+            </div>
+
+
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Conditions of the Scholarship Program</h1>
+
+                <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+                    <li>Accept and sign the NOA</li>
+                    <li>Enroll only in identified priority programs in the concerned SUCs following the conditions of the NOA</li>
+                    <li>Carry a full load as prescribed in the curriculum of the study program of the concerned SUCs</li>
+                    <li>Pass all subjects enrolled for the continuance of the program</li>
+                    <li>Maintain a GWA of at least 2.5 for baccalaureate and 2.0 for graduate</li>
+                    <li>Execute and conform with the Scholarship Service Contract (SSC) (Annex B) in consideration of the scholarship grant</li>
+                    <li>Transfer only to concerned SUCs or shift to priority programs upon written approval of CHEDRO</li>
+                    <li>
+                        Complete the degree program enrolled within its prescribed duration.
+                        In case of delayed completion due to acceptable and valid reasons, one semester extension may be granted but without stipend
+                    </li>
+                    <li>
+                        Avail of only one government-funded financial assistance program.
+                        Beneficiaries may benefit from another financial assistance program from a separate government entity provided there is no duplication of financial benefits mentioned under Section V of this amendatory CMO, unless a later law indicates otherwise
+                    </li>
+                </ol>
+
+            </div>
+
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Administrative Cost</h1>
+                <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
+                    The Administrative Cost (AC) shall be 5% of the total budget allocated for the program
+                    and shall be distributed as follows: 2.5% for Office of the Student Development and
+                    Services (OSDS), CHED, 1.25% for the concerned CHEDROs and 1.25% for the
+                    SUCs. The utilization of AC should be in accordance with the existing government
+                    accounting and auditing rules and regulations.
+                </p>
+            </div>
+
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">AC shall be used for related expenses such as but not limited to:</h1>
+
+                <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+                    <li>Office supplies and materials</li>
+                    <li>Communication</li>
+                    <li>Transportation/travel</li>
+                    <li>Monitoring</li>
+                    <li>Maintenance/repair of equipment</li>
+                    <li>Meetings and conferences</li>
+                    <li>Printing</li>
+                    <li>Sourcing of job order services</li>
+                    <li>Overtime services</li>
+                    <li>Other incidental expenses</li>
+                </ol>
+
+            </div>
+
             <footer className="bg-gray-800 text-white text-center py-4">
                 <div>
                     <p className="text-sm">
@@ -857,6 +1026,7 @@ export default function FinancialAssistanceSida_Sgp() {
                 </div>
 
             </footer>
+
         </div>
     )
 }
