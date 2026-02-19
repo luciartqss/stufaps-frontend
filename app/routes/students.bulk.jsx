@@ -1197,8 +1197,8 @@ export default function ImportBulk() {
       const resolveData = await resolveRes.json()
       const { summary } = resolveData
 
-      // If there are conflicts OR auto-merges, go to resolution page
-      if (summary.conflict_count > 0 || summary.auto_merge_count > 0) {
+      // If any duplicates found, go to resolution page
+      if (summary.duplicate_count > 0) {
         setUploadProgress(null)
         setLoading(false)
 
@@ -1477,11 +1477,13 @@ export default function ImportBulk() {
               <Text type="secondary">{data.length} records</Text>
               <Button
                 type="primary"
-                icon={<SendOutlined />}
+                icon={dbDupCount > 0 ? <WarningOutlined /> : <SendOutlined />}
                 onClick={handleSubmitData}
                 loading={loading}
+                danger={dbDupCount > 0}
+                style={dbDupCount > 0 ? { background: '#fa8c16', borderColor: '#fa8c16' } : {}}
               >
-                Submit All
+                {dbDupCount > 0 ? 'Resolve Conflicts' : 'Submit All'}
               </Button>
               <Button
                 danger
