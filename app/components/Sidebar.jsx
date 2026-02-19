@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router'
+import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
   DashboardOutlined,
   TeamOutlined,
@@ -8,6 +8,7 @@ import {
   FileTextOutlined,
   WarningOutlined,
 } from '@ant-design/icons'
+import { useState } from 'react'
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
 
@@ -16,6 +17,10 @@ const { Text } = Typography
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation()
+  const navigate = useNavigate()
+  const [openKeys, setOpenKeys] = useState(() => {
+    return location.pathname.startsWith('/data-quality') ? ['/data-quality'] : []
+  })
 
   const menuItems = [
     {
@@ -31,17 +36,30 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     {
       key: '/data-quality',
       icon: <WarningOutlined />,
-      label: <NavLink to="/data-quality">Data Quality</NavLink>,
+      label: 'Data Quality',
+      onTitleClick: () => {
+        navigate('/data-quality')
+        setOpenKeys(prev => prev.includes('/data-quality') ? prev : ['/data-quality'])
+      },
+      children: [
+        {
+          key: '/data-quality',
+          label: <NavLink to="/data-quality">StuFAPs</NavLink>,
+        },
+        {
+          key: '/data-quality/accounting',
+          label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
+        },
+        {
+          key: '/data-quality/cashier',
+          label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
+        },
+      ],
     },
     {
       key: '/logs',
       icon: <FileTextOutlined />,
       label: <NavLink to="/logs">Logs</NavLink>,
-    },
-    {
-      key: '/disbursements',
-      icon: <DollarOutlined />,
-      label: <NavLink to="/disbursements">Disbursements</NavLink>,
     },
     {
       key: '/financial_assistance',
@@ -58,8 +76,27 @@ export default function Sidebar({ collapsed, setCollapsed }) {
   const getSelectedKey = () => {
     const path = location.pathname
     if (path === '/') return '/'
-    const match = menuItems.find(item => item.key !== '/' && path.startsWith(item.key))
-    return match ? match.key : '/'
+    // Exact match for /data-quality (StuFAPs)
+    if (path === '/data-quality') return '/data-quality'
+    for (const item of menuItems) {
+      if (item.children) {
+        const child = item.children.find(c => c.key !== '/data-quality' && path.startsWith(c.key))
+        if (child) return child.key
+      }
+      if (!item.children && item.key !== '/' && path.startsWith(item.key)) return item.key
+    }
+    return '/'
+  }
+
+  const handleOpenChange = (keys) => {
+    setOpenKeys(keys)
+  }
+
+  const handleMenuClick = ({ key }) => {
+    // Collapse submenu when clicking a non-data-quality item
+    if (!key.startsWith('/data-quality')) {
+      setOpenKeys([])
+    }
   }
 
   return (
@@ -173,6 +210,9 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       <Menu
         mode="inline"
         selectedKeys={[getSelectedKey()]}
+        openKeys={openKeys}
+        onOpenChange={handleOpenChange}
+        onClick={handleMenuClick}
         items={menuItems}
         style={{
           backgroundColor: 'transparent',
@@ -237,6 +277,47 @@ export default function Sidebar({ collapsed, setCollapsed }) {
 
         .ant-menu-inline-collapsed > .ant-menu-item {
           padding: 0 calc(50% - 18px) !important;
+        }
+
+        .ant-menu-submenu-title {
+          margin: 4px 0 !important;
+          border-radius: 6px !important;
+          height: 44px !important;
+          line-height: 44px !important;
+          color: #595959 !important;
+          font-weight: 500 !important;
+        }
+
+        .ant-menu-submenu-title:hover {
+          background-color: #f0f5ff !important;
+          color: #0032a0 !important;
+        }
+
+        .ant-menu-submenu-title .ant-menu-item-icon {
+          color: #8c8c8c !important;
+          font-size: 18px !important;
+        }
+
+        .ant-menu-submenu-title:hover .ant-menu-item-icon {
+          color: #0032a0 !important;
+        }
+
+        .ant-menu-submenu-selected > .ant-menu-submenu-title {
+          color: #0032a0 !important;
+        }
+
+        .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon {
+          color: #0032a0 !important;
+        }
+
+        .ant-menu-sub.ant-menu-inline {
+          background: transparent !important;
+        }
+
+        .ant-menu-sub .ant-menu-item {
+          padding-left: 48px !important;
+          height: 38px !important;
+          line-height: 38px !important;
         }
       `}</style>
     </Sider>
