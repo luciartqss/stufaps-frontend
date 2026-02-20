@@ -413,11 +413,11 @@ export default function FinancialAssistanceCoScho() {
 
                           </tbody>
 
-                          <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tfoot style={{ background: '#CED4DA' }}>
                             <tr>
-                              <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                              <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱40,000.00</td>
-                              <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱80,000.00</td>
+                              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>Total</td>
+                              <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold', textAlign: 'center' }}>₱40,000.00</td>
+                              <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold', textAlign: 'center' }}>₱80,000.00</td>
                             </tr>
                           </tfoot>
 
@@ -487,10 +487,10 @@ export default function FinancialAssistanceCoScho() {
 
                           </tbody>
 
-                          <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                          <tfoot style={{ background: '#CED4DA' }}>
                             <tr>
-                              <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                              <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱115,000.00</td>
+                              <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'left' }}>Total</td>
+                              <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold', textAlign: 'center' }}>₱115,000.00</td>
                             </tr>
                           </tfoot>
 

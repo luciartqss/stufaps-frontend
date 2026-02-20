@@ -268,7 +268,7 @@ export default function FinancialAssistancescgms_sucs() {
                                 <table style={{ width: '100%' }}>
                                     <thead style={{ backgroundColor: "#3366cc", border: '1px solid #000', color: '#FFF', textAlign: 'center', fontWeight: 500 }}>
                                         <tr>
-                                            <td colSpan={2}>
+                                            <td colSpan={2} style={{fontSize: 15, padding: '8px', border: '1px solid #000' }}>
                                                 CASH GRANT TO MEDICAL STUDENTS ENROLLED IN STATE UNIVERSITIES AND COLLEGES (CGMS-SUCs)
                                             </td>
                                         </tr>
@@ -276,7 +276,7 @@ export default function FinancialAssistancescgms_sucs() {
 
                                     <tbody>
                                         <tr>
-                                            <td style={{ border: '1px solid #000', padding: '8px' }}>
+                                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>
                                                 <strong>WHAT</strong>
                                             </td>
                                             <td style={{ border: '1px solid #000', padding: '8px' }}>
@@ -295,7 +295,7 @@ export default function FinancialAssistancescgms_sucs() {
                                         </tr>
 
                                         <tr>
-                                            <td style={{ border: '1px solid #000', padding: '8px' }}>
+                                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>
                                                 <strong>WHO</strong>
                                             </td>
                                             <td style={{ border: '1px solid #000', padding: '8px' }}>
@@ -331,7 +331,7 @@ export default function FinancialAssistancescgms_sucs() {
                                         </tr>
 
                                         <tr>
-                                            <td style={{ border: '1px solid #000', padding: '8px' }}>
+                                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>
                                                 <strong>WHERE</strong>
                                             </td>
                                             <td style={{ border: '1px solid #000', padding: '8px' }}>
@@ -371,7 +371,7 @@ export default function FinancialAssistancescgms_sucs() {
                                         </tr>
 
                                         <tr>
-                                            <td style={{ border: '1px solid #000', padding: '8px' }}>
+                                            <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>
                                                 <strong>WHEN</strong>
                                             </td>
                                             <td style={{ border: '1px solid #000', padding: '8px' }}>

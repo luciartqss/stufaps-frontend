@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Space, Select, Row, Col } from 'antd'
+import { Card, Typography, Space, Select, Row, Col, Tag } from 'antd'
 import { API_BASE } from '../lib/config'
 import {
   ContactsOutlined,
@@ -18,6 +18,7 @@ import {
   ExclamationOutlined,
   ReconciliationOutlined,
   DollarOutlined,
+  WarningOutlined,
   FieldTimeOutlined,
   InteractionOutlined,
   ProfileOutlined,
@@ -26,7 +27,8 @@ import {
   EyeOutlined,
   SolutionOutlined,
   DeliveredProcedureOutlined,
-  AuditOutlined
+  AuditOutlined,
+  RightOutlined
 } from '@ant-design/icons'
 const { Text, Title } = Typography
 const { Option } = Select
@@ -40,6 +42,13 @@ export function meta() {
 }
 
 function StatsCards({ financialAssistances = [] }) {
+  const formatProgramName = name => {
+    if (!name) return '';
+    return name
+      .replace(/ESTAT/g, ' ESTAT')
+      .trim();
+  };
+
   let totals;
 
   if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
@@ -59,94 +68,74 @@ function StatsCards({ financialAssistances = [] }) {
     };
   }
 
-  const statsConfig = [
-    {
-      title: 'Total Slots',
-      value: totals.totalSlots,
-      icon: <ContactsOutlined />,
-      color: '#1890ff',
-      bgColor: '#e6f7ff',
-    },
-    {
-      title: 'Filled Slots',
-      value: totals.totalFilled,
-      icon: <TeamOutlined />,
-      color: '#52c41a',
-      bgColor: '#f6ffed',
-      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-    {
-      title: 'Unfilled Slots',
-      value: totals.totalUnfilled,
-      icon: <UserOutlined />,
-      color: '#faad14',
-      bgColor: '#fffbe6',
-      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-  ]
+  // Calculate fill percentage and exceeded status
+  const fillPct = Math.round((totals.totalFilled / (totals.totalSlots || 1)) * 100);
+  const exceeded = totals.totalFilled > totals.totalSlots;
+
+  // Check if we have data to display
+  if (!financialAssistances || financialAssistances.length === 0) {
+    return null;
+  }
 
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-      {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: 1, minWidth: 0 }}>
-          <Card
-            style={{
-              borderRadius: 12,
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: 96,
-            }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              height: '100%'
-            }}
-          >
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                {stat.title}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.prefix || ''}
-                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
-              </Text>
-              {stat.percentage && (
-                <>
-                  <Progress percent={parseFloat(stat.percentage)}
-                    showInfo={false}
-                    strokeColor={stat.color}
-                    style={{ marginBottom: 8 }}
-                  />
-
-                  <Text style={{ fontSize: 12, color: stat.color }}>
-                    {stat.percentage}% of total
-                  </Text>
-                </>
-              )}
-            </div>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: stat.bgColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: stat.color,
-                flexShrink: 0,
-              }}
-            >
-              {stat.icon}
-            </div>
-          </Card>
+    <Card
+      hoverable
+      style={{
+        borderRadius: 12,
+        border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
+        height: '100%',
+        transition: 'all 0.2s ease',
+      }}
+      bodyStyle={{ padding: 20 }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>
+              {formatProgramName(financialAssistances[0]?.scholarship_program_name)}
+            </Text>
+            {exceeded && (
+              <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
+                Exceeded
+              </Tag>
+            )}
+          </div>
         </div>
-      ))}
-    </div>
-  )
+        <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
+      </div>
+
+      {/* Progress */}
+      <Progress
+        percent={Math.min(fillPct, 100)}
+        size="small"
+        strokeColor={exceeded ? '#ff4d4f' : '#1890ff'}
+        trailColor="#f0f0f0"
+        showInfo={false}
+        style={{ marginBottom: 5 }}
+      />
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.totalSlots}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.totalFilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.totalUnfilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
+        </div>
+      </div>
+    </Card>
+  );  
 
 }
 
@@ -253,6 +242,19 @@ export default function FinancialAssistanceEstatistikolar() {
       return (p.academic_year || p.Academic_year) === 'All';
     });
 
+  // Separate filters for FULL-ESTAT and HALF-ESTAT
+  const filterByProgram = (data, programType) => {
+    return (Array.isArray(data) ? data : []).filter(p => {
+      const programName = p?.scholarship_program_name?.toUpperCase().trim();
+      if (programType === 'FULL' && programName === 'FULLESTAT') return true;
+      if (programType === 'HALF' && programName === 'HALFESTAT') return true;
+      return false;
+    });
+  };
+
+  const fullEstatData = filterByProgram(filteredestatistikolar, 'FULL');
+  const halfEstatData = filterByProgram(filteredestatistikolar, 'HALF');
+
   return (
     <div style={{ background: '#fafbfc', minHeight: '100vh' }}>
       {/* Header */}
@@ -286,7 +288,14 @@ export default function FinancialAssistanceEstatistikolar() {
       </div>
 
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
-        <StatsCards financialAssistances={filteredestatistikolar} />
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={12}>
+            {fullEstatData.length > 0 && <StatsCards financialAssistances={fullEstatData} />}
+          </Col>
+          <Col xs={24} md={12}>
+            {halfEstatData.length > 0 && <StatsCards financialAssistances={halfEstatData} />}
+          </Col>
+        </Row>
       </div>   
 
       <div style={{ background: '#fff' }}>
