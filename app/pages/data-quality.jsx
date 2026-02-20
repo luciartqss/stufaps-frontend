@@ -56,7 +56,7 @@ const ISSUE_TYPES = [
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
 ]
 
-export default function DataQuality() {
+export default function DataQuality({ readOnly = false }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [counts, setCounts] = useState({

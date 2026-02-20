@@ -68,7 +68,7 @@ const SearchInput = memo(function SearchInput({ onSearch, disabled }) {
   )
 })
 
-export default function DataQualityAccounting() {
+export default function DataQualityAccounting({ readOnly = false }) {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -341,36 +341,42 @@ export default function DataQualityAccounting() {
       title: 'Voucher No.',
       key: 'voucher_no',
       width: 160,
-      render: (_, record) => (
-        <EditableInput
-          value={record.voucher_no}
-          placeholder="Enter voucher no."
-          onChange={(val) => handleFieldChange(record.id, 'voucher_no', val)}
-        />
-      ),
+      render: (_, record) => readOnly
+        ? <Text style={{ fontSize: 13 }}>{record.voucher_no || '—'}</Text>
+        : (
+          <EditableInput
+            value={record.voucher_no}
+            placeholder="Enter voucher no."
+            onChange={(val) => handleFieldChange(record.id, 'voucher_no', val)}
+          />
+        ),
     },
     {
       title: 'Voucher Date',
       key: 'voucher_date',
       width: 170,
-      render: (_, record) => (
-        <EditableDatePicker
-          value={record.voucher_date}
-          onChange={(val) => handleFieldChange(record.id, 'voucher_date', val)}
-        />
-      ),
+      render: (_, record) => readOnly
+        ? <Text style={{ fontSize: 13 }}>{record.voucher_date || '—'}</Text>
+        : (
+          <EditableDatePicker
+            value={record.voucher_date}
+            onChange={(val) => handleFieldChange(record.id, 'voucher_date', val)}
+          />
+        ),
     },
     {
       title: 'Account/Check No.',
       key: 'account_check_no',
       width: 160,
-      render: (_, record) => (
-        <EditableInput
-          value={record.account_check_no}
-          placeholder="Enter check no."
-          onChange={(val) => handleFieldChange(record.id, 'account_check_no', val)}
-        />
-      ),
+      render: (_, record) => readOnly
+        ? <Text style={{ fontSize: 13 }}>{record.account_check_no || '—'}</Text>
+        : (
+          <EditableInput
+            value={record.account_check_no}
+            placeholder="Enter check no."
+            onChange={(val) => handleFieldChange(record.id, 'account_check_no', val)}
+          />
+        ),
     },
     {
       title: 'Status',
@@ -387,7 +393,7 @@ export default function DataQualityAccounting() {
           : <Tag color="orange" icon={<WarningOutlined />}>Pending</Tag>
       },
     },
-  ], [handleFieldChange, pagination.current, pagination.pageSize])
+  ], [handleFieldChange, pagination.current, pagination.pageSize, readOnly])
 
   // Merge edits onto data so the table reflects pending changes (e.g. auto-filled date)
   const mergedData = useMemo(() => {
@@ -414,7 +420,7 @@ export default function DataQualityAccounting() {
               Select Academic Year, Semester, and Scholarship Program to begin
             </Text>
           </div>
-          {filtersReady && editCount > 0 && (
+          {!readOnly && filtersReady && editCount > 0 && (
             <Button
               type="primary"
               icon={<SaveOutlined />}
@@ -464,10 +470,12 @@ export default function DataQualityAccounting() {
             <Text style={{ fontSize: 13, color: '#6b7280' }}>Missing only</Text>
             <Switch checked={showMissingOnly} onChange={setShowMissingOnly} size="small" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 13, color: '#6b7280' }}>Auto-fill date</Text>
-            <Switch checked={autoFillDate} onChange={setAutoFillDate} size="small" />
-          </div>
+          {!readOnly && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 13, color: '#6b7280' }}>Auto-fill date</Text>
+              <Switch checked={autoFillDate} onChange={setAutoFillDate} size="small" />
+            </div>
+          )}
 
           {(academicYear || semester || scholarshipProgram) && (
             <Button icon={<ClearOutlined />} size="small" onClick={handleClearFilters} type="text" danger>
@@ -487,9 +495,9 @@ export default function DataQualityAccounting() {
           </Space>
           <Text style={{ fontSize: 13, color: '#8c8c8c' }}>
             {pagination.total} record{pagination.total !== 1 ? 's' : ''}
-            {editCount > 0 && <span style={{ color: '#1677ff', marginLeft: 12, fontWeight: 500 }}>{editCount} unsaved</span>}
+            {!readOnly && editCount > 0 && <span style={{ color: '#1677ff', marginLeft: 12, fontWeight: 500 }}>{editCount} unsaved</span>}
           </Text>
-          {undoStack.length > 0 && (
+          {!readOnly && undoStack.length > 0 && (
             <Button
               size="small"
               icon={<UndoOutlined />}
@@ -502,8 +510,15 @@ export default function DataQualityAccounting() {
         </div>
       )}
 
+      {/* Read-only Banner */}
+      {readOnly && filtersReady && (
+        <div style={{ padding: '8px 24px', background: '#fff7e6', borderBottom: '1px solid #ffd591', textAlign: 'center' }}>
+          <Text style={{ fontSize: 13, color: '#d46b08' }}>You have view-only access to this section. Editing is disabled.</Text>
+        </div>
+      )}
+
       {/* Bulk Actions Bar — visible when rows are selected */}
-      {filtersReady && selectedRowKeys.length > 0 && (
+      {!readOnly && filtersReady && selectedRowKeys.length > 0 && (
         <div style={{ padding: '10px 24px', background: '#fffbe6', borderBottom: '1px solid #ffe58f', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <EditOutlined style={{ color: '#d48806', fontSize: 14 }} />
           <Text strong style={{ fontSize: 13, color: '#d48806' }}>{selectedRowKeys.length} selected</Text>
@@ -560,7 +575,7 @@ export default function DataQualityAccounting() {
               columns={columns}
               rowKey="id"
               loading={loading}
-              rowSelection={{
+              rowSelection={readOnly ? undefined : {
                 selectedRowKeys,
                 onChange: setSelectedRowKeys,
                 columnWidth: 40,

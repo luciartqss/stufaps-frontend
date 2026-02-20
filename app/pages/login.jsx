@@ -8,15 +8,18 @@ const { Text } = Typography
 
 export default function Login() {
   const [loading, setLoading] = useState(false)
-  const { login, isAuthenticated } = useAuth()
+  const { login, isAuthenticated, permissions } = useAuth()
   const navigate = useNavigate()
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated — route based on role
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard')
+    if (isAuthenticated && permissions) {
+      const role = permissions.role
+      if (role === 'accounting') navigate('/data-quality/accounting')
+      else if (role === 'cashier') navigate('/data-quality/cashier')
+      else navigate('/dashboard')
     }
-  }, [isAuthenticated, navigate])
+  }, [isAuthenticated, permissions, navigate])
 
   const onFinish = async (values) => {
     setLoading(true)
@@ -24,7 +27,10 @@ export default function Login() {
 
     if (result.success) {
       message.success('Login successful!')
-      navigate('/dashboard')
+      const role = result.permissions?.role
+      if (role === 'accounting') navigate('/data-quality/accounting')
+      else if (role === 'cashier') navigate('/data-quality/cashier')
+      else navigate('/dashboard')
     } else {
       message.error(result.message || 'Login failed')
     }

@@ -19,61 +19,69 @@ const { Text } = Typography
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, getAccess } = useAuth()
   const [openKeys, setOpenKeys] = useState(() => {
     return location.pathname.startsWith('/data-quality') ? ['sub-data-quality'] : []
   })
 
+  // Build Data Quality children based on access
+  const dataQualityChildren = []
+  if (getAccess('data-quality-stufaps') !== 'none') {
+    dataQualityChildren.push({
+      key: '/data-quality/stufaps',
+      label: <NavLink to="/data-quality">StuFAPs</NavLink>,
+    })
+  }
+  if (getAccess('data-quality-accounting') !== 'none') {
+    dataQualityChildren.push({
+      key: '/data-quality/accounting',
+      label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
+    })
+  }
+  if (getAccess('data-quality-cashier') !== 'none') {
+    dataQualityChildren.push({
+      key: '/data-quality/cashier',
+      label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
+    })
+  }
+
   const menuItems = [
-    {
+    ...(getAccess('dashboard') !== 'none' ? [{
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: <NavLink to="/dashboard">Dashboard</NavLink>,
-    },
-    {
+    }] : []),
+    ...(getAccess('students') !== 'none' ? [{
       key: '/students',
       icon: <TeamOutlined />,
       label: <NavLink to="/students">Students</NavLink>,
-    },
-    {
+    }] : []),
+    ...(dataQualityChildren.length > 0 ? [{
       key: 'sub-data-quality',
       icon: <WarningOutlined />,
       label: 'Data Quality',
-      children: [
-        {
-          key: '/data-quality/stufaps',
-          label: <NavLink to="/data-quality">StuFAPs</NavLink>,
-        },
-        {
-          key: '/data-quality/accounting',
-          label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
-        },
-        {
-          key: '/data-quality/cashier',
-          label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
-        },
-      ],
-    },
-    {
+      children: dataQualityChildren,
+    }] : []),
+    ...(getAccess('financial_assistance') !== 'none' ? [{
       key: '/financial_assistance',
       icon: <BarChartOutlined />,
       label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
-    },
-    ...(user?.role === 'master_admin' ? [{
+    }] : []),
+    ...(getAccess('logs') !== 'none' ? [{
       key: '/logs',
       icon: <FileTextOutlined />,
       label: <NavLink to="/logs">Logs</NavLink>,
     }] : []),
-    ...(user?.role === 'master_admin' ? [{
+    ...(getAccess('account-management') !== 'none' ? [{
       key: '/account-management',
       icon: <UserOutlined />,
       label: <NavLink to="/account-management">Account Management</NavLink>,
     }] : []),
-    {
+    ...(getAccess('about_us') !== 'none' ? [{
       key: '/about_us',
       icon: <InfoCircleOutlined />,
       label: <NavLink to="/about_us">About us</NavLink>,
-    },
+    }] : []),
   ]
 
   const getSelectedKey = () => {

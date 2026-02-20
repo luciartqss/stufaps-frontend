@@ -1,4 +1,5 @@
 import DataQuality from '../pages/data-quality'
+import { useAuth } from '../lib/AuthContext'
 
 export function meta() {
   return [
@@ -8,5 +9,7 @@ export function meta() {
 }
 
 export default function DataQualityRoute() {
-  return <DataQuality />
+  const { getAccess } = useAuth()
+  const access = getAccess('data-quality-stufaps')
+  return <DataQuality readOnly={access === 'read-only'} />
 }

@@ -1,4 +1,5 @@
 import DataQualityAccounting from '../pages/data-quality-accounting'
+import { useAuth } from '../lib/AuthContext'
 
 export function meta() {
   return [
@@ -8,5 +9,7 @@ export function meta() {
 }
 
 export default function DataQualityAccountingRoute() {
-  return <DataQualityAccounting />
+  const { getAccess } = useAuth()
+  const access = getAccess('data-quality-accounting')
+  return <DataQualityAccounting readOnly={access === 'read-only'} />
 }
