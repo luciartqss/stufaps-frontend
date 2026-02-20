@@ -1,5 +1,5 @@
 import { Typography, Table, Input, DatePicker, Button, message, Tag, Switch, Space, Pagination, Select, Card, Empty, Divider, Tooltip } from 'antd'
-import { SaveOutlined, SearchOutlined, CheckCircleOutlined, WarningOutlined, ClearOutlined, FilterOutlined } from '@ant-design/icons'
+import { SaveOutlined, SearchOutlined, CheckCircleOutlined, WarningOutlined, ClearOutlined, FilterOutlined, EditOutlined, UndoOutlined } from '@ant-design/icons'
 import { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react'
 import { API_BASE } from '../lib/config'
 import dayjs from 'dayjs'
@@ -9,16 +9,16 @@ const { Title, Text } = Typography
 // ── Debounced Input: only syncs to parent on blur or Enter ──
 const EditableInput = memo(function EditableInput({ value, onChange, placeholder }) {
   const [local, setLocal] = useState(value || '')
-  const prev = useRef(value)
+  const valueRef = useRef(value)
 
-  // Sync from parent only if the parent value actually changed (e.g. after save/refetch)
-  if (value !== prev.current) {
-    prev.current = value
-    if ((value || '') !== local) setLocal(value || '')
-  }
+  // Sync from parent when value changes externally (bulk edit, save/refetch)
+  useEffect(() => {
+    valueRef.current = value
+    setLocal(value || '')
+  }, [value])
 
   const commit = () => {
-    if (local !== (value || '')) onChange(local)
+    if (local !== (valueRef.current || '')) onChange(local)
   }
 
   return (
@@ -48,15 +48,39 @@ const EditableDatePicker = memo(function EditableDatePicker({ value, onChange })
   )
 })
 
+// ── Search input: local state only, commits via onSearch callback ──
+const SearchInput = memo(function SearchInput({ onSearch, disabled }) {
+  const [local, setLocal] = useState('')
+  return (
+    <>
+      <Input
+        placeholder="Search name or award no."
+        prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+        value={local}
+        onChange={(e) => setLocal(e.target.value)}
+        onPressEnter={() => onSearch(local)}
+        style={{ width: 220 }}
+        allowClear
+        disabled={disabled}
+      />
+      <Button onClick={() => onSearch(local)} disabled={disabled}>Search</Button>
+    </>
+  )
+})
+
 export default function DataQualityAccounting() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [search, setSearch] = useState('')
   const [showMissingOnly, setShowMissingOnly] = useState(true)
   const [editedRows, setEditedRows] = useState({})
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 50, total: 0 })
+  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
   const [hasQueried, setHasQueried] = useState(false)
+  const [autoFillDate, setAutoFillDate] = useState(true)
+  const [selectedRowKeys, setSelectedRowKeys] = useState([])
+  const [bulkDate, setBulkDate] = useState(null)
+  const [bulkVoucherNo, setBulkVoucherNo] = useState('')
+  const [undoStack, setUndoStack] = useState([])
 
   // Filters
   const [filterOptions, setFilterOptions] = useState({ academic_years: [], semesters: [], scholarship_programs: [] })
@@ -71,6 +95,9 @@ export default function DataQualityAccounting() {
   dataRef.current = data
   const editedRef = useRef(editedRows)
   editedRef.current = editedRows
+  const searchRef = useRef('')
+  const autoFillDateRef = useRef(true)
+  autoFillDateRef.current = autoFillDate
 
   // Fetch filter options once
   useEffect(() => {
@@ -85,20 +112,21 @@ export default function DataQualityAccounting() {
     fetchFilterOptions()
   }, [])
 
-  const fetchData = useCallback(async (page = 1) => {
+  const fetchData = useCallback(async (page = 1, perPage = null) => {
     if (!filtersReady) return
     setLoading(true)
     setHasQueried(true)
     try {
+      const ps = perPage || pagination.pageSize
       const params = new URLSearchParams({
         page,
-        per_page: pagination.pageSize,
+        per_page: ps,
         filter: showMissingOnly ? 'missing' : 'all',
         academic_year: academicYear,
         semester: semester,
         scholarship_program: scholarshipProgram,
       })
-      if (search) params.append('search', search)
+      if (searchRef.current) params.append('search', searchRef.current)
 
       const res = await fetch(`${API_BASE}/disbursements/accounting?${params}`)
       if (!res.ok) throw new Error('Failed to fetch')
@@ -112,7 +140,7 @@ export default function DataQualityAccounting() {
     } finally {
       setLoading(false)
     }
-  }, [search, showMissingOnly, pagination.pageSize, academicYear, semester, scholarshipProgram])
+  }, [showMissingOnly, pagination.pageSize, academicYear, semester, scholarshipProgram])
 
   // Auto-fetch when all 3 required filters are set
   useEffect(() => {
@@ -126,7 +154,8 @@ export default function DataQualityAccounting() {
     }
   }, [academicYear, semester, scholarshipProgram, showMissingOnly])
 
-  const handleSearch = useCallback(() => {
+  const handleSearch = useCallback((value) => {
+    if (value !== undefined) searchRef.current = value
     if (filtersReady) fetchData(1)
   }, [fetchData, filtersReady])
 
@@ -136,7 +165,7 @@ export default function DataQualityAccounting() {
       const existing = prev[disbursementId] || {}
 
       // QoL: Auto-fill today's date when voucher_no is entered & date is still empty
-      if (field === 'voucher_no' && value) {
+      if (field === 'voucher_no' && value && autoFillDateRef.current) {
         const record = dataRef.current.find(r => r.id === disbursementId)
         const hasDate = existing.voucher_date || record?.voucher_date
         if (!hasDate) {
@@ -184,14 +213,76 @@ export default function DataQualityAccounting() {
   }, [fetchData, pagination.current])
 
   const handleClearFilters = useCallback(() => {
-    setSearch('')
+    searchRef.current = ''
     setAcademicYear(null)
     setSemester(null)
     setScholarshipProgram(null)
     setShowMissingOnly(true)
+    setSelectedRowKeys([])
+    setBulkDate(null)
+    setBulkVoucherNo('')
     setData([])
     setHasQueried(false)
     setEditedRows({})
+  }, [])
+
+  const handleApplyDate = useCallback(() => {
+    if (!bulkDate) return message.info('Pick a date first')
+    if (selectedRowKeys.length === 0) return message.info('Select at least one row')
+
+    const dateStr = dayjs(bulkDate).format('YYYY-MM-DD')
+    setEditedRows(prev => {
+      const next = { ...prev }
+      selectedRowKeys.forEach(id => {
+        const existing = next[id] || {}
+        next[id] = { ...existing, voucher_date: dateStr }
+      })
+      return next
+    })
+
+    message.success(`Date applied to ${selectedRowKeys.length} record${selectedRowKeys.length !== 1 ? 's' : ''}`)
+  }, [bulkDate, selectedRowKeys])
+
+  const handleApplyBulk = useCallback(() => {
+    if (selectedRowKeys.length === 0) return message.info('Select at least one row')
+    if (!bulkVoucherNo && !bulkDate) return message.info('Enter a voucher no. or pick a date')
+
+    // Save current state for undo
+    setUndoStack(prev => [...prev, editedRef.current])
+
+    setEditedRows(prev => {
+      const next = { ...prev }
+      selectedRowKeys.forEach(id => {
+        const existing = next[id] || {}
+        const updates = { ...existing }
+        if (bulkVoucherNo) updates.voucher_no = bulkVoucherNo
+        if (bulkDate) updates.voucher_date = dayjs(bulkDate).format('YYYY-MM-DD')
+        else if (bulkVoucherNo && autoFillDateRef.current) {
+          const record = dataRef.current.find(r => r.id === id)
+          if (!existing.voucher_date && !record?.voucher_date) {
+            updates.voucher_date = dayjs().format('YYYY-MM-DD')
+          }
+        }
+        next[id] = updates
+      })
+      return next
+    })
+
+    const parts = []
+    if (bulkVoucherNo) parts.push('voucher no.')
+    if (bulkDate) parts.push('date')
+    message.success(`Applied ${parts.join(' & ')} to ${selectedRowKeys.length} record${selectedRowKeys.length !== 1 ? 's' : ''}`)
+  }, [bulkVoucherNo, bulkDate, selectedRowKeys])
+
+  const handleUndo = useCallback(() => {
+    setUndoStack(prev => {
+      if (prev.length === 0) return prev
+      const next = [...prev]
+      const last = next.pop()
+      setEditedRows(last)
+      message.info('Last action undone')
+      return next
+    })
   }, [])
 
   // ── Columns — no dependency on editedRows, so they stay stable ──
@@ -200,7 +291,10 @@ export default function DataQualityAccounting() {
       title: '#',
       width: 60,
       fixed: 'left',
-      render: (_, __, index) => <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{index + 1}</Text>,
+      render: (_, __, index) => {
+        const offset = ((pagination.current || 1) - 1) * (pagination.pageSize || 10)
+        return <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{offset + index + 1}</Text>
+      },
     },
     {
       title: 'Award No.',
@@ -210,7 +304,7 @@ export default function DataQualityAccounting() {
       render: (val) => <Text strong style={{ fontSize: 13 }}>{val || '—'}</Text>,
     },
     {
-      title: 'Full Name (Last, First Middle)',
+      title: 'Full Name',
       key: 'full_name',
       width: 280,
       render: (_, record) => {
@@ -293,7 +387,7 @@ export default function DataQualityAccounting() {
           : <Tag color="orange" icon={<WarningOutlined />}>Pending</Tag>
       },
     },
-  ], [handleFieldChange]) // handleFieldChange is stable (no deps)
+  ], [handleFieldChange, pagination.current, pagination.pageSize])
 
   // Merge edits onto data so the table reflects pending changes (e.g. auto-filled date)
   const mergedData = useMemo(() => {
@@ -364,24 +458,18 @@ export default function DataQualityAccounting() {
 
           <Divider type="vertical" style={{ height: 28 }} />
 
-          <Input
-            placeholder="Search name or award no."
-            prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onPressEnter={handleSearch}
-            style={{ width: 220 }}
-            allowClear
-            disabled={!filtersReady}
-          />
-          <Button onClick={handleSearch} disabled={!filtersReady}>Search</Button>
+          <SearchInput onSearch={handleSearch} disabled={!filtersReady} />
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Text style={{ fontSize: 13, color: '#6b7280' }}>Missing only</Text>
             <Switch checked={showMissingOnly} onChange={setShowMissingOnly} size="small" />
           </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 13, color: '#6b7280' }}>Auto-fill date</Text>
+            <Switch checked={autoFillDate} onChange={setAutoFillDate} size="small" />
+          </div>
 
-          {(academicYear || semester || scholarshipProgram || search) && (
+          {(academicYear || semester || scholarshipProgram) && (
             <Button icon={<ClearOutlined />} size="small" onClick={handleClearFilters} type="text" danger>
               Reset
             </Button>
@@ -401,6 +489,55 @@ export default function DataQualityAccounting() {
             {pagination.total} record{pagination.total !== 1 ? 's' : ''}
             {editCount > 0 && <span style={{ color: '#1677ff', marginLeft: 12, fontWeight: 500 }}>{editCount} unsaved</span>}
           </Text>
+          {undoStack.length > 0 && (
+            <Button
+              size="small"
+              icon={<UndoOutlined />}
+              onClick={handleUndo}
+              style={{ marginLeft: 8 }}
+            >
+              Undo
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Bulk Actions Bar — visible when rows are selected */}
+      {filtersReady && selectedRowKeys.length > 0 && (
+        <div style={{ padding: '10px 24px', background: '#fffbe6', borderBottom: '1px solid #ffe58f', display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <EditOutlined style={{ color: '#d48806', fontSize: 14 }} />
+          <Text strong style={{ fontSize: 13, color: '#d48806' }}>{selectedRowKeys.length} selected</Text>
+          <Divider type="vertical" style={{ height: 20 }} />
+          <Input
+            size="small"
+            placeholder="Voucher No."
+            value={bulkVoucherNo}
+            onChange={(e) => setBulkVoucherNo(e.target.value)}
+            style={{ width: 150 }}
+          />
+          <DatePicker
+            size="small"
+            value={bulkDate}
+            onChange={(date) => setBulkDate(date)}
+            format="YYYY-MM-DD"
+            placeholder="Voucher Date"
+            style={{ width: 140 }}
+          />
+          <Button
+            size="small"
+            type="primary"
+            onClick={handleApplyBulk}
+            disabled={!bulkVoucherNo && !bulkDate}
+          >
+            Apply to Selected
+          </Button>
+          <Button
+            size="small"
+            type="text"
+            onClick={() => setSelectedRowKeys([])}
+          >
+            Clear Selection
+          </Button>
         </div>
       )}
 
@@ -423,7 +560,27 @@ export default function DataQualityAccounting() {
               columns={columns}
               rowKey="id"
               loading={loading}
-              pagination={false}
+              rowSelection={{
+                selectedRowKeys,
+                onChange: setSelectedRowKeys,
+                columnWidth: 40,
+              }}
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: true,
+                size: 'small',
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
+                onChange: (page, pageSize) => {
+                  setPagination(prev => ({ ...prev, current: page, pageSize }))
+                  fetchData(page, pageSize)
+                },
+                onShowSizeChange: (_, size) => {
+                  setPagination(prev => ({ ...prev, pageSize: size, current: 1 }))
+                  fetchData(1, size)
+                },
+              }}
               scroll={{ x: 1500 }}
               size="small"
               bordered
@@ -431,17 +588,6 @@ export default function DataQualityAccounting() {
               rowClassName={(record) => editedRows[record.id] ? 'ant-table-row-edited' : ''}
               locale={{ emptyText: hasQueried ? <Empty description="No disbursement records found for this selection" /> : undefined }}
             />
-            {pagination.total > pagination.pageSize && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-                <Pagination
-                  current={pagination.current}
-                  pageSize={pagination.pageSize}
-                  total={pagination.total}
-                  showSizeChanger={false}
-                  onChange={(page) => fetchData(page)}
-                />
-              </div>
-            )}
           </>
         )}
       </div>
