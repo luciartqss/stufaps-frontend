@@ -387,7 +387,7 @@ export default function DataQuality() {
                     boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
                     transition: 'all 0.2s ease',
                   }}
-                  bodyStyle={{ padding: '16px' }}
+                  styles={{ body: { padding: '16px' } }}
                   onClick={() => setActiveTab(item.key)}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -412,7 +412,7 @@ export default function DataQuality() {
             border: '1px solid #e8eaed',
             boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
           }}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
           title={
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>

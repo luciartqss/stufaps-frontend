@@ -686,7 +686,7 @@ export default function StudentDetails() {
       {/* Cards - Row 1 */}
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card title="Personal Information" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Personal Information" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Surname" value={student.surname} field="surname" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="First Name" value={student.first_name} field="first_name" required editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -738,7 +738,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Contact & Address" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Contact & Address" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Email Address" value={student.email_address} field="email_address" type="email" required editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -756,7 +756,7 @@ export default function StudentDetails() {
       {/* Cards - Row 2 */}
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card title="Institution & Academic Program" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Institution & Academic Program" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -787,7 +787,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Scholarship & Authority" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Scholarship & Authority" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="In-Charge" value={student.in_charge} field="in_charge" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Award Year" value={student.award_year} field="award_year" required editMode={editMode} formData={formData} handleChange={handleChange} />
@@ -820,7 +820,7 @@ export default function StudentDetails() {
       {/* Cards - Row 3: Status & Remarks */}
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
         <Col xs={24} lg={12}>
-          <Card title="Status & Priority" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Status & Priority" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field 
                 label="Scholarship Status" 
@@ -865,7 +865,7 @@ export default function StudentDetails() {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="Remarks" style={{ height: '100%', borderRadius: 12 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+          <Card title="Remarks" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field 
                 label="General Remarks / Notes" 
@@ -886,7 +886,7 @@ export default function StudentDetails() {
       <Card
         title="Semester Transaction Records"
         style={{ borderRadius: 12 }}
-        headStyle={{ borderBottom: '1px solid #f0f0f0' }}
+        styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDisbursement}>
             Add Disbursement
@@ -915,7 +915,7 @@ export default function StudentDetails() {
         okText={disbursementModal.mode === 'create' ? 'Create Record' : 'Update Record'}
         cancelText="Cancel"
         confirmLoading={disbursementLoading}
-        destroyOnClose={true}
+        destroyOnHidden={true}
       >
         <Form form={disbursementForm} layout="vertical">
           {/* Academic Information */}
