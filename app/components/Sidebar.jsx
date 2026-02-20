@@ -7,16 +7,19 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   WarningOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import { useState } from 'react'
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
+import { useAuth } from '../lib/AuthContext'
 
 const { Sider } = Layout
 const { Text } = Typography
 
 export default function Sidebar({ collapsed, setCollapsed }) {
   const location = useLocation()
+  const { user } = useAuth()
   const [openKeys, setOpenKeys] = useState(() => {
     return location.pathname.startsWith('/data-quality') ? ['sub-data-quality'] : []
   })
@@ -52,15 +55,20 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       ],
     },
     {
-      key: '/logs',
-      icon: <FileTextOutlined />,
-      label: <NavLink to="/logs">Logs</NavLink>,
-    },
-    {
       key: '/financial_assistance',
       icon: <BarChartOutlined />,
       label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
     },
+    ...(user?.role === 'master_admin' ? [{
+      key: '/logs',
+      icon: <FileTextOutlined />,
+      label: <NavLink to="/logs">Logs</NavLink>,
+    }] : []),
+    ...(user?.role === 'master_admin' ? [{
+      key: '/account-management',
+      icon: <UserOutlined />,
+      label: <NavLink to="/account-management">Account Management</NavLink>,
+    }] : []),
     {
       key: '/about_us',
       icon: <InfoCircleOutlined />,
