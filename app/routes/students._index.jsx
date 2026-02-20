@@ -465,9 +465,9 @@ export default function StudentsIndex() {
       render: (_, __, index) => {
         const page = (pagination?.current || 1)
         const pageSize = (pagination?.pageSize || 10)
-        return <span style={{ fontSize: 13 }}>{(page - 1) * pageSize + index + 1}</span>
+        return <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{(page - 1) * pageSize + index + 1}</span>
       },
-      width: 40,
+      width: 45,
       align: 'center',
     },
     {
@@ -561,24 +561,19 @@ export default function StudentsIndex() {
       title: 'Program',
       dataIndex: 'scholarship_program',
       key: 'scholarship_program',
-      width: 85,
+      width: 100,
       align: 'center',
-      ellipsis: { showTitle: false },
-      render: (text) => (
-        <Tooltip placement="topLeft" title={text || '—'}>
-          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
-        </Tooltip>
-      ),
+      render: (text) => <NowrapCell text={text} />,
     },
     {
       title: 'Status',
       key: 'status',
-      width: 90,
+      width: 110,
       align: 'center',
       render: (_, student) => (
         <Tag
           color={getStatusColor(student.scholarship_status)}
-          style={{ margin: 0, fontSize: 12, lineHeight: '20px', padding: '1px 8px' }}
+          style={{ margin: 0, fontSize: 12, lineHeight: '20px', padding: '1px 8px', whiteSpace: 'nowrap' }}
         >
           {student.scholarship_status}
         </Tag>
@@ -1095,8 +1090,8 @@ export default function StudentsIndex() {
 
   return (
     <div style={{ padding: 0, margin: 0 }}>
-      <Title level={2} style={{ margin: '0 0 12px 0' }}>Students</Title>
-      <Space direction="vertical" style={{ width: '100%', marginBottom: '12px' }}>
+      <Title level={2} style={{ margin: '0 0 6px 0' }}>Students</Title>
+      <Space direction="vertical" style={{ width: '100%', marginBottom: '6px' }}>
         <Space style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <Space wrap>
             <Popover content={searchInstructions} title="How to use Search" trigger="click">
@@ -1208,8 +1203,8 @@ export default function StudentsIndex() {
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            padding: '10px 14px',
-            marginBottom: 16,
+            padding: '8px 14px',
+            marginBottom: 8,
             background: '#f0f5ff',
             border: '1px solid #adc6ff',
             borderRadius: 8,
@@ -1258,7 +1253,7 @@ export default function StudentsIndex() {
         .students-table .ant-table-thead > tr > th {
           font-size: 12px;
           font-weight: 600;
-          padding: 10px 12px;
+          padding: 8px 10px;
           background: #fafafa;
           color: #595959;
           text-transform: uppercase;
@@ -1266,9 +1261,9 @@ export default function StudentsIndex() {
           white-space: nowrap;
         }
         .students-table .ant-table-tbody > tr > td {
-          padding: 10px 12px;
+          padding: 8px 10px;
           vertical-align: middle;
-          height: 54px;
+          height: 48px;
         }
         .students-table .ant-table-tbody > tr {
           transition: none;
@@ -1318,7 +1313,7 @@ export default function StudentsIndex() {
         columns={columns}
         rowKey="seq"
         size="small"
-        scroll={{ x: 1400 }}
+        scroll={{ x: 1500 }}
         rowClassName={(record) => {
           const status = (record.scholarship_status || '').toLowerCase()
           if (status === 'terminated') return 'student-row-terminated'
