@@ -286,7 +286,7 @@ export default function Dashboard() {
       <div style={{ padding: '24px', background: '#fff' }}>
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <TeamOutlined style={{ fontSize: 32, color: '#3b82f6' }} />
               </div>
@@ -298,7 +298,7 @@ export default function Dashboard() {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <CheckCircleOutlined style={{ fontSize: 32, color: '#10b981' }} />
               </div>
@@ -311,7 +311,7 @@ export default function Dashboard() {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <TrophyOutlined style={{ fontSize: 32, color: '#3b82f6' }} />
               </div>
@@ -324,7 +324,7 @@ export default function Dashboard() {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <CloseCircleOutlined style={{ fontSize: 32, color: '#ef4444' }} />
               </div>
@@ -337,7 +337,7 @@ export default function Dashboard() {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <UserOutlined style={{ fontSize: 32, color: '#f59e0b' }} />
               </div>
@@ -350,7 +350,7 @@ export default function Dashboard() {
             </Card>
           </Col>
           <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} bodyStyle={{ padding: '20px', textAlign: 'center' }}>
+            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
               <div style={{ marginBottom: 12 }}>
                 <DollarOutlined style={{ fontSize: 32, color: '#8b5cf6' }} />
               </div>
@@ -374,7 +374,7 @@ export default function Dashboard() {
               background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
               cursor: 'pointer' 
             }}
-            bodyStyle={{ padding: '16px 20px' }}
+            styles={{ body: { padding: '16px 20px' } }}
             onClick={() => navigate('/data-quality')}
             hoverable
           >
@@ -421,7 +421,7 @@ export default function Dashboard() {
             <Card
               title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Status Distribution</Text>}
               style={mainCardStyle}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               {dashboardData.statusDistribution.some(item => item.value > 0) ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -458,7 +458,7 @@ export default function Dashboard() {
             <Card
               title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Scholarship Programs</Text>}
               style={mainCardStyle}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               {dashboardData.scholarshipPrograms.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -483,7 +483,7 @@ export default function Dashboard() {
             <Card
               title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Degree Levels</Text>}
               style={mainCardStyle}
-              bodyStyle={{ padding: '20px' }}
+              styles={{ body: { padding: '20px' } }}
             >
               {dashboardData.degreeLevels.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
@@ -510,7 +510,7 @@ export default function Dashboard() {
         <Card
           title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Progress Overview</Text>}
           style={mainCardStyle}
-          bodyStyle={{ padding: '24px' }}
+          styles={{ body: { padding: '24px' } }}
         >
           <Row gutter={[32, 24]}>
             <Col xs={24} sm={12} lg={6}>
@@ -526,7 +526,7 @@ export default function Dashboard() {
                   showInfo={false}
                   strokeColor="#10b981"
                   trailColor="#f3f4f6"
-                  strokeWidth={8}
+                  size={[undefined, 8]}
                 />
               </div>
             </Col>
@@ -543,7 +543,7 @@ export default function Dashboard() {
                   showInfo={false}
                   strokeColor="#3b82f6"
                   trailColor="#f3f4f6"
-                  strokeWidth={8}
+                  size={[undefined, 8]}
                 />
               </div>
             </Col>
@@ -560,7 +560,7 @@ export default function Dashboard() {
                   showInfo={false}
                   strokeColor="#ef4444"
                   trailColor="#f3f4f6"
-                  strokeWidth={8}
+                  size={[undefined, 8]}
                 />
               </div>
             </Col>
@@ -577,7 +577,7 @@ export default function Dashboard() {
                   showInfo={false}
                   strokeColor="#f59e0b"
                   trailColor="#f3f4f6"
-                  strokeWidth={8}
+                  size={[undefined, 8]}
                 />
               </div>
             </Col>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Modal, Drawer } from 'antd'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Modal, Drawer, Tooltip } from 'antd'
 import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
@@ -488,7 +488,18 @@ export default function StudentsIndex() {
         const extension = student.extension || ''
         const otherParts = [firstName, middleName, extension].filter(Boolean).join(' ')
         const name = surname && otherParts ? `${surname}, ${otherParts}` : (surname || otherParts)
-        return <NowrapCell text={name} bold />
+        if (!name) return <span style={{ color: '#bfbfbf', fontSize: 13 }}>—</span>
+        let fontSize = 14
+        if (name.length > 30) fontSize = 12
+        else if (name.length > 20) fontSize = 13
+        return (
+          <a
+            onClick={() => navigate(`/students/${student.seq}`)}
+            style={{ whiteSpace: 'nowrap', fontSize, fontWeight: 500, color: '#1677ff', cursor: 'pointer' }}
+          >
+            {name}
+          </a>
+        )
       },
     },
     {
@@ -503,28 +514,48 @@ export default function StudentsIndex() {
       dataIndex: 'contact_number',
       key: 'contact_number',
       width: 130,
-      render: (text) => <NowrapCell text={text} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'Email',
       dataIndex: 'email_address',
       key: 'email_address',
       width: 180,
-      render: (text) => <ClampedCell text={text} maxLines={2} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'School',
       dataIndex: 'name_of_institution',
       key: 'name_of_institution',
       width: 170,
-      render: (text) => <ClampedCell text={text} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'Degree Program',
       dataIndex: 'degree_program',
       key: 'degree_program',
       width: 155,
-      render: (text) => <ClampedCell text={text} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'Program',
@@ -532,7 +563,12 @@ export default function StudentsIndex() {
       key: 'scholarship_program',
       width: 85,
       align: 'center',
-      render: (text) => <ClampedCell text={text} maxLines={2} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'Status',

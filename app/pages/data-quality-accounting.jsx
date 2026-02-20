@@ -1,4 +1,4 @@
-import { Typography, Table, Input, DatePicker, Button, message, Tag, Switch, Space, Pagination, Select, Card, Empty, Divider } from 'antd'
+import { Typography, Table, Input, DatePicker, Button, message, Tag, Switch, Space, Pagination, Select, Card, Empty, Divider, Tooltip } from 'antd'
 import { SaveOutlined, SearchOutlined, CheckCircleOutlined, WarningOutlined, ClearOutlined, FilterOutlined } from '@ant-design/icons'
 import { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react'
 import { API_BASE } from '../lib/config'
@@ -207,15 +207,12 @@ export default function DataQualityAccounting() {
       dataIndex: ['student', 'award_number'],
       width: 130,
       fixed: 'left',
-      sorter: (a, b) => (a.student?.award_number || '').localeCompare(b.student?.award_number || ''),
-      defaultSortOrder: 'ascend',
       render: (val) => <Text strong style={{ fontSize: 13 }}>{val || '—'}</Text>,
     },
     {
       title: 'Full Name (Last, First Middle)',
       key: 'full_name',
       width: 280,
-      sorter: (a, b) => (a.student?.surname || '').localeCompare(b.student?.surname || ''),
       render: (_, record) => {
         const s = record.student || {}
         const name = s.surname
@@ -227,16 +224,24 @@ export default function DataQualityAccounting() {
     {
       title: 'School',
       dataIndex: ['student', 'name_of_institution'],
-      width: 220,
-      ellipsis: true,
-      render: (val) => <Text style={{ fontSize: 13 }}>{val || '—'}</Text>,
+      width: 200,
+      ellipsis: { showTitle: false },
+      render: (val) => (
+        <Tooltip placement="topLeft" title={val || '—'}>
+          <Text style={{ fontSize: 13 }}>{val || '—'}</Text>
+        </Tooltip>
+      ),
     },
     {
       title: 'Course',
       dataIndex: ['student', 'degree_program'],
-      width: 170,
-      ellipsis: true,
-      render: (val) => <Text style={{ fontSize: 13 }}>{val || '—'}</Text>,
+      width: 160,
+      ellipsis: { showTitle: false },
+      render: (val) => (
+        <Tooltip placement="topLeft" title={val || '—'}>
+          <Text style={{ fontSize: 13 }}>{val || '—'}</Text>
+        </Tooltip>
+      ),
     },
     {
       title: 'Voucher No.',
