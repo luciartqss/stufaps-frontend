@@ -1,4 +1,5 @@
 import DataQualityCashier from '../pages/data-quality-cashier'
+import { useAuth } from '../lib/AuthContext'
 
 export function meta() {
   return [
@@ -8,5 +9,7 @@ export function meta() {
 }
 
 export default function DataQualityCashierRoute() {
-  return <DataQualityCashier />
+  const { getAccess } = useAuth()
+  const access = getAccess('data-quality-cashier')
+  return <DataQualityCashier readOnly={access === 'read-only'} />
 }
