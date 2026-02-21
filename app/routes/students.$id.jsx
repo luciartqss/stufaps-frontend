@@ -1,9 +1,10 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
-import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Title, Text } = Typography
 
@@ -131,6 +132,10 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
 }
 
 export default function StudentDetails() {
+  const { permissions } = useAuth()
+  const isMasterAdmin = permissions?.role === 'master_admin'
+  const assignedPrograms = permissions?.assigned_programs || []
+  const assignedYears = permissions?.assigned_years || []
   const params = useParams()
   const id = params.id
 
@@ -517,33 +522,39 @@ export default function StudentDetails() {
       key: 'actions',
       width: 120,
       fixed: 'right',
-      render: (_, record) => (
-        <Space>
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => handleEditDisbursement(record)}
-            title="Edit disbursement"
-            size="small"
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this disbursement record?"
-            description="This action cannot be undone."
-            onConfirm={() => handleDeleteDisbursement(record)}
-            okText="Yes, Delete"
-            cancelText="Cancel"
-            okType="danger"
-          >
-            <Button 
-              type="text" 
-              danger 
-              icon={<DeleteOutlined />} 
-              title="Delete disbursement"
+      render: (_, record) => {
+        const canEditThisDisbursement = isMasterAdmin || (
+          (assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)) &&
+          (assignedYears.includes('ALL') || assignedYears.includes(record.academic_year))
+        )
+        return canEditThisDisbursement ? (
+          <Space>
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => handleEditDisbursement(record)}
+              title="Edit disbursement"
               size="small"
             />
-          </Popconfirm>
-        </Space>
-      ),
+            <Popconfirm
+              title="Are you sure you want to delete this disbursement record?"
+              description="This action cannot be undone."
+              onConfirm={() => handleDeleteDisbursement(record)}
+              okText="Yes, Delete"
+              cancelText="Cancel"
+              okType="danger"
+            >
+              <Button 
+                type="text" 
+                danger 
+                icon={<DeleteOutlined />} 
+                title="Delete disbursement"
+                size="small"
+              />
+            </Popconfirm>
+          </Space>
+        ) : null
+      },
     },
   ]
 
@@ -587,6 +598,24 @@ export default function StudentDetails() {
 
   return (
     <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
+      {/* Read-only access banner */}
+      {!isMasterAdmin && !(assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)) && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 14px',
+            background: '#e6f4ff',
+            borderBottom: '1px solid #91caff',
+          }}
+        >
+          <EyeOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+          <span style={{ fontSize: 13, color: '#0958d9' }}>
+            <strong>Read Only</strong> — You don't have access to this scholarship program. Editing is restricted.
+          </span>
+        </div>
+      )}
       {/* Header */}
       <div style={{ background: '#fff', borderBottom: '1px solid #e8eaed', padding: '20px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -648,35 +677,39 @@ export default function StudentDetails() {
                 {getIncompleteCount()} incomplete fields
               </Tag>
             )}
-            {editMode ? (
-              <Space>
-                <Button onClick={() => { setFormData(student); setEditMode(false) }}>
-                  Cancel
-                </Button>
+            {(() => {
+              const canEditStudent = isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)
+              if (editMode) return (
+                <Space>
+                  <Button onClick={() => { setFormData(student); setEditMode(false) }}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="primary" 
+                    loading={saving} 
+                    onClick={handleSave} 
+                    disabled={!hasChanges()}
+                  >
+                    Save Changes
+                  </Button>
+                </Space>
+              )
+              if (canEditStudent) return (
                 <Button 
                   type="primary" 
-                  loading={saving} 
-                  onClick={handleSave} 
-                  disabled={!hasChanges()}
+                  icon={<EditOutlined />} 
+                  onClick={() => {
+                    setEditMode(true)
+                    if (formData.name_of_institution && !formData.uii) {
+                      lookupAndFillFields(formData)
+                    }
+                  }}
                 >
-                  Save Changes
+                  Edit Record
                 </Button>
-              </Space>
-            ) : (
-              <Button 
-                type="primary" 
-                icon={<EditOutlined />} 
-                onClick={() => {
-                  setEditMode(true)
-                  // Auto-fill UII and related fields when entering edit mode if missing
-                  if (formData.name_of_institution && !formData.uii) {
-                    lookupAndFillFields(formData)
-                  }
-                }}
-              >
-                Edit Record
-              </Button>
-            )}
+              )
+              return null
+            })()}
           </div>
         </div>
       </div>
@@ -888,9 +921,11 @@ export default function StudentDetails() {
         style={{ borderRadius: 12 }}
         styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDisbursement}>
-            Add Disbursement
-          </Button>
+          (isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)) ? (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDisbursement}>
+              Add Disbursement
+            </Button>
+          ) : null
         }
       >
         <Table
@@ -988,8 +1023,9 @@ export default function StudentDetails() {
                     type="number" 
                     step="0.01" 
                     prefix="₱" 
-                    placeholder="0.00"
+                    placeholder="Managed by Cashier"
                     min={0}
+                    disabled
                   />
                 </Form.Item>
               </Col>
@@ -1009,14 +1045,15 @@ export default function StudentDetails() {
               </Col>
               <Col span={12}>
                 <Form.Item name="voucher_no" label="Voucher No.">
-                  <Input />
+                  <Input disabled placeholder="Managed by Accounting" />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item name="voucher_date" label="Voucher Date">
                   <DatePicker 
                     style={{ width: '100%' }}
-                    placeholder="Select date"
+                    disabled
+                    placeholder="Managed by Accounting"
                   />
                 </Form.Item>
               </Col>
@@ -1044,23 +1081,23 @@ export default function StudentDetails() {
               </Col>
               <Col span={12}>
                 <Form.Item name="account_check_no" label="Account/Check No.">
-                  <Input />
+                  <Input disabled placeholder="Managed by Accounting" />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item name="lddap_no" label="LDDAP No.">
-                  <Input />
+                  <Input disabled placeholder="Managed by Cashier" />
                 </Form.Item>
               </Col>
               <Col span={12}>
                 <Form.Item 
                   name="disbursement_date" 
                   label="Disbursement Date"
-                  rules={[{ required: true, message: 'Please select disbursement date' }]}
                 >
                   <DatePicker 
                     style={{ width: '100%' }}
-                    placeholder="Select date"
+                    disabled
+                    placeholder="Managed by Cashier"
                   />
                 </Form.Item>
               </Col>

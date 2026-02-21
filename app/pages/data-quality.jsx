@@ -1,16 +1,18 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination, Divider } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
   LoadingOutlined,
   SwapOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
 
 const { Title, Text } = Typography
+const { Option } = Select
 
 // Human-readable field labels — aligned with backend DashboardController $requiredFields
 const fieldLabels = {
@@ -56,9 +58,113 @@ const ISSUE_TYPES = [
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
 ]
 
-export default function DataQuality({ readOnly = false }) {
+export default function DataQuality({ readOnly = false, canEdit = false }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
+
+  // Bulk Edit state
+  const [bulkEditVisible, setBulkEditVisible] = useState(false)
+  const [bulkField, setBulkField] = useState('degree_program')
+  const [bulkOldValue, setBulkOldValue] = useState('')
+  const [bulkNewValue, setBulkNewValue] = useState('')
+  const [bulkFieldValues, setBulkFieldValues] = useState([])
+  const [loadingFieldValues, setLoadingFieldValues] = useState(false)
+
+  const bulkFieldOptions = [
+    { label: 'Course Name', value: 'degree_program' },
+    { label: 'Program Major', value: 'program_major' },
+    { label: 'Program Discipline', value: 'program_discipline' },
+    { label: 'Program Degree Level', value: 'program_degree_level' },
+    { label: 'Institution Name', value: 'name_of_institution' },
+    { label: 'Institution Type', value: 'institutional_type' },
+    { label: 'Region', value: 'region' },
+    { label: 'Province', value: 'province' },
+    { label: 'City / Municipality', value: 'municipality_city' },
+    { label: 'Barangay / Street', value: 'street_brgy' },
+    { label: 'Congressional District', value: 'congressional_district' },
+    { label: 'Scholarship Program', value: 'scholarship_program' },
+    { label: 'Scholarship Status', value: 'scholarship_status' },
+    { label: 'Special Group', value: 'special_group' },
+    { label: 'Authority Type', value: 'authority_type' },
+    { label: 'Authority Number', value: 'authority_number' },
+    { label: 'Series', value: 'series' },
+    { label: 'Basis CMO', value: 'basis_cmo' },
+    { label: 'Termination Reason', value: 'termination_reason' },
+    { label: 'Replacement Info', value: 'replacement_info' },
+  ]
+
+  const fetchBulkFieldValues = async (fieldName) => {
+    setLoadingFieldValues(true)
+    try {
+      const response = await fetch(`${API_URL}/students/export?pageSize=9999`)
+      if (response.ok) {
+        const allStudents = await response.json()
+        const values = [...new Set(
+          allStudents
+            .map((s) => (s && s[fieldName] !== undefined && s[fieldName] !== null ? String(s[fieldName]) : null))
+            .filter(Boolean)
+        )]
+        setBulkFieldValues(values)
+      }
+    } catch (error) {
+      console.error('Error fetching field values:', error)
+    } finally {
+      setLoadingFieldValues(false)
+    }
+  }
+
+  useEffect(() => {
+    if (bulkEditVisible && bulkField) {
+      fetchBulkFieldValues(bulkField)
+    }
+  }, [bulkEditVisible, bulkField])
+
+  const handleBulkSubmit = async () => {
+    if (!bulkField || !bulkOldValue || !bulkNewValue) {
+      message.error('Please select a field and enter both old and new values.')
+      return
+    }
+
+    // Log the bulk edit action
+    try {
+      await fetch(`${API_URL}/logs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'Student',
+          model_id: 0,
+          action: 'update',
+          old_data: { [bulkField]: bulkOldValue },
+          new_data: { [bulkField]: bulkNewValue },
+          ip_address: 'client',
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to log action:', error)
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/students/bulk-update-field`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: bulkField, old_value: bulkOldValue, new_value: bulkNewValue }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        message.success(data.message)
+        setBulkEditVisible(false)
+        setBulkOldValue('')
+        setBulkNewValue('')
+        // Refresh data quality counts
+        fetchCounts()
+      } else {
+        message.error(data.error || 'Failed to update')
+      }
+    } catch (error) {
+      console.error('Bulk edit error:', error)
+      message.error('Failed to update records')
+    }
+  }
   const [counts, setCounts] = useState({
     no_uii: 0,
     no_lrn: 0,
@@ -357,11 +463,22 @@ export default function DataQuality({ readOnly = false }) {
             <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>Data Quality</Title>
             <Text style={{ color: '#6b7280', fontSize: 16 }}>Review and fix data issues across student records</Text>
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 32, fontWeight: 700, color: totalIssues > 0 ? '#ff4d4f' : '#52c41a', lineHeight: 1 }}>
-              {totalIssues}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {!readOnly && canEdit && (
+              <Button
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => setBulkEditVisible(true)}
+              >
+                Bulk Edit
+              </Button>
+            )}
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 32, fontWeight: 700, color: totalIssues > 0 ? '#ff4d4f' : '#52c41a', lineHeight: 1 }}>
+                {totalIssues}
+              </div>
+              <Text style={{ color: '#6b7280', fontSize: 13 }}>Total Issues</Text>
             </div>
-            <Text style={{ color: '#6b7280', fontSize: 13 }}>Total Issues</Text>
           </div>
         </div>
       </div>
@@ -371,7 +488,6 @@ export default function DataQuality({ readOnly = false }) {
         <Row gutter={[16, 16]}>
           {ISSUE_TYPES.map(item => {
             const count = getCountForTab(item.key)
-            const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0
             const isActive = activeTab === item.key
             return (
               <Col xs={12} sm={8} md={4} key={item.key}>
@@ -586,6 +702,98 @@ export default function DataQuality({ readOnly = false }) {
           </Spin>
         </Card>
       </div>
+
+      {/* Bulk Edit Modal */}
+      <Modal
+        open={bulkEditVisible}
+        onCancel={() => setBulkEditVisible(false)}
+        onOk={handleBulkSubmit}
+        title="Bulk Edit Records"
+        width={500}
+        okText="Apply Changes"
+        cancelText="Cancel"
+        okType="primary"
+      >
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            backgroundColor: '#fff7ed',
+            border: '1px solid #fb923c',
+            borderRadius: 6,
+            padding: 16,
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8
+          }}>
+            <span style={{ color: '#ea580c', fontSize: 16, marginTop: 1 }}>⚠️</span>
+            <div>
+              <div style={{ fontWeight: 600, color: '#ea580c', marginBottom: 4 }}>
+                Important Notice
+              </div>
+              <div style={{ fontSize: 14, color: '#9a3412', lineHeight: 1.4 }}>
+                This operation will modify multiple student records simultaneously.
+                Please review your selections carefully as this action cannot be undone.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            Select Field to Update
+          </label>
+          <Select
+            value={bulkField}
+            onChange={setBulkField}
+            style={{ width: '100%' }}
+            placeholder="Choose the field you want to update"
+          >
+            {bulkFieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
+          </Select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            Current Value to Replace
+          </label>
+          <Select
+            value={bulkOldValue}
+            onChange={setBulkOldValue}
+            style={{ width: '100%' }}
+            placeholder="Select the existing value to replace"
+            showSearch
+            loading={loadingFieldValues}
+            notFoundContent={loadingFieldValues ? 'Loading...' : 'No values found'}
+          >
+            {bulkFieldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
+          </Select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
+            New Value
+          </label>
+          <Input
+            value={bulkNewValue}
+            onChange={e => setBulkNewValue(e.target.value)}
+            placeholder="Enter the new value to replace with"
+          />
+        </div>
+
+        {bulkField && bulkOldValue && bulkNewValue && (
+          <div style={{
+            backgroundColor: '#f0f9ff',
+            border: '1px solid #0ea5e9',
+            borderRadius: 6,
+            padding: 12,
+            marginTop: 16
+          }}>
+            <div style={{ fontSize: 13, color: '#0369a1' }}>
+              <strong>Preview:</strong> All records with "{bulkOldValue}" in the {bulkFieldOptions.find(opt => opt.value === bulkField)?.label} field will be updated to "{bulkNewValue}".
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

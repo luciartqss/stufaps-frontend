@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Typography, Form, Input, Button, Select, message, DatePicker, Card, Row, Col, Divider, Space, Modal, Tag } from 'antd'
 import {
   ArrowLeftOutlined, PlusOutlined, DeleteOutlined, SaveOutlined,
@@ -7,6 +7,7 @@ import {
   UploadOutlined, WarningOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useAuth } from '../lib/AuthContext'
 
 import { API_BASE } from '../lib/config'
 
@@ -43,9 +44,19 @@ const DATA_QUALITY_FIELDS = {
 
 export default function CreateStudent() {
   const navigate = useNavigate()
+  const { getAccess } = useAuth()
+  const canAdd = getAccess('students-add') === 'full'
   const [loading, setLoading] = useState(false)
   const [form] = Form.useForm()
   const [disbursements, setDisbursements] = useState([])
+
+  // Redirect if user doesn't have add permission
+  useEffect(() => {
+    if (!canAdd) {
+      message.error('You do not have permission to add students')
+      navigate('/students', { replace: true })
+    }
+  }, [canAdd, navigate])
 
   const addDisbursement = () => {
     setDisbursements(prev => [...prev, { id: Date.now() }])

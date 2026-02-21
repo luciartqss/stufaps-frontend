@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Title, Text } = Typography
 
@@ -550,9 +551,19 @@ const DebouncedInput = memo(function DebouncedInput({ value: externalValue, onCh
 
 export default function ImportBulk() {
   const navigate = useNavigate()
+  const { getAccess } = useAuth()
+  const canAdd = getAccess('students-add') === 'full'
   const [data, setData] = useState([])
   const [inputKey, setInputKey] = useState(Date.now())
   const [loading, setLoading] = useState(false)
+
+  // Redirect if user doesn't have add permission
+  useEffect(() => {
+    if (!canAdd) {
+      message.error('You do not have permission to add students')
+      navigate('/students', { replace: true })
+    }
+  }, [canAdd, navigate])
   const fileInputRef = useRef(null)
   const [academicYears, setAcademicYears] = useState([
     { id: makeAyId('2024-2025'), label: '2024-2025' },

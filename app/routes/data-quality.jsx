@@ -9,7 +9,8 @@ export function meta() {
 }
 
 export default function DataQualityRoute() {
-  const { getAccess } = useAuth()
+  const { getAccess, permissions } = useAuth()
   const access = getAccess('data-quality-stufaps')
-  return <DataQuality readOnly={access === 'read-only'} />
+  const canEdit = permissions?.role === 'master_admin' || (permissions?.assigned_programs?.length > 0)
+  return <DataQuality readOnly={access === 'read-only'} canEdit={canEdit} />
 }

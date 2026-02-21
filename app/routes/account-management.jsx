@@ -87,6 +87,7 @@ export default function AccountManagement() {
       password: '',
       accounting_access: user.accounting_access || false,
       cashier_access: user.cashier_access || false,
+      can_add_students: user.can_add_students || false,
       assigned_programs: uniquePrograms,
       assigned_years: uniqueYears,
     })
@@ -118,11 +119,13 @@ export default function AccountManagement() {
         if ((values.role || editingUser.role) === 'stufaps') {
           payload.accounting_access = values.accounting_access || false
           payload.cashier_access = values.cashier_access || false
+          payload.can_add_students = values.can_add_students || false
           payload.assignments = assignments
         } else {
           // Reset flags if switching away from stufaps
           payload.accounting_access = false
           payload.cashier_access = false
+          payload.can_add_students = false
           payload.assignments = []
         }
 
@@ -147,6 +150,7 @@ export default function AccountManagement() {
           role: values.role,
           accounting_access: values.role === 'stufaps' ? (values.accounting_access || false) : false,
           cashier_access: values.role === 'stufaps' ? (values.cashier_access || false) : false,
+          can_add_students: values.role === 'stufaps' ? (values.can_add_students || false) : false,
           assignments: values.role === 'stufaps' ? assignments : [],
         }
 
@@ -237,6 +241,7 @@ export default function AccountManagement() {
         const flags = []
         if (record.accounting_access) flags.push('Accounting')
         if (record.cashier_access) flags.push('Cashier')
+        if (record.can_add_students) flags.push('Add')
 
         return (
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
@@ -380,7 +385,10 @@ export default function AccountManagement() {
                   allowClear
                   showSearch
                   optionFilterProp="label"
-                  options={assignmentOptions.scholarship_programs.map(p => ({ label: p, value: p }))}
+                  options={[
+                    { label: '✦ ALL Programs', value: 'ALL' },
+                    ...assignmentOptions.scholarship_programs.map(p => ({ label: p, value: p }))
+                  ]}
                   style={{ width: '100%' }}
                 />
               </Form.Item>
@@ -393,10 +401,17 @@ export default function AccountManagement() {
                   mode="multiple"
                   placeholder="Select academic years"
                   allowClear
-                  options={assignmentOptions.academic_years.map(y => ({ label: y, value: y }))}
+                  options={[
+                    { label: '✦ ALL Academic Years', value: 'ALL' },
+                    ...assignmentOptions.academic_years.map(y => ({ label: y, value: y }))
+                  ]}
                   style={{ width: '100%' }}
                 />
               </Form.Item>
+
+              <Divider style={{ margin: '12px 0' }}>
+                <Text style={{ fontSize: 13, color: '#8c8c8c' }}>Section Access</Text>
+              </Divider>
 
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
                 <Form.Item name="accounting_access" valuePropName="checked" style={{ margin: 0 }}>
@@ -407,10 +422,22 @@ export default function AccountManagement() {
                 </Form.Item>
               </div>
 
+              <Divider style={{ margin: '12px 0' }}>
+                <Text style={{ fontSize: 13, color: '#8c8c8c' }}>Student Permissions</Text>
+              </Divider>
+
+              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
+                <Form.Item name="can_add_students" valuePropName="checked" style={{ margin: 0 }}>
+                  <Checkbox>Can add students</Checkbox>
+                </Form.Item>
+              </div>
+
               <div style={{ background: '#f6f8fa', borderRadius: 6, padding: '10px 14px', marginBottom: 8 }}>
                 <Text style={{ fontSize: 12, color: '#6b7280' }}>
                   <strong>Note:</strong> Without program/year assignments, the user can still log in but has read-only access.
                   Checking Accounting/Cashier grants full edit access to those sections; unchecked grants view-only.
+                  Users can edit students and disbursements only for the programs and academic years they are assigned to.
+                  Select "ALL" to grant access to all programs or all academic years.
                 </Text>
               </div>
             </>

@@ -10,6 +10,7 @@ import EditSlotsModal from '../components/EditSlotsModal'
 import UpdateSlotModal from '../components/UpdateSlotModal'
 
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -230,6 +231,8 @@ function ProgramCard({ program, totals }) {
 
 /* ─── Main Page ─── */
 export default function FinancialAssistanceIndex() {
+  const { permissions } = useAuth()
+  const isMasterAdmin = permissions?.role === 'master_admin'
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
   const [openModalAddSlot, setOpenModalAddSlot] = useState(false)
@@ -314,12 +317,16 @@ export default function FinancialAssistanceIndex() {
                 <Option key={y} value={y}>{y}</Option>
               ))}
             </Select>
-            <Button icon={<PlusOutlined />} onClick={() => setOpenModalAddSlot(true)}>
-              Add Slots
-            </Button>
-            <Button icon={<EditOutlined />} onClick={() => setOpenModalUpdateSlot(true)}>
-              Update Slots
-            </Button>
+            {isMasterAdmin && (
+              <>
+                <Button icon={<PlusOutlined />} onClick={() => setOpenModalAddSlot(true)}>
+                  Add Slots
+                </Button>
+                <Button icon={<EditOutlined />} onClick={() => setOpenModalUpdateSlot(true)}>
+                  Update Slots
+                </Button>
+              </>
+            )}
           </Space>
         </div>
       </div>

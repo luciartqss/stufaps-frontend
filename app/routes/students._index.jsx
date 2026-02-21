@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Modal, Drawer, Tooltip } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CloseOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useEffect, useMemo, useState } from 'react'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip } from 'antd'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Title } = Typography
 const { Search } = Input
@@ -120,20 +121,6 @@ const sortAcademicYears = (list = []) =>
     if (Number.isNaN(aYear) || Number.isNaN(bYear)) return a.label.localeCompare(b.label)
     return aYear - bYear
   })
-
-const mergeAcademicYears = (current = [], labels = []) => {
-  const seen = new Set(current.map((ay) => ay.label))
-  const merged = [...current]
-
-  labels.forEach((label) => {
-    if (!seen.has(label)) {
-      merged.push({ id: makeAyId(label), label })
-      seen.add(label)
-    }
-  })
-
-  return sortAcademicYears(merged)
-}
 
 const buildHeaders = (academicYears) => {
   const row1 = []
@@ -299,6 +286,11 @@ export function meta() {
 }
 
 export default function StudentsIndex() {
+  const { getAccess, permissions } = useAuth()
+  const canAdd = getAccess('students-add') === 'full'
+  const isMasterAdmin = permissions?.role === 'master_admin'
+  const assignedPrograms = permissions?.assigned_programs || []
+  const assignedYears = permissions?.assigned_years || []
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchValue, setSearchValue] = useState('')
@@ -308,7 +300,6 @@ export default function StudentsIndex() {
   const [semesterFilter, setSemesterFilter] = useState(null)
   const [courseFilter, setCourseFilter] = useState(null)
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
-  const [modalVisible, setModalVisible] = useState(false)
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const [regionFilter, setRegionFilter] = useState(null)
   const [provinceFilter, setProvinceFilter] = useState(null)
@@ -323,16 +314,6 @@ export default function StudentsIndex() {
   
   // Debounced search value for API calls
   const debouncedSearch = useDebounce(searchValue, 300)
-
-  const academicYearsFromData = useMemo(() => {
-    const labels = new Set()
-    students.forEach((s) => {
-      (s.disbursements || []).forEach((d) => {
-        if (d.academic_year) labels.add(d.academic_year)
-      })
-    })
-    return sortAcademicYears(Array.from(labels).map((label) => ({ id: makeAyId(label), label })))
-  }, [students])
 
   useEffect(() => {
     fetchFilterOptions()
@@ -589,18 +570,20 @@ export default function StudentsIndex() {
           <Button size="small" type="link" style={{ fontSize: 13, padding: 0 }} onClick={() => handleViewMore(student)}>
             View
           </Button>
-          <Popconfirm
-            title="Delete student"
-            description="Are you sure you want to delete this student? This action cannot be undone."
-            onConfirm={() => handleDeleteStudent(student)}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-          >
-            <Button size="small" type="link" danger style={{ fontSize: 13, padding: 0 }}>
-              Delete
-            </Button>
-          </Popconfirm>
+          {(isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(student.scholarship_program)) && (
+            <Popconfirm
+              title="Delete student"
+              description="Are you sure you want to delete this student? This action cannot be undone."
+              onConfirm={() => handleDeleteStudent(student)}
+              okText="Delete"
+              cancelText="Cancel"
+              okButtonProps={{ danger: true }}
+            >
+              <Button size="small" type="link" danger style={{ fontSize: 13, padding: 0 }}>
+                Delete
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -627,35 +610,9 @@ export default function StudentsIndex() {
     }
   }
 
-  // Log action function
-  const logAction = async (model, modelId, action, oldData, newData) => {
-    try {
-      await fetch(`${API_BASE}/logs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model,
-          model_id: modelId,
-          action,
-          old_data: oldData,
-          new_data: newData,
-          ip_address: 'client',
-        }),
-      })
-    } catch (error) {
-      console.error('Failed to log action:', error)
-    }
-  }
-
   // Handle "Add Student" button click
   const handleAddStudent = async () => {
-    // Log the navigation (logging will happen in the create page)
     navigate('/students/create')
-  }
-
-  // Handle "Add Bulk" button click
-  const handleBulkAdd = () => {
-    navigate('/students/bulk')
   }
 
   // Build rows for export
@@ -900,6 +857,18 @@ export default function StudentsIndex() {
     applyFilters({ program: value })
   }
 
+  // Handle academic year filter
+  const handleAcademicYearChange = (value) => {
+    setAcademicYearFilter(value)
+    applyFilters({ academicYear: value })
+  }
+
+  // Handle semester filter
+  const handleSemesterChange = (value) => {
+    setSemesterFilter(value)
+    applyFilters({ semester: value })
+  }
+
   const handleResetFilters = () => {
     setSearchValue('')
     setStatusFilter(null)
@@ -972,100 +941,8 @@ export default function StudentsIndex() {
     </div>
   )
 
-  const [field, setField] = useState('degree_program')
-  const [oldValue, setOldValue] = useState('')
-  const [newValue, setNewValue] = useState('')
-
-  // Safe, bulk-editable fields (excluding disbursement/sensitive data)
-  const fieldOptions = [
-    { label: 'Course Name', value: 'degree_program' },
-    { label: 'Program Major', value: 'program_major' },
-    { label: 'Program Discipline', value: 'program_discipline' },
-    { label: 'Program Degree Level', value: 'program_degree_level' },
-    { label: 'Institution Name', value: 'name_of_institution' },
-    { label: 'Institution Type', value: 'institutional_type' },
-    { label: 'Region', value: 'region' },
-    { label: 'Province', value: 'province' },
-    { label: 'City / Municipality', value: 'municipality_city' },
-    { label: 'Barangay / Street', value: 'street_brgy' },
-    { label: 'Congressional District', value: 'congressional_district' },
-    { label: 'Scholarship Program', value: 'scholarship_program' },
-    { label: 'Scholarship Status', value: 'scholarship_status' },
-    { label: 'Special Group', value: 'special_group' },
-    { label: 'Authority Type', value: 'authority_type' },
-    { label: 'Authority Number', value: 'authority_number' },
-    { label: 'Series', value: 'series' },
-    { label: 'Basis CMO', value: 'basis_cmo' },
-    { label: 'Termination Reason', value: 'termination_reason' },
-    { label: 'Replacement Info', value: 'replacement_info' },
-  ]
-
-  // Fetch field values for bulk edit when field changes
-  const [bulkEditFieldValues, setBulkEditFieldValues] = useState([])
-  const [loadingFieldValues, setLoadingFieldValues] = useState(false)
-
-  useEffect(() => {
-    if (modalVisible && field) {
-      fetchFieldValues(field)
-    }
-  }, [modalVisible, field])
-
-  const fetchFieldValues = async (fieldName) => {
-    setLoadingFieldValues(true)
-    try {
-      const response = await fetch(`${API_BASE}/students/export?pageSize=9999`)
-      if (response.ok) {
-        const allStudents = await response.json()
-        const values = [...new Set(
-          allStudents
-            .map((s) => (s && s[fieldName] !== undefined && s[fieldName] !== null ? String(s[fieldName]) : null))
-            .filter(Boolean)
-        )]
-        setBulkEditFieldValues(values)
-      }
-    } catch (error) {
-      console.error('Error fetching field values:', error)
-    } finally {
-      setLoadingFieldValues(false)
-    }
-  }
-
-  const oldValues = bulkEditFieldValues
-
-  // Update the handleSubmit for Bulk Edit to include logging
-  const handleSubmit = async () => {
-    if (!field || !oldValue || !newValue) {
-      message.error('Please select a field and enter both old and new values.')
-      return
-    }
-
-    // Log the bulk edit action
-    await logAction('Student', 0, 'update', { [field]: oldValue }, { [field]: newValue })
-
-    const res = await fetch(`${API_BASE}/students/bulk-update-field`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ field, old_value: oldValue, new_value: newValue }),
-    })
-    const data = await res.json()
-    if (res.ok) {
-      message.success(data.message)
-      fetchStudents()
-      fetchFilterOptions() // Refresh filter options after bulk edit
-      setModalVisible(false)
-      setOldValue('')
-      setNewValue('')
-    } else {
-      message.error(data.error || 'Failed to update')
-    }
-  }
-
   const handlePrintMasterlist = () => {
     navigate('/students/pdf')
-  }
-
-  const refreshStudents = () => {
-    fetchStudents()
   }
 
   // Build active filters list for the summary bar
@@ -1091,6 +968,7 @@ export default function StudentsIndex() {
   return (
     <div style={{ padding: 0, margin: 0 }}>
       <Title level={2} style={{ margin: '0 0 6px 0' }}>Students</Title>
+
       <Space direction="vertical" style={{ width: '100%', marginBottom: '6px' }}>
         <Space style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <Space wrap>
@@ -1134,24 +1012,61 @@ export default function StudentsIndex() {
               onChange={handleProgramChange}
               value={programFilter}
             >
-              {scholarshipPrograms.map((program) => (
-                <Option key={program} value={program}>
-                  {program}
-                </Option>
+              {scholarshipPrograms.map((program) => {
+                const isAssigned = isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(program)
+                return (
+                  <Option key={program} value={program}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {program}
+                      {!isMasterAdmin && isAssigned && (
+                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                      )}
+                    </span>
+                  </Option>
+                )
+              })}
+            </Select>
+            <Select
+              placeholder="Academic Year"
+              allowClear
+              showSearch
+              size="middle"
+              style={{ width: 160 }}
+              value={academicYearFilter}
+              onChange={handleAcademicYearChange}
+            >
+              {academicYears.map((year) => {
+                const isAssigned = isMasterAdmin || assignedYears.includes('ALL') || assignedYears.includes(year)
+                return (
+                  <Option key={year} value={year}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {year}
+                      {!isMasterAdmin && isAssigned && (
+                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                      )}
+                    </span>
+                  </Option>
+                )
+              })}
+            </Select>
+            <Select
+              placeholder="Semester"
+              allowClear
+              size="middle"
+              style={{ width: 140 }}
+              value={semesterFilter}
+              onChange={handleSemesterChange}
+            >
+              {semesters.map((sem) => (
+                <Option key={sem} value={sem}>{sem}</Option>
               ))}
             </Select>
             <Button
               size="middle"
+              icon={<FilterOutlined />}
               onClick={() => setFiltersDrawerOpen(true)}
             >
-              Filters
-            </Button>
-            <Button
-              type="default"
-              size="middle"
-              onClick={() => setModalVisible(true)}
-            >
-              Bulk Edit
+              More Filters
             </Button>
           </Space>
           <Space>
@@ -1184,14 +1099,16 @@ export default function StudentsIndex() {
             >
               Extract Excel
             </Button>
-            <Button
-              type="primary"
-              size="middle"
-              style={{ width: 120 }}
-              onClick={handleAddStudent}
-            >
-              Add Student
-            </Button>
+            {canAdd && (
+              <Button
+                type="primary"
+                size="middle"
+                style={{ width: 120 }}
+                onClick={handleAddStudent}
+              >
+                Add Student
+              </Button>
+            )}
           </Space>
         </Space>
       </Space>
@@ -1332,97 +1249,6 @@ export default function StudentsIndex() {
           onShowSizeChange: handleTableChange,
         }}
       />
-      <Modal 
-        open={modalVisible} 
-        onCancel={() => setModalVisible(false)} 
-        onOk={handleSubmit} 
-        title="Bulk Edit Records"
-        width={500}
-        okText="Apply Changes"
-        cancelText="Cancel"
-        okType="primary"
-      >
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ 
-            backgroundColor: '#fff7ed', 
-            border: '1px solid #fb923c', 
-            borderRadius: 6, 
-            padding: 16, 
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 8
-          }}>
-            <span style={{ color: '#ea580c', fontSize: 16, marginTop: 1 }}>⚠️</span>
-            <div>
-              <div style={{ fontWeight: 600, color: '#ea580c', marginBottom: 4 }}>
-                Important Notice
-              </div>
-              <div style={{ fontSize: 14, color: '#9a3412', lineHeight: 1.4 }}>
-                This operation will modify multiple student records simultaneously. 
-                Please review your selections carefully as this action cannot be undone.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            Select Field to Update
-          </label>
-          <Select 
-            value={field} 
-            onChange={setField} 
-            style={{ width: '100%' }}
-            placeholder="Choose the field you want to update"
-          >
-            {fieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
-          </Select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            Current Value to Replace
-          </label>
-          <Select
-            value={oldValue}
-            onChange={setOldValue}
-            style={{ width: '100%' }}
-            placeholder="Select the existing value to replace"
-            showSearch
-            loading={loadingFieldValues}
-            notFoundContent={loadingFieldValues ? 'Loading...' : 'No values found'}
-          >
-            {oldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
-          </Select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            New Value
-          </label>
-          <Input
-            value={newValue}
-            onChange={e => setNewValue(e.target.value)}
-            placeholder="Enter the new value to replace with"
-          />
-        </div>
-
-        {field && oldValue && newValue && (
-          <div style={{ 
-            backgroundColor: '#f0f9ff', 
-            border: '1px solid #0ea5e9', 
-            borderRadius: 6, 
-            padding: 12,
-            marginTop: 16
-          }}>
-            <div style={{ fontSize: 13, color: '#0369a1' }}>
-              <strong>Preview:</strong> All records with "{oldValue}" in the {fieldOptions.find(opt => opt.value === field)?.label} field will be updated to "{newValue}".
-            </div>
-          </div>
-        )}
-      </Modal>
-
       <Drawer
         title="Filters"
         placement="right"
@@ -1440,48 +1266,19 @@ export default function StudentsIndex() {
           <div>
             <div style={{ fontWeight: 600, marginBottom: 8 }}>Academic & Term</div>
             <Space direction="vertical" style={{ width: '100%' }} size="small">
-              <Space wrap style={{ width: '100%' }}>
-                <Select
-                  placeholder="Academic Year"
-                  allowClear
-                  showSearch
-                  size="middle"
-                  style={{ width: 185 }}
-                  value={academicYearFilter}
-                  onChange={(value) => setAcademicYearFilter(value)}
-                >
-                  {academicYears.map((year) => (
-                    <Option key={year} value={year}>{year}</Option>
-                  ))}
-                </Select>
-                <Select
-                  placeholder="Semester"
-                  allowClear
-                  size="middle"
-                  style={{ width: 185 }}
-                  value={semesterFilter}
-                  onChange={(value) => setSemesterFilter(value)}
-                >
-                  {semesters.map((sem) => (
-                    <Option key={sem} value={sem}>{sem}</Option>
-                  ))}
-                </Select>
-              </Space>
-              <Space wrap style={{ width: '100%' }}>
-                <Select
-                  placeholder="Award Year"
-                  allowClear
-                  showSearch
-                  size="middle"
-                  style={{ width: 185 }}
-                  value={awardYearFilter}
-                  onChange={(value) => setAwardYearFilter(value)}
-                >
-                  {awardYears.map((year) => (
-                    <Option key={year} value={year}>{year}</Option>
-                  ))}
-                </Select>
-              </Space>
+              <Select
+                placeholder="Award Year"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: '100%' }}
+                value={awardYearFilter}
+                onChange={(value) => setAwardYearFilter(value)}
+              >
+                {awardYears.map((year) => (
+                  <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
               <Select
                 placeholder="Course / Degree Program"
                 allowClear

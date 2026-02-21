@@ -78,7 +78,8 @@ export function AuthProvider({ children }) {
 
   /**
    * Check if the user can access a specific section.
-   * Sections: 'dashboard', 'students', 'data-quality-stufaps', 'data-quality-accounting',
+   * Sections: 'dashboard', 'students', 'students-add', 'students-edit',
+   *           'data-quality-stufaps', 'data-quality-accounting',
    *           'data-quality-cashier', 'logs', 'financial_assistance', 'about_us', 'account-management'
    * Returns: 'full' | 'read-only' | 'none'
    */
@@ -112,7 +113,15 @@ export function AuthProvider({ children }) {
         return permissions.cashier_access ? 'full' : 'read-only'
       }
 
-      // All other sections (dashboard, students, logs, financial assistance, data-quality-stufaps, about_us)
+      // Student-specific permissions
+      if (section === 'students-add') {
+        return permissions.can_add_students ? 'full' : 'none'
+      }
+      if (section === 'students-edit') {
+        return (permissions.assigned_programs?.length > 0) ? 'full' : 'none'
+      }
+
+      // All other sections (dashboard, students, financial assistance, data-quality-stufaps, about_us)
       return permissions.full_access ? 'full' : 'read-only'
     }
 
