@@ -9,7 +9,8 @@ import {
   WarningOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
+// Note: DollarOutlined import kept for potential future use
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
 import { useAuth } from '../lib/AuthContext'
@@ -17,77 +18,222 @@ import { useAuth } from '../lib/AuthContext'
 const { Sider } = Layout
 const { Text } = Typography
 
-export default function Sidebar({ collapsed, setCollapsed }) {
+// ── Static styles hoisted out of render ──────────────────────────────
+const siderBaseStyle = {
+  backgroundColor: '#ffffff',
+  borderRight: '1px solid #e8e8e8',
+  height: '100vh',
+  position: 'fixed',
+  left: 0,
+  top: 0,
+  bottom: 0,
+  zIndex: 100,
+  boxShadow: '2px 0 8px rgba(0, 0, 0, 0.05)',
+}
+
+const logoSectionStyle = {
+  padding: '0 20px',
+  borderBottom: '1px solid #e8e8e8',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  gap: '14px',
+  height: '72px',
+}
+
+const logoContainerStyle = {
+  width: '44px',
+  height: '44px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0,
+}
+
+const logoImgStyle = {
+  width: '44px',
+  height: '44px',
+  objectFit: 'contain',
+}
+
+const logoFallbackStyle = {
+  color: '#0032a0',
+  fontSize: '16px',
+  fontWeight: 700,
+  display: 'none',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
+  height: '100%',
+}
+
+const titleStyle = {
+  color: '#1a1a1a',
+  fontSize: '15px',
+  fontWeight: 600,
+  display: 'block',
+  lineHeight: '1.3',
+  whiteSpace: 'nowrap',
+  letterSpacing: '0.2px',
+}
+
+const subtitleStyle = {
+  color: '#8c8c8c',
+  fontSize: '11px',
+  display: 'block',
+  whiteSpace: 'nowrap',
+  letterSpacing: '0.3px',
+}
+
+const menuStyle = {
+  backgroundColor: 'transparent',
+  borderRight: 'none',
+  padding: '12px 8px',
+}
+
+const handleImgError = (e) => {
+  e.target.style.display = 'none'
+  e.target.nextSibling.style.display = 'flex'
+}
+
+// ── CSS moved to a module-level constant (parsed once, not every render) ──
+const SIDEBAR_CSS = `
+  .ant-menu-item {
+    margin: 2px 0 !important;
+    border-radius: 4px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+  }
+  .ant-menu-item a {
+    color: #434343 !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+    font-size: 13.5px !important;
+    letter-spacing: 0.15px !important;
+  }
+  .ant-menu-item-selected {
+    background-color: #3366cc !important;
+  }
+  .ant-menu-item-selected a {
+    color: #ffffff !important;
+  }
+  .ant-menu-item-selected::after {
+    display: none !important;
+  }
+  .ant-menu-item .ant-menu-item-icon {
+    color: #8c8c8c !important;
+    font-size: 16px !important;
+  }
+  .ant-menu-item-selected .ant-menu-item-icon {
+    color: #ffffff !important;
+  }
+  .ant-layout-sider-children {
+    display: flex;
+    flex-direction: column;
+  }
+  .ant-menu-submenu-title {
+    margin: 2px 0 !important;
+    border-radius: 4px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    color: #434343 !important;
+    font-weight: 500 !important;
+    font-size: 13.5px !important;
+    letter-spacing: 0.15px !important;
+  }
+  .ant-menu-submenu-title .ant-menu-item-icon {
+    color: #8c8c8c !important;
+    font-size: 16px !important;
+  }
+  .ant-menu-submenu-selected > .ant-menu-submenu-title {
+    color: #0032a0 !important;
+  }
+  .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon {
+    color: #0032a0 !important;
+  }
+  .ant-menu-sub.ant-menu-inline {
+    background: transparent !important;
+  }
+  .ant-menu-sub .ant-menu-item {
+    padding-left: 48px !important;
+    height: 38px !important;
+    line-height: 38px !important;
+  }
+`
+
+export default function Sidebar() {
   const location = useLocation()
   const { user, getAccess } = useAuth()
   const [openKeys, setOpenKeys] = useState(() => {
     return location.pathname.startsWith('/data-quality') ? ['sub-data-quality'] : []
   })
 
-  // Build Data Quality children based on access
-  const dataQualityChildren = []
-  if (getAccess('data-quality-stufaps') !== 'none') {
-    dataQualityChildren.push({
-      key: '/data-quality/stufaps',
-      label: <NavLink to="/data-quality">StuFAPs</NavLink>,
-    })
-  }
-  if (getAccess('data-quality-accounting') !== 'none') {
-    dataQualityChildren.push({
-      key: '/data-quality/accounting',
-      label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
-    })
-  }
-  if (getAccess('data-quality-cashier') !== 'none') {
-    dataQualityChildren.push({
-      key: '/data-quality/cashier',
-      label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
-    })
-  }
+  // Memoize menu items — only rebuilds when permissions change
+  const menuItems = useMemo(() => {
+    const dataQualityChildren = []
+    if (getAccess('data-quality-stufaps') !== 'none') {
+      dataQualityChildren.push({
+        key: '/data-quality/stufaps',
+        label: <NavLink to="/data-quality">StuFAPs</NavLink>,
+      })
+    }
+    if (getAccess('data-quality-accounting') !== 'none') {
+      dataQualityChildren.push({
+        key: '/data-quality/accounting',
+        label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
+      })
+    }
+    if (getAccess('data-quality-cashier') !== 'none') {
+      dataQualityChildren.push({
+        key: '/data-quality/cashier',
+        label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
+      })
+    }
 
-  const menuItems = [
-    ...(getAccess('dashboard') !== 'none' ? [{
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: <NavLink to="/dashboard">Dashboard</NavLink>,
-    }] : []),
-    ...(getAccess('students') !== 'none' ? [{
-      key: '/students',
-      icon: <TeamOutlined />,
-      label: <NavLink to="/students">Students</NavLink>,
-    }] : []),
-    ...(dataQualityChildren.length > 0 ? [{
-      key: 'sub-data-quality',
-      icon: <WarningOutlined />,
-      label: 'Data Quality',
-      children: dataQualityChildren,
-    }] : []),
-    ...(getAccess('financial_assistance') !== 'none' ? [{
-      key: '/financial_assistance',
-      icon: <BarChartOutlined />,
-      label: <NavLink to="/financial_assistance">Financial Assistances</NavLink>,
-    }] : []),
-    ...(getAccess('logs') !== 'none' ? [{
-      key: '/logs',
-      icon: <FileTextOutlined />,
-      label: <NavLink to="/logs">Logs</NavLink>,
-    }] : []),
-    ...(getAccess('account-management') !== 'none' ? [{
-      key: '/account-management',
-      icon: <UserOutlined />,
-      label: <NavLink to="/account-management">Account Management</NavLink>,
-    }] : []),
-    ...(getAccess('about_us') !== 'none' ? [{
-      key: '/about_us',
-      icon: <InfoCircleOutlined />,
-      label: <NavLink to="/about_us">About us</NavLink>,
-    }] : []),
-  ]
+    return [
+      ...(getAccess('dashboard') !== 'none' ? [{
+        key: '/dashboard',
+        icon: <DashboardOutlined />,
+        label: <NavLink to="/dashboard">Dashboard</NavLink>,
+      }] : []),
+      ...(getAccess('students') !== 'none' ? [{
+        key: '/students',
+        icon: <TeamOutlined />,
+        label: <NavLink to="/students">Students</NavLink>,
+      }] : []),
+      ...(dataQualityChildren.length > 0 ? [{
+        key: 'sub-data-quality',
+        icon: <WarningOutlined />,
+        label: 'Data Quality',
+        children: dataQualityChildren,
+      }] : []),
+      ...(getAccess('financial_assistance') !== 'none' ? [{
+        key: '/financial_assistance',
+        icon: <BarChartOutlined />,
+        label: <NavLink to="/financial_assistance">Financial Assistance</NavLink>,
+      }] : []),
+      ...(getAccess('logs') !== 'none' ? [{
+        key: '/logs',
+        icon: <FileTextOutlined />,
+        label: <NavLink to="/logs">Logs</NavLink>,
+      }] : []),
+      ...(getAccess('account-management') !== 'none' ? [{
+        key: '/account-management',
+        icon: <UserOutlined />,
+        label: <NavLink to="/account-management">Account Management</NavLink>,
+      }] : []),
+      ...(getAccess('about_us') !== 'none' ? [{
+        key: '/about_us',
+        icon: <InfoCircleOutlined />,
+        label: <NavLink to="/about_us">About Us</NavLink>,
+      }] : []),
+    ]
+  }, [getAccess])
 
-  const getSelectedKey = () => {
+  // Memoize selected key — only recalculates on route change
+  const selectedKey = useMemo(() => {
     const path = location.pathname
     if (path === '/') return '/'
-    // Exact match for /data-quality (StuFAPs)
     if (path === '/data-quality') return '/data-quality/stufaps'
     for (const item of menuItems) {
       if (item.children) {
@@ -97,240 +243,63 @@ export default function Sidebar({ collapsed, setCollapsed }) {
       if (!item.children && item.key !== '/' && path.startsWith(item.key)) return item.key
     }
     return '/'
-  }
+  }, [location.pathname, menuItems])
 
-  const handleOpenChange = (keys) => {
+  const selectedKeys = useMemo(() => [selectedKey], [selectedKey])
+
+  // Stable callback refs
+  const handleOpenChange = useCallback((keys) => {
     setOpenKeys(keys)
-  }
+  }, [])
 
-  const handleMenuClick = ({ key }) => {
-    // Collapse submenu when clicking a non-data-quality item
+  const handleMenuClick = useCallback(({ key }) => {
     if (!key.startsWith('/data-quality') && key !== 'sub-data-quality') {
       setOpenKeys([])
     }
-  }
+  }, [])
 
   return (
     <Sider
-      collapsible
-      collapsed={collapsed}
-      onCollapse={setCollapsed}
-      trigger={null}
       width={260}
-      collapsedWidth={80}
-      style={{
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid #e8e8e8',
-        height: '100vh',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        zIndex: 100,
-        boxShadow: '2px 0 8px rgba(0, 0, 0, 0.05)',
-        transition: 'all 0.2s ease',
-      }}
+      style={siderBaseStyle}
     >
       {/* Logo Section */}
-      <div
-        style={{
-          padding: collapsed ? '20px 16px' : '20px 24px',
-          borderBottom: '1px solid #e8e8e8',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          gap: '12px',
-          height: '72px',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        {/* CHED Logo */}
-        <div
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            overflow: 'hidden',
-            backgroundColor: '#f8f9fa',
-            border: '1px solid #e8e8e8',
-          }}
-        >
+      <div style={logoSectionStyle}>
+        <div style={logoContainerStyle}>
           <img
             src={CHEDLogo}
             alt="CHED Logo"
-            style={{
-              width: '32px',
-              height: '32px',
-              objectFit: 'contain',
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none'
-              e.target.nextSibling.style.display = 'flex'
-            }}
+            style={logoImgStyle}
+            onError={handleImgError}
           />
-          <Text 
-            strong 
-            style={{ 
-              color: '#0032a0', 
-              fontSize: '14px',
-              display: 'none',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              height: '100%'
-            }}
-          >
+          <Text strong style={logoFallbackStyle}>
             SF
           </Text>
         </div>
 
-        {/* Title - Hidden when collapsed */}
-        {!collapsed && (
-          <div style={{ overflow: 'hidden' }}>
-            <Text
-              strong
-              style={{
-                color: '#0032a0',
-                fontSize: '16px',
-                display: 'block',
-                lineHeight: '1.3',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              StuFAPs
-            </Text>
-            <Text
-              style={{
-                color: '#8c8c8c',
-                fontSize: '12px',
-                display: 'block',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Operations Hub
-            </Text>
-          </div>
-        )}
+        <div style={{ overflow: 'hidden' }}>
+          <Text strong style={titleStyle}>
+            StuFAPs
+          </Text>
+          <Text style={subtitleStyle}>
+            Operations Hub
+          </Text>
+        </div>
       </div>
 
       {/* Navigation Menu */}
       <Menu
         mode="inline"
-        selectedKeys={[getSelectedKey()]}
+        selectedKeys={selectedKeys}
         openKeys={openKeys}
         onOpenChange={handleOpenChange}
         onClick={handleMenuClick}
         items={menuItems}
-        style={{
-          backgroundColor: 'transparent',
-          borderRight: 'none',
-          padding: '12px 8px',
-        }}
+        style={menuStyle}
         theme="light"
       />
 
-      {/* Custom Styles */}
-      <style>{`
-        .ant-menu-item {
-          margin: 4px 0 !important;
-          border-radius: 6px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-        }
-
-        .ant-menu-item a {
-          color: #595959 !important;
-          text-decoration: none !important;
-          font-weight: 500 !important;
-        }
-
-        .ant-menu-item:hover {
-          background-color: #f0f5ff !important;
-        }
-
-        .ant-menu-item:hover a {
-          color: #0032a0 !important;
-        }
-
-        .ant-menu-item-selected {
-          background-color: #3366cc !important;
-        }
-
-        .ant-menu-item-selected a {
-          color: #ffffff !important;
-        }
-
-        .ant-menu-item-selected::after {
-          display: none !important;
-        }
-
-        .ant-menu-item .ant-menu-item-icon {
-          color: #8c8c8c !important;
-          font-size: 18px !important;
-        }
-
-        .ant-menu-item-selected .ant-menu-item-icon {
-          color: #ffffff !important;
-        }
-
-        .ant-menu-item:hover .ant-menu-item-icon {
-          color: #0032a0 !important;
-        }
-
-        .ant-layout-sider-children {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .ant-menu-inline-collapsed > .ant-menu-item {
-          padding: 0 calc(50% - 18px) !important;
-        }
-
-        .ant-menu-submenu-title {
-          margin: 4px 0 !important;
-          border-radius: 6px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-          color: #595959 !important;
-          font-weight: 500 !important;
-        }
-
-        .ant-menu-submenu-title:hover {
-          background-color: #f0f5ff !important;
-          color: #0032a0 !important;
-        }
-
-        .ant-menu-submenu-title .ant-menu-item-icon {
-          color: #8c8c8c !important;
-          font-size: 18px !important;
-        }
-
-        .ant-menu-submenu-title:hover .ant-menu-item-icon {
-          color: #0032a0 !important;
-        }
-
-        .ant-menu-submenu-selected > .ant-menu-submenu-title {
-          color: #0032a0 !important;
-        }
-
-        .ant-menu-submenu-selected > .ant-menu-submenu-title .ant-menu-item-icon {
-          color: #0032a0 !important;
-        }
-
-        .ant-menu-sub.ant-menu-inline {
-          background: transparent !important;
-        }
-
-        .ant-menu-sub .ant-menu-item {
-          padding-left: 48px !important;
-          height: 38px !important;
-          line-height: 38px !important;
-        }
-      `}</style>
+      <style>{SIDEBAR_CSS}</style>
     </Sider>
   )
 }
