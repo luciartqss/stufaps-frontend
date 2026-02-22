@@ -1,25 +1,41 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select } from 'antd'
-import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+import { Card, Typography, Select, Progress, Space } from 'antd'
+import {
+  ContactsOutlined,
+  TeamOutlined,
+  UserOutlined,
+  FilterOutlined,
+  InfoCircleOutlined,
+  ProjectOutlined,
+  FileProtectOutlined,
+  SolutionOutlined,
+  AuditOutlined,
+  FundOutlined,
+  DollarOutlined,
+  ReconciliationOutlined,
+  SwapOutlined,
+  PauseCircleOutlined,
+  BranchesOutlined,
+  UserSwitchOutlined,
+  WarningOutlined,
+  SafetyCertificateOutlined,
+} from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
-const { Text } = Typography
+
+const { Text, Title } = Typography
 const { Option } = Select
-import { Progress } from 'antd'
 
 export function meta() {
   return [
-    { title: 'SCHOLARSHIP PROGRAM FOR FUTURE MEDICAL TECHNOLOGISTS AND PHARMACISTS (MTP-SP)MTP-SP | StuFAPs' },
-    { name: 'description', content: 'Manage CMSP records' },
+    { title: 'Scholarship Program for Future Medical Technologists and Pharmacists (MTP-SP) | StuFAPs' },
+    { name: 'description', content: 'Manage MTP-SP records' },
   ]
 }
 
-function StatsCards({ financialAssistances }) {
-
+function StatsCards({ financialAssistances = [] }) {
   let totals;
 
   if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-    // Use backend values directly for the "All" row
     const row = financialAssistances[0];
     totals = {
       totalSlots: Number(row?.total_slot) || 0,
@@ -27,7 +43,6 @@ function StatsCards({ financialAssistances }) {
       totalUnfilled: Number(row?.unfilled_slot) || 0,
     };
   } else {
-    // Sum across rows for a specific year
     totals = {
       totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
       totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
@@ -64,20 +79,20 @@ function StatsCards({ financialAssistances }) {
   return (
     <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
       {statsConfig.map((stat, index) => (
-        <div key={index} style={{ flex: 1, minWidth: 0 }}>
           <Card
+            key={index}
             style={{
+              flex: 1,
+              minWidth: 0,
               borderRadius: 12,
               border: 'none',
               boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              height: 96,
             }}
             bodyStyle={{
               padding: 16,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              height: '100%'
             }}
           >
             <div style={{ overflow: 'hidden', flex: 1 }}>
@@ -95,7 +110,6 @@ function StatsCards({ financialAssistances }) {
                     strokeColor={stat.color}
                     style={{ marginBottom: 8 }}
                   />
-
                   <Text style={{ fontSize: 12, color: stat.color }}>
                     {stat.percentage}% of total
                   </Text>
@@ -119,17 +133,13 @@ function StatsCards({ financialAssistances }) {
               {stat.icon}
             </div>
           </Card>
-        </div>
       ))}
     </div>
   )
 }
 
 export default function FinancialAssistanceMTP() {
-  const [expandedId, setExpandedId] = useState(null);
   const [financialAssistances, setFinancialAssistances] = useState([])
-  const [expandedSUC, setExpandedSUC] = useState(null);
-  const [expandedPrivate, setExpandedPrivate] = useState(null);
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -149,7 +159,6 @@ export default function FinancialAssistanceMTP() {
         const programsData = data.data || data
         console.log('Programs Data:', programsData)
         setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
-        setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
 
         const uniqueYears = [
           ...new Set(
@@ -157,7 +166,7 @@ export default function FinancialAssistanceMTP() {
           )
         ]
 
-        setAcademicYears([ ...uniqueYears.sort()])
+        setAcademicYears([...uniqueYears.sort()])
         setLoading(false)
       })
       .catch(err => {
@@ -180,187 +189,85 @@ export default function FinancialAssistanceMTP() {
     if (academicYearFilter && academicYearFilter !== 'All') {
       return (p.academic_year || p.Academic_year) === academicYearFilter
     }
-    // Only keep the "All" row when filter is All
     return (p.academic_year || p.Academic_year) === 'All'
   })
 
-  const sucPrograms = [
-    {
-      id: "financial-assistance",
-      name: "Financial Assistance Package",
-      rows: [
-        {
-          label: "Tuition and other school fees",
-          perSem: "₱40,000.00",
-          perAY: "₱80,000.00",
-        },
-        {
-          label:
-            "Stipend (subsistence, clothing, transportation allowance, educational tours, field trips, expenses for small projects, and medical insurance)",
-          perSem: "₱60,000.00",
-          perAY: "₱120,000.00",
-        },
-        {
-          label: "Book allowance and other learning materials",
-          perSem: "₱5,000.00",
-          perAY: "₱10,000.00",
-        },
-      ],
-      total: {
-        perSem: "₱105,000.00",
-        perAY: "₱210,000.00",
-      },
-    },
-  ];
-
-  const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-      <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
-        {title}
-      </h2>
-      <div className="space-y-4">
-        {programs.map((program) => (
-          <div
-            key={program.id}
-            className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-          >
-            <button
-              onClick={() =>
-                setExpandedId(expandedId === program.id ? null : program.id)
-              }
-              className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
-            >
-              <span className="font-bold text-gray-800">{program.name}</span>
-              <span
-                className="text-red-600 text-xl transition-transform duration-200"
-                style={{
-                  transform:
-                    expandedId === program.id ? "rotate(180deg)" : "rotate(0deg)",
-                }}
-              >
-                ▼
-              </span>
-            </button>
-
-            {expandedId === program.id && (
-              <div className="p-4 animate-in fade-in duration-200">
-                <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
-                  <thead>
-                    <tr className="bg-gray-100">
-                      <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">
-                        Item
-                      </th>
-                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                        Per Sem
-                      </th>
-                      <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                        Per AY
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {program.rows.map((row, idx) => (
-                      <tr
-                        key={idx}
-                        className="hover:bg-gray-50 transition-colors duration-100"
-                      >
-                        <td className="border border-gray-400 p-3 text-ceneter text-gray-700">
-                          {row.label}
-                        </td>
-                        {row.colSpan ? (
-                          <td
-                            colSpan={2}
-                            className="border border-gray-400 p-3 text-center font-medium text-gray-800"
-                          >
-                            {row.value}
-                          </td>
-                        ) : (
-                          <>
-                            <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                              {row.perSem}
-                            </td>
-                            <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                              {row.perAY}
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))}
-                    <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
-                      <td className="border border-gray-400 p-3 text-left text-gray-800">
-                        Total
-                      </td>
-                      <td className="border border-gray-400 p-3 text-center text-gray-800 w-28">
-                        {program.total.perSem}
-                      </td>
-                      <td className="border border-gray-400 p-3 text-center text-gray-800 w-28">
-                        {program.total.perAY}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-white">
-      <main>
+    <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>
+      {/* Header */}
+      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>MTP-SP</Title>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>Scholarship Program for Future Medical Technologists and Pharmacists</Text>
+          </div>
+          <Space size={12}>
+            <FilterOutlined style={{ color: '#6b7280' }} />
+            <Select
+              value={academicYearFilter}
+              allowClear
+              size="middle"
+              style={{ width: 160 }}
+              onChange={handleAcademicYearChange}
+            >
+              {academicYears.map(year => (
+                <Option key={year} value={year}>{year}</Option>
+              ))}
+            </Select>
+          </Space>
+        </div>
+      </div>
 
-        <Select
-          value={academicYearFilter}
-          allowClear
-          size="middle"
-          style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-          onChange={handleAcademicYearChange}
-        >
-          {academicYears.map(year => (
-            <Option key={year} value={year}>{year}</Option>
-          ))}
-        </Select>
-
+      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
         <StatsCards financialAssistances={filteredMTP_SP} />
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-            SCHOLARSHIP PROGRAM FOR FUTURE MEDICAL TECHNOLOGISTS AND PHARMACISTS (MTP-SP)
-          </h1>
-        </div>
+      <div style={{ padding: '12px 24px 0' }}>
+        <Text style={{ color: '#6b7280', fontSize: 16 }}>
+          The Scholarship Program for Future Medical Technologists and Pharmacists is an initiative by the Commission on Higher Education (CHED) aimed at strengthening the healthcare workforce in the Philippines.
+        </Text>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">MTP-SP</h1>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            The Scholarship Program for Future Medical Technologists and Pharmacists is an initiative by the Commission on Higher Education (CHED) aimed at strengthening the healthcare workforce in the Philippines.
-          </p>
-        </div>
+      {/* Overview */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <InfoCircleOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Overview
+          </Title>
+        </Space>
+        <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+          CHED supports measures to ensure equitable distribution of health human resources (HRH) through competitive compensation, benefits, and good working conditions in geographically
+          isolated and disadvantaged areas (GIDAs). This aligns with Universal Health Coverage and the DOH 8-Point Action Agenda, ensuring safe, high-quality, people-centered health services. DOH data
+          show an inadequate and uneven distribution of health professionals, limiting access to quality basic health services, especially in peripheral areas.
+        </Text>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Overview</h1>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            CHED supports measures to ensure equitable distribution of health human resources (HRH) through competitive compensation, benefits, and good working conditions in geographically
-            isolated and disadvantaged areas (GIDAs). This aligns with Universal Health Coverage and the DOH 8-Point Action Agenda, ensuring safe, high-quality, people-centered health services. DOH data
-            show an inadequate and uneven distribution of health professionals, limiting access to quality basic health services, especially in peripheral areas.
-          </p>
-        </div>
+      {/* Scope and Coverage */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <ProjectOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Scope and Coverage
+          </Title>
+        </Space>
+        <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+          The Scholarship Program for Future Medical Technologists and Pharmacists (MTP-SP) is open to qualified students enrolled in BS Medical Technology/Medical Laboratory Science or BS Pharmacy
+          at participating SUCs or PHEIs. Priority is given to students from GIDAs or IP communities and to special groups, including the underprivileged and homeless, those below the poverty threshold,
+          persons with disabilities, solo parents and their children, senior citizens, indigenous peoples, and first-generation college students, in accordance with program requirements.
+        </Text>
+      </div>
 
-
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Scope and Coverage</h1>
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            The Scholarship Program for Future Medical Technologists and Pharmacists (MTP-SP) is open to qualified students enrolled in BS Medical Technology/Medical Laboratory Science or BS Pharmacy
-            at participating SUCs or PHEIs. Priority is given to students from GIDAs or IP communities and to special groups, including the underprivileged and homeless, those below the poverty threshold,
-            persons with disabilities, solo parents and their children, senior citizens, indigenous peoples, and first-generation college students, in accordance with program requirements.
-          </p>
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Qualification Process</h1>
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Qualification Process */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <FileProtectOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Qualification Process
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>Must be a Filipino citizen residing in the Philippines</li>
             <li>
               Senior high school STEM graduate or a current student in Medical Technology / Medical Laboratory Science or Pharmacy with a general weighted average (GWA) of at least 80% or equivalent
@@ -372,15 +279,22 @@ export default function FinancialAssistanceMTP() {
               Continuing students must meet academic requirements in the most recent term/semester with no failed subjects
             </li>
             <li>
-              Family combined annual gross income must not exceed ₱400,000. If it does, the applicant must provide either a medical certificate for a family member’s illness or school certifications showing two or more dependents enrolled in college
+              Family combined annual gross income must not exceed ₱400,000. If it does, the applicant must provide either a medical certificate for a family member's illness or school certifications showing two or more dependents enrolled in college
             </li>
           </ol>
-        </div>
+        </Typography>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Qualification Process</h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Documentary Requirements */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <SolutionOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Documentary Requirements
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
               Photocopy of Birth Certificate issued by the Local Civil Registry or PSA
             </li>
@@ -389,7 +303,7 @@ export default function FinancialAssistanceMTP() {
             </li>
             <li>
               One of the following income documents:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+              <ol className="list-[lower-alpha] list-inside">
                 <li>Latest Income Tax Return (ITR) of parent/s or guardian</li>
                 <li>BIR Tax Exemption/Non-Filer Certificate with Barangay Low-Income/Indigence Certificate</li>
                 <li>Case Study Report from City/Municipal Social Welfare and Development Office</li>
@@ -400,26 +314,32 @@ export default function FinancialAssistanceMTP() {
               Additional documents, if applicable, for applicants from IP communities, GIDAs, or special groups, such as certifications or IDs issued by relevant authorities
             </li>
           </ol>
+        </Typography>
+      </div>
 
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Procedure</h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Application Procedure */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <AuditOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Application Procedure
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
               CHED/CHED Regional Offices (CHEDRO) and participating SUCs/PHEIs shall promote the program, its application and selection process, and general provisions annually, subject to fund availability
             </li>
             <li>
               Interested applicants must meet Section 7 qualifications and submit applications through participating SUCs/PHEIs. The SUCs/PHEIs shall endorse applicants to CHEDRO with:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+              <ol className="list-[lower-alpha] list-inside">
                 <li>Completed application form (Annex "A") with supporting documents</li>
-                <li>Notarized Scholar’s Commitment to Render Return Service (Annex "B")</li>
+                <li>Notarized Scholar's Commitment to Render Return Service (Annex "B")</li>
               </ol>
             </li>
             <li>
               The CHEDRO shall:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+              <ol className="list-[lower-alpha] list-inside">
                 <li>Evaluate and rank applications</li>
                 <li>Inform applicants of their status</li>
                 <li>Send the Notice of Award (NOA, Annex "C") to qualified applicants</li>
@@ -430,40 +350,104 @@ export default function FinancialAssistanceMTP() {
               Applicants accept the NOA by signing and returning it (printed or electronic) within seven (7) working days
             </li>
             <li>
-              To waive the NOA, applicants must write “Waived,” sign, and return it or notify CHEDRO in writing within the same period
+              To waive the NOA, applicants must write "Waived," sign, and return it or notify CHEDRO in writing within the same period
             </li>
             <li>
               A Scholarship Contract (Annex "D") shall be executed between the CHEDRO and the accepted applicant
             </li>
           </ol>
-        </div>
+        </Typography>
+      </div>
 
-        <div>
-          <TableSection title="Medical Tuition Package (MTP)" programs={sucPrograms} expandedId={expandedSUC} setExpandedId={setExpandedSUC} />
-        </div>
+      {/* Financial Assistance Package */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <FundOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Financial Assistance Package
+          </Title>
+        </Space>
+        <Card
+          style={{
+            borderRadius: 12,
+            border: '1px solid #f0f2f5',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+            marginTop: 8,
+          }}
+          title="Financial Assistance Package"
+        >
+          <table style={{ width: '100%' }}>
+            <thead style={{ backgroundColor: '#3366cc', color: '#FFF' }}>
+              <tr>
+                <th style={{ border: '1px solid #000', padding: '8px' }}>Item</th>
+                <th style={{ border: '1px solid #000', padding: '8px' }}>Per Sem</th>
+                <th style={{ border: '1px solid #000', padding: '8px' }}>Per AY</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ border: '1px solid #000', padding: '8px' }}>Tuition and other school fees</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱40,000.00</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱80,000.00</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (subsistence, clothing, transportation allowance, educational tours, field trips, expenses for small projects, and medical insurance)</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱60,000.00</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱120,000.00</td>
+              </tr>
+              <tr>
+                <td style={{ border: '1px solid #000', padding: '8px' }}>Book allowance and other learning materials</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00</td>
+                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
+              </tr>
+            </tbody>
+            <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+              <tr>
+                <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱105,000.00</td>
+                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱210,000.00</td>
+              </tr>
+            </tfoot>
+          </table>
+        </Card>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Direct Payment</h1>
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Direct Payment */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <DollarOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Direct Payment
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
               CHEDROs shall pay scholars directly under the following conditions if enrolled in SUCs/PHEIs:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                <li>The SUC/PHEI is outside the CHEDRO’s regional jurisdiction</li>
+              <ol className="list-[lower-alpha] list-inside">
+                <li>The SUC/PHEI is outside the CHEDRO's regional jurisdiction</li>
                 <li>The SUC/PHEI has fewer than ten (10) scholars</li>
                 <li>There are unliquidated balances</li>
                 <li>There are verified complaints or issues related to CHED-administered programs</li>
               </ol>
             </li>
             <li>
-              CHEDRO transfers the financial assistance directly to the scholar’s account via ATM or cheque
+              CHEDRO transfers the financial assistance directly to the scholar's account via ATM or cheque
             </li>
           </ol>
-        </div>
+        </Typography>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Payment through SUCs/PHEIs</h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Payment through SUCs/PHEIs */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <ReconciliationOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Payment through SUCs/PHEIs
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
               CHEDRO may enter into an MOA with participating SUCs or PHEIs that have 10 or more grantees
             </li>
@@ -475,7 +459,7 @@ export default function FinancialAssistanceMTP() {
             </li>
             <li>
               Must be supported by the Registrar's Certificate (Annex "H"), which specifies:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+              <ol className="list-[lower-alpha] list-inside">
                 <li>Number of units enrolled</li>
                 <li>General Weighted Average (GWA)</li>
                 <li>Degree program and curriculum</li>
@@ -486,47 +470,50 @@ export default function FinancialAssistanceMTP() {
               Certification that the scholar is not receiving any other government scholarship grant
             </li>
           </ol>
-        </div>
+        </Typography>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Transfer of a Scholar to Other identified participating SUCs or PHEIs </h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Transfer of a Scholar */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <SwapOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Transfer of a Scholar to Other Participating SUCs or PHEIs
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
-              Change of residence (e.g., parent’s employment or government relocation/resettlement), certified by the LGU
+              Change of residence (e.g., parent's employment or government relocation/resettlement), certified by the LGU
             </li>
             <li>
               Safety and security / peace and order issues, certified by the LGU
             </li>
-            <li>
-              Financial concerns
-            </li>
-            <li>
-              Natural calamities
-            </li>
+            <li>Financial concerns</li>
+            <li>Natural calamities</li>
             <li>
               Health reasons, supported by a medical certificate from a licensed physician
             </li>
-            <li>
-              Force majeure (unforeseeable events beyond control)
-            </li>
-            <li>
-              Greater access to academic opportunities
-            </li>
+            <li>Force majeure (unforeseeable events beyond control)</li>
+            <li>Greater access to academic opportunities</li>
           </ol>
+        </Typography>
+      </div>
 
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Leave of Absence</h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-            <li>
-              The LOA cannot exceed one (1) academic year
-            </li>
+      {/* Leave of Absence */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <PauseCircleOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Leave of Absence
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
+            <li>The LOA cannot exceed one (1) academic year</li>
             <li>
               The reason must be valid and justified, such as:
-              <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+              <ol className="list-[lower-alpha] list-inside">
                 <li>Health concerns</li>
                 <li>Safety and security issues</li>
                 <li>Force majeure (unforeseeable events beyond control)</li>
@@ -537,32 +524,46 @@ export default function FinancialAssistanceMTP() {
               The LOA must comply with the guidelines and policies of the participating SUC or PHEI
             </li>
           </ol>
+        </Typography>
+      </div>
 
-        </div>
+      {/* Shifting */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <BranchesOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Shifting
+          </Title>
+        </Space>
+        <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+          Section 24 allows scholars to shift programs with CHEDRO approval.
+          Shifting to a medical or allied health program requires one year of government service per scholarship year, while shifting to a non-medical program requires full repayment of the scholarship and benefits.
+        </Text>
+      </div>
 
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Shifting</h1>
+      {/* Replacement */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <UserSwitchOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Replacement
+          </Title>
+        </Space>
+        <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+          Section 25 allows the replacement of a scholar within an academic year due to failure to accept the award, withdrawal, transfer, dropping out, termination, or non-completion of the degree. The replaced scholar is notified in writing, and the replacement is taken from the CHEDRO's official ranklist, assuming the scholarship benefits for the remaining duration.
+        </Text>
+      </div>
 
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            Section 24 allows scholars to shift programs with CHEDRO approval.
-            Shifting to a medical or allied health program requires one year of government service per scholarship year, while shifting to a non-medical program requires full repayment of the scholarship and benefits.
-          </p>
-
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Replacement</h1>
-
-          <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-            Section 25 allows the replacement of a scholar within an academic year due to failure to accept the award, withdrawal, transfer, dropping out, termination, or non-completion of the degree. The replaced scholar is notified in writing, and the replacement is taken from the CHEDRO’s official ranklist, assuming the scholarship benefits for the remaining duration.
-          </p>
-
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Grounds for Termination</h1>
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Grounds for Termination */}
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Grounds for Termination
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>Violation of the provisions of the scholarship contract and guidelines</li>
             <li>Enrollment in a non-recognized or non-priority program</li>
             <li>Failure to maintain a GWA of at least 80% or its equivalent</li>
@@ -580,13 +581,19 @@ export default function FinancialAssistanceMTP() {
             <li>Non-completion of the degree program</li>
             <li>Other causes analogous to the foregoing</li>
           </ol>
+        </Typography>
+      </div>
 
-        </div>
-
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Mandatory Return Service</h1>
-
-          <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+      {/* Mandatory Return Service */}
+      <div style={{ padding: '12px 24px 24px' }}>
+        <Space size={12} align="start">
+          <SafetyCertificateOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Mandatory Return Service
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+          <ol className="list-decimal">
             <li>
               After passing the licensure exam administered by the PRC, scholars must render one (1) year of return service for each year of scholarship availed, in accordance with DOH guidelines under SP No. 9 (DOH-OSEC budget, RA No. 11975) and Section 26 of RA No. 11223 (Universal Health Care Act)
             </li>
@@ -600,24 +607,8 @@ export default function FinancialAssistanceMTP() {
               Scholars unable to comply due to severe or serious illness must submit a written request to CHEDRO with a medical certificate from a licensed physician for approval
             </li>
           </ol>
-
-        </div>
-
-      </main>
-      <footer className="bg-gray-800 text-white text-center py-4">
-        <div>
-          <p className="text-sm">
-            CMO-NO.-11-S.-2024
-          </p>
-          <p className="text-sm">
-
-            © {new Date().getFullYear()} CMO. All rights reserved.
-          </p>
-        </div>
-
-      </footer>
+        </Typography>
+      </div>
     </div>
-
-
-  );
+  )
 }

@@ -1,16 +1,37 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Select } from 'antd'
-import { ContactsOutlined, TeamOutlined, UserOutlined } from '@ant-design/icons'
+import { Card, Typography, Space, Select } from 'antd'
 import { API_BASE } from '../lib/config'
-const { Text } = Typography
+import {
+    ContactsOutlined,
+    TeamOutlined,
+    FilterOutlined,
+    UserOutlined,
+    InfoCircleOutlined,
+    ProjectOutlined,
+    FileProtectOutlined,
+    ReconciliationOutlined,
+    FormOutlined,
+    SnippetsOutlined,
+    DollarOutlined,
+    ReadOutlined,
+    FileDoneOutlined,
+    AuditOutlined,
+    FileSearchOutlined,
+    ExceptionOutlined,
+    FundOutlined,
+    FundProjectionScreenOutlined,
+    WarningOutlined,
+    CreditCardOutlined,
+} from '@ant-design/icons'
+const { Text, Title } = Typography
 const { Option } = Select
 import { Progress } from 'antd'
 
+
 export function meta() {
     return [
-        { title: 'SCHOLARSHIP GRANT PROGRAM FOR CHILDREN AND DEPENDENTS OF SUGARCANE INDUSTRY WORKERSAND SMALL SUGARCANE FARMERS (SIDA-SGP) | StuFAPs' },
-        { name: 'description', content: 'Manage CMSP records' },
+        { title: 'Scholarship Grant Program for Children and Dependents of Sugarcane Industry Workers and Small Sugarcane Farmers (SIDA-SGP) | StuFAPs' },
+        { name: 'description', content: 'Manage SIDA-SGP records' },
     ]
 }
 
@@ -19,7 +40,6 @@ function StatsCards({ financialAssistances = [] }) {
     let totals;
 
     if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-        // Use backend values directly for the "All" row
         const row = financialAssistances[0];
         totals = {
             totalSlots: Number(row?.total_slot) || 0,
@@ -27,7 +47,6 @@ function StatsCards({ financialAssistances = [] }) {
             totalUnfilled: Number(row?.unfilled_slot) || 0,
         };
     } else {
-        // Sum across rows for a specific year
         totals = {
             totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
             totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
@@ -64,74 +83,69 @@ function StatsCards({ financialAssistances = [] }) {
     return (
         <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
             {statsConfig.map((stat, index) => (
-                <div key={index} style={{ flex: 1, minWidth: 0 }}>
-                    <Card
+                <Card
+                    key={index}
+                    style={{
+                        flex: 1,
+                        minWidth: 0,
+                        borderRadius: 12,
+                        border: 'none',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    }}
+                    bodyStyle={{
+                        padding: 16,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <div style={{ overflow: 'hidden', flex: 1 }}>
+                        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                            {stat.title}
+                        </Text>
+                        <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
+                            {stat.prefix || ''}
+                            {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
+                        </Text>
+                        {stat.percentage && (
+                            <>
+                                <Progress percent={parseFloat(stat.percentage)}
+                                    showInfo={false}
+                                    strokeColor={stat.color}
+                                    style={{ marginBottom: 8 }}
+                                />
+
+                                <Text style={{ fontSize: 12, color: stat.color }}>
+                                    {stat.percentage}% of total
+                                </Text>
+                            </>
+                        )}
+                    </div>
+                    <div
                         style={{
+                            width: 44,
+                            height: 44,
                             borderRadius: 12,
-                            border: 'none',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                            height: 96,
-                        }}
-                        bodyStyle={{
-                            padding: 16,
+                            backgroundColor: stat.bgColor,
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            height: '100%'
+                            justifyContent: 'center',
+                            fontSize: 20,
+                            color: stat.color,
+                            flexShrink: 0,
                         }}
                     >
-                        <div style={{ overflow: 'hidden', flex: 1 }}>
-                            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                                {stat.title}
-                            </Text>
-                            <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                                {stat.prefix || ''}
-                                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
-                            </Text>
-                            {stat.percentage && (
-                                <>
-                                    <Progress percent={parseFloat(stat.percentage)}
-                                        showInfo={false}
-                                        strokeColor={stat.color}
-                                        style={{ marginBottom: 8 }}
-                                    />
-
-                                    <Text style={{ fontSize: 12, color: stat.color }}>
-                                        {stat.percentage}% of total
-                                    </Text>
-                                </>
-                            )}
-                        </div>
-                        <div
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 12,
-                                backgroundColor: stat.bgColor,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 20,
-                                color: stat.color,
-                                flexShrink: 0,
-                            }}
-                        >
-                            {stat.icon}
-                        </div>
-                    </Card>
-                </div>
+                        {stat.icon}
+                    </div>
+                </Card>
             ))}
         </div>
     )
+
 }
 
 export default function FinancialAssistanceSida_Sgp() {
-    const [expandedId, setExpandedId] = useState(null);
     const [financialAssistances, setFinancialAssistances] = useState([])
-
-
-    const [expandedSUC, setExpandedSUC] = useState(null);
-    const [expandedPrivate, setExpandedPrivate] = useState(null);
 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -159,7 +173,7 @@ export default function FinancialAssistanceSida_Sgp() {
                     )
                 ]
 
-                setAcademicYears([ ...uniqueYears.sort()])
+                setAcademicYears([...uniqueYears.sort()])
                 setLoading(false)
             })
             .catch(err => {
@@ -169,369 +183,143 @@ export default function FinancialAssistanceSida_Sgp() {
             })
     }, [])
 
+    const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+
     if (loading) return <div className="p-8">Loading...</div>
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
     if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
         return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
     }
 
-    const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
-
     const filteredSida_Sgp = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
         if (p?.scholarship_program_name?.toUpperCase() !== 'SIDASGP') return false
         if (academicYearFilter && academicYearFilter !== 'All') {
             return (p.academic_year || p.Academic_year) === academicYearFilter
         }
-        // Only keep the "All" row when filter is All
         return (p.academic_year || p.Academic_year) === 'All'
     })
 
-    const sucPrograms = [
-        {
-            id: "regular-allowances",
-            name: "Regular Allowances",
-            rows: [
-                {
-                    label:
-                        "Stipend (includes subsistence, clothing, transportation, tours, field trips, small projects, medical insurance)",
-                    perSem: "10,000.00/month x 10 months or 50,000/semester",
-                    perAY: "₱100,000.00",
-                },
-                {
-                    label: "Book allowance and other learning materials",
-                    perSem: "₱5,000.00/Semester",
-                    perAY: "₱10,000.00",
-                },
-            ],
-            total: { perAY: "₱110,000.00" },
-        }
-    ];
-
-    const gradPrograms = [
-        {
-            id: "Regular Allowances",
-            name: "Regular Allowances",
-            rows: [
-                {
-                    label:
-                        "a. Tuition and Other School Fees",
-                    perSem: "₱30,000.00/semester",
-                    perAY: "₱60,000.00",
-                },
-                {
-                    label: "Stipend (which includes subsistence, clothing, transportation allowance, educational tours, field trips, expenses for small projects and medical insurance)",
-                    perSem: "PHP10,000.00/month x 10 months or PHP50,000/semester",
-                    perAY: "₱100,000.00",
-                },
-                {
-                    label: " Book allowance and other learning materials",
-                    perSem: "₱7,500.00/semester",
-                    perAY: "₱15000.00",
-                },
-            ],
-            total: { perAY: "₱175,000.00" },
-        }
-    ];
-
-
-
-    const TableSection = ({ title, programs, expandedId, setExpandedId }) => (
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
-                {title}
-            </h2>
-            <div className="space-y-4">
-                {programs.map((program) => (
-                    <div
-                        key={program.id}
-                        className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                    >
-                        <button
-                            onClick={() =>
-                                setExpandedId(expandedId === program.id ? null : program.id)
-                            }
-                            className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
-                        >
-                            <span className="font-bold text-gray-800">{program.name}</span>
-                            <span
-                                className="text-red-600 text-xl transition-transform duration-200"
-                                style={{
-                                    transform:
-                                        expandedId === program.id ? "rotate(180deg)" : "rotate(0deg)",
-                                }}
-                            >
-                                ▼
-                            </span>
-                        </button>
-
-                        {expandedId === program.id && (
-                            <div className="p-4 animate-in fade-in duration-200">
-                                <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
-                                    <thead>
-                                        <tr className="bg-gray-100">
-                                            <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">
-                                                Type
-                                            </th>
-                                            <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                                                Unit Cost (PHP)
-                                            </th>
-                                            <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-28">
-                                                Total Cost per Academic Year (PHP)
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {program.rows.map((row, idx) => (
-                                            <tr
-                                                key={idx}
-                                                className="hover:bg-gray-50 transition-colors duration-100"
-                                            >
-                                                <td className="border border-gray-400 p-3 text-left text-gray-700">
-                                                    {row.label}
-                                                </td>
-                                                <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                                                    {row.perSem}
-                                                </td>
-                                                <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-28">
-                                                    {row.perAY}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
-                                            <td className="border border-gray-400 p-3 text-left text-gray-800">
-                                                Total
-                                            </td>
-                                            <td colSpan={2} className="border border-gray-400 p-3 text-right text-gray-800 w-28">
-
-                                                {program.total.perAY}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-    const otherPrograms = [
-        {
-            id: "other-benefits",
-            name: "Others",
-            rows: [
-                {
-                    label: "Thesis and/or OJT allowance",
-                    cost: "₱75,000.00",
-                },
-                {
-                    label:
-                        "One-time attendance to local conference/fora (junior/senior year, outside enrolled HEI)",
-                    cost: "₱15,000.00",
-                },
-            ],
-            total: { cost: "₱90,000.00" },
-        },
-    ];
-
-    const grad_otherPrograms = [
-        {
-            id: "grad-other-benefits",
-            name: "Others",
-            rows: [
-                {
-                    label:
-                        "One-time attendance to local conference/fora; (Should be related to the graduate program. The activity should not be on the same HEI where the beneficiary is enrolled.)",
-                    cost: "₱15,000",
-                },
-                {
-                    label:
-                        "Dissertation Allowance (Doctoral)",
-                    cost: "₱100,000.00",
-                },
-            ],
-            total: { cost: "₱75,000.00" },
-        },
-    ];
-
-    const CompressedTableSection = ({ title, programs, expandedId, setExpandedId }) => (
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700 mb-6">
-                {title}
-            </h2>
-            <div className="space-y-4">
-                {programs.map((program) => (
-                    <div
-                        key={program.id}
-                        className="border border-gray-300 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                    >
-                        <button
-                            onClick={() =>
-                                setExpandedId(expandedId === program.id ? null : program.id)
-                            }
-                            className="w-full bg-red-50 hover:bg-red-100 p-4 text-left flex justify-between items-center transition-colors duration-200"
-                        >
-                            <span className="font-bold text-gray-800">{program.name}</span>
-                            <span
-                                className="text-red-600 text-xl transition-transform duration-200"
-                                style={{
-                                    transform:
-                                        expandedId === program.id ? "rotate(180deg)" : "rotate(0deg)",
-                                }}
-                            >
-                                ▼
-                            </span>
-                        </button>
-
-                        {expandedId === program.id && (
-                            <div className="p-4 animate-in fade-in duration-200">
-                                <table className="w-full text-sm md:text-base border-collapse border border-gray-400">
-                                    <thead>
-                                        <tr className="bg-gray-100">
-                                            <th className="border border-gray-400 p-3 text-left font-bold text-gray-800">
-                                                Type
-                                            </th>
-                                            <th className="border border-gray-400 p-3 text-center font-bold text-gray-800 w-36">
-                                                Total Cost
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {program.rows.map((row, idx) => (
-                                            <tr
-                                                key={idx}
-                                                className="hover:bg-gray-50 transition-colors duration-100"
-                                            >
-                                                <td className="border border-gray-400 p-3 text-left text-gray-700">
-                                                    {row.label}
-                                                </td>
-                                                <td className="border border-gray-400 p-3 text-center font-medium text-gray-800 w-36">
-                                                    {row.cost}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        <tr className="bg-red-100 hover:bg-red-150 transition-colors duration-100 font-bold">
-                                            <td className="border border-gray-400 p-3 text-left text-gray-800">
-                                                Total
-                                            </td>
-                                            <td className="border border-gray-400 p-3 text-center text-gray-800 w-36">
-                                                {program.total.cost}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-
-
-
-
-
     return (
-
-        <div className="min-h-screen bg-gray-100">
-
-            <main>
-
-                <Select
-                    value={academicYearFilter}
-                    allowClear
-                    size="middle"
-                    style={{ width: 160, marginLeft: 12, marginBottom: 12 }}
-                    onChange={handleAcademicYearChange}
-                >
-                    {academicYears.map(year => (
-                        <Option key={year} value={year}>{year}</Option>
-                    ))}
-                </Select>
-
-                <StatsCards financialAssistances={filteredSida_Sgp} />
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">
-                        SCHOLARSHIP GRANT PROGRAM FOR CHILDREN AND DEPENDENTS
-                        OF SUGARCANE INDUSTRY WORKERSAND SMALL SUGARCANE FARMERS
-                        (SIDA-SGP)
-                    </h1>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h3 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">SIDA-SGP</h3>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        To provide scholarship grant to children and dependents of sugarcane industry workers
-                        and small sugarcane farmers duly certified by the Sugar Regulatory Administration (SRA).
-                    </p>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Overview</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Administered in partnership with the Sugar Regulatory Administration (SRA), the program is designed to assist children and dependents of sugarcane industry workers and small sugarcane farmers in accessing quality higher education.
-                    </p>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Scope and Coverage</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The scholarship grant program is open to qualified and deserving children and
-                        dependents of sugarcane industry workers and small sugarcane farmers. This
-                        program shall cover both undergraduate and graduate students who will enroll or are
-                        currently enrolled in agriculture, agricultural engineering and mechanics, and
-                        chemical engineering/sugar technology as identified in Sec. 6.b of R.A. 10659 in any
-                        identified State Universities and Colleges (SUCs). Slot allocation per concerned region will be determined and recommended by Sugar
-                        Regulatory Administration (SRA).
-                    </p>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Process</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Undergraduate Program
-                        </h1>
-
-                        <ol className="mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>
-                                For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
-                            </li>
-                            <li>
-                                For Lifelong Learners eligible for college – High School Report Card
-                            </li>
-                            <li>
-                                For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
-                            </li>
-                            <li>
-                                For other Applicants:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
-                                    <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
-                                </ol>
-                            </li>
-                            <li>
-                                Certificate of Good Moral Character from the last school attended
-                            </li>
-                            <li>
-                                Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
-                            </li>
-                            <li>
-                                Notice of admission from the SUC
-                            </li>
-                        </ol>
+        <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>
+            {/* Header */}
+            <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>SIDA-SGP</Title>
+                        <Text style={{ color: '#6b7280', fontSize: 16 }}>Scholarship Grant Program for Children and Dependents of Sugarcane Industry Workers and Small Sugarcane Farmers</Text>
                     </div>
+                    <Space size={12}>
+                        <FilterOutlined style={{ color: '#6b7280' }} />
+                        <Select
+                            value={academicYearFilter}
+                            allowClear
+                            size="middle"
+                            style={{ width: 160 }}
+                            onChange={handleAcademicYearChange}
+                        >
+                            {academicYears.map(year => (
+                                <Option key={year} value={year}>{year}</Option>
+                            ))}
+                        </Select>
+                    </Space>
                 </div>
+            </div>
 
+            <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
+                <StatsCards financialAssistances={filteredSida_Sgp} />
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Program</h1>
+            <div style={{ padding: '12px 24px 0' }}>
+                <Text style={{ color: '#6b7280', fontSize: 16 }}>
+                    To provide scholarship grant to children and dependents of sugarcane industry workers
+                    and small sugarcane farmers duly certified by the Sugar Regulatory Administration (SRA).
+                </Text>
+            </div>
 
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Overview */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <InfoCircleOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Overview
+                    </Title>
+                </Space>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Administered in partnership with the Sugar Regulatory Administration (SRA), the program is designed to assist children and dependents of sugarcane industry workers and small sugarcane farmers in accessing quality higher education.
+                </Text>
+            </div>
+
+            {/* Scope and Coverage */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <ProjectOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Scope and Coverage
+                    </Title>
+                </Space>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    The scholarship grant program is open to qualified and deserving children and
+                    dependents of sugarcane industry workers and small sugarcane farmers. This
+                    program shall cover both undergraduate and graduate students who will enroll or are
+                    currently enrolled in agriculture, agricultural engineering and mechanics, and
+                    chemical engineering/sugar technology as identified in Sec. 6.b of R.A. 10659 in any
+                    identified State Universities and Colleges (SUCs). Slot allocation per concerned region will be determined and recommended by Sugar
+                    Regulatory Administration (SRA).
+                </Text>
+            </div>
+
+            {/* Application Process */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FileProtectOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Application Process
+                    </Title>
+                </Space>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Undergraduate Program
+                </Text>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                    <ol className="list-decimal">
+                        <li>
+                            For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
+                        </li>
+                        <li>
+                            For Lifelong Learners eligible for college – High School Report Card
+                        </li>
+                        <li>
+                            For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
+                        </li>
+                        <li>
+                            For other Applicants:
+                            <ol type="a" className="list-[lower-alpha] list-inside pl-6">
+                                <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
+                                <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                            </ol>
+                        </li>
+                        <li>
+                            Certificate of Good Moral Character from the last school attended
+                        </li>
+                        <li>
+                            Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
+                        </li>
+                        <li>
+                            Notice of admission from the SUC
+                        </li>
+                    </ol>
+                </Typography>
+            </div>
+
+            {/* Graduate Program - Qualifications */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <ReconciliationOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Graduate Program
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>Must be a Filipino Citizen</li>
                         <li>
                             With related undergraduate degree program and must pass the entry level requirements of identified SUC for master and doctoral degree programs
@@ -543,63 +331,72 @@ export default function FinancialAssistanceSida_Sgp() {
                             Applicant and/or spouse must have a combined annual gross income of not to exceed Php 500,000.00
                         </li>
                     </ol>
-                </div>
+                </Typography>
+            </div>
 
+            {/* Documentary Requirements - Undergraduate */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FormOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Documentary Requirements
+                    </Title>
+                </Space>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Undergraduate Program
+                </Text>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                    <ol className="list-decimal">
+                        <li>
+                            For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
+                        </li>
+                        <li>
+                            For Lifelong Learners eligible for college – High School Report Card
+                        </li>
+                        <li>
+                            For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
+                        </li>
+                        <li>
+                            For other Applicants:
+                            <ol type="a" className="list-[lower-alpha] list-inside pl-6">
+                                <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
+                                <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
+                            </ol>
+                        </li>
+                        <li>
+                            Certificate of Good Moral Character from the last school attended
+                        </li>
+                        <li>
+                            Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
+                        </li>
+                        <li>
+                            Notice of admission from the SUC
+                        </li>
+                        <li>
+                            Proof of Income – any one (1) of the following:
+                            <ol type="a" className="list-[lower-alpha] list-inside pl-6">
+                                <li>Latest Income Tax Return (ITR) of parents/guardians if employed</li>
+                                <li>Certificate of Tax Exemption from the Bureau of Internal Revenue (BIR)</li>
+                                <li>Certificate of No Income from BIR</li>
+                                <li>Certificate of Indigence from their barangay</li>
+                                <li>Certificate/Case Study from Department of Social Welfare and Development (DSWD)</li>
+                                <li>For Children of OFW and Seafarers, a latest copy of contract or proof of income may be considered</li>
+                            </ol>
+                        </li>
+                    </ol>
+                </Typography>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirements</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Undergraduate Program
-                        </h1>
-
-                        <ol className="mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>
-                                For Graduating Senior High School students – duly certified true copy of grades for Grade 11 and 1st semester of Grade 12
-                            </li>
-                            <li>
-                                For Lifelong Learners eligible for college – High School Report Card
-                            </li>
-                            <li>
-                                For Applicants with earned units in college – duly Certified Copy of Grades for the latest semester/term attended
-                            </li>
-                            <li>
-                                For other Applicants:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>ALS – duly certified copy of ALS Accreditation and Equivalency Test Passer Certificate</li>
-                                    <li>PEPT – duly certified copy of PEPT Certificate of Advancing to the next level</li>
-                                </ol>
-                            </li>
-                            <li>
-                                Certificate of Good Moral Character from the last school attended
-                            </li>
-                            <li>
-                                Certification from SRA as children and dependents of sugarcane industry workers and small sugarcane farmers
-                            </li>
-                            <li>
-                                Notice of admission from the SUC
-                            </li>
-                            <li>
-                                Proof of Income – any one (1) of the following:
-                                <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
-                                    <li>Latest Income Tax Return (ITR) of parents/guardians if employed</li>
-                                    <li>Certificate of Tax Exemption from the Bureau of Internal Revenue (BIR)</li>
-                                    <li>Certificate of No Income from BIR</li>
-                                    <li>Certificate of Indigence from their barangay</li>
-                                    <li>Certificate/Case Study from Department of Social Welfare and Development (DSWD)</li>
-                                    <li>For Children of OFW and Seafarers, a latest copy of contract or proof of income may be considered</li>
-                                </ol>
-                            </li>
-                        </ol>
-                    </div>
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Program</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Documentary Requirements - Graduate */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <SnippetsOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Graduate Program
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>
                             Diploma and Transcript of Records (TOR) of baccalaureate/master's thesis/dissertation proposal approved and endorsed by the Technical Working Group (TWG) for grant
                         </li>
@@ -614,7 +411,7 @@ export default function FinancialAssistanceSida_Sgp() {
                         </li>
                         <li>
                             Proof of Income – any one (1) of the following:
-                            <ol type="a" className="list-[lower-alpha] list-inside pl-6 space-y-1 mt-2">
+                            <ol type="a" className="list-[lower-alpha] list-inside pl-6">
                                 <li>Latest ITR</li>
                                 <li>Certificate of Tax Exemption from the BIR</li>
                                 <li>Certificate of No Income from BIR</li>
@@ -623,94 +420,104 @@ export default function FinancialAssistanceSida_Sgp() {
                             </ol>
                         </li>
                     </ol>
+                </Typography>
+            </div>
 
-                </div>
+            {/* Modes of Payment */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <DollarOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Modes of Payment
+                    </Title>
+                </Space>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Mode 1
+                </Text>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block' }}>
+                    CHEDROs release financial benefits directly to
+                    beneficiaries through checks or authorized banks; and
+                </Text>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 12 }}>
+                    Mode 2
+                </Text>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block' }}>
+                    CHEDROs transfer financial benefits to beneficiaries through SUCs.
+                </Text>
+            </div>
 
+            {/* Documentary Requirement for Regular Allowance */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <ReadOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Documentary Requirement for Regular Allowance
+                    </Title>
+                </Space>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Mode 1
+                </Text>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                    <ol className="list-decimal">
+                        <li>Copy of Notice of Award (NOA) – Annex A</li>
+                        <li>Copy of Certificate of Enrollment (COE) or Certificate of Registration (COR)</li>
+                        <li>Certified True Copy of Grades of the previous term issued by the school</li>
+                        <li>Copy of valid school ID</li>
+                        <li>Copy of ATM card as applicable</li>
+                    </ol>
+                </Typography>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 12 }}>
+                    Mode 2
+                </Text>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                    <ol className="list-decimal">
+                        <li>Billing Statement from SUC</li>
+                        <li>Memorandum of Agreement between CHEDRO and SUC</li>
+                    </ol>
+                </Typography>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Modes of Payment</h1>
+            {/* Documentary Requirement for Thesis/Dissertation Allowance */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FileDoneOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Documentary Requirement for Thesis/Dissertation Allowance
+                    </Title>
+                </Space>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    Hardbound copy of Thesis/Dissertation with signed approval
+                    sheet or certification from SUC of completion of the study, to be
+                    submitted to CHED Central Office through CHEDRO.
+                </Text>
+            </div>
 
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 1
-                        </h1>
-
-                        <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                            CHEDROs release financial benefits directly to
-                            beneficiaries through checks or authorized banks; and
-                        </p>
-
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 2
-                        </h1>
-
-                        <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                            CHEDROs transfer financial benefits to beneficiaries through SUCs.
-                        </p>
-
-                    </div>
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Regular Allowance</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 1
-                        </h1>
-
-                        <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>Copy of Notice of Award (NOA) – Annex A</li>
-                            <li>Copy of Certificate of Enrollment (COE) or Certificate of Registration (COR)</li>
-                            <li>Certified True Copy of Grades of the previous term issued by the school</li>
-                            <li>Copy of valid school ID</li>
-                            <li>Copy of ATM card as applicable</li>
-                        </ol>
-
-
-                        <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-red-700">
-                            Mode 2
-                        </h1>
-
-                        <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
-                            <li>Billing Statement from SUC</li>
-                            <li>Memorandum of Agreement between CHEDRO and SUC</li>
-                        </ol>
-
-
-                    </div>
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Thesis/Dissertation Allowance</h1>
-
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        Hardbound copy of Thesis/Dissertation with signed approval
-                        sheet or certification from SUC of completion of the study, to be
-                        submitted to CHED Central Office through CHEDRO.
-                    </p>
-
-
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for On-the-Job Training (OJT) Allowance</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Documentary Requirement for OJT Allowance */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <AuditOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Documentary Requirement for On-the-Job Training (OJT) Allowance
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>Copy of Narrative Report</li>
                         <li>Copy of Grades to be submitted to CHED Central Office through CHEDRO</li>
                     </ol>
+                </Typography>
+            </div>
 
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Documentary Requirement for Attendance to Local Conference/Fora</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Documentary Requirement for Conference/Fora */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FileSearchOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Documentary Requirement for Attendance to Local Conference/Fora
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>
                             Invitation to a local conference/fora or brochure providing details of the conference and/or seminar attended
                         </li>
@@ -724,14 +531,19 @@ export default function FinancialAssistanceSida_Sgp() {
                             Certificate of appearance or participation
                         </li>
                     </ol>
+                </Typography>
+            </div>
 
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Application Procedure</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 mt-4 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Application Procedure */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <ExceptionOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Application Procedure
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>
                             Student applicant shall submit to the SRA Mill District all documentary requirements to secure SRA certification
                         </li>
@@ -745,58 +557,186 @@ export default function FinancialAssistanceSida_Sgp() {
                             OSDS shall validate the rank list and approve the list of qualified beneficiaries for funding purposes
                         </li>
                     </ol>
+                </Typography>
+            </div>
 
-                </div>
+            {/* Financial Benefits - Undergraduate */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FundOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Financial Benefits — Undergraduate Programs
+                    </Title>
+                </Space>
+                <Card
+                    style={{
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        marginTop: 8,
+                    }}
+                    title="Regular Allowances"
+                >
+                    <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                            <tr>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Type</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Unit Cost (PHP)</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Total Cost per Academic Year (PHP)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (includes subsistence, clothing, transportation, tours, field trips, small projects, medical insurance)</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>10,000.00/month x 10 months or 50,000/semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱100,000.00</td>
+                            </tr>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Book allowance and other learning materials</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱5,000.00/Semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                                <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱110,000.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </Card>
+                <Card
+                    style={{
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        marginTop: 12,
+                    }}
+                    title="Others"
+                >
+                    <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                            <tr>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Type</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Thesis and/or OJT allowance</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱75,000.00</td>
+                            </tr>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>One-time attendance to local conference/fora (junior/senior year, outside enrolled HEI)</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱15,000.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱90,000.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </Card>
+            </div>
 
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+            {/* Financial Benefits - Graduate */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <FundProjectionScreenOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Financial Benefits — Graduate Programs
+                    </Title>
+                </Space>
+                <Card
+                    style={{
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        marginTop: 8,
+                    }}
+                    title="Regular Allowances"
+                >
+                    <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                            <tr>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Type</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Unit Cost (PHP)</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Total Cost per Academic Year (PHP)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>a. Tuition and Other School Fees</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱30,000.00/semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱60,000.00</td>
+                            </tr>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (which includes subsistence, clothing, transportation allowance, educational tours, field trips, expenses for small projects and medical insurance)</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>PHP10,000.00/month x 10 months or PHP50,000/semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱100,000.00</td>
+                            </tr>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Book allowance and other learning materials</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱7,500.00/semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱15,000.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                                <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱175,000.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </Card>
+                <Card
+                    style={{
+                        borderRadius: 12,
+                        border: '1px solid #f0f2f5',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
+                        marginTop: 12,
+                    }}
+                    title="Others"
+                >
+                    <table style={{ width: '100%' }}>
+                        <thead style={{ backgroundColor: "#3366cc", color: '#FFF' }}>
+                            <tr>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Type</th>
+                                <th style={{ border: '1px solid #000', padding: '8px' }}>Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>One-time attendance to local conference/fora (Should be related to the graduate program. The activity should not be on the same HEI where the beneficiary is enrolled.)</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱15,000</td>
+                            </tr>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Dissertation Allowance (Doctoral)</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱100,000.00</td>
+                            </tr>
+                        </tbody>
+                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                            <tr>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱75,000.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </Card>
+            </div>
 
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Financial Benefits</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <TableSection
-                            title="Undergraduate Programs"
-                            programs={sucPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                        <CompressedTableSection
-                            title="Others"
-                            programs={otherPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                    </div >
-
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Graduate Programs</h1>
-
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                        <TableSection
-                            title="Graduate Programs"
-                            programs={gradPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-
-                        <CompressedTableSection
-                            title="Others"
-                            programs={grad_otherPrograms}
-                            expandedId={expandedId}
-                            setExpandedId={setExpandedId}
-                        />
-                    </div>
-                </div>
-
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Conditions of the Scholarship Program</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Conditions of the Scholarship Program */}
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <WarningOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Conditions of the Scholarship Program
+                    </Title>
+                </Space>
+                <Typography style={{ color: '#6b7280', fontSize: 16, marginTop: 8 }}>
+                    <ol className="list-decimal">
                         <li>Accept and sign the NOA</li>
                         <li>Enroll only in identified priority programs in the concerned SUCs following the conditions of the NOA</li>
                         <li>Carry a full load as prescribed in the curriculum of the study program of the concerned SUCs</li>
@@ -813,24 +753,29 @@ export default function FinancialAssistanceSida_Sgp() {
                             Beneficiaries may benefit from another financial assistance program from a separate government entity provided there is no duplication of financial benefits mentioned under Section V of this amendatory CMO, unless a later law indicates otherwise
                         </li>
                     </ol>
+                </Typography>
+            </div>
 
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">Administrative Cost</h1>
-                    <p className="mt-4 text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed">
-                        The Administrative Cost (AC) shall be 5% of the total budget allocated for the program
-                        and shall be distributed as follows: 2.5% for Office of the Student Development and
-                        Services (OSDS), CHED, 1.25% for the concerned CHEDROs and 1.25% for the
-                        SUCs. The utilization of AC should be in accordance with the existing government
-                        accounting and auditing rules and regulations.
-                    </p>
-                </div>
-
-                <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-red-700">AC shall be used for related expenses such as but not limited to:</h1>
-
-                    <ol className="bg-red-50 border border-red-200 rounded-lg p-6 list-decimal list-inside text-sm sm:text-base md:text-lg lg:text-xl text-gray-700 leading-relaxed space-y-2">
+            {/* Administrative Cost */}
+            <div style={{ padding: '12px 24px 24px' }}>
+                <Space size={12} align="start">
+                    <CreditCardOutlined style={{ fontSize: 24, color: '#6b7280', marginTop: 6 }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Administrative Cost
+                    </Title>
+                </Space>
+                <Text style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 8 }}>
+                    The Administrative Cost (AC) shall be 5% of the total budget allocated for the program
+                    and shall be distributed as follows: 2.5% for Office of the Student Development and
+                    Services (OSDS), CHED, 1.25% for the concerned CHEDROs and 1.25% for the
+                    SUCs. The utilization of AC should be in accordance with the existing government
+                    accounting and auditing rules and regulations.
+                </Text>
+                <Text strong style={{ color: '#6b7280', fontSize: 16, display: 'block', marginTop: 16 }}>
+                    AC shall be used for related expenses such as but not limited to:
+                </Text>
+                <Typography style={{ color: '#6b7280', fontSize: 16 }}>
+                    <ol className="list-decimal">
                         <li>Office supplies and materials</li>
                         <li>Communication</li>
                         <li>Transportation/travel</li>
@@ -842,21 +787,11 @@ export default function FinancialAssistanceSida_Sgp() {
                         <li>Overtime services</li>
                         <li>Other incidental expenses</li>
                     </ol>
-
-                </div>
-            </main>
-            <footer className="bg-gray-800 text-white text-center py-4">
-                <div>
-                    <p className="text-sm">
-                        CMO-No.-2-s.-2020-Amendments-to-CMO-No.-30-s-2016
-                    </p>
-                    <p className="text-sm">
-
-                        © {new Date().getFullYear()} CMO. All rights reserved.
-                    </p>
-                </div>
-
-            </footer>
+                </Typography>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16 }}>
+                    Reference: CMO-No.-2-s.-2020-Amendments-to-CMO-No.-30-s-2016
+                </Text>
+            </div>
         </div>
-    )
+    );
 }
