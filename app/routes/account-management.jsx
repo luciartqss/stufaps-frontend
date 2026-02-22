@@ -88,6 +88,7 @@ export default function AccountManagement() {
       accounting_access: user.accounting_access || false,
       cashier_access: user.cashier_access || false,
       can_add_students: user.can_add_students || false,
+      can_add_disbursements: user.can_add_disbursements || false,
       assigned_programs: uniquePrograms,
       assigned_years: uniqueYears,
     })
@@ -120,12 +121,14 @@ export default function AccountManagement() {
           payload.accounting_access = values.accounting_access || false
           payload.cashier_access = values.cashier_access || false
           payload.can_add_students = values.can_add_students || false
+          payload.can_add_disbursements = values.can_add_disbursements || false
           payload.assignments = assignments
         } else {
           // Reset flags if switching away from stufaps
           payload.accounting_access = false
           payload.cashier_access = false
           payload.can_add_students = false
+          payload.can_add_disbursements = false
           payload.assignments = []
         }
 
@@ -151,6 +154,7 @@ export default function AccountManagement() {
           accounting_access: values.role === 'stufaps' ? (values.accounting_access || false) : false,
           cashier_access: values.role === 'stufaps' ? (values.cashier_access || false) : false,
           can_add_students: values.role === 'stufaps' ? (values.can_add_students || false) : false,
+          can_add_disbursements: values.role === 'stufaps' ? (values.can_add_disbursements || false) : false,
           assignments: values.role === 'stufaps' ? assignments : [],
         }
 
@@ -241,7 +245,8 @@ export default function AccountManagement() {
         const flags = []
         if (record.accounting_access) flags.push('Accounting')
         if (record.cashier_access) flags.push('Cashier')
-        if (record.can_add_students) flags.push('Add')
+        if (record.can_add_students) flags.push('Add Students')
+        if (record.can_add_disbursements) flags.push('Add Disb.')
 
         return (
           <div style={{ fontSize: 12, lineHeight: 1.6 }}>
@@ -429,6 +434,9 @@ export default function AccountManagement() {
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
                 <Form.Item name="can_add_students" valuePropName="checked" style={{ margin: 0 }}>
                   <Checkbox>Can add students</Checkbox>
+                </Form.Item>
+                <Form.Item name="can_add_disbursements" valuePropName="checked" style={{ margin: 0 }}>
+                  <Checkbox>Can add disbursements</Checkbox>
                 </Form.Item>
               </div>
 

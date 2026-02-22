@@ -921,7 +921,7 @@ export default function StudentDetails() {
         style={{ borderRadius: 12 }}
         styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}
         extra={
-          (isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)) ? (
+          (isMasterAdmin || (permissions?.can_add_disbursements && (assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)))) ? (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateDisbursement}>
               Add Disbursement
             </Button>
@@ -1014,21 +1014,6 @@ export default function StudentDetails() {
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={12}>
-                <Form.Item 
-                  name="amount" 
-                  label="Amount"
-                >
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    prefix="₱" 
-                    placeholder="Managed by Cashier"
-                    min={0}
-                    disabled
-                  />
-                </Form.Item>
-              </Col>
             </Row>
           </div>
 
@@ -1041,20 +1026,6 @@ export default function StudentDetails() {
               <Col span={12}>
                 <Form.Item name="voucher_tracking_no" label="Voucher Tracking No.">
                   <Input />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="voucher_no" label="Voucher No.">
-                  <Input disabled placeholder="Managed by Accounting" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="voucher_date" label="Voucher Date">
-                  <DatePicker 
-                    style={{ width: '100%' }}
-                    disabled
-                    placeholder="Managed by Accounting"
-                  />
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -1076,28 +1047,6 @@ export default function StudentDetails() {
                   <DatePicker 
                     style={{ width: '100%' }}
                     placeholder="Select date"
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="account_check_no" label="Account/Check No.">
-                  <Input disabled placeholder="Managed by Accounting" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="lddap_no" label="LDDAP No.">
-                  <Input disabled placeholder="Managed by Cashier" />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item 
-                  name="disbursement_date" 
-                  label="Disbursement Date"
-                >
-                  <DatePicker 
-                    style={{ width: '100%' }}
-                    disabled
-                    placeholder="Managed by Cashier"
                   />
                 </Form.Item>
               </Col>
