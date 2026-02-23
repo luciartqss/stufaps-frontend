@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Typography, Table, Button, Input, Select, Modal, Form, Tag, Space, message, Popconfirm, Checkbox, Divider, Tooltip } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { Typography, Table, Button, Input, Select, Modal, Form, Tag, Space, message, Popconfirm, Checkbox, Divider, Tooltip, Card } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, UserOutlined, LockOutlined, IdcardOutlined, BookOutlined, CalendarOutlined, SafetyOutlined } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
@@ -321,132 +321,138 @@ export default function AccountManagement() {
       />
 
       <Modal
-        title={editingUser ? 'Edit Account' : 'Create Account'}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {editingUser ? <EditOutlined /> : <PlusOutlined />}
+            <span>{editingUser ? 'Edit Account' : 'Create Account'}</span>
+          </div>
+        }
         open={modalOpen}
         onCancel={() => { setModalOpen(false); form.resetFields() }}
         onOk={handleSubmit}
         okText={editingUser ? 'Save Changes' : 'Create'}
-        width={520}
+        width={720}
         destroyOnHidden
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item
-            name="username"
-            label="Username"
-            rules={[{ required: true, message: 'Username is required' }]}
-          >
-            <Input placeholder="Enter username" />
-          </Form.Item>
-          <Form.Item
-            name="email"
-            label="Email"
-            rules={[
-              { required: true, message: 'Email is required' },
-              { type: 'email', message: 'Enter a valid email' },
-            ]}
-          >
-            <Input placeholder="Enter email" />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label={editingUser ? 'New Password (leave blank to keep)' : 'Password'}
-            rules={editingUser ? [] : [{ required: true, message: 'Password is required' }]}
-          >
-            <Input.Password placeholder={editingUser ? 'Leave blank to keep current' : 'Enter password'} />
-          </Form.Item>
-          <Form.Item
-            name="role"
-            label="Role"
-            rules={[{ required: true, message: 'Role is required' }]}
-          >
-            <Select placeholder="Select a role">
-              <Select.Option value="stufaps">StuFAPs</Select.Option>
-              <Select.Option value="accounting">Accounting</Select.Option>
-              <Select.Option value="cashier">Cashier</Select.Option>
-            </Select>
-          </Form.Item>
+        <Form form={form} layout="vertical" style={{ marginTop: 12 }}>
+          {/* Account Info Section */}
+          <div style={{ background: '#fafbfc', border: '1px solid #f0f0f0', borderRadius: 8, padding: '16px 16px 4px', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <UserOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+              <Text strong style={{ fontSize: 13, color: '#1677ff' }}>Account Information</Text>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item
+                name="username"
+                label="Username"
+                rules={[{ required: true, message: 'Username is required' }]}
+              >
+                <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="Enter username" />
+              </Form.Item>
+              <Form.Item
+                name="email"
+                label="Email"
+                rules={[
+                  { required: true, message: 'Email is required' },
+                  { type: 'email', message: 'Enter a valid email' },
+                ]}
+              >
+                <Input placeholder="Enter email" />
+              </Form.Item>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+              <Form.Item
+                name="password"
+                label={editingUser ? 'New Password (leave blank to keep)' : 'Password'}
+                rules={editingUser ? [] : [{ required: true, message: 'Password is required' }]}
+              >
+                <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder={editingUser ? 'Leave blank to keep current' : 'Enter password'} />
+              </Form.Item>
+              <Form.Item
+                name="role"
+                label="Role"
+                rules={[{ required: true, message: 'Role is required' }]}
+              >
+                <Select
+                  placeholder="Select a role"
+                  suffixIcon={<IdcardOutlined style={{ color: '#bfbfbf' }} />}
+                >
+                  <Select.Option value="stufaps">StuFAPs</Select.Option>
+                  <Select.Option value="accounting">Accounting</Select.Option>
+                  <Select.Option value="cashier">Cashier</Select.Option>
+                </Select>
+              </Form.Item>
+            </div>
+          </div>
 
           {/* StuFAPs-specific fields */}
           {selectedRole === 'stufaps' && (
             <>
-              <Divider style={{ margin: '12px 0' }}>
-                <Text style={{ fontSize: 13, color: '#8c8c8c' }}>StuFAPs Assignment & Access</Text>
-              </Divider>
-
-              <Form.Item
-                name="assigned_programs"
-                label={
-                  <Space size={4}>
-                    Scholarship Programs
-                    <Tooltip title="Assign at least one program AND one academic year for full access. Without assignments, the user gets read-only access.">
-                      <InfoCircleOutlined style={{ color: '#8c8c8c' }} />
-                    </Tooltip>
-                  </Space>
-                }
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="Select scholarship programs"
-                  allowClear
-                  showSearch
-                  optionFilterProp="label"
-                  options={[
-                    { label: '✦ ALL Programs', value: 'ALL' },
-                    ...assignmentOptions.scholarship_programs.map(p => ({ label: p, value: p }))
-                  ]}
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                name="assigned_years"
-                label="Academic Years"
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="Select academic years"
-                  allowClear
-                  options={[
-                    { label: '✦ ALL Academic Years', value: 'ALL' },
-                    ...assignmentOptions.academic_years.map(y => ({ label: y, value: y }))
-                  ]}
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-
-              <Divider style={{ margin: '12px 0' }}>
-                <Text style={{ fontSize: 13, color: '#8c8c8c' }}>Section Access</Text>
-              </Divider>
-
-              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                <Form.Item name="accounting_access" valuePropName="checked" style={{ margin: 0 }}>
-                  <Checkbox>Accounting access</Checkbox>
-                </Form.Item>
-                <Form.Item name="cashier_access" valuePropName="checked" style={{ margin: 0 }}>
-                  <Checkbox>Cashier access</Checkbox>
-                </Form.Item>
+              {/* Assignments Section */}
+              <div style={{ background: '#f0f5ff', border: '1px solid #d6e4ff', borderRadius: 8, padding: '16px 16px 4px', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <BookOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+                  <Text strong style={{ fontSize: 13, color: '#1677ff' }}>Program Assignments</Text>
+                  <Tooltip title="Assign at least one program AND one academic year for full access. Without assignments, the user gets read-only access.">
+                    <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: 12, cursor: 'pointer' }} />
+                  </Tooltip>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+                  <Form.Item
+                    name="assigned_programs"
+                    label="Scholarship Programs"
+                  >
+                    <Select
+                      mode="multiple"
+                      placeholder="Select programs"
+                      allowClear
+                      showSearch
+                      optionFilterProp="label"
+                      options={[
+                        { label: '✦ ALL Programs', value: 'ALL' },
+                        ...assignmentOptions.scholarship_programs.map(p => ({ label: p, value: p }))
+                      ]}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                  <Form.Item
+                    name="assigned_years"
+                    label="Academic Years"
+                  >
+                    <Select
+                      mode="multiple"
+                      placeholder="Select years"
+                      allowClear
+                      options={[
+                        { label: '✦ ALL Academic Years', value: 'ALL' },
+                        ...assignmentOptions.academic_years.map(y => ({ label: y, value: y }))
+                      ]}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </div>
               </div>
 
-              <Divider style={{ margin: '12px 0' }}>
-                <Text style={{ fontSize: 13, color: '#8c8c8c' }}>Student Permissions</Text>
-              </Divider>
-
-              <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
-                <Form.Item name="can_add_students" valuePropName="checked" style={{ margin: 0 }}>
-                  <Checkbox>Can add students</Checkbox>
-                </Form.Item>
-                <Form.Item name="can_add_disbursements" valuePropName="checked" style={{ margin: 0 }}>
-                  <Checkbox>Can add disbursements</Checkbox>
-                </Form.Item>
-              </div>
-
-              <div style={{ background: '#f6f8fa', borderRadius: 6, padding: '10px 14px', marginBottom: 8 }}>
-                <Text style={{ fontSize: 12, color: '#6b7280' }}>
-                  <strong>Note:</strong> Without program/year assignments, the user can still log in but has read-only access.
-                  Checking Accounting/Cashier grants full edit access to those sections; unchecked grants view-only.
-                  Users can edit students and disbursements only for the programs and academic years they are assigned to.
-                  Select "ALL" to grant access to all programs or all academic years.
-                </Text>
+              {/* Permissions Section */}
+              <div style={{ background: '#f6ffed', border: '1px solid #d9f7be', borderRadius: 8, padding: '16px 16px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                  <SafetyOutlined style={{ color: '#52c41a', fontSize: 14 }} />
+                  <Text strong style={{ fontSize: 13, color: '#52c41a' }}>Permissions</Text>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+                  <Form.Item name="accounting_access" valuePropName="checked" style={{ margin: 0 }}>
+                    <Checkbox>Accounting section access</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="cashier_access" valuePropName="checked" style={{ margin: 0 }}>
+                    <Checkbox>Cashier section access</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="can_add_students" valuePropName="checked" style={{ margin: 0 }}>
+                    <Checkbox>Can add students</Checkbox>
+                  </Form.Item>
+                  <Form.Item name="can_add_disbursements" valuePropName="checked" style={{ margin: 0 }}>
+                    <Checkbox>Can add disbursements</Checkbox>
+                  </Form.Item>
+                </div>
               </div>
             </>
           )}

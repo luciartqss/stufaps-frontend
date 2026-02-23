@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
-import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Progress, Modal } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Popconfirm, Progress, Modal, Divider } from 'antd'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined, StopOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -32,23 +32,36 @@ const SEM_FIELDS = [
 const sanitize = (str = '') => str.toLowerCase().replace(/[^a-z0-9]/g, '')
 const makeAyId = (label) => `ay_${sanitize(label) || Date.now()}`
 
-// Expand AY input like "2021-2029" to individual blocks (2021-2022, 2022-2023, ...)
-const expandAcademicYearInput = (input = '') => {
+// Validate and expand AY input like "2024-2025" or range "2021-2029"
+// Returns { valid: bool, labels: string[], error: string }
+const parseAcademicYearInput = (input = '') => {
   const trimmed = input.trim()
-  if (!trimmed) return []
+  if (!trimmed) return { valid: false, labels: [], error: 'Enter an academic year' }
+
+  // Must be digits and a dash/hyphen only
+  if (!/^\d{4}\s*-\s*\d{4}$/.test(trimmed)) {
+    return { valid: false, labels: [], error: 'Format must be YYYY-YYYY (e.g. 2024-2025)' }
+  }
 
   const rangeMatch = trimmed.match(/^(\d{4})\s*-\s*(\d{4})$/)
-  if (!rangeMatch) return [trimmed]
-
   const start = Number(rangeMatch[1])
   const end = Number(rangeMatch[2])
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return [trimmed]
+
+  if (start < 1990 || start > 2099) {
+    return { valid: false, labels: [], error: 'Start year must be between 1990 and 2099' }
+  }
+  if (end <= start) {
+    return { valid: false, labels: [], error: 'End year must be greater than start year' }
+  }
+  if (end - start > 10) {
+    return { valid: false, labels: [], error: 'Range too large (max 10 years)' }
+  }
 
   const labels = []
   for (let year = start; year < end; year += 1) {
     labels.push(`${year}-${year + 1}`)
   }
-  return labels
+  return { valid: true, labels, error: '' }
 }
 
 const sortAcademicYears = (list = []) =>
@@ -194,6 +207,36 @@ const STUDENT_FIELD_ALIASES = {
   scholarshipStatus: ['scholarshipstatus', 'schostatus'],
   replacement: ['replacement', 'remarks1'],
   reason: ['reason', 'remarks2'],
+}
+
+// Student information fields for comparison (excludes seq and dynamic AY fields)
+const STUDENT_INFO_KEYS = [
+  'inCharge', 'awardYear', 'scholarshipProgram', 'awardNumber',
+  'learnerReferenceNumber', 'surname', 'firstName', 'middleName',
+  'extension', 'sex', 'dateOfBirth', 'contactNumber', 'emailAddress',
+  'streetBrgy', 'municipalityCity', 'province', 'congressionalDistrict',
+  'zipCode', 'specialGroup', 'certificationNumber', 'nameOfInstitution',
+  'uii', 'institutionalType', 'regionSchoolLocated', 'degreeProgram',
+  'programMajor', 'programDiscipline', 'programDegreeLevel',
+  'authorityType', 'authorityNumber', 'series', 'priority', 'basisCmo',
+  'scholarshipStatus', 'replacement', 'reason',
+]
+
+// Human-readable field labels for export
+const FIELD_EXPORT_LABELS = {
+  inCharge: 'In-Charge', awardYear: 'Award Year', scholarshipProgram: 'Scholarship Program',
+  awardNumber: 'Award Number', learnerReferenceNumber: 'LRN', surname: 'Surname',
+  firstName: 'First Name', middleName: 'Middle Name', extension: 'Extension',
+  sex: 'Sex', dateOfBirth: 'Date of Birth', contactNumber: 'Contact Number',
+  emailAddress: 'Email Address', streetBrgy: 'Street/Brgy', municipalityCity: 'Municipality/City',
+  province: 'Province', congressionalDistrict: 'Congressional District', zipCode: 'Zip Code',
+  specialGroup: 'Special Group', certificationNumber: 'Certification Number',
+  nameOfInstitution: 'Institution', uii: 'UII', institutionalType: 'Institutional Type',
+  regionSchoolLocated: 'Region', degreeProgram: 'Degree Program', programMajor: 'Program Major',
+  programDiscipline: 'Program Discipline', programDegreeLevel: 'Program Degree Level',
+  authorityType: 'Authority Type', authorityNumber: 'Authority Number', series: 'Series',
+  priority: 'Priority', basisCmo: 'Basis (CMO)', scholarshipStatus: 'Scholarship Status',
+  replacement: 'Replacement', reason: 'Reason',
 }
 
 // Semester field aliases (used inside AY blocks)
@@ -568,14 +611,16 @@ export default function ImportBulk() {
   const [academicYears, setAcademicYears] = useState([
     { id: makeAyId('2024-2025'), label: '2024-2025' },
   ])
-  const [ayInput, setAyInput] = useState('2024-2025')
+  const ayInputRef = useRef(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [duplicateMap, setDuplicateMap] = useState({}) // { rowIndex: { matches: [...], checking: false } }
   const [duplicateChecking, setDuplicateChecking] = useState(false)
-  const duplicateCheckTimer = useRef(null)
+  const [needsValidation, setNeedsValidation] = useState(false) // true when data changed since last validation
   const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done, phase }
   const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const hasExportedRef = useRef(false)
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
@@ -952,7 +997,7 @@ export default function ImportBulk() {
 
         setAcademicYears(fileAys)
         setData(normalized)
-        checkDuplicates(normalized)
+        validateData(normalized)
 
         message.success(`Loaded ${normalized.length} records from ${file.name} | ${mappedCount} columns mapped${detectedAyLabels.length > 0 ? ` | AY: ${detectedAyLabels.join(', ')}` : ''}`)
       } catch (error) {
@@ -971,13 +1016,9 @@ export default function ImportBulk() {
     setData(prev => {
       const updated = [...prev]
       updated[rowIndex] = { ...updated[rowIndex], [field]: newValue }
-      // Trigger duplicate check on relevant field changes
-      const dupFields = ['surname', 'firstName', 'middleName', 'awardNumber', 'nameOfInstitution']
-      if (dupFields.includes(field)) {
-        triggerDuplicateCheck(updated)
-      }
       return updated
     })
+    setNeedsValidation(true)
   }
 
   // Add new row
@@ -988,6 +1029,7 @@ export default function ImportBulk() {
     })
     newRow.seq = String(data.length + 1)
     setData(prev => [...prev, newRow])
+    setNeedsValidation(true)
     // Navigate to the page containing the new row
     const newTotalRows = data.length + 1
     const newPage = Math.ceil(newTotalRows / pageSize)
@@ -998,157 +1040,337 @@ export default function ImportBulk() {
   const handleDeleteRow = (rowIndex) => {
     setData(prev => {
       const updated = prev.filter((_, idx) => idx !== rowIndex)
-      // Re-number seq
       return updated.map((row, idx) => ({ ...row, seq: String(idx + 1) }))
     })
+    setNeedsValidation(true)
   }
 
-  // --- Duplicate detection ---
-  const checkDuplicates = useCallback(async (rows) => {
+  // --- Comprehensive validation & duplicate detection ---
+  const validateData = useCallback(async (rows) => {
     if (!rows || rows.length === 0) {
       setDuplicateMap({})
       return
     }
 
-    // Build candidates from rows that have at least a surname + first name
-    const candidates = rows.map((row) => ({
-      surname: row.surname || '',
-      first_name: row.firstName || '',
-      middle_name: row.middleName || '',
-      award_number: row.awardNumber || '',
-      name_of_institution: row.nameOfInstitution || '',
-    }))
-
-    // Only check rows that have at least a name
-    const hasData = candidates.some(c => c.surname || c.first_name)
-    if (!hasData) {
-      setDuplicateMap({})
-      return
-    }
-
     setDuplicateChecking(true)
-    try {
-      const res = await fetch(`${API_BASE}/students/check-duplicates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ candidates }),
-      })
-      if (!res.ok) throw new Error('Duplicate check failed')
-      const json = await res.json()
-      const newMap = {}
-      ;(json.duplicates || []).forEach(d => {
-        newMap[d.row_index] = { matches: d.matches }
-      })
+    const newMap = {}
 
-      // Also detect duplicates within the import batch itself
-      const batchDupMap = {}
-      const nameKey = (r) => {
-        const s = (r.surname || '').trim().toLowerCase()
-        const f = (r.firstName || '').trim().toLowerCase()
-        const m = (r.middleName || '').trim().toLowerCase()
-        return s && f ? `${s}|${f}|${m}` : null
-      }
-      const awardKey = (r) => {
-        const a = (r.awardNumber || '').trim()
-        return a || null
-      }
-
-      // Group by name and award number
-      const nameGroups = {}
-      const awardGroups = {}
-      rows.forEach((row, idx) => {
-        const nk = nameKey(row)
-        if (nk) {
-          if (!nameGroups[nk]) nameGroups[nk] = []
-          nameGroups[nk].push(idx)
-        }
-        const ak = awardKey(row)
-        if (ak) {
-          if (!awardGroups[ak]) awardGroups[ak] = []
-          awardGroups[ak].push(idx)
-        }
-      })
-
-      // Mark batch duplicates
-      Object.values(nameGroups).filter(g => g.length > 1).forEach(group => {
-        group.forEach(idx => {
-          if (!batchDupMap[idx]) batchDupMap[idx] = []
-          const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
-          batchDupMap[idx].push({ match_type: 'batch_name', detail: `Same name as ${others.join(', ')}` })
-        })
-      })
-      Object.values(awardGroups).filter(g => g.length > 1).forEach(group => {
-        group.forEach(idx => {
-          if (!batchDupMap[idx]) batchDupMap[idx] = []
-          const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
-          batchDupMap[idx].push({ match_type: 'batch_award', detail: `Same award number as ${others.join(', ')}` })
-        })
-      })
-
-      // Merge batch duplicates into the map
-      Object.keys(batchDupMap).forEach(idx => {
-        const numIdx = Number(idx)
-        if (!newMap[numIdx]) newMap[numIdx] = { matches: [] }
-        batchDupMap[idx].forEach(bd => {
-          newMap[numIdx].matches.push({
-            match_type: bd.match_type,
-            name: bd.detail,
-            award_number: '',
-            institution: '',
-            program: '',
-          })
-        })
-      })
-
-      setDuplicateMap(newMap)
-    } catch (err) {
-      console.error('Duplicate check error:', err)
-    } finally {
-      setDuplicateChecking(false)
+    const ensureEntry = (idx) => {
+      if (!newMap[idx]) newMap[idx] = { matches: [], reasons: [], tags: [] }
     }
+
+    // --- Phase 1: Status Validation ---
+    rows.forEach((row, idx) => {
+      const status = String(row.scholarshipStatus || '').trim()
+      if (!status) {
+        ensureEntry(idx)
+        newMap[idx].tags.push('missing_status')
+        newMap[idx].reasons.push({ type: 'missing_status', detail: 'Missing Scholarship Status (required field)' })
+      }
+    })
+
+    // --- Phase 2: Batch-internal identity & conflict detection ---
+    // Identity: normalized name (surname + firstName + middleName)
+    const identityKey = (row) => {
+      const s = (row.surname || '').trim().toLowerCase()
+      const f = (row.firstName || '').trim().toLowerCase()
+      const m = (row.middleName || '').trim().toLowerCase()
+      return s && f ? `${s}|${f}|${m}` : null
+    }
+
+    // Student info fingerprint
+    const studentFingerprint = (row) =>
+      STUDENT_INFO_KEYS.map(k => String(row[k] || '').trim().toLowerCase()).join('|')
+
+    // AY disbursement data per row
+    const getAyData = (row) => {
+      const result = {}
+      Object.keys(row).forEach(k => {
+        const semMatch = k.match(/^(ay_[^_]+)__(first|second)__(.+)$/)
+        if (semMatch) {
+          const [, ayId, sem, field] = semMatch
+          if (!result[ayId]) result[ayId] = {}
+          if (!result[ayId][sem]) result[ayId][sem] = {}
+          const val = String(row[k] || '').trim()
+          if (val) result[ayId][sem][field] = val
+        }
+        const cylMatch = k.match(/^(ay_[^_]+)__cyl$/)
+        if (cylMatch) {
+          const ayId = cylMatch[1]
+          if (!result[ayId]) result[ayId] = {}
+          const val = String(row[k] || '').trim()
+          if (val) result[ayId].cyl = val
+        }
+      })
+      return result
+    }
+
+    // Group rows by identity
+    const identityGroups = {}
+    rows.forEach((row, idx) => {
+      const key = identityKey(row)
+      if (key) {
+        if (!identityGroups[key]) identityGroups[key] = []
+        identityGroups[key].push(idx)
+      }
+    })
+
+    // Analyze each group with >1 row
+    Object.values(identityGroups).filter(g => g.length > 1).forEach(group => {
+      const firstFp = studentFingerprint(rows[group[0]])
+
+      // Check if ALL student info is identical across the group
+      let allStudentInfoIdentical = true
+      const differingFields = []
+      for (let i = 1; i < group.length; i++) {
+        const fp = studentFingerprint(rows[group[i]])
+        if (fp !== firstFp) {
+          allStudentInfoIdentical = false
+          // Find specific differing fields
+          for (const key of STUDENT_INFO_KEYS) {
+            const v1 = String(rows[group[0]][key] || '').trim().toLowerCase()
+            const v2 = String(rows[group[i]][key] || '').trim().toLowerCase()
+            if (v1 !== v2 && !differingFields.includes(key)) {
+              differingFields.push(FIELD_EXPORT_LABELS[key] || key)
+            }
+          }
+        }
+      }
+
+      if (!allStudentInfoIdentical) {
+        // Student info differs → Conflict (Not Allowed) per requirement #1
+        group.forEach(idx => {
+          ensureEntry(idx)
+          if (!newMap[idx].tags.includes('batch_conflict')) {
+            newMap[idx].tags.push('batch_conflict')
+            const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
+            newMap[idx].reasons.push({
+              type: 'batch_conflict',
+              detail: `Student info conflict with ${others.join(', ')} — differs in: ${differingFields.join(', ')}`
+            })
+            newMap[idx].matches.push({
+              match_type: 'batch_conflict',
+              name: `Info conflict with ${others.join(', ')}`,
+              award_number: rows[idx].awardNumber || '',
+              institution: rows[idx].nameOfInstitution || '',
+              program: rows[idx].scholarshipProgram || '',
+            })
+          }
+        })
+      } else {
+        // Student info identical → check disbursement AYs (requirement #2)
+        const ayDataPerRow = group.map(idx => ({ idx, ayData: getAyData(rows[idx]) }))
+
+        for (let i = 0; i < ayDataPerRow.length; i++) {
+          for (let j = i + 1; j < ayDataPerRow.length; j++) {
+            const a = ayDataPerRow[i]
+            const b = ayDataPerRow[j]
+            const allAys = new Set([...Object.keys(a.ayData), ...Object.keys(b.ayData)])
+
+            let hasOverlapConflict = false
+            let allDisbIdentical = true
+
+            for (const ayId of allAys) {
+              const da = a.ayData[ayId]
+              const db = b.ayData[ayId]
+              if (da && db) {
+                // Both have this AY → compare
+                if (JSON.stringify(da) !== JSON.stringify(db)) {
+                  hasOverlapConflict = true
+                  allDisbIdentical = false
+                }
+              } else {
+                allDisbIdentical = false
+              }
+            }
+
+            if (allDisbIdentical) {
+              // Exact duplicate — all student info + all disbursements identical
+              // (includes case where both have zero AY data)
+              ;[a.idx, b.idx].forEach(idx => {
+                ensureEntry(idx)
+                if (!newMap[idx].tags.includes('exact_duplicate')) {
+                  newMap[idx].tags.push('exact_duplicate')
+                  const otherIdx = idx === a.idx ? b.idx : a.idx
+                  newMap[idx].reasons.push({
+                    type: 'exact_duplicate',
+                    detail: `Exact duplicate of Row ${otherIdx + 1} (student info + disbursements identical)`
+                  })
+                  newMap[idx].matches.push({
+                    match_type: 'exact_duplicate',
+                    name: `Exact duplicate of Row ${otherIdx + 1}`,
+                    award_number: rows[idx].awardNumber || '',
+                    institution: '', program: '',
+                  })
+                }
+              })
+            } else if (hasOverlapConflict) {
+              // Same student, overlapping AY with different data → disbursement conflict
+              ;[a.idx, b.idx].forEach(idx => {
+                ensureEntry(idx)
+                if (!newMap[idx].tags.includes('disb_conflict')) {
+                  newMap[idx].tags.push('disb_conflict')
+                  const otherIdx = idx === a.idx ? b.idx : a.idx
+                  newMap[idx].reasons.push({
+                    type: 'disb_conflict',
+                    detail: `Disbursement conflict with Row ${otherIdx + 1} — same AY, different data`
+                  })
+                  newMap[idx].matches.push({
+                    match_type: 'disb_conflict',
+                    name: `Disbursement conflict with Row ${otherIdx + 1}`,
+                    award_number: rows[idx].awardNumber || '',
+                    institution: '', program: '',
+                  })
+                }
+              })
+            }
+            // else: no AY overlap → valid (new AY data for same student), no flag needed
+          }
+        }
+      }
+    })
+
+    // --- Phase 3: DB duplicate check (backend) ---
+    try {
+      const candidates = rows.map(row => ({
+        surname: row.surname || '',
+        first_name: row.firstName || '',
+        middle_name: row.middleName || '',
+        award_number: row.awardNumber || '',
+        name_of_institution: row.nameOfInstitution || '',
+      }))
+
+      const hasData = candidates.some(c => c.surname || c.first_name)
+      if (hasData) {
+        const res = await fetch(`${API_BASE}/students/check-duplicates`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ candidates }),
+        })
+        if (res.ok) {
+          const json = await res.json()
+          ;(json.duplicates || []).forEach(d => {
+            ensureEntry(d.row_index)
+            if (!newMap[d.row_index].tags.includes('db_match')) {
+              newMap[d.row_index].tags.push('db_match')
+            }
+            d.matches.forEach(m => {
+              newMap[d.row_index].matches.push(m)
+              newMap[d.row_index].reasons.push({
+                type: 'db_match',
+                detail: `DB match: ${m.name} (${m.match_type})`
+              })
+            })
+          })
+        }
+      }
+    } catch (err) {
+      console.error('DB duplicate check error:', err)
+    }
+
+    setDuplicateMap(newMap)
+    setDuplicateChecking(false)
+    setNeedsValidation(false)
   }, [])
 
-  // Debounced duplicate check
-  const triggerDuplicateCheck = useCallback((rows) => {
-    if (duplicateCheckTimer.current) clearTimeout(duplicateCheckTimer.current)
-    duplicateCheckTimer.current = setTimeout(() => {
-      checkDuplicates(rows)
-    }, 1000)
-  }, [checkDuplicates])
-
-  // Count total duplicates, split by type
-  const duplicateCount = useMemo(() => Object.keys(duplicateMap).length, [duplicateMap])
-  const { dbDupCount, batchDupCount, bothDupCount } = useMemo(() => {
-    let db = 0, batch = 0, both = 0
-    Object.values(duplicateMap).forEach(({ matches = [] }) => {
-      const hasDb = matches.some(m => !m.match_type.startsWith('batch_'))
-      const hasBatch = matches.some(m => m.match_type.startsWith('batch_'))
-      if (hasDb && hasBatch) both++
-      else if (hasDb) db++
-      else if (hasBatch) batch++
+  // --- Validation counts ---
+  const validationCounts = useMemo(() => {
+    const total = data.length
+    let valid = 0, missingStatus = 0, conflict = 0, exactDuplicate = 0, disbConflict = 0, dbMatch = 0
+    data.forEach((_, idx) => {
+      const info = duplicateMap[idx]
+      if (!info || (!info.tags?.length && !info.matches?.length)) { valid++; return }
+      const tags = info.tags || []
+      if (tags.includes('missing_status')) missingStatus++
+      if (tags.includes('batch_conflict')) conflict++
+      if (tags.includes('exact_duplicate')) exactDuplicate++
+      if (tags.includes('disb_conflict')) disbConflict++
+      if (tags.includes('db_match')) dbMatch++
+      // A row that only has db_match but no local issues is still importable (goes to resolve page)
+      if (!tags.includes('missing_status') && !tags.includes('batch_conflict') &&
+          !tags.includes('exact_duplicate') && !tags.includes('disb_conflict') &&
+          !tags.includes('db_match')) valid++
     })
-    return { dbDupCount: db + both, batchDupCount: batch + both, bothDupCount: both }
-  }, [duplicateMap])
+    const flagged = total - valid
+    return { total, valid, missingStatus, conflict, exactDuplicate, disbConflict, dbMatch, flagged }
+  }, [data, duplicateMap])
 
-  // Clear all duplicate rows
-  const handleClearDuplicates = useCallback(() => {
-    const dupIndices = new Set(Object.keys(duplicateMap).map(Number))
-    if (dupIndices.size === 0) return
+  // --- Export flagged records to Excel ---
+  const handleExportFlagged = useCallback(() => {
+    const flaggedRows = []
+
+    data.forEach((row, idx) => {
+      const info = duplicateMap[idx]
+      if (!info || (!info.tags?.length && !info.matches?.length)) return
+
+      const tags = info.tags || []
+      const classification = []
+      const reasons = []
+
+      if (tags.includes('missing_status')) classification.push('❌ Missing Status')
+      if (tags.includes('batch_conflict')) classification.push('⚠ Student Info Conflict')
+      if (tags.includes('exact_duplicate')) classification.push('❌ Exact Duplicate')
+      if (tags.includes('disb_conflict')) classification.push('⚠ Disbursement Conflict')
+      if (tags.includes('db_match')) classification.push('⚠ DB Match')
+
+      ;(info.reasons || []).forEach(r => reasons.push(r.detail))
+
+      const exportRow = { 'Row #': idx + 1 }
+      STUDENT_INFO_KEYS.forEach(key => {
+        exportRow[FIELD_EXPORT_LABELS[key] || key] = row[key] || ''
+      })
+      exportRow['Classification'] = classification.join(', ')
+      exportRow['Conflict Reason'] = reasons.join('; ')
+
+      flaggedRows.push(exportRow)
+    })
+
+    if (flaggedRows.length === 0) {
+      message.info('No flagged records to export')
+      return false
+    }
+
+    const ws = XLSX.utils.json_to_sheet(flaggedRows)
+    const colWidths = Object.keys(flaggedRows[0]).map(k => ({
+      wch: Math.max(k.length, ...flaggedRows.slice(0, 50).map(r => String(r[k] || '').length)) + 2
+    }))
+    ws['!cols'] = colWidths
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Flagged Records')
+    XLSX.writeFile(wb, `bulk-import-flagged-${dayjs().format('YYYY-MM-DD-HHmmss')}.xlsx`)
+    message.success(`Exported ${flaggedRows.length} flagged records to Excel`)
+    hasExportedRef.current = true
+    return true
+  }, [data, duplicateMap])
+
+  // --- Clear flagged rows: export Excel copy then remove them ---
+  const handleClearFlagged = useCallback(() => {
+    const exported = handleExportFlagged()
+    if (!exported) return
+    const flaggedIndices = new Set(
+      Object.entries(duplicateMap)
+        .filter(([, v]) => v.tags?.length > 0 || v.matches?.length > 0)
+        .map(([k]) => Number(k))
+    )
+    if (flaggedIndices.size === 0) return
     setData(prev => {
-      const filtered = prev.filter((_, idx) => !dupIndices.has(idx))
+      const filtered = prev.filter((_, idx) => !flaggedIndices.has(idx))
       return filtered.map((row, idx) => ({ ...row, seq: String(idx + 1) }))
     })
     setDuplicateMap({})
     setCurrentPage(1)
-    message.success(`Removed ${dupIndices.size} duplicate row${dupIndices.size > 1 ? 's' : ''}`)
-  }, [duplicateMap])
+    message.success(`Removed ${flaggedIndices.size} flagged row${flaggedIndices.size > 1 ? 's' : ''}. Excel backup downloaded.`)
+  }, [duplicateMap, handleExportFlagged])
 
   // Clear data and reset input
   const handleClear = () => {
     setData([])
     setDuplicateMap({})
+    setNeedsValidation(false)
     setInputKey(Date.now())
     setCurrentPage(1)
+    hasExportedRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -1164,16 +1386,37 @@ export default function ImportBulk() {
   const STUDENT_CHUNK_SIZE = 200
   const DISBURSEMENT_CHUNK_SIZE = 500
 
-  // Submit data
-  const handleSubmitData = async () => {
+  // Pre-submit validation gate
+  const handlePreSubmit = () => {
     if (data.length === 0) {
       message.warning('No data to submit')
       return
     }
+    const c = validationCounts
+    if (c.missingStatus > 0) {
+      message.error(`${c.missingStatus} row(s) missing Scholarship Status. Fix or remove them first.`)
+      return
+    }
+    if (c.conflict > 0) {
+      message.error(`${c.conflict} row(s) have student info conflicts. Resolve or remove them first.`)
+      return
+    }
+    if (c.exactDuplicate > 0) {
+      message.error(`${c.exactDuplicate} exact duplicate(s) found. Export & remove them first.`)
+      return
+    }
+    if (c.disbConflict > 0) {
+      message.error(`${c.disbConflict} row(s) have disbursement conflicts. Resolve or remove them first.`)
+      return
+    }
+    setShowConfirmModal(true)
+  }
 
-    // Block if batch duplicates exist
-    if (batchDupCount > 0) {
-      message.error('Please resolve batch duplicates before submitting (rows duplicated within your file)')
+  // Submit data (called from confirmation modal)
+  const handleSubmitData = async () => {
+    setShowConfirmModal(false)
+    if (data.length === 0) {
+      message.warning('No data to submit')
       return
     }
 
@@ -1430,29 +1673,44 @@ export default function ImportBulk() {
               Add Row
             </Button>
 
-            {/* Academic Year Input */}
-            <Input
-              placeholder="AY (e.g. 2024-2025)"
-              value={ayInput}
-              onChange={(e) => setAyInput(e.target.value)}
-              style={{ width: 160 }}
-              size="small"
+            {/* Academic Year Input — uncontrolled to avoid re-rendering the table */}
+            <input
+              ref={ayInputRef}
+              placeholder="e.g. 2024-2025"
+              defaultValue=""
+              maxLength={9}
+              onInput={(e) => { e.target.value = e.target.value.replace(/[^\d-]/g, '') }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                const val = ayInputRef.current?.value || ''
+                const result = parseAcademicYearInput(val)
+                if (!result.valid) { message.warning(result.error); return }
+                const merged = mergeAcademicYears(academicYears, result.labels)
+                const addedCount = merged.length - academicYears.length
+                if (addedCount === 0) { message.info('AY already added') }
+                else { message.success(`Added ${addedCount} AY`); setAcademicYears(merged) }
+                ayInputRef.current.value = ''
+              }}
+              style={{
+                width: 130, height: 24, padding: '0 8px',
+                border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 13,
+                outline: 'none',
+              }}
+              onFocus={(e) => { e.target.style.borderColor = '#40a9ff' }}
+              onBlur={(e) => { e.target.style.borderColor = '#d9d9d9' }}
             />
             <Button
               size="small"
               type="primary"
               onClick={() => {
-                const labels = expandAcademicYearInput(ayInput)
-                if (labels.length === 0) return
-                const merged = mergeAcademicYears(academicYears, labels)
+                const val = ayInputRef.current?.value || ''
+                const result = parseAcademicYearInput(val)
+                if (!result.valid) { message.warning(result.error); return }
+                const merged = mergeAcademicYears(academicYears, result.labels)
                 const addedCount = merged.length - academicYears.length
-                if (addedCount === 0) {
-                  message.info('AY already added')
-                } else {
-                  message.success(`Added ${addedCount} AY`)
-                  setAcademicYears(merged)
-                }
-                setAyInput('')
+                if (addedCount === 0) { message.info('AY already added') }
+                else { message.success(`Added ${addedCount} AY`); setAcademicYears(merged) }
+                ayInputRef.current.value = ''
               }}
             >
               Add AY
@@ -1461,40 +1719,83 @@ export default function ImportBulk() {
 
           {/* Right: Actions */}
           {data.length > 0 && (
-            <Space>
+            <Space wrap>
               {duplicateChecking && (
-                <Tag color="processing">Checking duplicates...</Tag>
+                <Tag color="processing">Validating...</Tag>
               )}
-              {!duplicateChecking && dbDupCount > 0 && (
-                <Tag color="orange" icon={<WarningOutlined />}>
-                  {dbDupCount} DB match{dbDupCount > 1 ? 'es' : ''}
-                </Tag>
+              {needsValidation && !duplicateChecking && (
+                <Tag color="warning" icon={<ExclamationCircleOutlined />}>Needs Validation</Tag>
               )}
-              {!duplicateChecking && batchDupCount > 0 && (
-                <Tag color="purple" icon={<WarningOutlined />}>
-                  {batchDupCount} batch dup{batchDupCount > 1 ? 's' : ''}
-                </Tag>
+              {!duplicateChecking && data.length > 0 && (
+                <>
+                  <Tag color="green" icon={<CheckCircleOutlined />}>
+                    {validationCounts.valid} Valid
+                  </Tag>
+                  {validationCounts.missingStatus > 0 && (
+                    <Tag color="red" icon={<StopOutlined />}>
+                      {validationCounts.missingStatus} Missing Status
+                    </Tag>
+                  )}
+                  {validationCounts.conflict > 0 && (
+                    <Tag color="volcano" icon={<WarningOutlined />}>
+                      {validationCounts.conflict} Conflict
+                    </Tag>
+                  )}
+                  {validationCounts.exactDuplicate > 0 && (
+                    <Tag color="red" icon={<ExclamationCircleOutlined />}>
+                      {validationCounts.exactDuplicate} Duplicate
+                    </Tag>
+                  )}
+                  {validationCounts.disbConflict > 0 && (
+                    <Tag color="orange" icon={<WarningOutlined />}>
+                      {validationCounts.disbConflict} Disb. Conflict
+                    </Tag>
+                  )}
+                  {validationCounts.dbMatch > 0 && (
+                    <Tag color="purple" icon={<WarningOutlined />}>
+                      {validationCounts.dbMatch} DB Match
+                    </Tag>
+                  )}
+                </>
               )}
-              {!duplicateChecking && duplicateCount > 0 && (
-                <Button
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={handleClearDuplicates}
+              {!duplicateChecking && validationCounts.flagged > 0 && (
+                <Popconfirm
+                  title="Clear flagged records?"
+                  description="An Excel backup will be downloaded first. Flagged rows will then be removed."
+                  onConfirm={handleClearFlagged}
+                  okText="Download & Remove"
+                  cancelText="Cancel"
                 >
-                  Clear Duplicates ({duplicateCount})
-                </Button>
+                  <Button
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                  >
+                    Clear Flagged ({validationCounts.flagged})
+                  </Button>
+                </Popconfirm>
               )}
               <Text type="secondary">{data.length} records</Text>
+              {needsValidation && !duplicateChecking && (
+                <Button
+                  type="primary"
+                  ghost
+                  icon={<ExclamationCircleOutlined />}
+                  onClick={() => validateData(data)}
+                  size="small"
+                  style={{ borderColor: '#fa8c16', color: '#fa8c16' }}
+                >
+                  Validate
+                </Button>
+              )}
               <Button
                 type="primary"
-                icon={dbDupCount > 0 ? <WarningOutlined /> : <SendOutlined />}
-                onClick={handleSubmitData}
+                icon={validationCounts.flagged > 0 ? <WarningOutlined /> : <SendOutlined />}
+                onClick={handlePreSubmit}
                 loading={loading}
-                danger={dbDupCount > 0}
-                style={dbDupCount > 0 ? { background: '#fa8c16', borderColor: '#fa8c16' } : {}}
+                disabled={needsValidation || duplicateChecking || validationCounts.missingStatus > 0 || validationCounts.conflict > 0 || validationCounts.exactDuplicate > 0 || validationCounts.disbConflict > 0}
               >
-                {dbDupCount > 0 ? 'Resolve Conflicts' : 'Submit All'}
+                {needsValidation ? 'Validate First' : validationCounts.flagged > 0 ? 'Fix Issues First' : 'Submit All'}
               </Button>
               <Button
                 danger
@@ -1549,11 +1850,12 @@ export default function ImportBulk() {
           <Space size="small">
             <Button
               size="small"
+              type={needsValidation ? 'primary' : 'default'}
               icon={<ExclamationCircleOutlined />}
-              onClick={() => checkDuplicates(data)}
+              onClick={() => validateData(data)}
               loading={duplicateChecking}
             >
-              Re-check Duplicates
+              {needsValidation ? 'Validate Now' : 'Re-validate'}
             </Button>
             <Text type="secondary">Rows:</Text>
             <Select
@@ -1573,72 +1875,6 @@ export default function ImportBulk() {
           </Space>
         )}
       </div>
-
-      {/* Duplicate Warning Banners */}
-      {dbDupCount > 0 && data.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(90deg, #fff7e6 0%, #fff2e8 100%)',
-          padding: '8px 16px',
-          borderBottom: '1px solid #ffbb96',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flexShrink: 0
-        }}>
-          <WarningOutlined style={{ color: '#fa8c16', fontSize: 16 }} />
-          <Text style={{ color: '#d46b08', fontWeight: 500, fontSize: 13 }}>
-            {dbDupCount} row{dbDupCount > 1 ? 's' : ''} match existing records in the database.
-            {bothDupCount > 0 && ` (${bothDupCount} also duplicated within the batch)`}
-          </Text>
-          <Button
-            type="link"
-            size="small"
-            style={{ color: '#d46b08', fontWeight: 500, padding: 0 }}
-            onClick={() => {
-              const dbDupIndices = Object.entries(duplicateMap)
-                .filter(([, v]) => v.matches.some(m => !m.match_type.startsWith('batch_')))
-                .map(([k]) => Number(k))
-              if (dbDupIndices.length === 0) return
-              const firstIdx = Math.min(...dbDupIndices)
-              setCurrentPage(Math.floor(firstIdx / pageSize) + 1)
-            }}
-          >
-            Go to first →
-          </Button>
-        </div>
-      )}
-      {batchDupCount > 0 && data.length > 0 && (
-        <div style={{
-          background: 'linear-gradient(90deg, #f9f0ff 0%, #efdbff 100%)',
-          padding: '8px 16px',
-          borderBottom: '1px solid #d3adf7',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          flexShrink: 0
-        }}>
-          <WarningOutlined style={{ color: '#722ed1', fontSize: 16 }} />
-          <Text style={{ color: '#531dab', fontWeight: 500, fontSize: 13 }}>
-            {batchDupCount} row{batchDupCount > 1 ? 's' : ''} are duplicated within this upload batch.
-            {bothDupCount > 0 && ` (${bothDupCount} also match DB records)`}
-          </Text>
-          <Button
-            type="link"
-            size="small"
-            style={{ color: '#531dab', fontWeight: 500, padding: 0 }}
-            onClick={() => {
-              const batchDupIndices = Object.entries(duplicateMap)
-                .filter(([, v]) => v.matches.some(m => m.match_type.startsWith('batch_')))
-                .map(([k]) => Number(k))
-              if (batchDupIndices.length === 0) return
-              const firstIdx = Math.min(...batchDupIndices)
-              setCurrentPage(Math.floor(firstIdx / pageSize) + 1)
-            }}
-          >
-            Go to first →
-          </Button>
-        </div>
-      )}
 
       {/* Table Container with Scroll */}
       <div style={{ 
@@ -1765,25 +2001,33 @@ export default function ImportBulk() {
               paginatedData.map((row, paginatedIndex) => {
                 const actualRowIndex = (currentPage - 1) * pageSize + paginatedIndex
                 const dupInfo = duplicateMap[actualRowIndex]
-                const isDuplicate = !!dupInfo && dupInfo.matches && dupInfo.matches.length > 0
-                const hasDbDup = isDuplicate && dupInfo.matches.some(m => !m.match_type.startsWith('batch_'))
-                const hasBatchDup = isDuplicate && dupInfo.matches.some(m => m.match_type.startsWith('batch_'))
-                const hasBoth = hasDbDup && hasBatchDup
+                const tags = dupInfo?.tags || []
+                const hasMissingStatus = tags.includes('missing_status')
+                const hasConflict = tags.includes('batch_conflict')
+                const hasExactDup = tags.includes('exact_duplicate')
+                const hasDisbConflict = tags.includes('disb_conflict')
+                const hasDbMatch = tags.includes('db_match')
+                const hasAnyIssue = tags.length > 0
                 const alt = paginatedIndex % 2 === 0
-                const rowBg = hasBoth
-                  ? (alt ? '#fff1f0' : '#ffe7e6') // red tint for both
-                  : hasDbDup
-                    ? (alt ? '#fff7e6' : '#fff2d6') // orange for DB
-                    : hasBatchDup
-                      ? (alt ? '#f9f0ff' : '#f0e5ff') // purple for batch
-                      : (alt ? 'white' : '#fafafa')
-                const borderColor = hasBoth ? '#ff4d4f' : hasDbDup ? '#fa8c16' : hasBatchDup ? '#722ed1' : 'transparent'
+                const rowBg = (hasExactDup || hasConflict)
+                  ? (alt ? '#fff1f0' : '#ffe7e6')
+                  : hasMissingStatus
+                    ? (alt ? '#fff1f0' : '#ffe7e6')
+                    : hasDisbConflict
+                      ? (alt ? '#fff7e6' : '#fff2d6')
+                      : hasDbMatch
+                        ? (alt ? '#f9f0ff' : '#f0e5ff')
+                        : (alt ? 'white' : '#fafafa')
+                const borderColor = (hasExactDup || hasConflict) ? '#ff4d4f'
+                  : hasMissingStatus ? '#ff7875'
+                  : hasDisbConflict ? '#fa8c16'
+                  : hasDbMatch ? '#722ed1' : 'transparent'
                 return (
                   <tr
                     key={actualRowIndex}
                     style={{ 
                       background: rowBg,
-                      borderLeft: isDuplicate ? `3px solid ${borderColor}` : 'none'
+                      borderLeft: hasAnyIssue ? `3px solid ${borderColor}` : 'none'
                     }}
                     className="hover:bg-blue-50"
                   >
@@ -1805,71 +2049,56 @@ export default function ImportBulk() {
                             textAlign: 'center',
                             fontSize: '13px',
                             fontWeight: 500,
-                            background: hasBoth ? '#ffccc7' : hasDbDup ? '#fff1b8' : hasBatchDup ? '#efdbff' : '#f5f5f5',
+                            background: (hasExactDup || hasConflict) ? '#ffccc7' : hasMissingStatus ? '#ffccc7' : hasDisbConflict ? '#fff1b8' : hasDbMatch ? '#efdbff' : '#f5f5f5',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 4
                           }}>
-                            {isDuplicate && (
+                            {hasAnyIssue && (
                               <Popover
                                 title={
-                                  <span style={{ color: hasBoth ? '#cf1322' : hasDbDup ? '#d46b08' : '#531dab' }}>
+                                  <span style={{ color: (hasExactDup || hasConflict) ? '#cf1322' : hasMissingStatus ? '#cf1322' : hasDisbConflict ? '#d46b08' : '#531dab' }}>
                                     <ExclamationCircleOutlined style={{ marginRight: 6 }} />
-                                    {hasBoth ? 'DB Match + Batch Duplicate' : hasDbDup ? 'Matches Existing Record in DB' : 'Duplicate Within Batch'}
+                                    {hasExactDup ? 'Exact Duplicate'
+                                      : hasConflict ? 'Student Info Conflict'
+                                      : hasDisbConflict ? 'Disbursement Conflict'
+                                      : hasMissingStatus ? 'Missing Required Field'
+                                      : hasDbMatch ? 'DB Match Found'
+                                      : 'Issue'}
                                   </span>
                                 }
                                 content={
-                                  <div style={{ maxWidth: 380, maxHeight: 250, overflowY: 'auto' }}>
-                                    {dupInfo.matches.map((m, mi) => (
-                                      <div 
-                                        key={mi} 
-                                        style={{ 
+                                  <div style={{ maxWidth: 400, maxHeight: 280, overflowY: 'auto' }}>
+                                    {(dupInfo?.reasons || []).map((r, ri) => (
+                                      <div
+                                        key={ri}
+                                        style={{
                                           padding: '8px 12px',
-                                          background: mi % 2 === 0 ? '#fffbe6' : '#fff',
+                                          background: ri % 2 === 0 ? '#fffbe6' : '#fff',
                                           borderRadius: 6,
                                           marginBottom: 8,
                                           border: '1px solid #ffe58f',
                                           fontSize: 13
                                         }}
                                       >
-                                        <div style={{ fontWeight: 600, marginBottom: 4, color: '#1f2937' }}>
-                                          {m.name}
-                                        </div>
-                                        {m.award_number && (
-                                          <div style={{ color: '#6b7280' }}>
-                                            <span style={{ fontWeight: 500 }}>Award #:</span> {m.award_number}
-                                          </div>
-                                        )}
-                                        {m.institution && (
-                                          <div style={{ color: '#6b7280' }}>
-                                            <span style={{ fontWeight: 500 }}>Institution:</span> {m.institution}
-                                          </div>
-                                        )}
-                                        {m.program && (
-                                          <div style={{ color: '#6b7280' }}>
-                                            <span style={{ fontWeight: 500 }}>Program:</span> {m.program}
-                                          </div>
-                                        )}
-                                        <Tag 
+                                        <Tag
                                           color={
-                                            m.match_type === 'full_name' ? 'red' :
-                                            m.match_type === 'award_number' ? 'orange' :
-                                            m.match_type === 'name_institution' ? 'volcano' :
-                                            m.match_type === 'batch_name' ? 'purple' :
-                                            m.match_type === 'batch_award' ? 'magenta' : 'default'
+                                            r.type === 'missing_status' ? 'red' :
+                                            r.type === 'batch_conflict' ? 'volcano' :
+                                            r.type === 'exact_duplicate' ? 'red' :
+                                            r.type === 'disb_conflict' ? 'orange' :
+                                            r.type === 'db_match' ? 'purple' : 'default'
                                           }
-                                          style={{ marginTop: 6, fontSize: 11 }}
+                                          style={{ marginBottom: 4, fontSize: 11 }}
                                         >
-                                          {
-                                            m.match_type === 'full_name' ? 'Name match in DB' :
-                                            m.match_type === 'award_number' ? 'Award # match in DB' :
-                                            m.match_type === 'name_institution' ? 'Name + Institution match in DB' :
-                                            m.match_type === 'batch_name' ? 'Duplicate name in batch' :
-                                            m.match_type === 'batch_award' ? 'Duplicate award # in batch' :
-                                            m.match_type
-                                          }
+                                          {r.type === 'missing_status' ? '❌ Missing Status' :
+                                           r.type === 'batch_conflict' ? '⚠ Info Conflict' :
+                                           r.type === 'exact_duplicate' ? '❌ Exact Duplicate' :
+                                           r.type === 'disb_conflict' ? '⚠ Disb. Conflict' :
+                                           r.type === 'db_match' ? '⚠ DB Match' : r.type}
                                         </Tag>
+                                        <div style={{ color: '#6b7280', marginTop: 4 }}>{r.detail}</div>
                                       </div>
                                     ))}
                                   </div>
@@ -1877,7 +2106,7 @@ export default function ImportBulk() {
                                 trigger="click"
                                 placement="right"
                               >
-                                <WarningOutlined style={{ color: hasBoth ? '#ff4d4f' : hasDbDup ? '#fa8c16' : '#722ed1', cursor: 'pointer', fontSize: 14 }} />
+                                <WarningOutlined style={{ color: (hasExactDup || hasConflict) ? '#ff4d4f' : hasMissingStatus ? '#ff7875' : hasDisbConflict ? '#fa8c16' : '#722ed1', cursor: 'pointer', fontSize: 14 }} />
                               </Popover>
                             )}
                             {row.seq}
@@ -1993,6 +2222,53 @@ export default function ImportBulk() {
             />
           </div>
         )}
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <Modal
+        open={showConfirmModal}
+        title={
+          <span>
+            <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
+            Confirm Import
+          </span>
+        }
+        onOk={() => {
+          setShowConfirmModal(false)
+          handleSubmitData()
+        }}
+        onCancel={() => setShowConfirmModal(false)}
+        okText="Yes, Import"
+        cancelText="Cancel"
+        centered
+        width={480}
+      >
+        <div style={{ padding: '12px 0' }}>
+          <Text style={{ fontSize: 14, display: 'block', marginBottom: 16 }}>
+            You are about to submit <strong>{data.length}</strong> record{data.length !== 1 ? 's' : ''} for import.
+          </Text>
+
+          <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, padding: '12px 16px', marginBottom: 12 }}>
+            <Text style={{ fontSize: 13 }}>
+              <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 6 }} />
+              <strong>{validationCounts.valid}</strong> record{validationCounts.valid !== 1 ? 's' : ''} ready for import
+            </Text>
+          </div>
+
+          {validationCounts.dbMatch > 0 && (
+            <div style={{ background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 6, padding: '12px 16px', marginBottom: 12 }}>
+              <Text style={{ fontSize: 13, color: '#531dab' }}>
+                <WarningOutlined style={{ marginRight: 6 }} />
+                <strong>{validationCounts.dbMatch}</strong> record{validationCounts.dbMatch !== 1 ? 's' : ''} match existing DB records — you will be redirected to the resolve page for these.
+              </Text>
+            </div>
+          )}
+
+          <Divider style={{ margin: '16px 0 12px' }} />
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            This action cannot be undone after confirmation.
+          </Text>
+        </div>
       </Modal>
     </div>
   )
