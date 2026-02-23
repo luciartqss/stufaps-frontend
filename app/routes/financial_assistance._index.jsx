@@ -37,7 +37,7 @@ const PROGRAMS = [
     label: 'Estatistikolar',
     fullName: 'CHED Scholarship for Future Statisticians',
     link: '/financial_assistance/estatistikolar',
-    codes: ['FULLESTAT', 'HALFESTAT', 'ESTATISTIKOLAR'],
+    codes: ['FULL-ESTAT', 'HALF-ESTAT', 'ESTATISTIKOLAR'],
     color: '#722ed1',
   },
   {
@@ -100,7 +100,14 @@ const PROGRAMS = [
 
 /* Helpers */
 function getTotals(assistances, codes) {
-  const filtered = assistances.filter(p => codes.includes(p.scholarship_program_name))
+  // Normalize codes for comparison (lowercase, remove hyphens)
+  const normalizedCodes = codes.map(c => c.toLowerCase().replace(/-/g, ''))
+  
+  const filtered = assistances.filter(p => {
+    // Normalize backend program name for comparison
+    const normalized = p.scholarship_program_name?.toLowerCase().replace(/-/g, '')
+    return normalizedCodes.includes(normalized)
+  })
 
   if (filtered.length === 1 && (filtered[0].Academic_year === 'All' || filtered[0].academic_year === 'All')) {
     const r = filtered[0]

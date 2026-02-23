@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Typography, Space, Select } from 'antd'
+import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
 import { API_BASE } from '../lib/config'
 import {
   ContactsOutlined,
@@ -23,6 +23,7 @@ import {
   ProfileOutlined,
   FileSearchOutlined,
   UserSwitchOutlined,
+  RightOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons'
 const { Text, Title } = Typography
@@ -37,10 +38,18 @@ export function meta() {
 }
 
 function StatsCards({ financialAssistances = [] }) {
+  // Handle empty data
+  if (!financialAssistances || financialAssistances.length === 0) {
+    return null;
+  }
+
   let totals;
 
-  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-    // Use backend values directly for the "All" row
+  if (
+    financialAssistances.length === 1 &&
+    (financialAssistances[0].academic_year === 'All' ||
+      financialAssistances[0].Academic_year === 'All')
+  ) {
     const row = financialAssistances[0];
     totals = {
       totalSlots: Number(row?.total_slot) || 0,
@@ -48,13 +57,20 @@ function StatsCards({ financialAssistances = [] }) {
       totalUnfilled: Number(row?.unfilled_slot) || 0,
     };
   } else {
-    // Sum across rows for a specific year
     totals = {
       totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
       totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
       totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
     };
   }
+
+  const fillPct = totals.totalSlots > 0 ? Math.round((totals.totalFilled / totals.totalSlots) * 100) : 0;
+  const exceeded = totals.totalFilled > totals.totalSlots;
+
+  const formatProgramName = name => {
+    if (!name) return '';
+    return name.toUpperCase();
+  };
 
   const statsConfig = [
     {
@@ -83,66 +99,64 @@ function StatsCards({ financialAssistances = [] }) {
   ]
 
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-      {statsConfig.map((stat, index) => (
-          <Card
-            key={index}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              borderRadius: 12,
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-            }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                {stat.title}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.prefix || ''}
-                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
-              </Text>
-              {stat.percentage && (
-                <>
-                  <Progress percent={parseFloat(stat.percentage)}
-                    showInfo={false}
-                    strokeColor={stat.color}
-                    style={{ marginBottom: 8 }}
-                  />
+    <Card
+      hoverable
+      style={{
+        borderRadius: 12,
+        border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
+        height: '100%',
+        transition: 'all 0.2s ease',
+      }}
+      bodyStyle={{ padding: 20 }}
+    >
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>
+              {formatProgramName(financialAssistances[0]?.scholarship_program_name)}
+            </Text>
+            {exceeded && (
+              <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
+                Exceeded
+              </Tag>
+            )}
+          </div>
+        </div>
+        <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
+      </div>
 
-                  <Text style={{ fontSize: 12, color: stat.color }}>
-                    {stat.percentage}% of total
-                  </Text>
-                </>
-              )}
-            </div>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: stat.bgColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: stat.color,
-                flexShrink: 0,
-              }}
-            >
-              {stat.icon}
-            </div>
-          </Card>
-      ))}
-    </div>
-  )
+      {/* Progress */}
+      <Progress
+        percent={Math.min(fillPct, 100)}
+        size="small"
+        strokeColor={exceeded ? '#ff4d4f' : '#1890ff'}
+        trailColor="#f0f0f0"
+        showInfo={false}
+        style={{ marginBottom: 5 }}
+      />
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.totalSlots}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.totalFilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.totalUnfilled}</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+        </div>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+          <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
+        </div>
+      </div>
+    </Card>
+  );
 
 }
 
@@ -160,7 +174,7 @@ export default function FinancialAssistanceEstatistikolar() {
   const [academicYears, setAcademicYears] = useState([])
 
   useEffect(() => {
-    fetch(`${API_BASE}/scholarship_program_records`)
+    fetch(`${API_BASE}/scholarship_program_records/estat-count`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`)
@@ -212,42 +226,52 @@ export default function FinancialAssistanceEstatistikolar() {
     return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
   }
 
-  const allowedPrograms =
-    [
-      'FULLESTAT',
-      'HALFESTAT',
-      'ESTATISTIKOLAR'
-    ];
+  const allowedPrograms = [
+    'FULLESTAT',
+    'HALFESTAT'
+  ];
 
   const formatProgramName = name => {
     if (!name) return '';
-    return name
-      .replace(/ESTAT/g, ' ESTAT')       // turn FULLSSP → FULL SSP
-      .trim();
+    const nameUpper = String(name).toUpperCase();
+    if (nameUpper === 'FULLESTAT') return 'Full Estat';
+    if (nameUpper === 'HALFESTAT') return 'Half Estat';
+    return name;
   };
 
 
-  const filteredestatistikolar = (Array.isArray(financialAssistances) ? financialAssistances : []).filter
-    (p => {
+  const filteredestatistikolar = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
+    const programName = p?.scholarship_program_name?.toUpperCase().trim();
 
+    // Only keep allowed programs
+    if (!allowedPrograms.includes(programName)) return false;
+
+    // Apply program filter if not "All"
+    if (programFilter && programFilter !== 'All') {
+      if (programName !== programFilter.toUpperCase().trim()) return false
+    }
+
+    // Apply academic year filter if not "All"
+    if (academicYearFilter && academicYearFilter !== 'All') {
+      return (p.academic_year || p.Academic_year) === academicYearFilter;
+    }
+
+    // When no year filter, show only 'All' rows
+    return (p.academic_year || p.Academic_year) === 'All';
+  });
+
+  // Separate filters for FULL-ESTAT and HALF-ESTAT
+  const filterByProgram = (data, programType) => {
+    return (Array.isArray(data) ? data : []).filter(p => {
       const programName = p?.scholarship_program_name?.toUpperCase().trim();
-
-      // Only keep allowed programs
-      if (!allowedPrograms.includes(programName)) return false;
-
-      // Apply program filter if not "All"
-      if (programFilter && programFilter !== 'All') {
-        if (programName !== programFilter.toUpperCase().trim()) return false;
-      }
-
-      // Apply academic year filter if not "All"
-      if (academicYearFilter && academicYearFilter !== 'All') {
-        return (p.academic_year || p.Academic_year) === academicYearFilter;
-      }
-
-      // Default: keep "All" row when year filter is All
-      return (p.academic_year || p.Academic_year) === 'All';
+      if (programType === 'FULL' && programName === 'FULLESTAT') return true;
+      if (programType === 'HALF' && programName === 'HALFESTAT') return true;
+      return false;
     });
+  };
+
+  const fullEstatData = filterByProgram(filteredestatistikolar, 'FULL');
+  const halfEstatData = filterByProgram(filteredestatistikolar, 'HALF');
 
   return (
     <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>
@@ -276,7 +300,16 @@ export default function FinancialAssistanceEstatistikolar() {
       </div>
 
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
-        <StatsCards financialAssistances={filteredestatistikolar} />
+        <Row gutter={[16, 16]}>
+          {allowedPrograms.map((program, index) => {
+            const programData = filteredestatistikolar.filter(p => p.scholarship_program_name?.toUpperCase().trim() === program);
+            return (
+              <Col key={index} span={12}>
+                <StatsCards financialAssistances={programData} />
+              </Col>
+            );
+          })}
+        </Row>
       </div>
 
       <div style={{ padding: '12px 24px 0' }}>
