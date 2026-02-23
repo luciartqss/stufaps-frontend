@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, Typography, message } from 'antd'
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/AuthContext'
+import CHEDLogo from '../assets/images/CHED_Logo.png'
 
 const { Text } = Typography
 
@@ -49,7 +50,7 @@ export default function Login() {
           {/* Logo Section (adjusted spacing) */}
           <div className="flex flex-col items-center mb-16">
             <img 
-              src="/app/assets/images/CHED_Logo.png" 
+              src={CHEDLogo} 
               alt="CHED Logo" 
               className="w-32 h-32 mb-6 object-contain"
             />
