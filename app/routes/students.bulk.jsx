@@ -1483,13 +1483,21 @@ export default function ImportBulk() {
       // --- Phase 1: Upload students in chunks ---
       const allCreatedStudents = []
 
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const bulkBatchId = crypto.randomUUID()
+      const userHeaders = {
+        'Content-Type': 'application/json',
+        ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
+        'X-Bulk-Batch': bulkBatchId,
+      }
+
       for (let i = 0; i < totalStudentChunks; i++) {
         const chunk = studentChunks[i]
         setUploadProgress({ current: uploaded, total: totalStudents, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
 
         const response = await fetch(`${API_BASE}/students/import`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: userHeaders,
           body: JSON.stringify({ students: chunk }),
         })
 
@@ -1524,7 +1532,7 @@ export default function ImportBulk() {
           try {
             const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: userHeaders,
               body: JSON.stringify({ disbursements: chunk }),
             })
             const disbJson = await disbResponse.json().catch(() => null)

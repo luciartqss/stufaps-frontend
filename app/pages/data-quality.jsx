@@ -127,6 +127,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
     // Log the bulk edit action
     try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       await fetch(`${API_URL}/logs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -134,8 +135,9 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
           model: 'Student',
           model_id: 0,
           action: 'update',
-          old_data: { [bulkField]: bulkOldValue },
-          new_data: { [bulkField]: bulkNewValue },
+          old_data: JSON.stringify({ [bulkField]: bulkOldValue }),
+          new_data: JSON.stringify({ [bulkField]: bulkNewValue }),
+          user_id: storedUser?.id || null,
           ip_address: 'client',
         }),
       })
@@ -146,7 +148,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     try {
       const res = await fetch(`${API_URL}/students/bulk-update-field`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
         body: JSON.stringify({ field: bulkField, old_value: bulkOldValue, new_value: bulkNewValue }),
       })
       const data = await res.json()

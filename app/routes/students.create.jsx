@@ -91,9 +91,11 @@ export default function CreateStudent() {
         }
       })
 
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const userHeaders = { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) }
       const studentRes = await fetch(`${API_BASE}/students`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: userHeaders,
         body: JSON.stringify(studentData),
       })
 
@@ -132,7 +134,7 @@ export default function CreateStudent() {
         if (validDisbursements.length > 0) {
           await fetch(`${API_BASE}/disbursements/bulk`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: userHeaders,
             body: JSON.stringify({ disbursements: validDisbursements }),
           })
         }
