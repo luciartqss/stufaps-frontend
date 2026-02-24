@@ -11,10 +11,12 @@ const { Title, Text } = Typography
 // API utility functions
 const api = {
   async request(url, options = {}) {
+    const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
     const response = await fetch(`${API_BASE}${url}`, {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
         ...options.headers,
       },
       ...options,

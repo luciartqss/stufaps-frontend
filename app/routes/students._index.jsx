@@ -597,9 +597,10 @@ export default function StudentsIndex() {
   // Handle delete student
   const handleDeleteStudent = async (student) => {
     try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const response = await fetch(`${API_BASE}/students/${student.seq}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
       })
       if (!response.ok) throw new Error('Failed to delete student')
       message.success('Student deleted successfully')

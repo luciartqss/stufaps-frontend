@@ -435,9 +435,11 @@ export default function BulkResolve() {
 
       setMergeProgress({ phase: 'Merging...', percent: 40 })
 
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const userHeaders = { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) }
       const res = await fetch(`${API_BASE}/students/merge-import`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: userHeaders,
         body: JSON.stringify({
           clean: cleanRows,
           resolved: resolvedEntries,

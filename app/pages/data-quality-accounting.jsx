@@ -194,9 +194,10 @@ export default function DataQualityAccounting({ readOnly = false }) {
     setSaving(true)
     try {
       const updates = ids.map(id => ({ id: Number(id), ...editedRef.current[id] }))
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const res = await fetch(`${API_BASE}/disbursements/accounting/bulk-update`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
         body: JSON.stringify({ updates }),
       })
       if (!res.ok) throw new Error('Failed to save')

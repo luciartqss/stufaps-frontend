@@ -6,6 +6,22 @@ const { Title, Text } = Typography
 
 import { API_BASE as API_URL } from '../lib/config'
 
+const TIMESTAMP_FIELDS = ['created_at', 'updated_at', 'deleted_at']
+
+const formatDate = (date) => {
+  if (!date) return '-'
+  const d = new Date(date)
+  if (isNaN(d)) return date
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  const yyyy = d.getFullYear()
+  let hrs = d.getHours()
+  const mins = String(d.getMinutes()).padStart(2, '0')
+  const ampm = hrs >= 12 ? 'PM' : 'AM'
+  hrs = hrs % 12 || 12
+  return `${mm}-${dd}-${yyyy} ${hrs}:${mins} ${ampm}`
+}
+
 export function meta() {
   return [
     { title: 'Logs | StuFAPs' },
@@ -50,9 +66,10 @@ export default function LogsIndex() {
       cancelText: 'Cancel',
       onOk: async () => {
         try {
+          const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
           const res = await fetch(`${API_URL}/logs/${log.id}/rollback`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
           })
           const data = await res.json()
           if (res.ok) {
@@ -82,7 +99,18 @@ export default function LogsIndex() {
     }
   }
 
-  const formatDataChange = (oldData, newData, action) => {
+  const formatDataChange = (oldData, newData, action, record) => {
+    // Bulk batch entry
+    if (record?.bulk_batch) {
+      const data = typeof newData === 'string' ? JSON.parse(newData) : newData
+      const count = data?.count || '?'
+      return (
+        <Tag color="purple" style={{ fontSize: '12px' }}>
+          Bulk {action}: {count} {record.model.toLowerCase()}(s)
+        </Tag>
+      )
+    }
+
     if (action === 'create') {
       return <Text type="success">Record created</Text>
     }
@@ -95,15 +123,25 @@ export default function LogsIndex() {
       const oldObj = typeof oldData === 'string' ? JSON.parse(oldData) : oldData
       const newObj = typeof newData === 'string' ? JSON.parse(newData) : newData
       
+      // Only show fields that actually changed (excluding timestamps)
+      const changedKeys = Object.keys(newObj).filter(key => {
+        if (TIMESTAMP_FIELDS.includes(key)) return false
+        const oldVal = oldObj[key] ?? null
+        const newVal = newObj[key] ?? null
+        return String(oldVal) !== String(newVal)
+      })
+
+      if (changedKeys.length === 0) return <Text type="secondary">No changes</Text>
+
       return (
         <div>
-          {Object.keys(newObj).map(key => (
+          {changedKeys.map(key => (
             <div key={key} style={{ fontSize: '12px', marginBottom: '4px' }}>
               <Text strong>{key}:</Text>
               <br />
-              <Text delete style={{ color: '#ff4d4f' }}>{oldObj[key] || 'null'}</Text>
+              <Text delete style={{ color: '#ff4d4f' }}>{oldObj[key] ?? 'null'}</Text>
               <br />
-              <Text style={{ color: '#52c41a' }}>{newObj[key] || 'null'}</Text>
+              <Text style={{ color: '#52c41a' }}>{newObj[key] ?? 'null'}</Text>
             </div>
           ))}
         </div>
@@ -151,7 +189,7 @@ export default function LogsIndex() {
       title: 'Changes',
       key: 'changes',
       width: 250,
-      render: (_, record) => formatDataChange(record.old_data, record.new_data, record.action),
+      render: (_, record) => formatDataChange(record.old_data, record.new_data, record.action, record),
     },
     {
       title: 'Changed Fields',
@@ -168,26 +206,19 @@ export default function LogsIndex() {
       },
     },
     {
-      title: 'User ID',
-      dataIndex: 'user_id',
-      key: 'user_id',
-      width: 80,
-      align: 'center',
-      render: (userId) => userId || <Text type="secondary">System</Text>,
-    },
-    {
-      title: 'IP Address',
-      dataIndex: 'ip_address',
-      key: 'ip_address',
+      title: 'Done By',
+      dataIndex: 'user',
+      key: 'user',
       width: 120,
-      render: (ip) => <Text style={{ fontSize: '12px' }}>{ip || '-'}</Text>,
+      align: 'center',
+      render: (user) => user ? <Text strong>{user.username}</Text> : <Text type="secondary">System</Text>,
     },
     {
       title: 'Date',
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date) => new Date(date).toLocaleString(),
+      render: (date) => formatDate(date),
     },
     {
       title: 'Action',
