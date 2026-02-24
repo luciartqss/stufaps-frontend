@@ -8,6 +8,7 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAuth } from '../lib/AuthContext'
+import { formatForApi } from '../lib/dateUtils'
 
 import { API_BASE } from '../lib/config'
 
@@ -71,7 +72,7 @@ export default function CreateStudent() {
     try {
       const studentData = { ...values }
       if (studentData.date_of_birth) {
-        studentData.date_of_birth = studentData.date_of_birth.format('YYYY-MM-DD')
+        studentData.date_of_birth = formatForApi(studentData.date_of_birth)
       }
       if (studentData.is_priority !== undefined) {
         studentData.is_priority = studentData.is_priority === 'Yes' ? '1' : '0'
@@ -119,14 +120,14 @@ export default function CreateStudent() {
             fund_source: d.fund_source || null,
             voucher_tracking_no: d.voucher_tracking_no || null,
             voucher_no: d.voucher_no || null,
-            voucher_date: d.voucher_date ? dayjs(d.voucher_date).format('YYYY-MM-DD') : null,
+            voucher_date: d.voucher_date ? formatForApi(d.voucher_date) : null,
             mode_of_payment: d.mode_of_payment || null,
             atm_account_no: d.atm_account_no || null,
-            date_process: d.date_process ? dayjs(d.date_process).format('YYYY-MM-DD') : null,
+            date_process: d.date_process ? formatForApi(d.date_process) : null,
             account_check_no: d.account_check_no || null,
             amount: d.amount ? parseFloat(d.amount) : null,
             lddap_no: d.lddap_no || null,
-            disbursement_date: d.disbursement_date ? dayjs(d.disbursement_date).format('YYYY-MM-DD') : null,
+            disbursement_date: d.disbursement_date ? formatForApi(d.disbursement_date) : null,
             status: d.status || null,
             remarks: d.remarks || null,
           }))
@@ -252,7 +253,7 @@ export default function CreateStudent() {
               </Col>
               <Col xs={24} sm={12} md={6}>
                 <Form.Item label="Date of Birth" name="date_of_birth">
-                  <DatePicker style={{ width: '100%' }} placeholder="Select date" disabledDate={(c) => c && c > dayjs().endOf('day')} />
+                  <DatePicker style={{ width: '100%' }} placeholder="Select date" format="MM-DD-YYYY" disabledDate={(c) => c && c > dayjs().endOf('day')} />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12} md={6}>
@@ -538,7 +539,7 @@ export default function CreateStudent() {
                     </Col>
                     <Col xs={24} sm={8} md={6}>
                       <Form.Item label="Voucher Date" name={`disb_${index}_voucher_date`}>
-                        <DatePicker style={{ width: '100%' }} placeholder="Select date" />
+                        <DatePicker style={{ width: '100%' }} placeholder="Select date" format="MM-DD-YYYY" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
@@ -557,7 +558,7 @@ export default function CreateStudent() {
                     </Col>
                     <Col xs={24} sm={8} md={6}>
                       <Form.Item label="Date Process" name={`disb_${index}_date_process`}>
-                        <DatePicker style={{ width: '100%' }} placeholder="Select date" />
+                        <DatePicker style={{ width: '100%' }} placeholder="Select date" format="MM-DD-YYYY" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={8} md={6}>
@@ -572,7 +573,7 @@ export default function CreateStudent() {
                     </Col>
                     <Col xs={24} sm={8} md={6}>
                       <Form.Item label="Disbursement Date" name={`disb_${index}_disbursement_date`}>
-                        <DatePicker style={{ width: '100%' }} placeholder="Select date" />
+                        <DatePicker style={{ width: '100%' }} placeholder="Select date" format="MM-DD-YYYY" />
                       </Form.Item>
                     </Col>
                     <Col xs={24} sm={12} md={6}>

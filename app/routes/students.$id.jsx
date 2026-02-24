@@ -5,6 +5,7 @@ import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutli
 import dayjs from 'dayjs'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
+import { formatDisplayDateOnly, parseDate, formatForApi } from '../lib/dateUtils'
 
 const { Title, Text } = Typography
 
@@ -78,9 +79,9 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
             <DatePicker
               style={{ width: '100%' }}
               status={editFieldEmpty ? 'warning' : undefined}
-              value={formData?.[field] ? dayjs(formData[field]) : null}
+              value={formData?.[field] ? parseDate(formData[field]) : null}
               onChange={(date) => handleChange(field, date ? date.format('YYYY-MM-DD') : null)}
-              format="YYYY-MM-DD"
+              format="MM-DD-YYYY"
             />
           ) : type === 'email' ? (
             <Input
@@ -274,8 +275,8 @@ export default function StudentDetails() {
       }
       
       // Format dates properly
-      if (dataToSave.date_of_birth && dayjs(dataToSave.date_of_birth).isValid()) {
-        dataToSave.date_of_birth = dayjs(dataToSave.date_of_birth).format('YYYY-MM-DD')
+      if (dataToSave.date_of_birth && (dayjs(dataToSave.date_of_birth).isValid() || parseDate(dataToSave.date_of_birth)?.isValid())) {
+        dataToSave.date_of_birth = formatForApi(dataToSave.date_of_birth)
       }
       
       const response = await api.put(`/students/${id}`, dataToSave)
@@ -298,7 +299,7 @@ export default function StudentDetails() {
 
   const formatDate = (date) => {
     if (!date) return 'N/A'
-    return dayjs(date).format('MMM D, YYYY')
+    return formatDisplayDateOnly(date)
   }
 
   const formatCurrency = (amount) => {
@@ -309,7 +310,8 @@ export default function StudentDetails() {
   const calculateAge = (dateOfBirth) => {
     if (!dateOfBirth) return 'N/A'
     const today = dayjs()
-    const birthDate = dayjs(dateOfBirth)
+    const birthDate = parseDate(dateOfBirth)
+    if (!birthDate || !birthDate.isValid()) return 'N/A'
     return today.diff(birthDate, 'year')
   }
 
@@ -338,9 +340,9 @@ export default function StudentDetails() {
     setDisbursementModal({ visible: true, mode: 'edit', record })
     disbursementForm.setFieldsValue({
       ...record,
-      disbursement_date: record.disbursement_date ? dayjs(record.disbursement_date) : null,
-      date_process: record.date_process ? dayjs(record.date_process) : null,
-      voucher_date: record.voucher_date ? dayjs(record.voucher_date) : null,
+      disbursement_date: record.disbursement_date ? parseDate(record.disbursement_date) : null,
+      date_process: record.date_process ? parseDate(record.date_process) : null,
+      voucher_date: record.voucher_date ? parseDate(record.voucher_date) : null,
       amount: record.amount,
     })
   }
@@ -371,11 +373,11 @@ export default function StudentDetails() {
       const formattedData = {
         ...values,
         disbursement_date: values.disbursement_date ? 
-          dayjs(values.disbursement_date).format('YYYY-MM-DD') : null,
+          formatForApi(values.disbursement_date) : null,
         date_process: values.date_process ? 
-          dayjs(values.date_process).format('YYYY-MM-DD') : null,
+          formatForApi(values.date_process) : null,
         voucher_date: values.voucher_date ? 
-          dayjs(values.voucher_date).format('YYYY-MM-DD') : null,
+          formatForApi(values.voucher_date) : null,
         amount: values.amount !== undefined && values.amount !== '' && values.amount !== null ? parseFloat(values.amount) : null,
         // Ensure student_seq is included
         student_seq: values.student_seq || student?.seq,
@@ -404,137 +406,110 @@ export default function StudentDetails() {
     }
   }
 
+  // Detail item for expanded row
+  const DetailItem = ({ label, value }) => (
+    <div style={{ marginBottom: 8 }}>
+      <Text style={{ fontSize: 12, color: '#8c8c8c', display: 'block', marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontSize: 13, color: value && value !== 'N/A' ? '#262626' : '#bfbfbf' }}>{value || '—'}</Text>
+    </div>
+  )
+
+  // Expanded row content — grouped to match backend $fillable sections
+  const expandedRowRender = (record) => (
+    <div style={{ padding: '8px 12px' }}>
+      <Row gutter={[32, 4]}>
+        {/* StuFAPs Fields */}
+        <Col span={8}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <div style={{ width: 3, height: 14, background: '#1677ff', borderRadius: 2 }} />
+            <Text strong style={{ fontSize: 12, color: '#1677ff', textTransform: 'uppercase', letterSpacing: 0.5 }}>StuFAPs</Text>
+          </div>
+          <DetailItem label="NTA" value={record.nta} />
+          <DetailItem label="Fund Source" value={record.fund_source} />
+          <DetailItem label="Voucher Tracking No." value={record.voucher_tracking_no} />
+          <DetailItem label="Mode of Payment" value={record.mode_of_payment} />
+          <DetailItem label="ATM Account No." value={record.atm_account_no} />
+          <DetailItem label="Date Process" value={formatDate(record.date_process)} />
+        </Col>
+        {/* Accounting Fields */}
+        <Col span={8}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <div style={{ width: 3, height: 14, background: '#722ed1', borderRadius: 2 }} />
+            <Text strong style={{ fontSize: 12, color: '#722ed1', textTransform: 'uppercase', letterSpacing: 0.5 }}>Accounting</Text>
+          </div>
+          <DetailItem label="Voucher No." value={record.voucher_no} />
+          <DetailItem label="Voucher Date" value={formatDate(record.voucher_date)} />
+          <DetailItem label="Account/Check No." value={record.account_check_no} />
+        </Col>
+        {/* Cashier Fields */}
+        <Col span={8}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+            <div style={{ width: 3, height: 14, background: '#389e0d', borderRadius: 2 }} />
+            <Text strong style={{ fontSize: 12, color: '#389e0d', textTransform: 'uppercase', letterSpacing: 0.5 }}>Cashier</Text>
+          </div>
+          <DetailItem label="Amount" value={formatCurrency(record.amount)} />
+          <DetailItem label="LDDAP No." value={record.lddap_no} />
+          <DetailItem label="Disbursement Date" value={formatDate(record.disbursement_date)} />
+        </Col>
+      </Row>
+    </div>
+  )
+
   const disbursementColumns = [
     {
       title: 'Academic Year',
       dataIndex: 'academic_year',
       key: 'academic_year',
-      width: 140,
     },
     {
       title: 'Semester',
       dataIndex: 'semester',
       key: 'semester',
-      width: 120,
     },
     {
       title: 'Year Level',
       dataIndex: 'curriculum_year_level',
       key: 'curriculum_year_level',
-      width: 110,
-    },
-    {
-      title: 'NTA',
-      dataIndex: 'nta',
-      key: 'nta',
-      width: 140,
-    },
-    {
-      title: 'Fund Source',
-      dataIndex: 'fund_source',
-      key: 'fund_source',
-      width: 160,
-    },
-    {
-      title: 'Voucher Tracking No.',
-      dataIndex: 'voucher_tracking_no',
-      key: 'voucher_tracking_no',
-      width: 180,
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Voucher No.',
-      dataIndex: 'voucher_no',
-      key: 'voucher_no',
-      width: 160,
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Voucher Date',
-      dataIndex: 'voucher_date',
-      key: 'voucher_date',
-      width: 140,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Mode of Payment',
-      dataIndex: 'mode_of_payment',
-      key: 'mode_of_payment',
-      width: 180,
-    },
-    {
-      title: 'ATM Account No.',
-      dataIndex: 'atm_account_no',
-      key: 'atm_account_no',
-      width: 160,
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Date Process',
-      dataIndex: 'date_process',
-      key: 'date_process',
-      width: 140,
-      render: (date) => formatDate(date),
-    },
-    {
-      title: 'Account/Check No.',
-      dataIndex: 'account_check_no',
-      key: 'account_check_no',
-      width: 160,
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Amount',
-      dataIndex: 'amount',
-      key: 'amount',
-      width: 150,
-      align: 'right',
-      render: (amount) => formatCurrency(amount),
-    },
-    {
-      title: 'LDDAP No.',
-      dataIndex: 'lddap_no',
-      key: 'lddap_no',
-      width: 140,
-      render: (text) => text || 'N/A',
-    },
-    {
-      title: 'Disbursement Date',
-      dataIndex: 'disbursement_date',
-      key: 'disbursement_date',
-      width: 140,
-      render: (date) => formatDate(date),
+      width: 100,
+      align: 'center',
     },
     {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
-      render: (text) => text || 'N/A',
+      render: (text) => {
+        const colorMap = {
+          'Paid': 'green',
+          'Pending': 'orange',
+          'Processing': 'blue',
+          'Cancelled': 'red',
+        }
+        return text ? <Tag color={colorMap[text] || 'default'}>{text}</Tag> : <Text type="secondary">—</Text>
+      },
     },
     {
       title: 'Remarks',
       dataIndex: 'remarks',
       key: 'remarks',
-      width: 200,
-      render: (text) => text || 'N/A',
+      ellipsis: true,
+      render: (text) => text || <Text type="secondary">—</Text>,
     },
     {
       title: 'Actions',
       key: 'actions',
-      width: 120,
-      fixed: 'right',
+      width: 100,
+      align: 'center',
       render: (_, record) => {
         const canEditThisDisbursement = isMasterAdmin || (
           (assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)) &&
           (assignedYears.includes('ALL') || assignedYears.includes(record.academic_year))
         )
         return canEditThisDisbursement ? (
-          <Space>
+          <Space size={4}>
             <Button
               type="text"
               icon={<EditOutlined />}
-              onClick={() => handleEditDisbursement(record)}
+              onClick={(e) => { e.stopPropagation(); handleEditDisbursement(record) }}
               title="Edit disbursement"
               size="small"
             />
@@ -552,6 +527,7 @@ export default function StudentDetails() {
                 icon={<DeleteOutlined />} 
                 title="Delete disbursement"
                 size="small"
+                onClick={(e) => e.stopPropagation()}
               />
             </Popconfirm>
           </Space>
@@ -935,7 +911,14 @@ export default function StudentDetails() {
           columns={disbursementColumns}
           rowKey="id"
           pagination={false}
-          scroll={{ x: 1800, y: 500 }}
+          expandable={{
+            expandedRowRender,
+            expandRowByClick: true,
+            rowExpandable: () => true,
+          }}
+          scroll={{ y: 500 }}
+          size="middle"
+          locale={{ emptyText: 'No disbursement records yet' }}
         />
       </Card>
 
@@ -955,16 +938,15 @@ export default function StudentDetails() {
         destroyOnHidden={true}
       >
         <Form form={disbursementForm} layout="vertical">
-          {/* Academic Information */}
+          {/* StuFAPs Fields */}
           <div style={{ marginBottom: '24px' }}>
-            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
-              Academic Information
-            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 18, background: '#1677ff', borderRadius: 2 }} />
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>StuFAPs Fields</Text>
+            </div>
             <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item name="student_seq" label="Student ID" hidden>
-                  <Input disabled />
-                </Form.Item>
+              <Form.Item name="student_seq" hidden><Input /></Form.Item>
+              <Col span={8}>
                 <Form.Item 
                   name="academic_year" 
                   label="Academic Year"
@@ -973,7 +955,7 @@ export default function StudentDetails() {
                   <Input placeholder="e.g., 2024-2025" />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="semester" label="Semester">
                   <Select placeholder="Select semester">
                     <Select.Option value="First">First</Select.Option>
@@ -981,7 +963,7 @@ export default function StudentDetails() {
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item 
                   name="curriculum_year_level" 
                   label="Year Level"
@@ -997,77 +979,131 @@ export default function StudentDetails() {
                   </Select>
                 </Form.Item>
               </Col>
-            </Row>
-          </div>
-
-          {/* Financial Information */}
-          <div style={{ marginBottom: '24px' }}>
-            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
-              Financial Information
-            </Text>
-            <Row gutter={16}>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="nta" label="NTA">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="fund_source" label="Fund Source">
                   <Input />
                 </Form.Item>
               </Col>
-            </Row>
-          </div>
-
-          {/* Payment Details */}
-          <div style={{ marginBottom: '24px' }}>
-            <Text strong style={{ fontSize: '14px', color: '#262626', display: 'block', marginBottom: '16px' }}>
-              Payment Details
-            </Text>
-            <Row gutter={16}>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="voucher_tracking_no" label="Voucher Tracking No.">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="mode_of_payment" label="Mode of Payment">
-                  <Select placeholder="Select mode of payment">
+                  <Select placeholder="Select mode">
                     <Select.Option value="ATM">ATM</Select.Option>
                     <Select.Option value="Cheque">Cheque</Select.Option>
                     <Select.Option value="Through the HEI">Through the HEI</Select.Option>
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="atm_account_no" label="ATM Account No.">
                   <Input />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col span={8}>
                 <Form.Item name="date_process" label="Date Process">
                   <DatePicker 
                     style={{ width: '100%' }}
                     placeholder="Select date"
+                    format="MM-DD-YYYY"
                   />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item name="status" label="Status">
-                  <Input placeholder="e.g., Paid, Pending, etc." />
                 </Form.Item>
               </Col>
             </Row>
           </div>
 
-          {/* Remarks */}
+          {/* Accounting Fields */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 18, background: '#722ed1', borderRadius: 2 }} />
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>Accounting Fields</Text>
+            </div>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item name="voucher_no" label="Voucher No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="voucher_date" label="Voucher Date">
+                  <DatePicker 
+                    style={{ width: '100%' }}
+                    placeholder="Select date"
+                    format="MM-DD-YYYY"
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="account_check_no" label="Account/Check No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Cashier Fields */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 18, background: '#389e0d', borderRadius: 2 }} />
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>Cashier Fields</Text>
+            </div>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item name="amount" label="Amount">
+                  <Input type="number" prefix="₱" placeholder="0.00" />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="lddap_no" label="LDDAP No.">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={8}>
+                <Form.Item name="disbursement_date" label="Disbursement Date">
+                  <DatePicker 
+                    style={{ width: '100%' }}
+                    placeholder="Select date"
+                    format="MM-DD-YYYY"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Status & Remarks */}
           <div>
-            <Form.Item name="remarks" label="Remarks">
-              <Input.TextArea 
-                rows={3} 
-                placeholder="Enter any additional remarks or notes..."
-              />
-            </Form.Item>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+              <div style={{ width: 4, height: 18, background: '#8c8c8c', borderRadius: 2 }} />
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>Status & Remarks</Text>
+            </div>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item name="status" label="Status">
+                  <Select placeholder="Select status" allowClear>
+                    <Select.Option value="Paid">Paid</Select.Option>
+                    <Select.Option value="Pending">Pending</Select.Option>
+                    <Select.Option value="Processing">Processing</Select.Option>
+                    <Select.Option value="Cancelled">Cancelled</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={16}>
+                <Form.Item name="remarks" label="Remarks">
+                  <Input.TextArea 
+                    rows={2} 
+                    placeholder="Enter any additional remarks or notes..."
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
           </div>
         </Form>
       </Modal>
