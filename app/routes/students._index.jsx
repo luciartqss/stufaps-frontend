@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip } from 'antd'
 import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
@@ -293,27 +293,71 @@ export default function StudentsIndex() {
   const assignedYears = permissions?.assigned_years || []
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [searchValue, setSearchValue] = useState('')
-  const [statusFilter, setStatusFilter] = useState(null)
-  const [programFilter, setProgramFilter] = useState(null)
-  const [academicYearFilter, setAcademicYearFilter] = useState(null)
-  const [semesterFilter, setSemesterFilter] = useState(null)
-  const [courseFilter, setCourseFilter] = useState(null)
-  const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 })
-  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
-  const [regionFilter, setRegionFilter] = useState(null)
-  const [provinceFilter, setProvinceFilter] = useState(null)
-  const [cityFilter, setCityFilter] = useState(null)
-  const [schoolFilter, setSchoolFilter] = useState(null)
-  const [priorityFilter, setPriorityFilter] = useState(null)
-  const [specialGroupFilter, setSpecialGroupFilter] = useState(null)
-  const [authorityTypeFilter, setAuthorityTypeFilter] = useState(null)
-  const [awardYearFilter, setAwardYearFilter] = useState(null)
   const [filterOptions, setFilterOptions] = useState({})
+  const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
   const navigate = useNavigate()
-  
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Initialize filter state from URL search params so filters survive navigation
+  const [searchValue, setSearchValue] = useState(searchParams.get('search') || '')
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || null)
+  const [programFilter, setProgramFilter] = useState(searchParams.get('program') || null)
+  const [academicYearFilter, setAcademicYearFilter] = useState(searchParams.get('academicYear') || null)
+  const [semesterFilter, setSemesterFilter] = useState(searchParams.get('semester') || null)
+  const [courseFilter, setCourseFilter] = useState(searchParams.get('course') || null)
+  const [regionFilter, setRegionFilter] = useState(searchParams.get('region') || null)
+  const [provinceFilter, setProvinceFilter] = useState(searchParams.get('province') || null)
+  const [cityFilter, setCityFilter] = useState(searchParams.get('city') || null)
+  const [schoolFilter, setSchoolFilter] = useState(searchParams.get('school') || null)
+  const [priorityFilter, setPriorityFilter] = useState(searchParams.get('priority') || null)
+  const [specialGroupFilter, setSpecialGroupFilter] = useState(searchParams.get('specialGroup') || null)
+  const [authorityTypeFilter, setAuthorityTypeFilter] = useState(searchParams.get('authorityType') || null)
+  const [awardYearFilter, setAwardYearFilter] = useState(searchParams.get('awardYear') || null)
+  const [pagination, setPagination] = useState({
+    current: parseInt(searchParams.get('page'), 10) || 1,
+    pageSize: parseInt(searchParams.get('pageSize'), 10) || 10,
+    total: 0,
+  })
+
   // Debounced search value for API calls
   const debouncedSearch = useDebounce(searchValue, 300)
+
+  // Sync filter state to URL search params
+  const syncSearchParams = (overrides = {}) => {
+    const filters = {
+      search: overrides.search ?? searchValue,
+      status: overrides.status ?? statusFilter,
+      program: overrides.program ?? programFilter,
+      academicYear: overrides.academicYear ?? academicYearFilter,
+      semester: overrides.semester ?? semesterFilter,
+      course: overrides.course ?? courseFilter,
+      region: overrides.region ?? regionFilter,
+      province: overrides.province ?? provinceFilter,
+      city: overrides.city ?? cityFilter,
+      school: overrides.school ?? schoolFilter,
+      priority: overrides.priority ?? priorityFilter,
+      specialGroup: overrides.specialGroup ?? specialGroupFilter,
+      authorityType: overrides.authorityType ?? authorityTypeFilter,
+      awardYear: overrides.awardYear ?? awardYearFilter,
+      page: overrides.page ?? pagination.current,
+      pageSize: overrides.pageSize ?? pagination.pageSize,
+    }
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== null && value !== undefined && value !== '' && value !== 1 && key !== 'pageSize') {
+        params.set(key, value)
+      }
+      // Always keep pageSize if not default
+      if (key === 'pageSize' && value && value !== 10) {
+        params.set(key, value)
+      }
+      // Always keep page if not 1
+      if (key === 'page' && value && value !== 1) {
+        params.set(key, value)
+      }
+    })
+    setSearchParams(params, { replace: true })
+  }
 
   useEffect(() => {
     fetchFilterOptions()
@@ -321,10 +365,14 @@ export default function StudentsIndex() {
   }, [])
 
   // Auto-search when debounced search value changes
+  const initialMount = useRef(true)
   useEffect(() => {
-    if (debouncedSearch !== undefined) {
-      fetchStudents({ search: debouncedSearch, page: 1 })
+    if (initialMount.current) {
+      initialMount.current = false
+      return
     }
+    syncSearchParams({ search: debouncedSearch, page: 1 })
+    fetchStudents({ search: debouncedSearch, page: 1 })
   }, [debouncedSearch])
 
   // Fetch filter options once on mount
@@ -843,30 +891,35 @@ export default function StudentsIndex() {
   // Handle immediate search (on button click or enter)
   const handleSearch = (value) => {
     setSearchValue(value)
+    syncSearchParams({ search: value, page: 1 })
     fetchStudents({ search: value, page: 1 })
   }
 
   // Handle status filter
   const handleStatusChange = (value) => {
     setStatusFilter(value)
+    syncSearchParams({ status: value, page: 1 })
     applyFilters({ status: value })
   }
 
   // Handle program filter
   const handleProgramChange = (value) => {
     setProgramFilter(value)
+    syncSearchParams({ program: value, page: 1 })
     applyFilters({ program: value })
   }
 
   // Handle academic year filter
   const handleAcademicYearChange = (value) => {
     setAcademicYearFilter(value)
+    syncSearchParams({ academicYear: value, page: 1 })
     applyFilters({ academicYear: value })
   }
 
   // Handle semester filter
   const handleSemesterChange = (value) => {
     setSemesterFilter(value)
+    syncSearchParams({ semester: value, page: 1 })
     applyFilters({ semester: value })
   }
 
@@ -885,6 +938,7 @@ export default function StudentsIndex() {
     setSpecialGroupFilter(null)
     setAuthorityTypeFilter(null)
     setAwardYearFilter(null)
+    setSearchParams({}, { replace: true })
     fetchStudents({
       search: '',
       status: null,
@@ -906,6 +960,7 @@ export default function StudentsIndex() {
   }
 
   const handleApplyDrawerFilters = () => {
+    syncSearchParams({ page: 1 })
     applyFilters({})
     setFiltersDrawerOpen(false)
   }
@@ -913,6 +968,7 @@ export default function StudentsIndex() {
   // Handle pagination change
   const handleTableChange = (page, pageSize) => {
     setPagination(prev => ({ ...prev, current: page, pageSize }))
+    syncSearchParams({ page, pageSize })
     fetchStudents({ page, pageSize })
   }
 

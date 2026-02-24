@@ -57,7 +57,7 @@ const api = {
 }
 
 // Simple field display with proper input types - moved outside to prevent focus loss
-const Field = ({ label, value, field, span = 12, type = 'text', editMode, formData, handleChange, options = [], required = false }) => {
+const Field = ({ label, value, field, span = 12, type = 'text', editMode, formData, handleChange, options = [], required = false, disabled = false }) => {
   const isEmpty = !value || value === '—' || value === 'N/A'
   const editFieldEmpty = editMode && required && field && (!formData?.[field] || formData[field] === '')
   const showWarning = required && isEmpty && !editMode
@@ -75,7 +75,13 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
           {showWarning && <span style={{ color: '#ef4444', fontSize: 11 }}>(missing)</span>}
         </Text>
         {editMode && field ? (
-          type === 'date' ? (
+          disabled ? (
+            <Input
+              value={formData?.[field] ?? ''}
+              disabled
+              style={{ color: '#595959', background: '#f5f5f5' }}
+            />
+          ) : type === 'date' ? (
             <DatePicker
               style={{ width: '100%' }}
               status={editFieldEmpty ? 'warning' : undefined}
@@ -770,18 +776,19 @@ export default function StudentDetails() {
           <Card title="Institution & Academic Program" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Region" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
                 value={student.program_degree_level} 
                 field="program_degree_level" 
                 type="select" 
                 required
+                disabled
                 options={[
                   { label: 'Pre-baccalaureate', value: 'Pre-baccalaureate' },
                   { label: 'Baccalaureate', value: 'Baccalaureate' },
@@ -810,6 +817,7 @@ export default function StudentDetails() {
                 field="authority_type" 
                 type="select" 
                 required
+                disabled
                 options={[
                   { label: 'GP', value: 'GP' },
                   { label: 'GR', value: 'GR' },
@@ -820,8 +828,8 @@ export default function StudentDetails() {
                 formData={formData} 
                 handleChange={handleChange} 
               />
-              <Field label="Authority Number" value={student.authority_number} field="authority_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Series" value={student.series} field="series" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Authority Number" value={student.authority_number} field="authority_number" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Series" value={student.series} field="series" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Basis (CMO)" value={student.basis_cmo} field="basis_cmo" required editMode={editMode} formData={formData} handleChange={handleChange} />
             </Row>
           </Card>
@@ -1025,25 +1033,27 @@ export default function StudentDetails() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 18, background: '#722ed1', borderRadius: 2 }} />
               <Text strong style={{ fontSize: 14, color: '#262626' }}>Accounting Fields</Text>
+              <Tag style={{ marginLeft: 'auto', fontSize: 11 }}>Read Only</Tag>
             </div>
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item name="voucher_no" label="Voucher No.">
-                  <Input />
+                  <Input disabled style={{ color: '#595959', background: '#f5f5f5' }} />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="voucher_date" label="Voucher Date">
                   <DatePicker 
-                    style={{ width: '100%' }}
-                    placeholder="Select date"
+                    style={{ width: '100%', color: '#595959', background: '#f5f5f5' }}
+                    placeholder="—"
                     format="MM-DD-YYYY"
+                    disabled
                   />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="account_check_no" label="Account/Check No.">
-                  <Input />
+                  <Input disabled style={{ color: '#595959', background: '#f5f5f5' }} />
                 </Form.Item>
               </Col>
             </Row>
@@ -1054,24 +1064,26 @@ export default function StudentDetails() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 18, background: '#389e0d', borderRadius: 2 }} />
               <Text strong style={{ fontSize: 14, color: '#262626' }}>Cashier Fields</Text>
+              <Tag style={{ marginLeft: 'auto', fontSize: 11 }}>Read Only</Tag>
             </div>
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item name="amount" label="Amount">
-                  <Input type="number" prefix="₱" placeholder="0.00" />
+                  <Input type="number" prefix="₱" placeholder="0.00" disabled style={{ color: '#595959', background: '#f5f5f5' }} />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="lddap_no" label="LDDAP No.">
-                  <Input />
+                  <Input disabled style={{ color: '#595959', background: '#f5f5f5' }} />
                 </Form.Item>
               </Col>
               <Col span={8}>
                 <Form.Item name="disbursement_date" label="Disbursement Date">
                   <DatePicker 
-                    style={{ width: '100%' }}
-                    placeholder="Select date"
+                    style={{ width: '100%', color: '#595959', background: '#f5f5f5' }}
+                    placeholder="—"
                     format="MM-DD-YYYY"
+                    disabled
                   />
                 </Form.Item>
               </Col>
