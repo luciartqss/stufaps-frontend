@@ -73,6 +73,7 @@ export default function AccountManagement() {
 
   const openEdit = (user) => {
     setEditingUser(user)
+    form.resetFields()
 
     // Build assignments list for the form
     const programs = (user.assignments || []).map(a => a.scholarship_program)
@@ -173,8 +174,9 @@ export default function AccountManagement() {
         message.success(data.message)
       }
 
-      setModalOpen(false)
       form.resetFields()
+      setEditingUser(null)
+      setModalOpen(false)
       fetchUsers()
     } catch (err) {
       if (err.errorFields) return
@@ -328,11 +330,11 @@ export default function AccountManagement() {
           </div>
         }
         open={modalOpen}
-        onCancel={() => { setModalOpen(false); form.resetFields() }}
+        onCancel={() => { form.resetFields(); setEditingUser(null); setModalOpen(false) }}
         onOk={handleSubmit}
         okText={editingUser ? 'Save Changes' : 'Create'}
         width={720}
-        destroyOnHidden
+        forceRender
       >
         <Form form={form} layout="vertical" style={{ marginTop: 12 }}>
           {/* Account Info Section */}
