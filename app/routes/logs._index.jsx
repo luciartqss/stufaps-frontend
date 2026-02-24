@@ -5,22 +5,9 @@ import { UndoOutlined } from '@ant-design/icons'
 const { Title, Text } = Typography
 
 import { API_BASE as API_URL } from '../lib/config'
+import { formatDisplayDate, parseDate } from '../lib/dateUtils'
 
 const TIMESTAMP_FIELDS = ['created_at', 'updated_at', 'deleted_at']
-
-const formatDate = (date) => {
-  if (!date) return '-'
-  const d = new Date(date)
-  if (isNaN(d)) return date
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  const yyyy = d.getFullYear()
-  let hrs = d.getHours()
-  const mins = String(d.getMinutes()).padStart(2, '0')
-  const ampm = hrs >= 12 ? 'PM' : 'AM'
-  hrs = hrs % 12 || 12
-  return `${mm}-${dd}-${yyyy} ${hrs}:${mins} ${ampm}`
-}
 
 export function meta() {
   return [
@@ -46,7 +33,11 @@ export default function LogsIndex() {
       const data = await res.json()
       
       // Sort by created_at in descending order (newest first)
-      const sortedData = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      const sortedData = data.sort((a, b) => {
+        const da = parseDate(a.created_at)
+        const db = parseDate(b.created_at)
+        return (db?.valueOf() || 0) - (da?.valueOf() || 0)
+      })
       
       setLogs(sortedData)
     } catch (error) {
@@ -218,7 +209,7 @@ export default function LogsIndex() {
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
-      render: (date) => formatDate(date),
+      render: (date) => formatDisplayDate(date),
     },
     {
       title: 'Action',

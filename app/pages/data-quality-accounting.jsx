@@ -3,6 +3,7 @@ import { SaveOutlined, SearchOutlined, CheckCircleOutlined, WarningOutlined, Cle
 import { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react'
 import { API_BASE } from '../lib/config'
 import dayjs from 'dayjs'
+import { formatForApi } from '../lib/dateUtils'
 
 const { Title, Text } = Typography
 
@@ -40,9 +41,9 @@ const EditableDatePicker = memo(function EditableDatePicker({ value, onChange })
     <DatePicker
       size="small"
       value={value ? dayjs(value) : null}
-      onChange={(_, dateStr) => onChange(dateStr || null)}
+      onChange={(date) => onChange(date ? date.format('YYYY-MM-DD') : null)}
       style={{ width: '100%', fontSize: 13 }}
-      format="YYYY-MM-DD"
+      format="MM-DD-YYYY"
       placeholder="Pick date"
     />
   )
@@ -174,7 +175,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
             [disbursementId]: {
               ...existing,
               voucher_no: value,
-              voucher_date: dayjs().format('YYYY-MM-DD'),
+              voucher_date: formatForApi(dayjs()),
             },
           }
         }
@@ -231,7 +232,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
     if (!bulkDate) return message.info('Pick a date first')
     if (selectedRowKeys.length === 0) return message.info('Select at least one row')
 
-    const dateStr = dayjs(bulkDate).format('YYYY-MM-DD')
+    const dateStr = formatForApi(bulkDate)
     setEditedRows(prev => {
       const next = { ...prev }
       selectedRowKeys.forEach(id => {
@@ -257,11 +258,11 @@ export default function DataQualityAccounting({ readOnly = false }) {
         const existing = next[id] || {}
         const updates = { ...existing }
         if (bulkVoucherNo) updates.voucher_no = bulkVoucherNo
-        if (bulkDate) updates.voucher_date = dayjs(bulkDate).format('YYYY-MM-DD')
+        if (bulkDate) updates.voucher_date = formatForApi(bulkDate)
         else if (bulkVoucherNo && autoFillDateRef.current) {
           const record = dataRef.current.find(r => r.id === id)
           if (!existing.voucher_date && !record?.voucher_date) {
-            updates.voucher_date = dayjs().format('YYYY-MM-DD')
+            updates.voucher_date = formatForApi(dayjs())
           }
         }
         next[id] = updates
@@ -535,7 +536,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
             size="small"
             value={bulkDate}
             onChange={(date) => setBulkDate(date)}
-            format="YYYY-MM-DD"
+            format="MM-DD-YYYY"
             placeholder="Voucher Date"
             style={{ width: 140 }}
           />

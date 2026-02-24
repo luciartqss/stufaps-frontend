@@ -1611,10 +1611,10 @@ export default function ImportBulk() {
       return (
         <DatePicker
           value={value ? dayjs(value) : null}
-          onChange={(date, dateString) => handleCellEdit(rowIndex, field.key, dateString)}
+          onChange={(date) => handleCellEdit(rowIndex, field.key, date ? date.format('YYYY-MM-DD') : '')}
           size="small"
           className="w-full"
-          format="YYYY-MM-DD"
+          format="MM-DD-YYYY"
           style={{ minWidth: config.width - 16 }}
         />
       )
