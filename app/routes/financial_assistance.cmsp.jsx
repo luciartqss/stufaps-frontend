@@ -68,8 +68,8 @@ function StatsCards({ financialAssistances = [] }) {
   const formatProgramName = name => {
     if (!name) return '';
     return name
-      .replace(/SSP/g, ' SSP')       // turn FULLSSP → FULL SSP
-      .replace(/PESFA/g, ' PESFA')   // turn FULLPESFA → FULL PESFA
+      .replace(/SSP/g, '-SSP')       // turn FULLSSP → FULL SSP
+      .replace(/PESFA/g, '-PESFA')   // turn FULLPESFA → FULL PESFA
       .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
       .trim();
   };
