@@ -597,10 +597,10 @@ export default function FinancialAssistanceSida_Sgp() {
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00</td>
                             </tr>
                         </tbody>
-                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                        <tfoot style={{ background: '#CED4DA'}}>
                             <tr>
                                 <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                                <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱110,000.00</td>
+                                <td colSpan={2} style={{ border: '1px solid #000',  textAlign: 'center' , padding: '8px', fontWeight: 'bold' }}>₱110,000.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -631,10 +631,10 @@ export default function FinancialAssistanceSida_Sgp() {
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱15,000.00</td>
                             </tr>
                         </tbody>
-                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                        <tfoot style={{ background: '#CED4DA' }}>
                             <tr>
                                 <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱90,000.00</td>
+                                <td style={{ border: '1px solid #000', textAlign: 'center', padding: '8px', paddingLeft: '35px', paddingRight: '35px', fontWeight: 'bold' }}>₱90,000.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -668,13 +668,13 @@ export default function FinancialAssistanceSida_Sgp() {
                         </thead>
                         <tbody>
                             <tr>
-                                <td style={{ border: '1px solid #000', padding: '8px' }}>a. Tuition and Other School Fees</td>
+                                <td style={{ border: '1px solid #000', padding: '8px' }}>Tuition and Other School Fees</td>
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱30,000.00/semester</td>
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱60,000.00</td>
                             </tr>
                             <tr>
                                 <td style={{ border: '1px solid #000', padding: '8px' }}>Stipend (which includes subsistence, clothing, transportation allowance, educational tours, field trips, expenses for small projects and medical insurance)</td>
-                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>PHP10,000.00/month x 10 months or PHP50,000/semester</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱10,000.00/month x 10 months or ₱50,000/semester</td>
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱100,000.00</td>
                             </tr>
                             <tr>
@@ -683,10 +683,10 @@ export default function FinancialAssistanceSida_Sgp() {
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱15,000.00</td>
                             </tr>
                         </tbody>
-                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                        <tfoot style={{ background: '#CED4DA'}}>
                             <tr>
                                 <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                                <td colSpan={2} style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱175,000.00</td>
+                                <td colSpan={2} style={{ border: '1px solid #000', textAlign: 'center', padding: '8px', fontWeight: 'bold' }}>₱175,000.00</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -717,10 +717,10 @@ export default function FinancialAssistanceSida_Sgp() {
                                 <td style={{ border: '1px solid #000', padding: '8px', textAlign: 'center' }}>₱100,000.00</td>
                             </tr>
                         </tbody>
-                        <tfoot style={{ background: '#CED4DA', textAlign: 'center' }}>
+                        <tfoot style={{ background: '#CED4DA' }}>
                             <tr>
                                 <td style={{ border: '1px solid #000', padding: '8px' }}>Total</td>
-                                <td style={{ border: '1px solid #000', padding: '8px', fontWeight: 'bold' }}>₱75,000.00</td>
+                                <td style={{ border: '1px solid #000', padding: '8px', paddingLeft: '66px', paddingRight: '66px', fontWeight: 'bold' }}>₱75,000.00</td>
                             </tr>
                         </tfoot>
                     </table>

@@ -69,7 +69,10 @@ function StatsCards({ financialAssistances = [] }) {
 
   const formatProgramName = name => {
     if (!name) return '';
-    return name.toUpperCase();
+    const nameUpper = String(name).toUpperCase();
+    if (nameUpper === 'FULLESTAT') return 'FULL-ESTAT';
+    if (nameUpper === 'HALFESTAT') return 'HALF-ESTAT';
+    return name;
   };
 
   const statsConfig = [
@@ -230,14 +233,6 @@ export default function FinancialAssistanceEstatistikolar() {
     'FULLESTAT',
     'HALFESTAT'
   ];
-
-  const formatProgramName = name => {
-    if (!name) return '';
-    const nameUpper = String(name).toUpperCase();
-    if (nameUpper === 'FULLESTAT') return 'Full Estat';
-    if (nameUpper === 'HALFESTAT') return 'Half Estat';
-    return name;
-  };
 
 
   const filteredestatistikolar = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
