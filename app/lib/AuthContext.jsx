@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { API_BASE } from './config'
 
 const AuthContext = createContext(null)
@@ -66,15 +66,37 @@ export function AuthProvider({ children }) {
     if (!user?.id) return
     try {
       const res = await fetch(`${API_BASE}/users/${user.id}/permissions`)
-      if (res.ok) {
-        const perms = await res.json()
-        setPermissions(perms)
-        localStorage.setItem('permissions', JSON.stringify(perms))
+      if (!res.ok) {
+        // User was deleted or server error — force logout
+        if (res.status === 404) {
+          logout()
+          return
+        }
+        return
       }
+      const perms = await res.json()
+
+      // If the role changed, force logout so the user gets the correct UI
+      const currentRole = permissions?.role
+      if (currentRole && perms.role !== currentRole) {
+        logout()
+        return
+      }
+
+      setPermissions(perms)
+      localStorage.setItem('permissions', JSON.stringify(perms))
     } catch (err) {
       console.error('Failed to refresh permissions:', err)
     }
-  }, [user?.id])
+  }, [user?.id, permissions?.role])
+
+  // Poll permissions every 30 seconds so admin changes take effect without logout
+  const pollRef = useRef(null)
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return
+    pollRef.current = setInterval(refreshPermissions, 30000)
+    return () => clearInterval(pollRef.current)
+  }, [isAuthenticated, user?.id, refreshPermissions])
 
   /**
    * Check if the user can access a specific section.

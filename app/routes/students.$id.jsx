@@ -25,7 +25,10 @@ const api = {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+      const err = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`)
+      err.status = response.status
+      err.data = errorData
+      throw err
     }
     
     return response.json()
@@ -297,7 +300,19 @@ export default function StudentDetails() {
       message.success('Student updated successfully')
     } catch (err) {
       console.error('Save error:', err)
-      message.error(err.message || 'Failed to update student')
+      if (err.status === 409) {
+        Modal.warning({
+          title: 'Version Conflict',
+          content: 'This record was modified by another staff member while you were editing. Your changes were NOT saved. The page will reload with the latest data.',
+          okText: 'Reload',
+          onOk: () => {
+            setRefreshTrigger(prev => prev + 1)
+            setEditMode(false)
+          },
+        })
+      } else {
+        message.error(err.message || 'Failed to update student')
+      }
     } finally {
       setSaving(false)
     }
@@ -389,6 +404,11 @@ export default function StudentDetails() {
         student_seq: values.student_seq || student?.seq,
       }
 
+      // Include version for optimistic concurrency on edits
+      if (disbursementModal.mode === 'edit' && disbursementModal.record?.version !== undefined) {
+        formattedData.version = disbursementModal.record.version
+      }
+
       if (disbursementModal.mode === 'create') {
         await api.post('/disbursements', formattedData)
         message.success('Disbursement record created successfully')
@@ -402,7 +422,18 @@ export default function StudentDetails() {
       setRefreshTrigger(prev => prev + 1) // Refresh student data
     } catch (err) {
       console.error('Disbursement submit error:', err)
-      if (err.message.includes('validation')) {
+      if (err.status === 409) {
+        Modal.warning({
+          title: 'Version Conflict',
+          content: 'This disbursement was modified by another staff member while you were editing. Your changes were NOT saved. The page will reload with the latest data.',
+          okText: 'Reload',
+          onOk: () => {
+            setDisbursementModal({ visible: false, mode: 'create', record: null })
+            disbursementForm.resetFields()
+            setRefreshTrigger(prev => prev + 1)
+          },
+        })
+      } else if (err.message.includes('validation')) {
         message.error('Please check all required fields and try again')
       } else {
         message.error(err.message || `Failed to ${disbursementModal.mode === 'create' ? 'create' : 'update'} disbursement record`)

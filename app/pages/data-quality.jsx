@@ -125,27 +125,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       return
     }
 
-    // Log the bulk edit action
     try {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-      await fetch(`${API_URL}/logs`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'Student',
-          model_id: 0,
-          action: 'update',
-          old_data: JSON.stringify({ [bulkField]: bulkOldValue }),
-          new_data: JSON.stringify({ [bulkField]: bulkNewValue }),
-          user_id: storedUser?.id || null,
-          ip_address: 'client',
-        }),
-      })
-    } catch (error) {
-      console.error('Failed to log action:', error)
-    }
-
-    try {
       const res = await fetch(`${API_URL}/students/bulk-update-field`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
@@ -157,7 +138,6 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         setBulkEditVisible(false)
         setBulkOldValue('')
         setBulkNewValue('')
-        // Refresh data quality counts
         fetchCounts()
       } else {
         message.error(data.error || 'Failed to update')
