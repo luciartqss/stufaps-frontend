@@ -19,4 +19,9 @@ export default defineConfig({
   },
   plugins: [reactRouter()],
   assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf', '**/*.otf'],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    hmr: false, // Disable Hot Module Replacement for better LAN performance
+  },
 })
