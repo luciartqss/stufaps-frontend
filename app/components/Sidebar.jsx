@@ -222,6 +222,11 @@ export default function Sidebar() {
         icon: <UserOutlined />,
         label: <NavLink to="/account-management">Account Management</NavLink>,
       }] : []),
+      ...(getAccess('sub-aro-nta') !== 'none' ? [{
+        key: '/sub_aro_nta',
+        icon: <FileTextOutlined />,
+        label: <NavLink to="/sub_aro_nta">SUB-ARO/NTA</NavLink>,
+      }] : []),
       ...(getAccess('about_us') !== 'none' ? [{
         key: '/about_us',
         icon: <InfoCircleOutlined />,
