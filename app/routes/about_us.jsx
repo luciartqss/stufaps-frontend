@@ -265,7 +265,7 @@ export default function AboutUs() {
 
     return (
         <ErrorBoundary>
-        <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>
+            <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>
                 <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', backgroundColor: '#fff' }}>
                     <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
                         About STUFAPS
@@ -284,12 +284,12 @@ export default function AboutUs() {
                         </Title>
                     </Space>
                     <Text style={{ display: 'block', marginTop: 8, color: '#6b7280', fontSize: 16 }}>
-                        STUFAPS exists to help educational institutions manage and distribute scholarships and financial aid to students 
-                        fairly and efficiently. We understand that finances can be a barrier to education, and our system is designed to 
+                        STUFAPS exists to help educational institutions manage and distribute scholarships and financial aid to students
+                        fairly and efficiently. We understand that finances can be a barrier to education, and our system is designed to
                         make the process of awarding and tracking aid simpler for administrators and more transparent for students.
                     </Text>
                     <Text style={{ display: 'block', marginTop: 12, color: '#6b7280', fontSize: 16 }}>
-                        By streamlining how institutions handle scholarships and disbursements, we help ensure that deserving students 
+                        By streamlining how institutions handle scholarships and disbursements, we help ensure that deserving students
                         receive the support they need to pursue their education.
                     </Text>
                 </div>
@@ -305,19 +305,19 @@ export default function AboutUs() {
                     <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
                         <ol className="list-decimal">
                             <li style={{ marginBottom: 12 }}>
-                                <Text strong>Manage Student Profiles</Text> - Keep track of student information and academic status 
+                                <Text strong>Manage Student Profiles</Text> - Keep track of student information and academic status
                                 in one centralized system, making it easy to find and update records.
                             </li>
                             <li style={{ marginBottom: 12 }}>
-                                <Text strong>Administer Scholarship Programs</Text> - Support different types of scholarships and 
+                                <Text strong>Administer Scholarship Programs</Text> - Support different types of scholarships and
                                 programs your institution offers, making it easier to manage eligibility and requirements.
                             </li>
                             <li style={{ marginBottom: 12 }}>
-                                <Text strong>Process and Track Payments</Text> - Manage the disbursement of scholarship funds to 
+                                <Text strong>Process and Track Payments</Text> - Manage the disbursement of scholarship funds to
                                 students and keep complete records of every transaction and payment history.
                             </li>
                             <li>
-                                <Text strong>Ensure Accountability</Text> - Maintain complete records of all activities and transactions 
+                                <Text strong>Ensure Accountability</Text> - Maintain complete records of all activities and transactions
                                 so your institution can demonstrate transparency and compliance.
                             </li>
                         </ol>
@@ -374,19 +374,19 @@ export default function AboutUs() {
                     <Typography style={{ marginTop: 12, color: '#6b7280', fontSize: 16 }}>
                         <ul className="list-disc" style={{ paddingLeft: 20 }}>
                             <li style={{ marginBottom: 8 }}>
-                                <Text strong>Educational Institutions</Text> - Colleges and universities that want to streamline their 
+                                <Text strong>Educational Institutions</Text> - Colleges and universities that want to streamline their
                                 scholarship management and financial aid processes.
                             </li>
                             <li style={{ marginBottom: 8 }}>
-                                <Text strong>Students</Text> - Students seeking scholarships and financial aid with transparent, 
+                                <Text strong>Students</Text> - Students seeking scholarships and financial aid with transparent,
                                 efficient access to support programs.
                             </li>
                             <li style={{ marginBottom: 8 }}>
-                                <Text strong>Finance Teams</Text> - Administrative staff who manage budgets, process payments, and 
+                                <Text strong>Finance Teams</Text> - Administrative staff who manage budgets, process payments, and
                                 need clear records of all transactions.
                             </li>
                             <li>
-                                <Text strong>Institution Leaders</Text> - Decision makers who need insights into how aid is being 
+                                <Text strong>Institution Leaders</Text> - Decision makers who need insights into how aid is being
                                 distributed and student support outcomes.
                             </li>
                         </ul>
@@ -424,12 +424,12 @@ export default function AboutUs() {
                         </Title>
                     </Space>
                     <Text style={{ display: 'block', marginTop: 8, color: '#6b7280', fontSize: 16 }}>
-                        We are committed to making financial aid administration simpler, fairer, and more transparent. Every feature 
+                        We are committed to making financial aid administration simpler, fairer, and more transparent. Every feature
                         we build is designed with one goal in mind: helping deserving students access the education they deserve.
                     </Text>
                     <Text style={{ display: 'block', marginTop: 12, color: '#6b7280', fontSize: 16 }}>
-                        By using STUFAPS, your institution joins a community dedicated to removing financial barriers to education 
-                        and ensuring equitable access to scholarship opportunities for qualified students across all Higher Education 
+                        By using STUFAPS, your institution joins a community dedicated to removing financial barriers to education
+                        and ensuring equitable access to scholarship opportunities for qualified students across all Higher Education
                         Institutions.
                     </Text>
                 </div>
@@ -441,21 +441,21 @@ export default function AboutUs() {
                         <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
                             Meet the Team
                         </Title>
-                     
 
-                        
+
+
 
                     </Space>
                     <br /> <br />
                     <Button
-                            type="primary"
-                            icon={<EditOutlined />}
-                            onClick={() => {
-                                setSelectedPerson(null)
-                                setEditModalOpen(true)
-                                setIsEditMode(false)
-                            }}
-                        >
+                        type="primary"
+                        icon={<EditOutlined />}
+                        onClick={() => {
+                            setSelectedPerson(null)
+                            setEditModalOpen(true)
+                            setIsEditMode(false)
+                        }}
+                    >
                         Edit Employees
                     </Button>
                     <Button
@@ -492,15 +492,15 @@ export default function AboutUs() {
                             <Title level={4} style={{ color: '#1a1a1a', fontWeight: 600, marginBottom: 16 }}>
                                 Team Leaders
                             </Title>
-                            
+
                             {teamLeaders.length > 0 ? (
                                 <Row gutter={[24]} justify="center" style={{ marginBottom: 32 }}>
                                     {teamLeaders.map((leader) => (
                                         <Col key={leader.id || leader.email || leader.fname} xs={24} sm={12} md={8} lg={6}>
-                                            <Card 
-                                                bordered={false} 
-                                                style={{ 
-                                                    textAlign: 'center', 
+                                            <Card
+                                                bordered={false}
+                                                style={{
+                                                    textAlign: 'center',
                                                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                                                     borderRadius: 0
                                                 }}
@@ -516,11 +516,11 @@ export default function AboutUs() {
                                                     />
                                                 </div>
                                                 <Text strong style={{ display: 'block', fontSize: 16, color: '#1a1a1a', marginBottom: 4 }}>
-                                                    {leader.fname}{leader.middle_initial && ' ' + leader.middle_initial + ','} {leader.last_name}{leader.name_extension && ' ' + leader.name_extension}
+                                                    {leader.fname}{leader.middle_initial && ' ' + leader.middle_initial + '.'} {leader.last_name}{leader.name_extension && ' ' + leader.name_extension}
                                                 </Text>
                                                 <Space direction="vertical" size={8} style={{ width: '100%' }}>
                                                     <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 14 }}>
-                                                    <FileOutlined />
+                                                        <FileOutlined />
                                                         {leader.position}
                                                     </Text>
                                                     <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 13 }}>
@@ -548,10 +548,10 @@ export default function AboutUs() {
                                 <Row gutter={[24]} justify="center">
                                     {teamMembers.map((member) => (
                                         <Col key={member.id} xs={24} sm={12} md={8} lg={6}>
-                                            <Card 
-                                                bordered={false} 
-                                                style={{ 
-                                                    textAlign: 'center', 
+                                            <Card
+                                                bordered={false}
+                                                style={{
+                                                    textAlign: 'center',
                                                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                                                     borderRadius: 0
                                                 }}
@@ -567,11 +567,11 @@ export default function AboutUs() {
                                                     />
                                                 </div>
                                                 <Text strong style={{ display: 'block', fontSize: 16, color: '#1a1a1a', marginBottom: 4 }}>
-                                                    {member.fname}{member.middle_initial && ' ' + member.middle_initial + ','} {member.last_name}{member.name_extension && ' ' + member.name_extension}
+                                                    {member.fname}{member.middle_initial && ' ' + member.middle_initial + '.'} {member.last_name}{member.name_extension && ' ' + member.name_extension}
                                                 </Text>
                                                 <Space direction="vertical" size={8} style={{ width: '100%' }}>
                                                     <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 14 }}>
-                                                    <FileOutlined />
+                                                        <FileOutlined />
                                                         {member.position}
                                                     </Text>
                                                     <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 13 }}>
