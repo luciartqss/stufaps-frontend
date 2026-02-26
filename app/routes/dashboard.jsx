@@ -1,16 +1,16 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Progress, Select, Statistic, Space, Button } from 'antd'
+import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Select, Statistic, Space, Button, Badge, Tooltip } from 'antd'
 import {
   TeamOutlined,
   CheckCircleOutlined,
   TrophyOutlined,
   CloseCircleOutlined,
   DollarOutlined,
-  CalendarOutlined,
   WarningOutlined,
   FilterOutlined,
-  UserOutlined,
   RightOutlined,
-  ReloadOutlined,
+  ExclamationCircleOutlined,
+  AlertOutlined,
+  BankOutlined,
 } from '@ant-design/icons'
 import {
   PieChart,
@@ -24,10 +24,6 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
 } from 'recharts'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -42,20 +38,31 @@ export function meta() {
   ]
 }
 
-// Clean card styles
-const cardStyle = {
-  borderRadius: 12,
-  border: '1px solid #f0f2f5',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-  transition: 'all 0.3s ease',
+// Shared card styles
+const kpiCardStyle = {
+  borderRadius: 10,
+  border: '1px solid #f0f0f0',
+  boxShadow: '0 1px 4px rgba(0, 0, 0, 0.04)',
+  height: '100%',
 }
 
-const mainCardStyle = {
-  borderRadius: 16,
+const sectionCardStyle = {
+  borderRadius: 12,
   border: '1px solid #e8eaed',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
   background: '#fff',
+  height: '100%',
 }
+
+// Warning definitions ordered by severity (critical first)
+const WARNING_CONFIG = [
+  { key: 'duplicate_award_numbers', label: 'Duplicate Award Numbers', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e' },
+  { key: 'duplicate_lrn', label: 'Duplicate LRN', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e' },
+  { key: 'incomplete_info', label: 'Incomplete Records', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96' },
+  { key: 'no_award_number', label: 'Missing Award Number', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
+  { key: 'no_lrn', label: 'Missing LRN', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
+  { key: 'no_uii', label: 'Missing UII (Institutions)', severity: 'low', color: '#7c7c7c', bg: '#fafafa', border: '#d9d9d9' },
+]
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -79,17 +86,16 @@ export default function Dashboard() {
       totalDisbursed: 0,
     },
     statusDistribution: [],
-    degreeLevels: [],
     scholarshipPrograms: [],
     institutionTypes: [],
     recentRegistrations: [],
     warnings: {
-      no_uii: { count: 0, students: [] },
-      no_lrn: { count: 0, students: [] },
+      no_uii: { count: 0 },
+      no_lrn: { count: 0 },
       duplicate_lrn: { count: 0, duplicates: [], students: [] },
-      no_award_number: { count: 0, students: [] },
+      no_award_number: { count: 0 },
       duplicate_award_numbers: { count: 0, students: [] },
-      incomplete_info: { count: 0, students: [] },
+      incomplete_info: { count: 0 },
     },
   })
 
@@ -104,7 +110,7 @@ export default function Dashboard() {
 
       const url = `${API_URL}/dashboard/stats${params.toString() ? `?${params.toString()}` : ''}`
       const response = await fetch(url)
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
@@ -136,10 +142,6 @@ export default function Dashboard() {
           value: item.count || 0,
           color: getStatusColor(item.status),
         })),
-        degreeLevels: (data.degree_levels || []).map(item => ({
-          level: item.level || 'Unknown',
-          students: parseInt(item.students) || 0,
-        })),
         scholarshipPrograms: (data.scholarship_programs || []).map(item => ({
           program: item.scholarship_program || 'Unknown',
           count: parseInt(item.count) || 0,
@@ -150,12 +152,12 @@ export default function Dashboard() {
         })),
         recentRegistrations: data.recent_registrations || [],
         warnings: data.warnings || {
-          no_uii: { count: 0, students: [] },
-          no_lrn: { count: 0, students: [] },
+          no_uii: { count: 0 },
+          no_lrn: { count: 0 },
           duplicate_lrn: { count: 0, duplicates: [], students: [] },
-          no_award_number: { count: 0, students: [] },
+          no_award_number: { count: 0 },
           duplicate_award_numbers: { count: 0, students: [] },
-          incomplete_info: { count: 0, students: [] },
+          incomplete_info: { count: 0 },
         },
       })
     } catch (err) {
@@ -194,28 +196,76 @@ export default function Dashboard() {
   }
 
   const getPercentage = (value) => {
-    if (dashboardData.stats.totalStudents === 0) return 0
+    if (dashboardData.stats.totalStudents === 0) return '0.0'
     return ((value / dashboardData.stats.totalStudents) * 100).toFixed(1)
   }
 
   const formatCurrency = (value) => {
-    if (value >= 1000000) {
-      return `₱${(value / 1000000).toFixed(2)}M`
-    } else if (value >= 1000) {
-      return `₱${(value / 1000).toFixed(1)}K`
-    }
-    return `₱${value.toLocaleString()}`
+    if (value >= 1000000) return `₱${(value / 1000000).toFixed(2)}M`
+    if (value >= 1000) return `₱${(value / 1000).toFixed(1)}K`
+    return `₱${Number(value).toLocaleString()}`
   }
 
   const getTotalWarnings = () => {
     const w = dashboardData.warnings
-    return (w.no_uii?.count || 0) + 
-           (w.no_lrn?.count || 0) + 
-           (w.duplicate_lrn?.count || 0) + 
+    return (w.no_uii?.count || 0) +
+           (w.no_lrn?.count || 0) +
+           (w.duplicate_lrn?.count || 0) +
            (w.no_award_number?.count || 0) +
            (w.duplicate_award_numbers?.count || 0) +
            (w.incomplete_info?.count || 0)
   }
+
+  const getActiveWarnings = () => {
+    return WARNING_CONFIG.filter(w => (dashboardData.warnings[w.key]?.count || 0) > 0)
+  }
+
+  const formatStudentName = (record) => {
+    const parts = [record.surname, record.first_name]
+    if (record.middle_name) parts.push(record.middle_name.charAt(0) + '.')
+    if (record.extension) parts.push(record.extension)
+    return parts.join(', ')
+  }
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—'
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
+
+  // Recent registrations table columns
+  const recentColumns = [
+    {
+      title: 'Name',
+      key: 'name',
+      ellipsis: true,
+      render: (_, r) => <Text strong style={{ fontSize: 13 }}>{formatStudentName(r)}</Text>,
+    },
+    {
+      title: 'Program',
+      dataIndex: 'degree_program',
+      key: 'degree_program',
+      ellipsis: true,
+      render: (v) => <Text style={{ fontSize: 13, color: '#595959' }}>{v || '—'}</Text>,
+    },
+    {
+      title: 'Status',
+      dataIndex: 'scholarship_status',
+      key: 'status',
+      width: 100,
+      render: (status) => {
+        const colorMap = { Active: 'green', Graduated: 'blue', Terminated: 'red' }
+        return <Tag color={colorMap[status] || 'default'} style={{ margin: 0 }}>{status || 'Unknown'}</Tag>
+      },
+    },
+    {
+      title: 'Added',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 120,
+      render: (v) => <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{formatDate(v)}</Text>,
+    },
+  ]
 
   if (loading && !dashboardData.stats.totalStudents) {
     return (
@@ -229,7 +279,7 @@ export default function Dashboard() {
   if (error) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
-        <Empty 
+        <Empty
           description={
             <div style={{ textAlign: 'center' }}>
               <Text type="danger" strong>Failed to load dashboard</Text>
@@ -242,355 +292,343 @@ export default function Dashboard() {
     )
   }
 
+  const totalWarnings = getTotalWarnings()
+  const activeWarnings = getActiveWarnings()
+
   return (
     <div>
-      {/* Header */}
-      <div style={{ marginBottom: 24, paddingBottom: 20, borderBottom: '1px solid #e8eaed' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* ── Header with Filters ── */}
+      <div style={{ marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid #e8eaed' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>Dashboard</Title>
-            <Text style={{ color: '#6b7280', fontSize: 16 }}>Student Financial Assistance Overview</Text>
+            <Text style={{ color: '#8c8c8c', fontSize: 14 }}>Scholarship program monitoring and operational overview</Text>
           </div>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Space size={12}>
-              <FilterOutlined style={{ color: '#6b7280' }} />
-              <Select
-                placeholder="Academic Year"
-                value={filters.academic_year}
-                onChange={(v) => handleFilterChange('academic_year', v)}
-                allowClear
-                style={{ width: 140 }}
-                size="middle"
-              >
-                {filterOptions.academic_years.map(ay => (
-                  <Select.Option key={ay} value={ay}>{ay}</Select.Option>
-                ))}
-              </Select>
-              <Select
-                placeholder="Semester"
-                value={filters.semester}
-                onChange={(v) => handleFilterChange('semester', v)}
-                allowClear
-                style={{ width: 120 }}
-                size="middle"
-              >
-                {filterOptions.semesters.map(sem => (
-                  <Select.Option key={sem} value={sem}>{sem}</Select.Option>
-                ))}
-              </Select>
-              {(filters.semester || filters.academic_year) && (
-                <Button type="text" onClick={clearFilters} style={{ color: '#ef4444' }}>
-                  Clear
-                </Button>
-              )}
-            </Space>
-          </div>
+          <Space size={10}>
+            <FilterOutlined style={{ color: '#8c8c8c' }} />
+            <Select
+              placeholder="Academic Year"
+              value={filters.academic_year}
+              onChange={(v) => handleFilterChange('academic_year', v)}
+              allowClear
+              style={{ width: 140 }}
+              size="middle"
+            >
+              {filterOptions.academic_years.map(ay => (
+                <Select.Option key={ay} value={ay}>{ay}</Select.Option>
+              ))}
+            </Select>
+            <Select
+              placeholder="Semester"
+              value={filters.semester}
+              onChange={(v) => handleFilterChange('semester', v)}
+              allowClear
+              style={{ width: 120 }}
+              size="middle"
+            >
+              {filterOptions.semesters.map(sem => (
+                <Select.Option key={sem} value={sem}>{sem}</Select.Option>
+              ))}
+            </Select>
+            {(filters.semester || filters.academic_year) && (
+              <Button type="text" size="small" onClick={clearFilters} style={{ color: '#ff4d4f' }}>Clear</Button>
+            )}
+          </Space>
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div style={{ marginBottom: 24 }}>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <TeamOutlined style={{ fontSize: 32, color: '#3b82f6' }} />
+      {/* ── KPI Strip ── */}
+      <Row gutter={[12, 12]} style={{ marginBottom: 20 }}>
+        <Col xs={24} sm={12} md={8} xl={4}>
+          <Card style={kpiCardStyle} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TeamOutlined style={{ fontSize: 20, color: '#3b82f6' }} />
               </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Total Students</Text>}
-                value={dashboardData.stats.totalStudents}
-                valueStyle={{ color: '#1a1a1a', fontSize: 28, fontWeight: 600 }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <CheckCircleOutlined style={{ fontSize: 32, color: '#10b981' }} />
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Total Scholars</Text>
+                <Text strong style={{ fontSize: 22, color: '#1a1a1a', lineHeight: 1.2 }}>{dashboardData.stats.totalStudents.toLocaleString()}</Text>
               </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Active</Text>}
-                value={dashboardData.stats.activeScholars}
-                valueStyle={{ color: '#1a1a1a', fontSize: 28, fontWeight: 600 }}
-                suffix={<Text style={{ color: '#6b7280', fontSize: 14 }}>({getPercentage(dashboardData.stats.activeScholars)}%)</Text>}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <TrophyOutlined style={{ fontSize: 32, color: '#3b82f6' }} />
-              </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Graduated</Text>}
-                value={dashboardData.stats.graduated}
-                valueStyle={{ color: '#1a1a1a', fontSize: 28, fontWeight: 600 }}
-                suffix={<Text style={{ color: '#6b7280', fontSize: 14 }}>({getPercentage(dashboardData.stats.graduated)}%)</Text>}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <CloseCircleOutlined style={{ fontSize: 32, color: '#ef4444' }} />
-              </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Terminated</Text>}
-                value={dashboardData.stats.terminated}
-                valueStyle={{ color: '#1a1a1a', fontSize: 28, fontWeight: 600 }}
-                suffix={<Text style={{ color: '#6b7280', fontSize: 14 }}>({getPercentage(dashboardData.stats.terminated)}%)</Text>}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <UserOutlined style={{ fontSize: 32, color: '#f59e0b' }} />
-              </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Others</Text>}
-                value={dashboardData.stats.others}
-                valueStyle={{ color: '#1a1a1a', fontSize: 28, fontWeight: 600 }}
-                suffix={<Text style={{ color: '#6b7280', fontSize: 14 }}>({getPercentage(dashboardData.stats.others)}%)</Text>}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8} xl={4}>
-            <Card style={cardStyle} styles={{ body: { padding: '20px', textAlign: 'center' } }}>
-              <div style={{ marginBottom: 12 }}>
-                <DollarOutlined style={{ fontSize: 32, color: '#8b5cf6' }} />
-              </div>
-              <Statistic
-                title={<Text style={{ color: '#6b7280', fontSize: 14 }}>Total Disbursed</Text>}
-                value={formatCurrency(dashboardData.stats.totalDisbursed)}
-                valueStyle={{ color: '#1a1a1a', fontSize: 24, fontWeight: 600 }}
-              />
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      {/* Data Quality Alert */}
-      {getTotalWarnings() > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <Card
-            style={{ 
-              ...cardStyle, 
-              borderColor: '#f59e0b', 
-              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-              cursor: 'pointer' 
-            }}
-            styles={{ body: { padding: '16px 20px' } }}
-            onClick={() => navigate('/data-quality')}
-            hoverable
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <WarningOutlined style={{ color: '#d97706', fontSize: 20 }} />
-                <div>
-                  <Text strong style={{ color: '#92400e', fontSize: 16 }}>
-                    {getTotalWarnings()} Data Quality Issues Found
-                  </Text>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-                    {dashboardData.warnings.duplicate_award_numbers?.count > 0 && (
-                      <Tag color="red">{dashboardData.warnings.duplicate_award_numbers.count} Duplicate Awards</Tag>
-                    )}
-                    {dashboardData.warnings.duplicate_lrn?.count > 0 && (
-                      <Tag color="red">{dashboardData.warnings.duplicate_lrn.count} Duplicate LRN</Tag>
-                    )}
-                    {dashboardData.warnings.no_uii?.count > 0 && (
-                      <Tag color="orange">{dashboardData.warnings.no_uii.count} Missing UII</Tag>
-                    )}
-                    {dashboardData.warnings.no_lrn?.count > 0 && (
-                      <Tag color="orange">{dashboardData.warnings.no_lrn.count} Missing LRN</Tag>
-                    )}
-                    {dashboardData.warnings.incomplete_info?.count > 0 && (
-                      <Tag color="volcano">{dashboardData.warnings.incomplete_info.count} Incomplete Info</Tag>
-                    )}
-                    {dashboardData.warnings.no_award_number?.count > 0 && (
-                      <Tag color="orange">{dashboardData.warnings.no_award_number.count} Missing Award #</Tag>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <RightOutlined style={{ color: '#92400e' }} />
             </div>
           </Card>
-        </div>
-      )}
-
-      {/* Main Content Grid - Symmetric 3 Columns */}
-      <div style={{ marginBottom: 24 }}>
-        <Row gutter={[24, 24]}>
-          {/* Left Column */}
-          <Col xs={24} lg={8}>
-            <Card
-              title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Status Distribution</Text>}
-              style={mainCardStyle}
-              styles={{ body: { padding: '20px' } }}
-            >
-              {dashboardData.statusDistribution.some(item => item.value > 0) ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={dashboardData.statusDistribution.filter(item => item.value > 0)}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="50%"
-                      outerRadius="85%"
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {dashboardData.statusDistribution
-                        .filter(item => item.value > 0)
-                        .map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                    </Pie>
-                    <RechartsTooltip />
-                    <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-                  <Empty description="No data available" />
+        </Col>
+        <Col xs={12} sm={12} md={8} xl={4}>
+          <Card style={kpiCardStyle} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CheckCircleOutlined style={{ fontSize: 20, color: '#16a34a' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Active</Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <Text strong style={{ fontSize: 22, color: '#1a1a1a', lineHeight: 1.2 }}>{dashboardData.stats.activeScholars.toLocaleString()}</Text>
+                  <Text style={{ fontSize: 12, color: '#16a34a' }}>{getPercentage(dashboardData.stats.activeScholars)}%</Text>
                 </div>
-              )}
-            </Card>
-          </Col>
-
-          {/* Center Column */}
-          <Col xs={24} lg={8}>
-            <Card
-              title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Scholarship Programs</Text>}
-              style={mainCardStyle}
-              styles={{ body: { padding: '20px' } }}
-            >
-              {dashboardData.scholarshipPrograms.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dashboardData.scholarshipPrograms.slice(0, 6)} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
-                    <XAxis type="number" tick={{ fill: '#6b7280', fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="program" tick={{ fill: '#374151', fontSize: 12 }} width={80} tickLine={false} axisLine={false} />
-                    <RechartsTooltip />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} maxBarSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-                  <Empty description="No program data" />
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={8} xl={4}>
+          <Card style={kpiCardStyle} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TrophyOutlined style={{ fontSize: 20, color: '#2563eb' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Graduated</Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <Text strong style={{ fontSize: 22, color: '#1a1a1a', lineHeight: 1.2 }}>{dashboardData.stats.graduated.toLocaleString()}</Text>
+                  <Text style={{ fontSize: 12, color: '#2563eb' }}>{getPercentage(dashboardData.stats.graduated)}%</Text>
                 </div>
-              )}
-            </Card>
-          </Col>
-
-          {/* Right Column */}
-          <Col xs={24} lg={8}>
-            <Card
-              title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Degree Levels</Text>}
-              style={mainCardStyle}
-              styles={{ body: { padding: '20px' } }}
-            >
-              {dashboardData.degreeLevels.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dashboardData.degreeLevels}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
-                    <XAxis dataKey="level" tick={{ fill: '#374151', fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} tickLine={false} axisLine={false} />
-                    <RechartsTooltip />
-                    <Bar dataKey="students" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={40} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-                  <Empty description="No degree data" />
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={8} xl={4}>
+          <Card style={kpiCardStyle} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CloseCircleOutlined style={{ fontSize: 20, color: '#dc2626' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Terminated</Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <Text strong style={{ fontSize: 22, color: '#1a1a1a', lineHeight: 1.2 }}>{dashboardData.stats.terminated.toLocaleString()}</Text>
+                  <Text style={{ fontSize: 12, color: '#dc2626' }}>{getPercentage(dashboardData.stats.terminated)}%</Text>
                 </div>
-              )}
-            </Card>
-          </Col>
-        </Row>
-      </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={12} sm={12} md={8} xl={4}>
+          <Card style={kpiCardStyle} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <ExclamationCircleOutlined style={{ fontSize: 20, color: '#d97706' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Others</Text>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+                  <Text strong style={{ fontSize: 22, color: '#1a1a1a', lineHeight: 1.2 }}>{dashboardData.stats.others.toLocaleString()}</Text>
+                  <Text style={{ fontSize: 12, color: '#d97706' }}>{getPercentage(dashboardData.stats.others)}%</Text>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} xl={4}>
+          <Card style={{ ...kpiCardStyle, background: '#fafaff' }} styles={{ body: { padding: '16px 20px' } }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 10, background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DollarOutlined style={{ fontSize: 20, color: '#7c3aed' }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Total Disbursed</Text>
+                <Text strong style={{ fontSize: 20, color: '#1a1a1a', lineHeight: 1.2 }}>{formatCurrency(dashboardData.stats.totalDisbursed)}</Text>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
 
-      {/* Bottom Section - Progress Overview */}
-      <div>
+      {/* ── Data Quality Alerts ── */}
+      {totalWarnings > 0 && (
         <Card
-          title={<Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Progress Overview</Text>}
-          style={mainCardStyle}
-          styles={{ body: { padding: '24px' } }}
+          style={{ ...sectionCardStyle, marginBottom: 20, borderColor: '#ffd666' }}
+          styles={{ body: { padding: '16px 20px' } }}
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <AlertOutlined style={{ color: '#d48806', fontSize: 16 }} />
+              <Text strong style={{ fontSize: 15 }}>Attention Required</Text>
+              <Badge count={totalWarnings} style={{ backgroundColor: '#faad14' }} />
+            </div>
+          }
+          extra={
+            <Button type="link" size="small" onClick={() => navigate('/data-quality')} style={{ padding: 0 }}>
+              View All <RightOutlined style={{ fontSize: 10 }} />
+            </Button>
+          }
         >
-          <Row gutter={[32, 24]}>
-            <Col xs={24} sm={12} lg={6}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#6b7280' }}>Active Students</Text>
-                  <Text strong style={{ color: '#10b981' }}>
-                    {dashboardData.stats.activeScholars} ({getPercentage(dashboardData.stats.activeScholars)}%)
-                  </Text>
-                </div>
-                <Progress 
-                  percent={parseFloat(getPercentage(dashboardData.stats.activeScholars))} 
-                  showInfo={false}
-                  strokeColor="#10b981"
-                  trailColor="#f3f4f6"
-                  size={[undefined, 8]}
-                />
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#6b7280' }}>Graduated</Text>
-                  <Text strong style={{ color: '#3b82f6' }}>
-                    {dashboardData.stats.graduated} ({getPercentage(dashboardData.stats.graduated)}%)
-                  </Text>
-                </div>
-                <Progress 
-                  percent={parseFloat(getPercentage(dashboardData.stats.graduated))} 
-                  showInfo={false}
-                  strokeColor="#3b82f6"
-                  trailColor="#f3f4f6"
-                  size={[undefined, 8]}
-                />
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#6b7280' }}>Terminated</Text>
-                  <Text strong style={{ color: '#ef4444' }}>
-                    {dashboardData.stats.terminated} ({getPercentage(dashboardData.stats.terminated)}%)
-                  </Text>
-                </div>
-                <Progress 
-                  percent={parseFloat(getPercentage(dashboardData.stats.terminated))} 
-                  showInfo={false}
-                  strokeColor="#ef4444"
-                  trailColor="#f3f4f6"
-                  size={[undefined, 8]}
-                />
-              </div>
-            </Col>
-            <Col xs={24} sm={12} lg={6}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ color: '#6b7280' }}>Others</Text>
-                  <Text strong style={{ color: '#f59e0b' }}>
-                    {dashboardData.stats.others} ({getPercentage(dashboardData.stats.others)}%)
-                  </Text>
-                </div>
-                <Progress 
-                  percent={parseFloat(getPercentage(dashboardData.stats.others))} 
-                  showInfo={false}
-                  strokeColor="#f59e0b"
-                  trailColor="#f3f4f6"
-                  size={[undefined, 8]}
-                />
-              </div>
-            </Col>
+          <Row gutter={[12, 10]}>
+            {activeWarnings.map((w) => {
+              const count = dashboardData.warnings[w.key]?.count || 0
+              return (
+                <Col xs={24} sm={12} md={8} key={w.key}>
+                  <div
+                    onClick={() => navigate('/data-quality')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      background: w.bg,
+                      border: `1px solid ${w.border}`,
+                      cursor: 'pointer',
+                      transition: 'opacity 0.2s',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
+                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                      <WarningOutlined style={{ color: w.color, fontSize: 14, flexShrink: 0 }} />
+                      <Text style={{ color: w.color, fontSize: 13, fontWeight: 500 }} ellipsis>{w.label}</Text>
+                    </div>
+                    <Badge
+                      count={count}
+                      style={{
+                        backgroundColor: w.severity === 'critical' ? '#ff4d4f' : w.severity === 'high' ? '#ff7a45' : '#faad14',
+                        fontSize: 11,
+                        flexShrink: 0,
+                      }}
+                    />
+                  </div>
+                </Col>
+              )
+            })}
           </Row>
         </Card>
-      </div>
+      )}
+
+      {/* ── Distribution Analysis (2 columns) ── */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 20 }}>
+        {/* Status Composition */}
+        <Col xs={24} lg={10}>
+          <Card
+            title={<Text strong style={{ fontSize: 15 }}>Scholar Status Composition</Text>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {dashboardData.statusDistribution.some(item => item.value > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={dashboardData.statusDistribution.filter(item => item.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="52%"
+                    outerRadius="82%"
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                  >
+                    {dashboardData.statusDistribution
+                      .filter(item => item.value > 0)
+                      .map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value, name) => [`${value.toLocaleString()} scholars`, name]}
+                  />
+                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No status data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* Scholarship Programs */}
+        <Col xs={24} lg={14}>
+          <Card
+            title={<Text strong style={{ fontSize: 15 }}>Scholars by Program</Text>}
+            extra={<Text type="secondary" style={{ fontSize: 12 }}>Top {Math.min(dashboardData.scholarshipPrograms.length, 8)}</Text>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {dashboardData.scholarshipPrograms.length > 0 ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={dashboardData.scholarshipPrograms.slice(0, 8)} layout="vertical" margin={{ left: 0, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="program" tick={{ fill: '#434343', fontSize: 12 }} width={90} tickLine={false} axisLine={false} />
+                  <RechartsTooltip formatter={(value) => [`${value.toLocaleString()} scholars`, 'Count']} />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} maxBarSize={22} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No program data" />
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── Bottom Panel: Institution Types + Recent Activity ── */}
+      <Row gutter={[16, 16]}>
+        {/* Institution Type Distribution */}
+        <Col xs={24} lg={10}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BankOutlined style={{ color: '#8c8c8c', fontSize: 14 }} />
+                <Text strong style={{ fontSize: 15 }}>By Institution Type</Text>
+              </div>
+            }
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {dashboardData.institutionTypes.length > 0 ? (
+              <div>
+                {dashboardData.institutionTypes.slice(0, 6).map((item, idx) => {
+                  const max = Math.max(...dashboardData.institutionTypes.map(i => i.count))
+                  const pct = max > 0 ? (item.count / max) * 100 : 0
+                  return (
+                    <div key={idx} style={{ marginBottom: idx < dashboardData.institutionTypes.length - 1 ? 14 : 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={{ fontSize: 13, color: '#434343' }} ellipsis>{item.type}</Text>
+                        <Text strong style={{ fontSize: 13, color: '#1a1a1a', flexShrink: 0, marginLeft: 8 }}>{item.count.toLocaleString()}</Text>
+                      </div>
+                      <div style={{ height: 6, borderRadius: 3, background: '#f5f5f5', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: '#36cfc9', transition: 'width 0.6s ease' }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <Empty description="No institution data" style={{ padding: '40px 0' }} />
+            )}
+          </Card>
+        </Col>
+
+        {/* Recent Registrations */}
+        <Col xs={24} lg={14}>
+          <Card
+            title={<Text strong style={{ fontSize: 15 }}>Recent Registrations</Text>}
+            extra={
+              <Button type="link" size="small" onClick={() => navigate('/students')} style={{ padding: 0 }}>
+                View All <RightOutlined style={{ fontSize: 10 }} />
+              </Button>
+            }
+            style={sectionCardStyle}
+            styles={{ body: { padding: '4px 0 0' } }}
+          >
+            {dashboardData.recentRegistrations.length > 0 ? (
+              <Table
+                dataSource={dashboardData.recentRegistrations}
+                columns={recentColumns}
+                rowKey="student_id"
+                pagination={false}
+                size="small"
+                style={{ cursor: 'default' }}
+                onRow={(record) => ({
+                  onClick: () => navigate(`/students/${record.student_id}`),
+                  style: { cursor: 'pointer' },
+                })}
+              />
+            ) : (
+              <Empty description="No recent registrations" style={{ padding: '40px 0' }} />
+            )}
+          </Card>
+        </Col>
+      </Row>
     </div>
   )
 }
