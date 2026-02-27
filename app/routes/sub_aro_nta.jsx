@@ -265,7 +265,7 @@ export default function SUB_ARO_NTA() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>SUB-ARO/NTA</Title>
-            <Text style={{ color: '#6b7280', fontSize: 16 }}>Sub Allotment Release Order / Notice to Appear</Text>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>Sub Allotment Release Order / Notice of Transfer Allocation</Text>
           </div>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function SUB_ARO_NTA() {
                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selectedFiscalYear?.id === fy.id ? 'rgba(37, 99, 235, 0.3)' : 'transparent')}
                 >
                   <strong>FY: {fy.fiscal_year}</strong>
-                  <div style={{ fontSize: '11px', marginTop: '2px', opacity: 0.8 }}>{fy.year_suffix}</div>
+                  <div style={{ fontSize: '11px', marginTop: '2px', opacity: 0.8 }}>{fy.fiscal_year}-{parseInt(fy.fiscal_year) + 1}</div>
                 </li>
               ))}
             </ul>

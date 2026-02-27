@@ -609,6 +609,44 @@ export default function FinancialAssistanceMTP() {
           </ol>
         </Typography>
       </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Issuances
+                    </Title>
+                </Space>
+                <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                    <ul className="list-disc">
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/CMO-NO.-11-S.-2024.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                CHED Memorandum Order No. 11, Series of 2024 – Implementing Guidelines of the Scholarship Program for Future Medical Technologists and Pharmacists (MTP-SP)
+                            </a>
+                        </li>
+                        <br />
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/MOC-Call-for-Application-for-the-Scholarship-Program-for-Future-Medical-Technologists-and-Pharmacists-MTP-SP-Program-for-AY-2025-2026.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Memorandum from the Chairperson – 28 April 2025 – Call for Application for the Scholarship Program for Future Medical Technologists and Pharmacists (MTP-SP) Program for Academic Year 2025-2026
+                            </a>
+                            
+                        </li>
+                        
+                    </ul>
+                </Typography>
+              
+            </div>
+
     </div>
   )
 }

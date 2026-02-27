@@ -616,7 +616,7 @@ export default function AboutUs() {
                                         >
                                             <div style={{ textAlign: 'left', width: '100%' }}>
                                                 <div style={{ fontWeight: 600 }}>
-                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + ','} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
+                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + '.'} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
                                                 </div>
                                                 <div style={{ fontSize: 12, color: '#6b7280' }}>{employee.position}</div>
                                             </div>

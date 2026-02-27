@@ -527,6 +527,85 @@ export default function FinancialAssistanceCoScho() {
           PCA shall be informed of any replacement made for information and record purposes.
         </Text>
       </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Issuances
+          </Title>
+        </Space>
+        <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+          <ul className="list-disc">
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/20230913-JMC-No-01-S-2023-Implementing-Guidelines-of-the-Scholarship-Program-for-Coconut-Farmers-and-their-Families-CoScho.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CHED – PCA Joint Memorandum Circular No. 1, series of 2023
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/MOC-CALL-FOR-APPLICATIONS-FOR-THE-SCHOLARSHIP-PROGRAM-FOR-COCONUT-FRAMERS-AND-THEIR-FAMILIES-CoScho-FOR-ACADEMIC-YEAR-AY-2023-2024.pdf.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Memorandum from the Chairperson – Call for Applications for the Scholarship Program for Coconut Farmers and their Families (CoScho) for AY 2023-2024
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/CAO-NO.-2-S.-2023-Operational-Guidelines-on-the-Implementation-of-the-Scholarship-Program-for-Coconut-Farmers-and-their-Families-for-CHED-Regional-Offices.pdf.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CHED Administrative Order No. 02, Series of 2023 – Operational Guidelines on the Implementation of the Scholarship Program for Coconut Farmers and their Families (CoScho) for CHED Regional Offices
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/CMO-No.-17-S.-2023-Operational-Guidelines-on-the-Implementation-of-the-Scholarship-Program-for-Coconut-Farmers-and-their-Families-for-Higher-Education-Institution.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CMO No. 17, Series of 2023 – Operational Guidelines on the Implementation of the Scholarship Program for Coconut Farmers and their Families (CoScho) for Participating Higher Education Institutions
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/2024-MOC-COSCHO-CALL-FOR-APPLICATION.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Memorandum from the Chairperson – Call for Applications for the Scholarship Program for Coconut Farmers and their Families (CoScho) for AY 2024-2025
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/MOED_NO_486_S_2025_CoScho_Call_for_Aplication_AY_25_26.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Memorandum from  the Office of the Executive Director – Call for Application for the Scholarship Program for Coconut Farmers and their Families (CoScho) for AY 2025-2026
+              </a>
+            </li>      
+          </ul>
+        </Typography>
+      </div>
+
     </div>
   );
 }

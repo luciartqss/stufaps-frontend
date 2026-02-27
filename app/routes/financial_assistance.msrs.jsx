@@ -645,6 +645,56 @@ export default function FinancialAssistanceMSRS() {
                     Act under the scholarship programs of SUCs and CHED.
                 </Text>
             </div>
+
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Issuances
+                    </Title>
+                </Space>
+                <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                    <ul className="list-disc">
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/MSRS_Form_10-Scholarship-Application-Form.xlsx"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                MSRS Application Form
+                            </a>
+                        </li>
+                        <br />
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/MSRS-Form-No-1_Program-Evaluation-Sheet_2025-version.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                MSRS Evaluation Sheet 
+                            </a>
+                            (For SUCs)
+                        </li>
+                        <br />
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/MSRS-_Form-No.-2-Commitment-Render-Service.docx"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Scholar’s Commitment to Render Service Obligation
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </Typography>
+            </div>
+
         </div>
+
+
     );
 }
