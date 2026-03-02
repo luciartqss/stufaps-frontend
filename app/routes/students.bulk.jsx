@@ -934,6 +934,10 @@ export default function ImportBulk() {
         setFileLoadingState({ phase: `Loaded ${normalized.length} records`, detail: 'Checking for duplicates...' })
         await new Promise(r => setTimeout(r, 0))
 
+        // Set AYs detected from the file so disbursement keys line up at submit time
+        if (fileAys.length > 0) {
+          setAcademicYears(fileAys)
+        }
         setData(normalized)
         validateData(normalized)
 

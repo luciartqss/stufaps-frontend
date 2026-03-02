@@ -210,7 +210,7 @@ export default function Sidebar() {
       ...(getAccess('financial_assistance') !== 'none' ? [{
         key: '/financial_assistance',
         icon: <BarChartOutlined />,
-        label: <NavLink to="/financial_assistance">Financial Assistance</NavLink>,
+        label: <NavLink to="/financial_assistance">CMOs</NavLink>,
       }] : []),
       ...(getAccess('logs') !== 'none' ? [{
         key: '/logs',
