@@ -1,13 +1,11 @@
 import { Link } from 'react-router-dom'
-import { useEffect, useState, useMemo } from 'react'
-import { Typography, Card, Select, Progress, Spin, Tag, Row, Col, Button, Space } from 'antd'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { Typography, Card, Select, Progress, Spin, Tag, Row, Col, Space, InputNumber, message, Popover, Button } from 'antd'
 import {
   TeamOutlined, ContactsOutlined, UserOutlined,
-  WarningOutlined, PlusOutlined, EditOutlined,
+  WarningOutlined, EditOutlined, CheckOutlined, CloseOutlined,
   RightOutlined, QuestionCircleOutlined, FilterOutlined,
 } from '@ant-design/icons'
-import EditSlotsModal from '../components/EditSlotsModal'
-import UpdateSlotModal from '../components/UpdateSlotModal'
 
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
@@ -22,100 +20,40 @@ export function meta() {
   ]
 }
 
-/* Program definitions */
+/* ── Friendly display names for sub-program codes ── */
+const CODE_LABELS = {
+  FULLSSP: 'Full SSP', HALFSSP: 'Half SSP',
+  FULLSSPGAD: 'Full SSP-GAD', HALFSSPGAD: 'Half SSP-GAD',
+  FULLPESFA: 'Full PESFA', HALFPESFA: 'Half PESFA',
+  FULLPESFAGAD: 'Full PESFA-GAD', HALFPESFAGAD: 'Half PESFA-GAD',
+  FULLESTAT: 'Full Estat', HALFESTAT: 'Half Estat', ESTATISTIKOLAR: 'Estatistikolar',
+  COSCHO: 'CoScho', MSRS: 'MSRS', SIDASGP: 'SIDA-SGP',
+  ACEFGIAHEP: 'ACEF-GIAHEP', MTPSP: 'MTP-SP', CGMSSUCS: 'CGMS-SUCs', SNPLP: 'SNPLP',
+}
+
+/* ── Program definitions ── */
 const PROGRAMS = [
-  {
-    key: 'cmsp',
-    label: 'CMSP',
-    fullName: 'CHED Merit Scholarship Program',
-    link: '/financial_assistance/cmsp',
-    codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'],
-    color: '#1890ff',
-  },
-  {
-    key: 'estatistikolar',
-    label: 'Estatistikolar',
-    fullName: 'CHED Scholarship for Future Statisticians',
-    link: '/financial_assistance/estatistikolar',
-    codes: ['FULL-ESTAT', 'HALF-ESTAT', 'ESTATISTIKOLAR'],
-    color: '#722ed1',
-  },
-  {
-    key: 'coscho',
-    label: 'CoScho',
-    fullName: 'Coconut Farmers and Farmworkers Scholarship',
-    link: '/financial_assistance/CoScho',
-    codes: ['COSCHO'],
-    color: '#13c2c2',
-  },
-  {
-    key: 'msrs',
-    label: 'MSRS',
-    fullName: 'Medical Scholarship and Return Service',
-    link: '/financial_assistance/msrs',
-    codes: ['MSRS'],
-    color: '#eb2f96',
-  },
-  {
-    key: 'sida_sgp',
-    label: 'SIDA-SGP',
-    fullName: 'Sugarcane Industry Development Act Grant',
-    link: '/financial_assistance/Sida_Sgp',
-    codes: ['SIDASGP'],
-    color: '#fa8c16',
-  },
-  {
-    key: 'acef_giahep',
-    label: 'ACEF-GIAHEP',
-    fullName: 'Agricultural Competitiveness Enhancement Fund',
-    link: '/financial_assistance/Acef_Giahep',
-    codes: ['ACEFGIAHEP'],
-    color: '#52c41a',
-  },
-  {
-    key: 'mtp_sp',
-    label: 'MTP-SP',
-    fullName: 'Medical Technologists and Pharmacists Scholarship',
-    link: '/financial_assistance/Mtp_Sp',
-    codes: ['MTPSP'],
-    color: '#2f54eb',
-  },
-  {
-    key: 'cgms_sucs',
-    label: 'CGMS-SUCs',
-    fullName: 'Cash Grant to Medical Students in SUCs',
-    link: '/financial_assistance/Cgms_Sucs',
-    codes: ['CGMSSUCS'],
-    color: '#f5222d',
-  },
-  {
-    key: 'snplp',
-    label: 'SNPLP',
-    fullName: 'Student Nurses Licensure Preparation',
-    link: '/financial_assistance/Snplp',
-    codes: ['SNPLP'],
-    color: '#a0d911',
-  },
+  { key: 'cmsp', label: 'CMSP', fullName: 'CHED Merit Scholarship Program', link: '/financial_assistance/cmsp', codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'], color: '#1890ff' },
+  { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['FULL-ESTAT', 'HALF-ESTAT', 'ESTATISTIKOLAR'], color: '#722ed1' },
+  { key: 'coscho', label: 'CoScho', fullName: 'Coconut Farmers and Farmworkers Scholarship', link: '/financial_assistance/CoScho', codes: ['COSCHO'], color: '#13c2c2' },
+  { key: 'msrs', label: 'MSRS', fullName: 'Medical Scholarship and Return Service', link: '/financial_assistance/msrs', codes: ['MSRS'], color: '#eb2f96' },
+  { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Sugarcane Industry Development Act Grant', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
+  { key: 'acef_giahep', label: 'ACEF-GIAHEP', fullName: 'Agricultural Competitiveness Enhancement Fund', link: '/financial_assistance/Acef_Giahep', codes: ['ACEFGIAHEP'], color: '#52c41a' },
+  { key: 'mtp_sp', label: 'MTP-SP', fullName: 'Medical Technologists and Pharmacists Scholarship', link: '/financial_assistance/Mtp_Sp', codes: ['MTPSP'], color: '#2f54eb' },
+  { key: 'cgms_sucs', label: 'CGMS-SUCs', fullName: 'Cash Grant to Medical Students in SUCs', link: '/financial_assistance/Cgms_Sucs', codes: ['CGMSSUCS'], color: '#f5222d' },
+  { key: 'snplp', label: 'SNPLP', fullName: 'Student Nurses Licensure Preparation', link: '/financial_assistance/Snplp', codes: ['SNPLP'], color: '#a0d911' },
 ]
 
-/* Helpers */
+/* ── Helpers ── */
+const norm = s => s?.toLowerCase().replace(/[-_ ]/g, '')
+
 function getTotals(assistances, codes) {
-  // Normalize codes for comparison (lowercase, remove hyphens)
-  const normalizedCodes = codes.map(c => c.toLowerCase().replace(/-/g, ''))
-  
-  const filtered = assistances.filter(p => {
-    // Normalize backend program name for comparison
-    const normalized = p.scholarship_program_name?.toLowerCase().replace(/-/g, '')
-    return normalizedCodes.includes(normalized)
-  })
+  const normalizedCodes = codes.map(norm)
+  const filtered = assistances.filter(p => normalizedCodes.includes(norm(p.scholarship_program_name)))
 
   if (filtered.length === 1 && (filtered[0].Academic_year === 'All' || filtered[0].academic_year === 'All')) {
     const r = filtered[0]
-    return {
-      slots: Number(r?.total_slot) || 0,
-      filled: Number(r?.total_students) || 0,
-      unfilled: Number(r?.unfilled_slot) || 0,
-    }
+    return { slots: Number(r?.total_slot) || 0, filled: Number(r?.total_students) || 0, unfilled: Number(r?.unfilled_slot) || 0 }
   }
 
   return {
@@ -125,11 +63,26 @@ function getTotals(assistances, codes) {
   }
 }
 
+function getSubPrograms(assistances, codes) {
+  return codes.map(code => {
+    const nc = norm(code)
+    const match = assistances.find(p => norm(p.scholarship_program_name) === nc)
+    return {
+      code: nc.toUpperCase(),
+      label: CODE_LABELS[code.replace(/-/g, '').toUpperCase()] || code,
+      slots: Number(match?.total_slot) || 0,
+      filled: Number(match?.total_students) || 0,
+      unfilled: Number(match?.unfilled_slot) || 0,
+      programName: match?.scholarship_program_name || code.replace(/-/g, '').toUpperCase(),
+    }
+  })
+}
+
 function pct(part, whole) {
   return whole > 0 ? ((part / whole) * 100).toFixed(1) : '0.0'
 }
 
-/* Summary Cards */
+/* ── Summary Cards ── */
 function SummaryCards({ data }) {
   const cards = [
     { title: 'Total Slots', value: data.slots, icon: <ContactsOutlined />, color: '#1890ff', bg: '#e6f7ff' },
@@ -168,99 +121,186 @@ function SummaryCards({ data }) {
   )
 }
 
-/* Program Card */
-function ProgramCard({ program, totals }) {
-  const exceeded = totals.filled > totals.slots && totals.slots > 0
-  const fillPct = parseFloat(pct(totals.filled, totals.slots))
+/* ── Inline Slot Editor (popover content) ── */
+function SlotEditor({ subPrograms, academicYear, onSaved }) {
+  const [edits, setEdits] = useState({})
+  const [saving, setSaving] = useState(false)
+
+  const handleChange = (programName, value) => {
+    setEdits(prev => ({ ...prev, [programName]: value }))
+  }
+
+  const hasChanges = Object.keys(edits).some(k => {
+    const sp = subPrograms.find(s => s.programName === k)
+    return sp && edits[k] !== sp.slots
+  })
+
+  const handleSave = async () => {
+    const changes = Object.entries(edits).filter(([k, v]) => {
+      const sp = subPrograms.find(s => s.programName === k)
+      return sp && v !== sp.slots
+    })
+    if (changes.length === 0) return
+
+    setSaving(true)
+    try {
+      await Promise.all(changes.map(([programName, slots]) =>
+        fetch(`${API_BASE}/scholarship_program_records/upsert-slots`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ scholarship_program_name: programName, Academic_year: academicYear, total_slot: slots }),
+        }).then(r => { if (!r.ok) throw new Error('Failed') })
+      ))
+      message.success('Slots updated')
+      setEdits({})
+      onSaved()
+    } catch {
+      message.error('Failed to update slots')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <Link to={program.link} style={{ textDecoration: 'none', display: 'block', height: '100%' }}>
-      <Card
-        hoverable
-        style={{
-          borderRadius: 12,
-          borderLeft: `3px solid ${exceeded ? '#ff4d4f' : program.color}`,
-          boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
-          height: '100%',
-          transition: 'box-shadow 0.2s ease',
-        }}
-        bodyStyle={{ padding: '16px 20px' }}
-      >
-        {/* Title row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Text strong style={{ fontSize: 15 }}>{program.label}</Text>
-              {exceeded && <Tag color="error" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: 0 }}>Exceeded</Tag>}
-            </div>
-            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {program.fullName}
-            </Text>
-          </div>
-          <RightOutlined style={{ color: '#bfbfbf', fontSize: 12, flexShrink: 0 }} />
+    <div style={{ minWidth: 260 }}>
+      <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
+        Edit Slots — {academicYear}
+      </Text>
+      {subPrograms.map(sp => (
+        <div key={sp.programName} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <Text style={{ fontSize: 12, color: '#595959', flex: 1, minWidth: 0 }} ellipsis>{sp.label}</Text>
+          <InputNumber
+            size="small"
+            min={0}
+            value={edits[sp.programName] ?? sp.slots}
+            onChange={v => handleChange(sp.programName, v)}
+            style={{ width: 80 }}
+            controls={false}
+          />
+          <Text style={{ fontSize: 11, color: '#8c8c8c', width: 50, textAlign: 'right' }}>{sp.filled} filled</Text>
         </div>
-
-        {/* Fill bar */}
-        <Progress
-          percent={Math.min(fillPct, 100)}
-          size="small"
-          strokeColor={exceeded ? '#ff4d4f' : program.color}
-          trailColor="#f0f0f0"
-          showInfo={false}
-          style={{ marginBottom: 12 }}
-        />
-
-        {/* Stats */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
-          {[
-            { label: 'Slots', value: totals.slots, color: '#1a1a1a' },
-            { label: 'Filled', value: totals.filled, color: '#52c41a' },
-            { label: 'Unfilled', value: totals.unfilled, color: exceeded ? '#ff4d4f' : '#faad14' },
-            { label: 'Fill Rate', value: `${fillPct}%`, color: exceeded ? '#ff4d4f' : '#1890ff' },
-          ].map((s, i) => (
-            <div key={i}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: s.color }}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</div>
-              <Text type="secondary" style={{ fontSize: 11 }}>{s.label}</Text>
-            </div>
-          ))}
+      ))}
+      {hasChanges && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, gap: 6 }}>
+          <Button size="small" onClick={() => setEdits({})} icon={<CloseOutlined />}>Cancel</Button>
+          <Button size="small" type="primary" loading={saving} onClick={handleSave} icon={<CheckOutlined />}>Save</Button>
         </div>
-      </Card>
-    </Link>
+      )}
+    </div>
   )
 }
 
-/* Main Page */
+/* ── Program Card ── */
+function ProgramCard({ program, totals, subPrograms, canEdit, academicYear, onSaved }) {
+  const exceeded = totals.filled > totals.slots && totals.slots > 0
+  const fillPct = parseFloat(pct(totals.filled, totals.slots))
+  const isSpecificYear = academicYear && academicYear !== 'All'
+
+  const slotsContent = (
+    <div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{totals.slots.toLocaleString()}</div>
+      <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+    </div>
+  )
+
+  return (
+    <Card
+      style={{
+        borderRadius: 12,
+        borderLeft: `3px solid ${exceeded ? '#ff4d4f' : program.color}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        height: '100%',
+        transition: 'box-shadow 0.2s ease',
+      }}
+      bodyStyle={{ padding: '16px 20px' }}
+    >
+      {/* Title row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <Link to={program.link} style={{ textDecoration: 'none', minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text strong style={{ fontSize: 15 }}>{program.label}</Text>
+            {exceeded && <Tag color="error" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: 0 }}>Exceeded</Tag>}
+          </div>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {program.fullName}
+          </Text>
+        </Link>
+        <Link to={program.link} style={{ textDecoration: 'none' }}>
+          <RightOutlined style={{ color: '#bfbfbf', fontSize: 12, flexShrink: 0 }} />
+        </Link>
+      </div>
+
+      {/* Fill bar */}
+      <Progress
+        percent={Math.min(fillPct, 100)}
+        size="small"
+        strokeColor={exceeded ? '#ff4d4f' : program.color}
+        trailColor="#f0f0f0"
+        showInfo={false}
+        style={{ marginBottom: 12 }}
+      />
+
+      {/* Stats */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
+        {/* Slots — editable via popover when admin + specific AY selected */}
+        {canEdit && isSpecificYear && subPrograms.length > 0 ? (
+          <Popover
+            trigger="click"
+            placement="bottom"
+            content={<SlotEditor subPrograms={subPrograms} academicYear={academicYear} onSaved={onSaved} />}
+          >
+            <div style={{ cursor: 'pointer', position: 'relative' }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1890ff' }}>
+                {totals.slots.toLocaleString()}
+                <EditOutlined style={{ fontSize: 10, marginLeft: 4, color: '#bfbfbf' }} />
+              </div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+            </div>
+          </Popover>
+        ) : slotsContent}
+
+        {[
+          { label: 'Filled', value: totals.filled, color: '#52c41a' },
+          { label: 'Unfilled', value: totals.unfilled, color: exceeded ? '#ff4d4f' : '#faad14' },
+          { label: 'Fill Rate', value: `${fillPct}%`, color: exceeded ? '#ff4d4f' : '#1890ff' },
+        ].map((s, i) => (
+          <div key={i}>
+            <div style={{ fontSize: 15, fontWeight: 600, color: s.color }}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</div>
+            <Text type="secondary" style={{ fontSize: 11 }}>{s.label}</Text>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+/* ── Main Page ── */
 export default function FinancialAssistanceIndex() {
   const { permissions } = useAuth()
   const isMasterAdmin = permissions?.role === 'master_admin'
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
-  const [openModalAddSlot, setOpenModalAddSlot] = useState(false)
-  const [openModalUpdateSlot, setOpenModalUpdateSlot] = useState(false)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
   const [academicYears, setAcademicYears] = useState([])
   const [othersData, setOthersData] = useState({ total: 0, programs: [] })
 
-  const fetchPrograms = () => {
+  const fetchPrograms = useCallback(() => {
     setLoading(true)
     Promise.all([
       fetch(`${API_BASE}/scholarship_program_records`).then(r => r.json()),
       fetch(`${API_BASE}/scholarship_program_records/others`).then(r => r.json()).catch(() => ({ total: 0, programs: [] })),
-    ]).then(([data, others]) => {
+      fetch(`${API_BASE}/scholarship_program_records/academic-years`).then(r => r.json()).catch(() => []),
+    ]).then(([data, others, years]) => {
       const programsData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
       setFinancialAssistances(programsData)
-
-      const uniqueYears = [...new Set(
-        programsData.map(p => p.academic_year || p.Academic_year).filter(Boolean)
-      )]
-      setAcademicYears([...uniqueYears.sort()])
+      setAcademicYears(Array.isArray(years) ? years : [])
       setOthersData(others)
     }).catch(err => {
       console.error('Fetch Error:', err)
     }).finally(() => setLoading(false))
-  }
+  }, [])
 
-  useEffect(() => { fetchPrograms() }, [])
+  useEffect(() => { fetchPrograms() }, [fetchPrograms])
 
   const filteredAssistances = useMemo(() => {
     if (academicYearFilter && academicYearFilter !== 'All') {
@@ -300,8 +340,8 @@ export default function FinancialAssistanceIndex() {
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>Financial Assistance</Title>
-            <Text style={{ color: '#6b7280', fontSize: 14 }}>Manage scholarship programs, slots, and allocations</Text>
+            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>CMOs</Title>
+            <Text style={{ color: '#6b7280', fontSize: 14 }}>CHED Memorandum Order</Text>
           </div>
           <Space size={12}>
             <FilterOutlined style={{ color: '#6b7280' }} />
@@ -312,16 +352,10 @@ export default function FinancialAssistanceIndex() {
               allowClear={false}
             >
               <Option value="All">All Years</Option>
-              {academicYears.filter(y => y !== 'All').map(y => (
+              {academicYears.map(y => (
                 <Option key={y} value={y}>{y}</Option>
               ))}
             </Select>
-            {isMasterAdmin && (
-              <>
-                <Button icon={<PlusOutlined />} onClick={() => setOpenModalAddSlot(true)}>Add Slots</Button>
-                <Button icon={<EditOutlined />} onClick={() => setOpenModalUpdateSlot(true)}>Update Slots</Button>
-              </>
-            )}
           </Space>
         </div>
       </div>
@@ -340,6 +374,19 @@ export default function FinancialAssistanceIndex() {
           </div>
         )}
 
+        {/* Admin hint */}
+        {isMasterAdmin && academicYearFilter === 'All' && (
+          <div style={{
+            background: '#f0f5ff', border: '1px solid #d6e4ff', borderRadius: 8,
+            padding: '8px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <EditOutlined style={{ color: '#1890ff', fontSize: 13 }} />
+            <Text style={{ color: '#1d39c4', fontSize: 13 }}>
+              Select a specific academic year to edit slot counts inline.
+            </Text>
+          </div>
+        )}
+
         {/* Summary */}
         <SummaryCards data={grandTotals} />
 
@@ -352,9 +399,17 @@ export default function FinancialAssistanceIndex() {
         <Row gutter={[16, 16]}>
           {PROGRAMS.map(prog => {
             const totals = getTotals(filteredAssistances, prog.codes)
+            const subPrograms = getSubPrograms(filteredAssistances, prog.codes)
             return (
               <Col xs={24} sm={12} lg={8} key={prog.key}>
-                <ProgramCard program={prog} totals={totals} />
+                <ProgramCard
+                  program={prog}
+                  totals={totals}
+                  subPrograms={subPrograms}
+                  canEdit={isMasterAdmin}
+                  academicYear={academicYearFilter}
+                  onSaved={fetchPrograms}
+                />
               </Col>
             )
           })}
@@ -392,10 +447,6 @@ export default function FinancialAssistanceIndex() {
           )}
         </Row>
       </div>
-
-      {/* Modals */}
-      <EditSlotsModal open={openModalAddSlot} onClose={() => setOpenModalAddSlot(false)} onUpdated={() => fetchPrograms()} />
-      <UpdateSlotModal open={openModalUpdateSlot} onClose={() => setOpenModalUpdateSlot(false)} onUpdated={() => fetchPrograms()} />
     </div>
   )
 }
