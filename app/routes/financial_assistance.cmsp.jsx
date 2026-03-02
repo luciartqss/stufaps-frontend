@@ -6,6 +6,7 @@ import { API_BASE } from '../lib/config'
 import {
   ContactsOutlined,
   RightOutlined,
+  SnippetsOutlined,
   TeamOutlined,
   FilterOutlined,
   UserOutlined,
@@ -286,6 +287,64 @@ export default function FinancialAssistanceCmsp() {
         </Text>
       </div>
 
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <SnippetsOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Priority programs
+          </Title>
+        </Space>
+        <Typography style={{ color: '#6b7280' }}>
+
+        <ol>  
+            <li style={{fontSize: 22}}>National
+              <ul className="list-disc">
+                <li style={{fontSize: 14}}>
+                  <a
+                    href="https://ched.gov.ph/wp-content/uploads/CMO-NO.-7-S.-2023.pdf"
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    CHED Memorandum Order No. 7, series of 2023 – List of Identified Priority Programs for CHED Merit Scholarship Program (CMSP) for Academic Years (AY) 2023-2024 to 2027-2028
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li style={{fontSize: 22}}>Regional
+              <ul className="list-disc">
+                <li style={{fontSize: 14}}>
+                  <a
+                    href="https://ched.gov.ph/wp-content/uploads/Regional-Priority-Courses-for-CHED-Scholarship-Prograrms-CSPs-Effective-Academic-Year-2021-2022-4.pdf"
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Memorandum from the Chairperson -Regional Priority Courses for CHED Scholarship Programs (CSPs) Effective Academic Year 2021-2022
+                  </a>
+                </li>
+              </ul>
+            </li>
+
+            <li style={{fontSize: 22}}>Gender and Development (GAD)
+              <ul className="list-disc">
+                <li style={{fontSize: 14}}>
+                  <a
+                    href="https://ched.gov.ph/wp-content/uploads/2011-April-4-Gender-and-Development-STUFAPs-Slot-Allocation-for-AY-2011-2012.pdf"
+                    className="text-blue-600 hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Memorandum from the Chairperson – Gender and Development STUFAPs Slot Allocation for AY 2011-2012
+                  </a>
+                </li>
+              </ul>
+            </li>
+        </ol>  
+        </Typography>
+
+      </div>
 
       <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
         <Space size={12} align="start">
@@ -731,6 +790,188 @@ export default function FinancialAssistanceCmsp() {
           </table>
         </Card>
       </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Forms
+          </Title>
+        </Space>
+        <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+          <ul className="list-disc">
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-A_CMSP-Application-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex A – Scholarship Application Form (front) | data privacy consent (back)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-B-1_CMSP-NOA.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex B-1 – Notice of Award (NOA)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-B-2_CMSP-Contract.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex B-2 – Scholarship Contract
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-C_CMSP-Ranklist.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex C – Official Ranklist
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-D_CMSP-Masterlist.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex D – Masterlist
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-E-1_CMSP-Database-of-Beneficiaries.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex E-1 – Database of Beneficiaries
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-E-2_CMSP-Transaction-and-Monitoring.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex E-2 – Database for Transaction and Monitoring
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-F_StuFAPs-CMSP-Forms.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex F – StuFAP Forms  
+              </a> 
+              (by status, cy level, sex, type of HEI, special group, graduates, liquidation report form)
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-G_CMSP-HEIs-Billing-Statement.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex G – HEIs Billing Statement Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-H_CMSP-Template-Request-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex H – Template Request Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-I_CMSP-Graduate-Exit-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex I – Graduate Exit Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-J_CMSP-MOA.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex J – Memorandum of Agreement (MOA)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-K_CMSP-Template-letter-to-scholar.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex K – Template Letter to Scholar
+              </a>
+            </li>
+            
+          </ul>
+        </Typography>
+      </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Issuances
+          </Title>
+        </Space>
+        <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+          <ul className="list-disc">
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/MOED-NO.-336-S.-2025.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Memorandum from the Office of the Executive Director No. 336, series of 2025 – Call for Application for the CHED Merit Scholarship Program (CMSP) for Academic Year (AY) 2025-2026
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/CMO-NO.-13-S.-2025.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CHED Memorandum Order No. 13, series of 2025 – Revised Policies and Guidelines for the CHED Merit Scholarship Program (CMSP)
+              </a>
+            </li>
+            
+            
+          </ul>
+        </Typography>
+      </div>
+
     </div>
   );
 }

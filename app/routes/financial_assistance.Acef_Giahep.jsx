@@ -546,6 +546,31 @@ export default function FinancialAssistanceAcef_giahep() {
                     </a>
                 </Text>
             </div>
+
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Issuances
+                    </Title>
+                </Space>
+                <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                    <ul className="list-disc">
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/MOC_CALL_FOR_APPLICATIONS_FOR_THE_AGRICULTURAL_COMPETITIVENESS_ENHANCEMENT.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Memorandum from the Office of the Chairperson – Call for Applications for the Agricultural Competitiveness Enhancement Fund – Grants-in-Aid for Higher Education Program (ACEF-GIAHEP) for Academic Year 2024-2025
+                            </a>
+                        </li>
+                        
+                    </ul>
+                </Typography>
+                
+            </div>
         </div>
     );
 }

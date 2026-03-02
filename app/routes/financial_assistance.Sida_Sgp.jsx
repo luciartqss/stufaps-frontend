@@ -788,10 +788,47 @@ export default function FinancialAssistanceSida_Sgp() {
                         <li>Other incidental expenses</li>
                     </ol>
                 </Typography>
+            </div>
+
+            <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+                <Space size={12} align="start">
+                    <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+                    <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+                        Issuances
+                    </Title>
+                </Space>
+                <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                    <ul className="list-disc">
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/2017/10/CMO-30-s.-2016.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                CMO No. 30, s. 2016, “Implementing Guidelines for the Scholarship Grant Program for Children and Dependents of Sugarcane Industry Workers and Small Sugarcane Farmers (SIDA-SGP)
+                            </a>
+                        </li>
+                        <br />
+                        <li>
+                            <a
+                                href="https://ched.gov.ph/wp-content/uploads/CMO-No.-2-s.-2020-Amendments-to-CMO-No.-30-s-2016.pdf"
+                                className="text-blue-600 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                CMO No. 2, s. 2020, “Amendments to Sections III, IV, V, VI, VII and VIII of CMO No. 30, s. 2016”
+                            </a>
+                            
+                        </li>
+                        
+                    </ul>
+                </Typography>
                 <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 16 }}>
                     Reference: CMO-No.-2-s.-2020-Amendments-to-CMO-No.-30-s-2016
                 </Text>
             </div>
+
         </div>
     );
 }

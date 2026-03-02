@@ -760,6 +760,187 @@ export default function FinancialAssistanceEstatistikolar() {
           </ol>
         </Typography>
       </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Forms
+          </Title>
+        </Space>
+        <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+          <ul className="list-disc">
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-A-_Estatistikolar-Application-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex A – Scholarship Application Form (front) | data privacy consent (back)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-B-1_Estat-NOA.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex B-1 – Notice of Award (NOA)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-B-2_Estat-Contract.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex B-2 – Scholarship Contract
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-C_Estat-Ranklist.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex C – Official Ranklist
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-D_Estat-Masterlist.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex D – Masterlist
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-E-1_Estat-Database-for-Beneficiaries.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex E-1 – Database of Beneficiaries
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-E-2_Estat-Transaction-and-Monitoring.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex E-2 – Database for Transaction and Monitoring
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-F_StuFAPs-Estat-Forms.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex F – StuFAP Forms  
+              </a> 
+              (by status, cy level, sex, type of HEI, special group, graduates, liquidation report form)
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-G_Estat-HEIs-Billing-Statement.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex G – HEIs Billing Statement Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-H_Estat-Template-Request-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex H – Template Request Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-I_Estat-Graduate-Exit-Form.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex I – Graduate Exit Form
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-J_Estat-MOA.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex J – Memorandum of Agreement (MOA)
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/Annex-K_Estat-Template-letter-to-scholar.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Annex K – Template Letter to Scholar
+              </a>
+            </li>
+            
+          </ul>
+        </Typography>
+      </div>
+
+      <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed' }}>
+        <Space size={12} align="start">
+          <WarningOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
+          <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
+            Issuances
+          </Title>
+        </Space>
+        <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+          <ul className="list-disc">
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/CMO-NO.-14-S.-2025.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Memorandum from the Office of the Executive Director No. 336, series of 2025 – Call for Application for the CHED Merit Scholarship Program (CMSP) for Academic Year (AY) 2025-2026
+              </a>
+            </li>
+            <br />
+            <li>
+              <a
+                href="https://ched.gov.ph/wp-content/uploads/MOED-NO.-624-S.-2025-Estat-call-for-application-AY-2025-2026.pdf"
+                className="text-blue-600 hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                CHED Memorandum Order No. 13, series of 2025 – Revised Policies and Guidelines for the CHED Merit Scholarship Program (CMSP)
+              </a>
+            </li>
+            
+            
+          </ul>
+        </Typography>
+      </div>
     </div>
   );
 }
