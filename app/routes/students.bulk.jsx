@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
-import { Typography, message, Button, Card, Space, Input, Select, DatePicker, Tag, Pagination, Tooltip, Badge, Popover, Popconfirm, Progress, Modal, Divider } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, DownloadOutlined, InfoCircleOutlined, StopOutlined } from '@ant-design/icons'
+import { Typography, message, Button, Space, Input, Select, DatePicker, Tag, Pagination, Popover, Progress, Modal, Divider } from 'antd'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -134,17 +134,6 @@ const deriveAyLabelFromKey = (key = '') => {
   return null
 }
 
-const extractAyLabelsFromRows = (rows = []) => {
-  const labels = new Set()
-  rows.forEach((row) => {
-    Object.keys(row || {}).forEach((key) => {
-      const label = deriveAyLabelFromKey(String(key))
-      if (label) labels.add(label)
-    })
-  })
-  return Array.from(labels).sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
-}
-
 const excelDateToISO = (value) => {
   const parsed = XLSX.SSF?.parse_date_code?.(value)
   if (!parsed) return value
@@ -207,36 +196,6 @@ const STUDENT_FIELD_ALIASES = {
   scholarshipStatus: ['scholarshipstatus', 'schostatus'],
   replacement: ['replacement', 'remarks1'],
   reason: ['reason', 'remarks2'],
-}
-
-// Student information fields for comparison (excludes seq and dynamic AY fields)
-const STUDENT_INFO_KEYS = [
-  'inCharge', 'awardYear', 'scholarshipProgram', 'awardNumber',
-  'learnerReferenceNumber', 'surname', 'firstName', 'middleName',
-  'extension', 'sex', 'dateOfBirth', 'contactNumber', 'emailAddress',
-  'streetBrgy', 'municipalityCity', 'province', 'congressionalDistrict',
-  'zipCode', 'specialGroup', 'certificationNumber', 'nameOfInstitution',
-  'uii', 'institutionalType', 'regionSchoolLocated', 'degreeProgram',
-  'programMajor', 'programDiscipline', 'programDegreeLevel',
-  'authorityType', 'authorityNumber', 'series', 'priority', 'basisCmo',
-  'scholarshipStatus', 'replacement', 'reason',
-]
-
-// Human-readable field labels for export
-const FIELD_EXPORT_LABELS = {
-  inCharge: 'In-Charge', awardYear: 'Award Year', scholarshipProgram: 'Scholarship Program',
-  awardNumber: 'Award Number', learnerReferenceNumber: 'LRN', surname: 'Surname',
-  firstName: 'First Name', middleName: 'Middle Name', extension: 'Extension',
-  sex: 'Sex', dateOfBirth: 'Date of Birth', contactNumber: 'Contact Number',
-  emailAddress: 'Email Address', streetBrgy: 'Street/Brgy', municipalityCity: 'Municipality/City',
-  province: 'Province', congressionalDistrict: 'Congressional District', zipCode: 'Zip Code',
-  specialGroup: 'Special Group', certificationNumber: 'Certification Number',
-  nameOfInstitution: 'Institution', uii: 'UII', institutionalType: 'Institutional Type',
-  regionSchoolLocated: 'Region', degreeProgram: 'Degree Program', programMajor: 'Program Major',
-  programDiscipline: 'Program Discipline', programDegreeLevel: 'Program Degree Level',
-  authorityType: 'Authority Type', authorityNumber: 'Authority Number', series: 'Series',
-  priority: 'Priority', basisCmo: 'Basis (CMO)', scholarshipStatus: 'Scholarship Status',
-  replacement: 'Replacement', reason: 'Reason',
 }
 
 // Semester field aliases (used inside AY blocks)
@@ -407,8 +366,6 @@ const buildHeaders = (academicYears) => {
 
   return { row1, row2, row3, leafFields }
 }
-
-const getFieldConfig = (fieldKey, leafFields) => leafFields.find(f => f.key === fieldKey) || {}
 
 // Map frontend keys to backend keys
 const FRONTEND_TO_BACKEND_MAP = {
@@ -608,9 +565,7 @@ export default function ImportBulk() {
     }
   }, [canAdd, navigate])
   const fileInputRef = useRef(null)
-  const [academicYears, setAcademicYears] = useState([
-    { id: makeAyId('2024-2025'), label: '2024-2025' },
-  ])
+  const [academicYears, setAcademicYears] = useState([])
   const ayInputRef = useRef(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
@@ -620,7 +575,6 @@ export default function ImportBulk() {
   const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done, phase }
   const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const hasExportedRef = useRef(false)
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
     () => buildHeaders(academicYears),
@@ -664,21 +618,6 @@ export default function ImportBulk() {
       })
     })
   }, [leafFields])
-
-  // Normalize parsed rows to include all fields in order
-  const normalizeRows = (rows, fields = leafFields) =>
-    rows.map((row, idx) => {
-      const normalized = {}
-      const entries = Object.entries(row)
-
-      fields.forEach((field) => {
-        const match = entries.find(([k]) => sanitize(k) === sanitize(field.label) || sanitize(k) === sanitize(field.key))
-        normalized[field.key] = match ? match[1] ?? '' : ''
-      })
-
-      if (!normalized.seq) normalized.seq = String(idx + 1)
-      return normalized
-    })
 
   // Handle file upload
   const handleFileUpload = (event) => {
@@ -995,7 +934,6 @@ export default function ImportBulk() {
         setFileLoadingState({ phase: `Loaded ${normalized.length} records`, detail: 'Checking for duplicates...' })
         await new Promise(r => setTimeout(r, 0))
 
-        setAcademicYears(fileAys)
         setData(normalized)
         validateData(normalized)
 
@@ -1059,178 +997,26 @@ export default function ImportBulk() {
       if (!newMap[idx]) newMap[idx] = { matches: [], reasons: [], tags: [] }
     }
 
-    // --- Phase 1: Status Validation ---
+    // --- Phase 1: Missing Award No. + Status = Conflict ---
     rows.forEach((row, idx) => {
+      const awardNo = String(row.awardNumber || '').trim()
       const status = String(row.scholarshipStatus || '').trim()
-      if (!status) {
+      if (!awardNo && !status) {
         ensureEntry(idx)
-        newMap[idx].tags.push('missing_status')
-        newMap[idx].reasons.push({ type: 'missing_status', detail: 'Missing Scholarship Status (required field)' })
+        newMap[idx].tags.push('missing_fields')
+        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing both Award Number and Scholarship Status' })
+      } else if (!awardNo) {
+        ensureEntry(idx)
+        newMap[idx].tags.push('missing_fields')
+        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing Award Number' })
+      } else if (!status) {
+        ensureEntry(idx)
+        newMap[idx].tags.push('missing_fields')
+        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing Scholarship Status' })
       }
     })
 
-    // --- Phase 2: Batch-internal identity & conflict detection ---
-    // Identity: normalized name (surname + firstName + middleName)
-    const identityKey = (row) => {
-      const s = (row.surname || '').trim().toLowerCase()
-      const f = (row.firstName || '').trim().toLowerCase()
-      const m = (row.middleName || '').trim().toLowerCase()
-      return s && f ? `${s}|${f}|${m}` : null
-    }
-
-    // Student info fingerprint
-    const studentFingerprint = (row) =>
-      STUDENT_INFO_KEYS.map(k => String(row[k] || '').trim().toLowerCase()).join('|')
-
-    // AY disbursement data per row
-    const getAyData = (row) => {
-      const result = {}
-      Object.keys(row).forEach(k => {
-        const semMatch = k.match(/^(ay_[^_]+)__(first|second)__(.+)$/)
-        if (semMatch) {
-          const [, ayId, sem, field] = semMatch
-          if (!result[ayId]) result[ayId] = {}
-          if (!result[ayId][sem]) result[ayId][sem] = {}
-          const val = String(row[k] || '').trim()
-          if (val) result[ayId][sem][field] = val
-        }
-        const cylMatch = k.match(/^(ay_[^_]+)__cyl$/)
-        if (cylMatch) {
-          const ayId = cylMatch[1]
-          if (!result[ayId]) result[ayId] = {}
-          const val = String(row[k] || '').trim()
-          if (val) result[ayId].cyl = val
-        }
-      })
-      return result
-    }
-
-    // Group rows by identity
-    const identityGroups = {}
-    rows.forEach((row, idx) => {
-      const key = identityKey(row)
-      if (key) {
-        if (!identityGroups[key]) identityGroups[key] = []
-        identityGroups[key].push(idx)
-      }
-    })
-
-    // Analyze each group with >1 row
-    Object.values(identityGroups).filter(g => g.length > 1).forEach(group => {
-      const firstFp = studentFingerprint(rows[group[0]])
-
-      // Check if ALL student info is identical across the group
-      let allStudentInfoIdentical = true
-      const differingFields = []
-      for (let i = 1; i < group.length; i++) {
-        const fp = studentFingerprint(rows[group[i]])
-        if (fp !== firstFp) {
-          allStudentInfoIdentical = false
-          // Find specific differing fields
-          for (const key of STUDENT_INFO_KEYS) {
-            const v1 = String(rows[group[0]][key] || '').trim().toLowerCase()
-            const v2 = String(rows[group[i]][key] || '').trim().toLowerCase()
-            if (v1 !== v2 && !differingFields.includes(key)) {
-              differingFields.push(FIELD_EXPORT_LABELS[key] || key)
-            }
-          }
-        }
-      }
-
-      if (!allStudentInfoIdentical) {
-        // Student info differs → Conflict (Not Allowed) per requirement #1
-        group.forEach(idx => {
-          ensureEntry(idx)
-          if (!newMap[idx].tags.includes('batch_conflict')) {
-            newMap[idx].tags.push('batch_conflict')
-            const others = group.filter(i => i !== idx).map(i => `Row ${i + 1}`)
-            newMap[idx].reasons.push({
-              type: 'batch_conflict',
-              detail: `Student info conflict with ${others.join(', ')} — differs in: ${differingFields.join(', ')}`
-            })
-            newMap[idx].matches.push({
-              match_type: 'batch_conflict',
-              name: `Info conflict with ${others.join(', ')}`,
-              award_number: rows[idx].awardNumber || '',
-              institution: rows[idx].nameOfInstitution || '',
-              program: rows[idx].scholarshipProgram || '',
-            })
-          }
-        })
-      } else {
-        // Student info identical → check disbursement AYs (requirement #2)
-        const ayDataPerRow = group.map(idx => ({ idx, ayData: getAyData(rows[idx]) }))
-
-        for (let i = 0; i < ayDataPerRow.length; i++) {
-          for (let j = i + 1; j < ayDataPerRow.length; j++) {
-            const a = ayDataPerRow[i]
-            const b = ayDataPerRow[j]
-            const allAys = new Set([...Object.keys(a.ayData), ...Object.keys(b.ayData)])
-
-            let hasOverlapConflict = false
-            let allDisbIdentical = true
-
-            for (const ayId of allAys) {
-              const da = a.ayData[ayId]
-              const db = b.ayData[ayId]
-              if (da && db) {
-                // Both have this AY → compare
-                if (JSON.stringify(da) !== JSON.stringify(db)) {
-                  hasOverlapConflict = true
-                  allDisbIdentical = false
-                }
-              } else {
-                allDisbIdentical = false
-              }
-            }
-
-            if (allDisbIdentical) {
-              // Exact duplicate — all student info + all disbursements identical
-              // (includes case where both have zero AY data)
-              ;[a.idx, b.idx].forEach(idx => {
-                ensureEntry(idx)
-                if (!newMap[idx].tags.includes('exact_duplicate')) {
-                  newMap[idx].tags.push('exact_duplicate')
-                  const otherIdx = idx === a.idx ? b.idx : a.idx
-                  newMap[idx].reasons.push({
-                    type: 'exact_duplicate',
-                    detail: `Exact duplicate of Row ${otherIdx + 1} (student info + disbursements identical)`
-                  })
-                  newMap[idx].matches.push({
-                    match_type: 'exact_duplicate',
-                    name: `Exact duplicate of Row ${otherIdx + 1}`,
-                    award_number: rows[idx].awardNumber || '',
-                    institution: '', program: '',
-                  })
-                }
-              })
-            } else if (hasOverlapConflict) {
-              // Same student, overlapping AY with different data → disbursement conflict
-              ;[a.idx, b.idx].forEach(idx => {
-                ensureEntry(idx)
-                if (!newMap[idx].tags.includes('disb_conflict')) {
-                  newMap[idx].tags.push('disb_conflict')
-                  const otherIdx = idx === a.idx ? b.idx : a.idx
-                  newMap[idx].reasons.push({
-                    type: 'disb_conflict',
-                    detail: `Disbursement conflict with Row ${otherIdx + 1} — same AY, different data`
-                  })
-                  newMap[idx].matches.push({
-                    match_type: 'disb_conflict',
-                    name: `Disbursement conflict with Row ${otherIdx + 1}`,
-                    award_number: rows[idx].awardNumber || '',
-                    institution: '', program: '',
-                  })
-                }
-              })
-            }
-            // else: no AY overlap → valid (new AY data for same student), no flag needed
-          }
-        }
-      }
-    })
-
-    // --- Phase 3: DB duplicate check (backend) ---
+    // --- Phase 2: DB duplicate check (backend) ---
     try {
       const candidates = rows.map(row => ({
         surname: row.surname || '',
@@ -1276,102 +1062,40 @@ export default function ImportBulk() {
   // --- Validation counts ---
   const validationCounts = useMemo(() => {
     const total = data.length
-    let valid = 0, missingStatus = 0, conflict = 0, exactDuplicate = 0, disbConflict = 0, dbMatch = 0
+    let valid = 0, missingFields = 0, dbMatch = 0
     data.forEach((_, idx) => {
       const info = duplicateMap[idx]
       if (!info || (!info.tags?.length && !info.matches?.length)) { valid++; return }
       const tags = info.tags || []
-      if (tags.includes('missing_status')) missingStatus++
-      if (tags.includes('batch_conflict')) conflict++
-      if (tags.includes('exact_duplicate')) exactDuplicate++
-      if (tags.includes('disb_conflict')) disbConflict++
+      if (tags.includes('missing_fields')) missingFields++
       if (tags.includes('db_match')) dbMatch++
-      // A row that only has db_match but no local issues is still importable (goes to resolve page)
-      if (!tags.includes('missing_status') && !tags.includes('batch_conflict') &&
-          !tags.includes('exact_duplicate') && !tags.includes('disb_conflict') &&
-          !tags.includes('db_match')) valid++
+      if (!tags.includes('missing_fields') && !tags.includes('db_match')) valid++
     })
     const flagged = total - valid
-    return { total, valid, missingStatus, conflict, exactDuplicate, disbConflict, dbMatch, flagged }
+    return { total, valid, missingFields, dbMatch, flagged }
   }, [data, duplicateMap])
-
-  // --- Export flagged records to Excel ---
-  const handleExportFlagged = useCallback(() => {
-    const flaggedRows = []
-
-    data.forEach((row, idx) => {
-      const info = duplicateMap[idx]
-      if (!info || (!info.tags?.length && !info.matches?.length)) return
-
-      const tags = info.tags || []
-      const classification = []
-      const reasons = []
-
-      if (tags.includes('missing_status')) classification.push('❌ Missing Status')
-      if (tags.includes('batch_conflict')) classification.push('⚠ Student Info Conflict')
-      if (tags.includes('exact_duplicate')) classification.push('❌ Exact Duplicate')
-      if (tags.includes('disb_conflict')) classification.push('⚠ Disbursement Conflict')
-      if (tags.includes('db_match')) classification.push('⚠ DB Match')
-
-      ;(info.reasons || []).forEach(r => reasons.push(r.detail))
-
-      const exportRow = { 'Row #': idx + 1 }
-      STUDENT_INFO_KEYS.forEach(key => {
-        exportRow[FIELD_EXPORT_LABELS[key] || key] = row[key] || ''
-      })
-      exportRow['Classification'] = classification.join(', ')
-      exportRow['Conflict Reason'] = reasons.join('; ')
-
-      flaggedRows.push(exportRow)
-    })
-
-    if (flaggedRows.length === 0) {
-      message.info('No flagged records to export')
-      return false
-    }
-
-    const ws = XLSX.utils.json_to_sheet(flaggedRows)
-    const colWidths = Object.keys(flaggedRows[0]).map(k => ({
-      wch: Math.max(k.length, ...flaggedRows.slice(0, 50).map(r => String(r[k] || '').length)) + 2
-    }))
-    ws['!cols'] = colWidths
-
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Flagged Records')
-    XLSX.writeFile(wb, `bulk-import-flagged-${dayjs().format('YYYY-MM-DD-HHmmss')}.xlsx`)
-    message.success(`Exported ${flaggedRows.length} flagged records to Excel`)
-    hasExportedRef.current = true
-    return true
-  }, [data, duplicateMap])
-
-  // --- Clear flagged rows: export Excel copy then remove them ---
-  const handleClearFlagged = useCallback(() => {
-    const exported = handleExportFlagged()
-    if (!exported) return
-    const flaggedIndices = new Set(
-      Object.entries(duplicateMap)
-        .filter(([, v]) => v.tags?.length > 0 || v.matches?.length > 0)
-        .map(([k]) => Number(k))
-    )
-    if (flaggedIndices.size === 0) return
-    setData(prev => {
-      const filtered = prev.filter((_, idx) => !flaggedIndices.has(idx))
-      return filtered.map((row, idx) => ({ ...row, seq: String(idx + 1) }))
-    })
-    setDuplicateMap({})
-    setCurrentPage(1)
-    message.success(`Removed ${flaggedIndices.size} flagged row${flaggedIndices.size > 1 ? 's' : ''}. Excel backup downloaded.`)
-  }, [duplicateMap, handleExportFlagged])
 
   // Clear data and reset input
   const handleClear = () => {
     setData([])
     setDuplicateMap({})
+    setAcademicYears([])
     setNeedsValidation(false)
     setInputKey(Date.now())
-    setCurrentPage(1)
-    hasExportedRef.current = false
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  // Add Academic Year from the AY input field
+  const handleAddAY = () => {
+    const inputEl = ayInputRef.current?.input ?? ayInputRef.current
+    const val = inputEl?.value || ''
+    const result = parseAcademicYearInput(val)
+    if (!result.valid) { message.warning(result.error); return }
+    const merged = mergeAcademicYears(academicYears, result.labels)
+    const addedCount = merged.length - academicYears.length
+    if (addedCount === 0) { message.info('AY already added') }
+    else { message.success(`Added ${addedCount} AY`); setAcademicYears(merged) }
+    if (inputEl) inputEl.value = ''
   }
 
   // Chunk an array into smaller arrays of a given size
@@ -1393,20 +1117,12 @@ export default function ImportBulk() {
       return
     }
     const c = validationCounts
-    if (c.missingStatus > 0) {
-      message.error(`${c.missingStatus} row(s) missing Scholarship Status. Fix or remove them first.`)
+    if (c.missingFields > 0) {
+      message.error(`${c.missingFields} row(s) missing Award Number and/or Scholarship Status. Fix or remove them first.`)
       return
     }
-    if (c.conflict > 0) {
-      message.error(`${c.conflict} row(s) have student info conflicts. Resolve or remove them first.`)
-      return
-    }
-    if (c.exactDuplicate > 0) {
-      message.error(`${c.exactDuplicate} exact duplicate(s) found. Export & remove them first.`)
-      return
-    }
-    if (c.disbConflict > 0) {
-      message.error(`${c.disbConflict} row(s) have disbursement conflicts. Resolve or remove them first.`)
+    if (c.dbMatch > 0) {
+      message.error(`${c.dbMatch} row(s) already exist in the database. Remove them first.`)
       return
     }
     setShowConfirmModal(true)
@@ -1474,14 +1190,11 @@ export default function ImportBulk() {
       }
 
       // --- All clean: proceed with direct import ---
-      setUploadProgress({ current: 0, total: backendData.length, done: false, phase: 'Uploading students...' })
-
-      const studentChunks = chunkArray(backendData, STUDENT_CHUNK_SIZE)
+      // Upload students + their disbursements together per chunk.
+      // Progress counts students only — a student is "done" once both
+      // the student record and its disbursements are saved.
       const totalStudents = backendData.length
-      const totalStudentChunks = studentChunks.length
-      let uploaded = 0
-      // --- Phase 1: Upload students in chunks ---
-      const allCreatedStudents = []
+      setUploadProgress({ current: 0, total: totalStudents, done: false, phase: 'Importing...' })
 
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const bulkBatchId = crypto.randomUUID()
@@ -1491,70 +1204,58 @@ export default function ImportBulk() {
         'X-Bulk-Batch': bulkBatchId,
       }
 
-      for (let i = 0; i < totalStudentChunks; i++) {
-        const chunk = studentChunks[i]
-        setUploadProgress({ current: uploaded, total: totalStudents, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
+      let imported = 0
 
+      for (let offset = 0; offset < totalStudents; offset += STUDENT_CHUNK_SIZE) {
+        const end = Math.min(offset + STUDENT_CHUNK_SIZE, totalStudents)
+        const studentChunk = backendData.slice(offset, end)
+        const dataChunk = data.slice(offset, end)
+
+        setUploadProgress({ current: imported, total: totalStudents, done: false, phase: `Importing students... (${imported}/${totalStudents})` })
+
+        // 1. Upload student records
         const response = await fetch(`${API_BASE}/students/import`, {
           method: 'POST',
           headers: userHeaders,
-          body: JSON.stringify({ students: chunk }),
+          body: JSON.stringify({ students: studentChunk }),
         })
 
         if (!response.ok) {
           const errText = await response.text().catch(() => '')
-          throw new Error(`Failed to import students (batch ${i + 1}): ${errText || response.status}`)
+          throw new Error(`Failed to import students (batch starting at ${offset + 1}): ${errText || response.status}`)
         }
 
         const respJson = await response.json().catch(() => null)
         const created = respJson?.data || []
-        allCreatedStudents.push(...created)
-        uploaded += chunk.length
-        setUploadProgress({ current: uploaded, total: totalStudents, done: false, phase: `Uploading students... (${i + 1}/${totalStudentChunks})` })
-      }
 
-      // --- Phase 2: Upload disbursements in chunks ---
-      const studentSeqByIndex = allCreatedStudents.map((s) => s.seq)
-      const backendDisbursements = convertDisbursementsToBackend(data, academicYears, studentSeqByIndex)
+        // 2. Upload disbursements for this same chunk
+        const chunkSeqs = created.map(s => s.seq)
+        const chunkDisbursements = convertDisbursementsToBackend(dataChunk, academicYears, chunkSeqs)
 
-      if (backendDisbursements.length > 0) {
-        const disbChunks = chunkArray(backendDisbursements, DISBURSEMENT_CHUNK_SIZE)
-        const totalDisbursements = backendDisbursements.length
-        const totalDisbChunks = disbChunks.length
-        const grandTotal = totalStudents + totalDisbursements
-
-        let totalDisbInserted = 0
-
-        for (let i = 0; i < totalDisbChunks; i++) {
-          const chunk = disbChunks[i]
-          setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
-
-          try {
-            const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
-              method: 'POST',
-              headers: userHeaders,
-              body: JSON.stringify({ disbursements: chunk }),
-            })
-            const disbJson = await disbResponse.json().catch(() => null)
-            if (!disbResponse.ok) {
-              console.warn(`Disbursement batch ${i + 1} failed:`, disbJson)
-              message.warning(`Disbursement batch ${i + 1} had errors`)
-            } else {
-              totalDisbInserted += disbJson?.created_count || 0
-              if (disbJson?.error_count > 0) {
-                console.warn(`Disbursement batch ${i + 1} partial errors:`, disbJson.errors)
+        if (chunkDisbursements.length > 0) {
+          const disbChunks = chunkArray(chunkDisbursements, DISBURSEMENT_CHUNK_SIZE)
+          for (let di = 0; di < disbChunks.length; di++) {
+            try {
+              const disbResponse = await fetch(`${API_BASE}/disbursements/bulk`, {
+                method: 'POST',
+                headers: userHeaders,
+                body: JSON.stringify({ disbursements: disbChunks[di] }),
+              })
+              const disbJson = await disbResponse.json().catch(() => null)
+              if (!disbResponse.ok) {
+                console.warn(`Disbursement batch ${di + 1} failed:`, disbJson)
+              } else if (disbJson?.error_count > 0) {
+                console.warn(`Disbursement partial errors:`, disbJson.errors)
               }
+            } catch (err) {
+              console.error('Disbursement upload error:', err)
             }
-          } catch (err) {
-            console.error(`Disbursement batch ${i + 1} error:`, err)
           }
-          uploaded += chunk.length
-          setUploadProgress({ current: uploaded, total: grandTotal, done: false, phase: `Uploading disbursements... (${i + 1}/${totalDisbChunks})` })
         }
 
-        console.log(`[DISB] Total disbursements inserted: ${totalDisbInserted}`)
-      } else {
-        console.warn('[DISB] No disbursements generated from data')
+        // 3. Count these students as done
+        imported += studentChunk.length
+        setUploadProgress({ current: imported, total: totalStudents, done: false, phase: `Importing students... (${imported}/${totalStudents})` })
       }
 
       setUploadProgress(prev => ({ ...prev, phase: 'Updating scholarship slots...' }))
@@ -1642,249 +1343,211 @@ export default function ImportBulk() {
       overflow: 'hidden',
       margin: '-24px'
     }}>
-      {/* Compact Header Controls */}
-      <div style={{ 
-        background: 'white', 
+      {/* Hidden file input — always mounted */}
+      <input
+        key={inputKey}
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls,.xlsm,.xlsb,.csv"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
+
+      {/* Header */}
+      <div style={{
+        background: 'white',
         padding: '12px 16px',
         borderBottom: '1px solid #e8e8e8',
         flexShrink: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-          {/* Left: Title and Upload */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UploadOutlined style={{ color: '#1890ff' }} />
-              Bulk Import
-            </Title>
-            
-            <label className="cursor-pointer">
-              <input
-                key={inputKey}
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,.xlsm,.xlsb,.csv"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
+        {/* Row 1: Title + data controls */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+            <UploadOutlined style={{ color: '#1890ff' }} />
+            Bulk Import
+            {data.length > 0 && (
+              <Text type="secondary" style={{ fontSize: 14, fontWeight: 400, marginLeft: 4 }}>
+                — {data.length} record{data.length !== 1 ? 's' : ''}
+              </Text>
+            )}
+          </Title>
+          {data.length > 0 && (
+            <Space size="small">
               <Button
+                size="small"
                 icon={<UploadOutlined />}
                 onClick={() => fileInputRef.current?.click()}
               >
-                Upload Excel
+                Upload
               </Button>
-            </label>
-
-            <Button
-              icon={<PlusOutlined />}
-              onClick={handleAddRow}
-            >
-              Add Row
-            </Button>
-
-            {/* Academic Year Input — uncontrolled to avoid re-rendering the table */}
-            <input
-              ref={ayInputRef}
-              placeholder="e.g. 2024-2025"
-              defaultValue=""
-              maxLength={9}
-              onInput={(e) => { e.target.value = e.target.value.replace(/[^\d-]/g, '') }}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
-                const val = ayInputRef.current?.value || ''
-                const result = parseAcademicYearInput(val)
-                if (!result.valid) { message.warning(result.error); return }
-                const merged = mergeAcademicYears(academicYears, result.labels)
-                const addedCount = merged.length - academicYears.length
-                if (addedCount === 0) { message.info('AY already added') }
-                else { message.success(`Added ${addedCount} AY`); setAcademicYears(merged) }
-                ayInputRef.current.value = ''
-              }}
-              style={{
-                width: 130, height: 24, padding: '0 8px',
-                border: '1px solid #d9d9d9', borderRadius: 4, fontSize: 13,
-                outline: 'none',
-              }}
-              onFocus={(e) => { e.target.style.borderColor = '#40a9ff' }}
-              onBlur={(e) => { e.target.style.borderColor = '#d9d9d9' }}
-            />
-            <Button
-              size="small"
-              type="primary"
-              onClick={() => {
-                const val = ayInputRef.current?.value || ''
-                const result = parseAcademicYearInput(val)
-                if (!result.valid) { message.warning(result.error); return }
-                const merged = mergeAcademicYears(academicYears, result.labels)
-                const addedCount = merged.length - academicYears.length
-                if (addedCount === 0) { message.info('AY already added') }
-                else { message.success(`Added ${addedCount} AY`); setAcademicYears(merged) }
-                ayInputRef.current.value = ''
-              }}
-            >
-              Add AY
-            </Button>
-          </div>
-
-          {/* Right: Actions */}
-          {data.length > 0 && (
-            <Space wrap>
-              {duplicateChecking && (
-                <Tag color="processing">Validating...</Tag>
-              )}
-              {needsValidation && !duplicateChecking && (
-                <Tag color="warning" icon={<ExclamationCircleOutlined />}>Needs Validation</Tag>
-              )}
-              {!duplicateChecking && data.length > 0 && (
-                <>
-                  <Tag color="green" icon={<CheckCircleOutlined />}>
-                    {validationCounts.valid} Valid
-                  </Tag>
-                  {validationCounts.missingStatus > 0 && (
-                    <Tag color="red" icon={<StopOutlined />}>
-                      {validationCounts.missingStatus} Missing Status
-                    </Tag>
-                  )}
-                  {validationCounts.conflict > 0 && (
-                    <Tag color="volcano" icon={<WarningOutlined />}>
-                      {validationCounts.conflict} Conflict
-                    </Tag>
-                  )}
-                  {validationCounts.exactDuplicate > 0 && (
-                    <Tag color="red" icon={<ExclamationCircleOutlined />}>
-                      {validationCounts.exactDuplicate} Duplicate
-                    </Tag>
-                  )}
-                  {validationCounts.disbConflict > 0 && (
-                    <Tag color="orange" icon={<WarningOutlined />}>
-                      {validationCounts.disbConflict} Disb. Conflict
-                    </Tag>
-                  )}
-                  {validationCounts.dbMatch > 0 && (
-                    <Tag color="purple" icon={<WarningOutlined />}>
-                      {validationCounts.dbMatch} DB Match
-                    </Tag>
-                  )}
-                </>
-              )}
-              {!duplicateChecking && validationCounts.flagged > 0 && (
-                <Popconfirm
-                  title="Clear flagged records?"
-                  description="An Excel backup will be downloaded first. Flagged rows will then be removed."
-                  onConfirm={handleClearFlagged}
-                  okText="Download & Remove"
-                  cancelText="Cancel"
-                >
-                  <Button
-                    size="small"
-                    danger
-                    icon={<DeleteOutlined />}
-                  >
-                    Clear Flagged ({validationCounts.flagged})
-                  </Button>
-                </Popconfirm>
-              )}
-              <Text type="secondary">{data.length} records</Text>
-              {needsValidation && !duplicateChecking && (
-                <Button
-                  type="primary"
-                  ghost
-                  icon={<ExclamationCircleOutlined />}
-                  onClick={() => validateData(data)}
-                  size="small"
-                  style={{ borderColor: '#fa8c16', color: '#fa8c16' }}
-                >
-                  Validate
-                </Button>
-              )}
-              <Button
-                type="primary"
-                icon={validationCounts.flagged > 0 ? <WarningOutlined /> : <SendOutlined />}
-                onClick={handlePreSubmit}
-                loading={loading}
-                disabled={needsValidation || duplicateChecking || validationCounts.missingStatus > 0 || validationCounts.conflict > 0 || validationCounts.exactDuplicate > 0 || validationCounts.disbConflict > 0}
-              >
-                {needsValidation ? 'Validate First' : validationCounts.flagged > 0 ? 'Fix Issues First' : 'Submit All'}
+              <Button size="small" icon={<PlusOutlined />} onClick={handleAddRow}>
+                Add Row
               </Button>
-              <Button
-                danger
-                icon={<CloseOutlined />}
-                onClick={handleClear}
-                disabled={loading}
-              >
-                Clear
+              <Button size="small" danger icon={<CloseOutlined />} onClick={handleClear} disabled={loading}>
+                Clear All
               </Button>
             </Space>
           )}
         </div>
 
-        {/* AY Tags Row */}
-        {academicYears.length > 0 && (
-          <div style={{ marginTop: '10px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>Academic Years:</Text>
-            {academicYears.map((ay) => (
-              <Tag 
-                key={ay.id} 
-                closable 
-                onClose={() => setAcademicYears(prev => sortAcademicYears(prev.filter(p => p.id !== ay.id)))}
-              >
-                {ay.label}
-              </Tag>
-            ))}
-          </div>
-        )}
+        {/* Row 2: Academic Year management */}
+        <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>Academic Years:</Text>
+          {academicYears.map((ay) => (
+            <Tag
+              key={ay.id}
+              closable
+              onClose={() => setAcademicYears(prev => sortAcademicYears(prev.filter(p => p.id !== ay.id)))}
+              style={{ margin: 0 }}
+            >
+              {ay.label}
+            </Tag>
+          ))}
+          <Input
+            ref={ayInputRef}
+            placeholder="YYYY-YYYY"
+            size="small"
+            maxLength={9}
+            style={{ width: 110 }}
+            onPressEnter={handleAddAY}
+          />
+          <Button size="small" icon={<PlusOutlined />} onClick={handleAddAY}>
+            Add
+          </Button>
+        </div>
       </div>
 
-      {/* Table Controls Bar */}
-      <div style={{ 
-        background: '#fafafa', 
-        padding: '8px 16px',
-        borderBottom: '1px solid #e8e8e8',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexShrink: 0
-      }}>
-        <div>
-          {data.length > 0 ? (
-            <Text type="secondary">
-              Showing {Math.min((currentPage - 1) * pageSize + 1, data.length)}-{Math.min(currentPage * pageSize, data.length)} of {data.length} rows
-            </Text>
-          ) : (
-            <Text type="secondary">No data loaded</Text>
-          )}
-        </div>
-        
-        {data.length > 0 && (
-          <Space size="small">
-            <Button
-              size="small"
-              type={needsValidation ? 'primary' : 'default'}
-              icon={<ExclamationCircleOutlined />}
-              onClick={() => validateData(data)}
-              loading={duplicateChecking}
-            >
-              {needsValidation ? 'Validate Now' : 'Re-validate'}
-            </Button>
-            <Text type="secondary">Rows:</Text>
-            <Select
-              value={pageSize}
-              onChange={(value) => {
-                setPageSize(value)
-                setCurrentPage(1)
-              }}
-              size="small"
-              style={{ width: 70 }}
-              options={[
-                { label: '20', value: 20 },
-                { label: '50', value: 50 },
-                { label: '100', value: 100 },
-              ]}
-            />
+      {/* Status & Action Bar — only when data is loaded */}
+      {data.length > 0 && (
+        <div style={{
+          background: '#fafafa',
+          padding: '6px 16px',
+          borderBottom: '1px solid #e8e8e8',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 8,
+          flexShrink: 0
+        }}>
+          {/* Left: Validation summary */}
+          <Space size={4}>
+            {duplicateChecking ? (
+              <Tag color="processing" icon={<LoadingOutlined />}>Validating...</Tag>
+            ) : needsValidation ? (
+              <Tag color="warning" icon={<ExclamationCircleOutlined />}>Needs Validation</Tag>
+            ) : (
+              <>
+                <Tag color="green" icon={<CheckCircleOutlined />}>{validationCounts.valid} Valid</Tag>
+                {validationCounts.missingFields > 0 && (
+                  <Tag color="red" icon={<StopOutlined />}>{validationCounts.missingFields} Missing Fields</Tag>
+                )}
+                {validationCounts.dbMatch > 0 && (
+                  <Tag color="purple" icon={<WarningOutlined />}>{validationCounts.dbMatch} DB Match</Tag>
+                )}
+              </>
+            )}
           </Space>
-        )}
-      </div>
+
+          {/* Right: Action buttons */}
+          <Space size="small">
+            {needsValidation && !duplicateChecking && (
+              <Button
+                size="small"
+                type="primary"
+                ghost
+                icon={<ExclamationCircleOutlined />}
+                onClick={() => validateData(data)}
+                style={{ borderColor: '#fa8c16', color: '#fa8c16' }}
+              >
+                Validate
+              </Button>
+            )}
+            {!needsValidation && !duplicateChecking && (
+              <Button
+                size="small"
+                icon={<ExclamationCircleOutlined />}
+                onClick={() => validateData(data)}
+              >
+                Re-validate
+              </Button>
+            )}
+            {!duplicateChecking && validationCounts.flagged > 0 && (
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => {
+                  const flaggedIndices = new Set(
+                    Object.entries(duplicateMap)
+                      .filter(([, v]) => {
+                        const tags = v.tags || []
+                        return tags.includes('missing_fields') || tags.includes('db_match')
+                      })
+                      .map(([k]) => Number(k))
+                  )
+                  if (flaggedIndices.size === 0) return
+                  setData(prev => {
+                    const filtered = prev.filter((_, idx) => !flaggedIndices.has(idx))
+                    return filtered.map((row, idx) => ({ ...row, seq: String(idx + 1) }))
+                  })
+                  setDuplicateMap({})
+                  setCurrentPage(1)
+                  setNeedsValidation(true)
+                  message.success(`Removed ${flaggedIndices.size} conflicting row${flaggedIndices.size > 1 ? 's' : ''}`)
+                }}
+              >
+                Clear Conflicts ({validationCounts.flagged})
+              </Button>
+            )}
+            <Button
+              type="primary"
+              size="small"
+              icon={validationCounts.flagged > 0 ? <WarningOutlined /> : <SendOutlined />}
+              onClick={handlePreSubmit}
+              loading={loading}
+              disabled={needsValidation || duplicateChecking || validationCounts.flagged > 0}
+            >
+              {needsValidation ? 'Validate First' : validationCounts.flagged > 0 ? 'Fix Issues' : 'Submit All'}
+            </Button>
+          </Space>
+        </div>
+      )}
+
+      {/* Empty State — when no data is loaded */}
+      {data.length === 0 && (
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'white',
+          padding: 40
+        }}>
+          <InboxOutlined style={{ fontSize: 64, color: '#d9d9d9', marginBottom: 16 }} />
+          <Title level={5} style={{ color: '#8c8c8c', margin: '0 0 8px' }}>No Data Loaded</Title>
+          <Text type="secondary" style={{ marginBottom: 24 }}>
+            Upload an Excel file or add a row to get started
+          </Text>
+          <Space size="middle">
+            <Button
+              type="primary"
+              size="large"
+              icon={<UploadOutlined />}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Upload Excel
+            </Button>
+            <Button size="large" icon={<PlusOutlined />} onClick={handleAddRow}>
+              Add Row
+            </Button>
+          </Space>
+        </div>
+      )}
 
       {/* Table Container with Scroll */}
+      {data.length > 0 && (
       <div style={{ 
         flex: 1, 
         overflow: 'auto',
@@ -1989,46 +1652,20 @@ export default function ImportBulk() {
           </thead>
 
           <tbody>
-            {data.length === 0 ? (
-              <tr>
-                <td
-                  style={{ 
-                    padding: '60px 20px',
-                    textAlign: 'center',
-                    color: '#bfbfbf',
-                    border: '1px solid #f0f0f0'
-                  }}
-                  colSpan={leafFields.length + 1}
-                >
-                  <InboxOutlined style={{ fontSize: '48px', marginBottom: '16px', display: 'block' }} />
-                  <div style={{ fontSize: '16px', fontWeight: 500, marginBottom: '8px' }}>No Data</div>
-                  <div style={{ fontSize: '14px' }}>Upload Excel or Add Row to start</div>
-                </td>
-              </tr>
-            ) : (
-              paginatedData.map((row, paginatedIndex) => {
+            {paginatedData.map((row, paginatedIndex) => {
                 const actualRowIndex = (currentPage - 1) * pageSize + paginatedIndex
                 const dupInfo = duplicateMap[actualRowIndex]
                 const tags = dupInfo?.tags || []
-                const hasMissingStatus = tags.includes('missing_status')
-                const hasConflict = tags.includes('batch_conflict')
-                const hasExactDup = tags.includes('exact_duplicate')
-                const hasDisbConflict = tags.includes('disb_conflict')
+                const hasMissingFields = tags.includes('missing_fields')
                 const hasDbMatch = tags.includes('db_match')
                 const hasAnyIssue = tags.length > 0
                 const alt = paginatedIndex % 2 === 0
-                const rowBg = (hasExactDup || hasConflict)
+                const rowBg = hasMissingFields
                   ? (alt ? '#fff1f0' : '#ffe7e6')
-                  : hasMissingStatus
-                    ? (alt ? '#fff1f0' : '#ffe7e6')
-                    : hasDisbConflict
-                      ? (alt ? '#fff7e6' : '#fff2d6')
-                      : hasDbMatch
-                        ? (alt ? '#f9f0ff' : '#f0e5ff')
-                        : (alt ? 'white' : '#fafafa')
-                const borderColor = (hasExactDup || hasConflict) ? '#ff4d4f'
-                  : hasMissingStatus ? '#ff7875'
-                  : hasDisbConflict ? '#fa8c16'
+                  : hasDbMatch
+                    ? (alt ? '#f9f0ff' : '#f0e5ff')
+                    : (alt ? 'white' : '#fafafa')
+                const borderColor = hasMissingFields ? '#ff4d4f'
                   : hasDbMatch ? '#722ed1' : 'transparent'
                 return (
                   <tr
@@ -2057,7 +1694,7 @@ export default function ImportBulk() {
                             textAlign: 'center',
                             fontSize: '13px',
                             fontWeight: 500,
-                            background: (hasExactDup || hasConflict) ? '#ffccc7' : hasMissingStatus ? '#ffccc7' : hasDisbConflict ? '#fff1b8' : hasDbMatch ? '#efdbff' : '#f5f5f5',
+                            background: hasMissingFields ? '#ffccc7' : hasDbMatch ? '#efdbff' : '#f5f5f5',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -2066,12 +1703,9 @@ export default function ImportBulk() {
                             {hasAnyIssue && (
                               <Popover
                                 title={
-                                  <span style={{ color: (hasExactDup || hasConflict) ? '#cf1322' : hasMissingStatus ? '#cf1322' : hasDisbConflict ? '#d46b08' : '#531dab' }}>
+                                  <span style={{ color: hasMissingFields ? '#cf1322' : '#531dab' }}>
                                     <ExclamationCircleOutlined style={{ marginRight: 6 }} />
-                                    {hasExactDup ? 'Exact Duplicate'
-                                      : hasConflict ? 'Student Info Conflict'
-                                      : hasDisbConflict ? 'Disbursement Conflict'
-                                      : hasMissingStatus ? 'Missing Required Field'
+                                    {hasMissingFields ? 'Missing Required Field(s)'
                                       : hasDbMatch ? 'DB Match Found'
                                       : 'Issue'}
                                   </span>
@@ -2092,18 +1726,12 @@ export default function ImportBulk() {
                                       >
                                         <Tag
                                           color={
-                                            r.type === 'missing_status' ? 'red' :
-                                            r.type === 'batch_conflict' ? 'volcano' :
-                                            r.type === 'exact_duplicate' ? 'red' :
-                                            r.type === 'disb_conflict' ? 'orange' :
+                                            r.type === 'missing_fields' ? 'red' :
                                             r.type === 'db_match' ? 'purple' : 'default'
                                           }
                                           style={{ marginBottom: 4, fontSize: 11 }}
                                         >
-                                          {r.type === 'missing_status' ? '❌ Missing Status' :
-                                           r.type === 'batch_conflict' ? '⚠ Info Conflict' :
-                                           r.type === 'exact_duplicate' ? '❌ Exact Duplicate' :
-                                           r.type === 'disb_conflict' ? '⚠ Disb. Conflict' :
+                                          {r.type === 'missing_fields' ? '❌ Missing Field' :
                                            r.type === 'db_match' ? '⚠ DB Match' : r.type}
                                         </Tag>
                                         <div style={{ color: '#6b7280', marginTop: 4 }}>{r.detail}</div>
@@ -2114,7 +1742,7 @@ export default function ImportBulk() {
                                 trigger="click"
                                 placement="right"
                               >
-                                <WarningOutlined style={{ color: (hasExactDup || hasConflict) ? '#ff4d4f' : hasMissingStatus ? '#ff7875' : hasDisbConflict ? '#fa8c16' : '#722ed1', cursor: 'pointer', fontSize: 14 }} />
+                                <WarningOutlined style={{ color: hasMissingFields ? '#ff4d4f' : '#722ed1', cursor: 'pointer', fontSize: 14 }} />
                               </Popover>
                             )}
                             {row.seq}
@@ -2134,7 +1762,7 @@ export default function ImportBulk() {
                         border: '1px solid #f0f0f0',
                         position: 'sticky',
                         right: 0,
-                        background: rowBg
+                        background: rowBg,
                       }}
                     >
                       <Button
@@ -2149,31 +1777,48 @@ export default function ImportBulk() {
                     </td>
                   </tr>
                 )
-              })
-            )}
+              })}
           </tbody>
         </table>
       </div>
+      )}
 
       {/* Pagination Footer */}
       {data.length > 0 && (
         <div style={{ 
           background: '#fafafa',
-          padding: '10px 16px',
+          padding: '8px 16px',
           borderTop: '1px solid #e8e8e8',
           display: 'flex',
-          justifyContent: 'center',
+          alignItems: 'center',
+          justifyContent: 'space-between',
           flexShrink: 0
         }}>
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            Showing {Math.min((currentPage - 1) * pageSize + 1, data.length)}–{Math.min(currentPage * pageSize, data.length)} of {data.length}
+          </Text>
           <Pagination
             current={currentPage}
             pageSize={pageSize}
             total={data.length}
             onChange={(page) => setCurrentPage(page)}
             showSizeChanger={false}
-            showTotal={(total, range) => `${range[0]}-${range[1]} of ${total}`}
             size="small"
           />
+          <Space size="small">
+            <Text type="secondary" style={{ fontSize: 12 }}>Rows:</Text>
+            <Select
+              value={pageSize}
+              onChange={(value) => { setPageSize(value); setCurrentPage(1) }}
+              size="small"
+              style={{ width: 65 }}
+              options={[
+                { label: '20', value: 20 },
+                { label: '50', value: 50 },
+                { label: '100', value: 100 },
+              ]}
+            />
+          </Space>
         </div>
       )}
 
@@ -2262,15 +1907,6 @@ export default function ImportBulk() {
               <strong>{validationCounts.valid}</strong> record{validationCounts.valid !== 1 ? 's' : ''} ready for import
             </Text>
           </div>
-
-          {validationCounts.dbMatch > 0 && (
-            <div style={{ background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 6, padding: '12px 16px', marginBottom: 12 }}>
-              <Text style={{ fontSize: 13, color: '#531dab' }}>
-                <WarningOutlined style={{ marginRight: 6 }} />
-                <strong>{validationCounts.dbMatch}</strong> record{validationCounts.dbMatch !== 1 ? 's' : ''} match existing DB records — you will be redirected to the resolve page for these.
-              </Text>
-            </div>
-          )}
 
           <Divider style={{ margin: '16px 0 12px' }} />
           <Text type="secondary" style={{ fontSize: 12 }}>
