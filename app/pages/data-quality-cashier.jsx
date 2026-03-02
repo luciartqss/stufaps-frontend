@@ -113,6 +113,7 @@ export default function DataQualityCashier({ readOnly = false }) {
   const [bulkLddap, setBulkLddap] = useState('')
   const [bulkDate, setBulkDate] = useState(null)
   const [undoStack, setUndoStack] = useState([])
+  const [autoFillDate, setAutoFillDate] = useState(true)
 
   // Filters
   const [filterOptions, setFilterOptions] = useState({ academic_years: [], semesters: [], scholarship_programs: [] })
@@ -127,6 +128,8 @@ export default function DataQualityCashier({ readOnly = false }) {
   const editedRef = useRef(editedRows)
   editedRef.current = editedRows
   const searchRef = useRef('')
+  const autoFillDateRef = useRef(true)
+  autoFillDateRef.current = autoFillDate
 
   // Fetch filter options once
   useEffect(() => {
@@ -192,6 +195,23 @@ export default function DataQualityCashier({ readOnly = false }) {
   const handleFieldChange = useCallback((disbursementId, field, value) => {
     setEditedRows(prev => {
       const existing = prev[disbursementId] || {}
+
+      // Auto-fill today's date when lddap_no is entered & date is still empty
+      if (field === 'lddap_no' && value && autoFillDateRef.current) {
+        const record = dataRef.current.find(r => r.id === disbursementId)
+        const hasDate = existing.disbursement_date || record?.disbursement_date
+        if (!hasDate) {
+          return {
+            ...prev,
+            [disbursementId]: {
+              ...existing,
+              lddap_no: value,
+              disbursement_date: formatForApi(dayjs()),
+            },
+          }
+        }
+      }
+
       return {
         ...prev,
         [disbursementId]: { ...existing, [field]: value },
@@ -255,6 +275,12 @@ export default function DataQualityCashier({ readOnly = false }) {
         if (bulkAmount !== null) updates.amount = bulkAmount
         if (bulkLddap) updates.lddap_no = bulkLddap
         if (bulkDate) updates.disbursement_date = formatForApi(bulkDate)
+        else if (bulkLddap && autoFillDateRef.current) {
+          const record = dataRef.current.find(r => r.id === id)
+          if (!existing.disbursement_date && !record?.disbursement_date) {
+            updates.disbursement_date = formatForApi(dayjs())
+          }
+        }
         next[id] = updates
       })
       return next
@@ -453,6 +479,12 @@ export default function DataQualityCashier({ readOnly = false }) {
             <Text style={{ fontSize: 13, color: '#6b7280' }}>Missing only</Text>
             <Switch checked={showMissingOnly} onChange={setShowMissingOnly} size="small" />
           </div>
+          {!readOnly && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 13, color: '#6b7280' }}>Auto-fill date</Text>
+              <Switch checked={autoFillDate} onChange={setAutoFillDate} size="small" />
+            </div>
+          )}
 
           {(academicYear || semester || scholarshipProgram) && (
             <Button icon={<ClearOutlined />} size="small" onClick={handleClearFilters} type="text" danger>

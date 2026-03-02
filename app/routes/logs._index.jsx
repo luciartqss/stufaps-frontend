@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Button, Tag, Typography, Space, message, Modal, Empty, Row, Col, Pagination, Spin, Collapse } from 'antd'
+import { Button, Tag, Typography, Space, message, Modal, Empty, Row, Col, Pagination, Spin } from 'antd'
 import {
   UndoOutlined, ArrowRightOutlined, HistoryOutlined,
   ClockCircleOutlined, UserOutlined, ExclamationCircleOutlined,
   WarningOutlined,
-  PlusCircleOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined,
-  QuestionCircleOutlined
+  PlusCircleOutlined, EditOutlined, DeleteOutlined
 } from '@ant-design/icons'
 
 const { Title, Text } = Typography
@@ -503,76 +502,25 @@ export default function LogsIndex() {
         </Text>
       </div>
 
-      {/* Legend & Rules */}
-      <Collapse
-        size="small"
-        bordered={false}
-        style={{ marginBottom: 20, background: '#fafbfc', borderRadius: 8 }}
-        items={[
-          {
-            key: 'guide',
-            label: (
-              <Space size={6}>
-                <QuestionCircleOutlined style={{ color: '#0032a0', fontSize: 13 }} />
-                <Text style={{ fontSize: 12.5, color: '#595959' }}>Legend & How It Works</Text>
-              </Space>
-            ),
-            children: (
-              <div style={{ padding: '4px 0' }}>
-                {/* Color Legend */}
-                <Text strong style={{ fontSize: 12, color: '#262626', display: 'block', marginBottom: 10 }}>Timeline Color Legend</Text>
-                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-                  {[
-                    { color: '#52c41a', label: 'Created', desc: 'New record added' },
-                    { color: '#1890ff', label: 'Updated', desc: 'Record modified' },
-                    { color: '#ff4d4f', label: 'Deleted', desc: 'Record removed' },
-                    { color: '#722ed1', label: 'Bulk Import', desc: 'Multiple records added' },
-                    { color: '#13c2c2', label: 'Bulk Update', desc: 'Multiple records changed' },
-                    { color: '#d9d9d9', label: 'Rolled Back', desc: 'Action undone by rollback' },
-                  ].map(item => (
-                    <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 170 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-                      <div>
-                        <Text style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.2, display: 'block' }}>{item.label}</Text>
-                        <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{item.desc}</Text>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Rules */}
-                <Text strong style={{ fontSize: 12, color: '#262626', display: 'block', marginBottom: 8 }}>How the Log System Works</Text>
-                <div style={{ display: 'grid', gap: 6, fontSize: 12, color: '#434343', lineHeight: 1.6 }}>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#1890ff', marginTop: 3, flexShrink: 0 }} />
-                    <span>Every create, update, delete, and bulk operation is <strong>automatically logged</strong> with full before/after snapshots.</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#1890ff', marginTop: 3, flexShrink: 0 }} />
-                    <span>Logs are <strong>immutable</strong> — once recorded, an entry is never modified or erased.</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#fa8c16', marginTop: 3, flexShrink: 0 }} />
-                    <span>Rollback <strong>restores state</strong> — it creates a <strong>new version</strong> rather than erasing history.</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#fa8c16', marginTop: 3, flexShrink: 0 }} />
-                    <span>An action can only be rolled back if <strong>no later active changes</strong> exist for that record. Roll back newer changes first.</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#ff4d4f', marginTop: 3, flexShrink: 0 }} />
-                    <span>When rollback is blocked, the <strong>Conflicts</strong> button shows which later changes must be rolled back first.</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <InfoCircleOutlined style={{ color: '#1890ff', marginTop: 3, flexShrink: 0 }} />
-                    <span>Click any card to view full details. Click the <strong>entity ID</strong> (e.g. #537) to view the complete version history of that record.</span>
-                  </div>
-                </div>
-              </div>
-            ),
-          },
-        ]}
-      />
+      {/* Legend */}
+      <div style={{ marginBottom: 20, padding: '10px 16px', background: '#fafbfc', borderRadius: 8, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        {[
+          { color: '#52c41a', label: 'Created', desc: 'New record added' },
+          { color: '#1890ff', label: 'Updated', desc: 'Record modified' },
+          { color: '#ff4d4f', label: 'Deleted', desc: 'Record removed' },
+          { color: '#722ed1', label: 'Bulk Import', desc: 'Multiple records added' },
+          { color: '#13c2c2', label: 'Bulk Update', desc: 'Multiple records changed' },
+          { color: '#d9d9d9', label: 'Rolled Back', desc: 'Action undone by rollback' },
+        ].map(item => (
+          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 170 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
+            <div>
+              <Text style={{ fontSize: 12, fontWeight: 500, lineHeight: 1.2, display: 'block' }}>{item.label}</Text>
+              <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{item.desc}</Text>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* ── Timeline Feed ── */}
       {loading ? (
