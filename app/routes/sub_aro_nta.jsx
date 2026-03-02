@@ -1,7 +1,7 @@
 // HomePage.jsx
 import { useEffect, useState } from 'react'
 import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm } from 'antd'
-import { InboxOutlined, DeleteOutlined, DownloadOutlined, FileOutlined, FilePdfOutlined } from '@ant-design/icons'
+import { InboxOutlined, DeleteOutlined, FileOutlined, FilePdfOutlined } from '@ant-design/icons'
 const { Text, Title } = Typography
 
 
@@ -16,6 +16,7 @@ export default function SUB_ARO_NTA() {
   const [fileList, setFileList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filesLoading, setFilesLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('sub-aro');
 
   // Fetch fiscal years from backend
   useEffect(() => {
@@ -110,6 +111,7 @@ export default function SUB_ARO_NTA() {
       formData.append('filename', values.filename);
       formData.append('yearsuffix', values.yearsuffix);
       formData.append('number_count', values.number_count);
+      formData.append('filetype', activeTab.toUpperCase()); // Add file type based on active tab
 
       const response = await fetch("http://localhost:8000/api/sub-aro-nta-files", {
         method: "POST",
@@ -162,6 +164,9 @@ export default function SUB_ARO_NTA() {
   const renderFileCards = () => {
     let filteredFiles = uploadedFiles;
 
+    // Filter by file type (NTA or SUB-ARO)
+    filteredFiles = filteredFiles.filter(f => f.filetype === activeTab.toUpperCase());
+
     // Filter by fiscal year
     if (selectedFiscalYear) {
       filteredFiles = filteredFiles.filter(f => f.yearsuffix === selectedFiscalYear.year_suffix);
@@ -210,7 +215,11 @@ export default function SUB_ARO_NTA() {
             </div>
 
             <div style={{ flex: 1, overflow: 'hidden' }}>
-              <Text strong style={{ fontSize: 14, display: 'block' }}>CHEDRO-{record.yearsuffix || "N/A"}-{record.number_count}</Text>
+              <Text strong style={{ fontSize: 14, display: 'block' }}>
+                {record.filetype === 'NTA' 
+                  ? `NTA-${record.yearsuffix || "N/A"}-${record.number_count}` 
+                  : `CHEDRO IV-${record.yearsuffix || "N/A"}-${record.number_count}`}
+              </Text>
               <Text
                 style={{
                   fontSize: 13,
@@ -231,14 +240,6 @@ export default function SUB_ARO_NTA() {
             </div>
 
             <Space style={{ flexShrink: 0 }}>
-              <Button
-                type="default"
-                size="small"
-                icon={<DownloadOutlined />}
-                onClick={() => handleDownloadFile(record.file)}
-              >
-                Download
-              </Button>
               <Popconfirm
                 title="Delete File"
                 description="Are you sure you want to delete this file?"
@@ -258,7 +259,7 @@ export default function SUB_ARO_NTA() {
   };
 
   return (
-    <div style={{ backgroundColor: '#fff', margin: -24, minHeight: '100vh' }}>
+    <div style={{ backgroundColor: '#fff', margin: -24, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header */}
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
@@ -270,9 +271,47 @@ export default function SUB_ARO_NTA() {
         </div>
       </div>
 
-      <div style={{ padding: '30px' }}>
+      {/* Large Card Tab Buttons */}
+      <div style={{ padding: '20px 30px', borderBottom: '1px solid #e8eaed', backgroundColor: '#f9fafb' }}>
+        <div style={{ display: 'flex', gap: 15 }}>
+          <Card
+            onClick={() => {
+              setActiveTab('sub-aro');
+              setSearchQuery('');
+            }}
+            style={{
+              flex: 1,
+              cursor: 'pointer',
+              border: activeTab === 'sub-aro' ? '2px solid #2563eb' : '1px solid #e8eaed',
+              backgroundColor: activeTab === 'sub-aro' ? '#e6f4ff' : 'white',
+              transition: 'all 0.2s ease',
+            }}
+            bodyStyle={{ padding: '20px' }}
+          >
+            <Text strong style={{ fontSize: 16, color: activeTab === 'sub-aro' ? '#2563eb' : '#1a1a1a' }}>SUB-ARO</Text>
+          </Card>
+          <Card
+            onClick={() => {
+              setActiveTab('nta');
+              setSearchQuery('');
+            }}
+            style={{
+              flex: 1,
+              cursor: 'pointer',
+              border: activeTab === 'nta' ? '2px solid #2563eb' : '1px solid #e8eaed',
+              backgroundColor: activeTab === 'nta' ? '#e6f4ff' : 'white',
+              transition: 'all 0.2s ease',
+            }}
+            bodyStyle={{ padding: '20px' }}
+          >
+            <Text strong style={{ fontSize: 16, color: activeTab === 'nta' ? '#2563eb' : '#1a1a1a' }}>NTA</Text>
+          </Card>
+        </div>
+      </div>
+
+      <div style={{ padding: '30px', flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
         {/* Layout */}
-        <div style={{ display: 'flex', height: 'calc(100vh - 80px)' }}>
+        <div style={{ display: 'flex', flex: 1, gap: 20, minHeight: 0 }}>
 
           {/* Sidebar */}
           <aside
@@ -280,9 +319,8 @@ export default function SUB_ARO_NTA() {
               width: '200px',
               backgroundColor: '#1e3a8a',
               color: 'white',
-        
+              borderRadius: '8px',
               overflowY: 'auto',
-
             }}
           >
             <div
@@ -292,25 +330,27 @@ export default function SUB_ARO_NTA() {
                 alignItems: 'center',
                 padding: '10px',
                 marginBottom: '10px',
-                borderBottom: '1px solid #e8eaed',
-                position: 'sticky',   // 👈 makes it sticky
-                top: 0,               // 👈 sticks to the top of the parent container
-                backgroundColor: '#1e3a8a', // 👈 match sidebar background so it blends
-                zIndex: 10            // 👈 ensures it stays above list items
+                borderBottom: '1px solid rgba(255,255,255,0.2)',
+                position: 'sticky',
+                top: 0,
+                backgroundColor: '#1e3a8a',
+                zIndex: 10
               }}
             >
               <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: 600 }}>Fiscal Years</h2>
-              <Button
-                type="primary"
-                size="small"
-                onClick={handleAddFiscalYear}
-                style={{ backgroundColor: '#2563eb', borderColor: '#2563eb' }}
-              >
-                Add
-              </Button>
+              {activeTab === 'sub-aro' && (
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={handleAddFiscalYear}
+                  style={{ backgroundColor: '#2563eb', borderColor: '#2563eb' }}
+                >
+                  Add
+                </Button>
+              )}
             </div>
  
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, padding: '5px' }}>
+            <ul style={{ listStyle: 'none', margin: 0, padding: '5px' }}>
               {fiscalYears.map((fy) => (
                 <li
                   key={fy.id}
@@ -341,29 +381,39 @@ export default function SUB_ARO_NTA() {
             style={{
               flex: 1,
               backgroundColor: '#f9fafb',
+              borderRadius: '8px',
               padding: '1rem',
-              overflowY: 'auto'
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: 10 }}>
-              <h1 style={{ margin: 0 }}>Uploaded Files</h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
                 <Input
                   placeholder="Search files..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   style={{ maxWidth: '300px' }}
                 />
-                <Button
-                  type="primary"
-                  onClick={handleOpenUploadModal}
-                  style={{ backgroundColor: '#2563eb', borderColor: '#2563eb' }}
-                >
-                  Upload File
-                </Button>
               </div>
+              <Button
+                type="primary"
+                onClick={handleOpenUploadModal}
+                style={{ backgroundColor: '#2563eb', borderColor: '#2563eb' }}
+              >
+                Upload File
+              </Button>
             </div>
 
+            {/* Title for current tab */}
+            <div style={{ marginBottom: '20px' }}>
+              <Title level={4} style={{ margin: 0, color: '#1a1a1a' }}>
+                {activeTab === 'sub-aro' ? 'Sub Allotment Release Order' : 'Notice of Transfer Allocation'}
+              </Title>
+            </div>
+
+            {/* Content based on active tab */}
             {filesLoading ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Text type="secondary">Loading files...</Text>
@@ -372,21 +422,44 @@ export default function SUB_ARO_NTA() {
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Text type="secondary">Select a fiscal year to view files</Text>
               </div>
-            ) : uploadedFiles.filter(f => f.yearsuffix === selectedFiscalYear.year_suffix &&
-              (searchQuery.trim() === '' ||
-                f.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                f.number_count.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                f.yearsuffix.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                `${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                `CHEDRO-${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()))
-            ).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Text type="secondary">
-                  {searchQuery.trim() ? 'No files match your search' : 'No files for this fiscal year'}
-                </Text>
-              </div>
+            ) : activeTab === 'sub-aro' ? (
+              uploadedFiles.filter(f => 
+                f.filetype === 'SUB-ARO' &&
+                f.yearsuffix === selectedFiscalYear.year_suffix &&
+                (searchQuery.trim() === '' ||
+                  f.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  f.number_count.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  f.yearsuffix.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  `${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  `CHEDRO IV-${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()))
+              ).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <Text type="secondary">
+                    {searchQuery.trim() ? 'No files match your search' : 'No SUB-ARO files for this fiscal year'}
+                  </Text>
+                </div>
+              ) : (
+                renderFileCards()
+              )
             ) : (
-              renderFileCards()
+              uploadedFiles.filter(f => 
+                f.filetype === 'NTA' &&
+                f.yearsuffix === selectedFiscalYear.year_suffix &&
+                (searchQuery.trim() === '' ||
+                  f.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  f.number_count.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  f.yearsuffix.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  `${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  `NTA-${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(searchQuery.toLowerCase()))
+              ).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <Text type="secondary">
+                    {searchQuery.trim() ? 'No files match your search' : 'No NTA files for this fiscal year'}
+                  </Text>
+                </div>
+              ) : (
+                renderFileCards()
+              )
             )}
           </main>
         </div>
@@ -394,7 +467,7 @@ export default function SUB_ARO_NTA() {
 
       {/* Upload Modal */}
       <Modal
-        title="Upload SUB-ARO/NTA File"
+        title={`Upload ${activeTab === 'nta' ? 'NTA' : 'SUB-ARO'} File`}
         open={isModalVisible}
         onOk={form.submit}
         onCancel={handleCloseModal}
@@ -429,13 +502,13 @@ export default function SUB_ARO_NTA() {
           {/* Filename */}
           <Form.Item
             name="filename"
-            label="Filename"
+            label="Filename (Custom name for this file)"
             rules={[
               { required: true, message: 'Please enter filename' },
               { max: 255, message: 'Filename must not exceed 255 characters' }
             ]}
           >
-            <Input placeholder="Enter filename" />
+            <Input placeholder="e.g., Budget Report - January" />
           </Form.Item>
 
           {/* Year Suffix Dropdown */}
@@ -444,7 +517,7 @@ export default function SUB_ARO_NTA() {
             label="Fiscal Year"
             rules={[{ required: true, message: 'Please select a fiscal year' }]}
           >
-            <Select placeholder="Select fiscal year">
+            <Select placeholder="Select fiscal year" value={selectedFiscalYear?.year_suffix}>
               {fiscalYears.map((fy) => (
                 <Select.Option key={fy.id} value={fy.year_suffix}>
                   <p>FY: <strong>{fy.fiscal_year} - ({fy.year_suffix})</strong></p>
@@ -456,7 +529,7 @@ export default function SUB_ARO_NTA() {
           {/* Number Input */}
           <Form.Item
             name="number_count"
-            label="Reference Number (XX-XXXX... format)"
+            label="Reference Number (Format: XX-XXXX...)"
             rules={[
               { required: true, message: 'Please enter reference number' },
               {
@@ -466,6 +539,17 @@ export default function SUB_ARO_NTA() {
             ]}
           >
             <Input placeholder="e.g., 25-001" />
+          </Form.Item>
+
+          {/* Display how title will appear */}
+          <Form.Item
+            label="Display Title (Auto-generated)"
+          >
+            <div style={{ padding: '8px 12px', backgroundColor: '#f5f5f5', borderRadius: '4px', color: '#666' }}>
+              {activeTab === 'nta' 
+                ? `NTA-${selectedFiscalYear?.year_suffix || 'YYYY'}-[your reference number]` 
+                : `CHEDRO IV-${selectedFiscalYear?.year_suffix || 'YYYY'}-[your reference number]`}
+            </div>
           </Form.Item>
         </Form>
       </Modal>
