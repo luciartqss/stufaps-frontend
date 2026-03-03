@@ -5,6 +5,7 @@ import {
   TeamOutlined, ContactsOutlined, UserOutlined,
   WarningOutlined, EditOutlined, CheckOutlined, CloseOutlined,
   RightOutlined, QuestionCircleOutlined, FilterOutlined,
+  InfoCircleOutlined, CalendarOutlined,
 } from '@ant-design/icons'
 
 import { API_BASE } from '../lib/config'
@@ -83,11 +84,18 @@ function pct(part, whole) {
 }
 
 /* ── Summary Cards ── */
-function SummaryCards({ data }) {
+function SummaryCards({ data, academicYear, semester }) {
+  const isSpecificYear = academicYear && academicYear !== 'All'
+  const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
+
+  const slotsTitle = isSpecificYear ? 'Annual Slots' : 'Total Slots'
+  const filledTitle = `Disbursed (${semShort})`
+  const unfilledTitle = `Not Yet Disbursed (${semShort})`
+
   const cards = [
-    { title: 'Total Slots', value: data.slots, icon: <ContactsOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-    { title: 'Filled Slots', value: data.filled, icon: <TeamOutlined />, color: '#52c41a', bg: '#f6ffed', pct: pct(data.filled, data.slots) },
-    { title: 'Unfilled Slots', value: data.unfilled, icon: <UserOutlined />, color: '#faad14', bg: '#fffbe6', pct: pct(data.unfilled, data.slots) },
+    { title: slotsTitle, value: data.slots, icon: isSpecificYear ? <CalendarOutlined /> : <ContactsOutlined />, color: '#1890ff', bg: '#e6f7ff' },
+    { title: filledTitle, value: data.filled, icon: <TeamOutlined />, color: '#52c41a', bg: '#f6ffed', pct: pct(data.filled, data.slots) },
+    { title: unfilledTitle, value: data.unfilled, icon: <UserOutlined />, color: '#faad14', bg: '#fffbe6', pct: pct(data.unfilled, data.slots) },
   ]
 
   return (
@@ -99,7 +107,9 @@ function SummaryCards({ data }) {
           bodyStyle={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
         >
           <div style={{ flex: 1, overflow: 'hidden' }}>
-            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>{c.title}</Text>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+              {c.title}
+            </Text>
             <Text strong style={{ fontSize: 22, color: c.color, lineHeight: 1.2, display: 'block' }}>
               {c.value.toLocaleString()}
             </Text>
@@ -162,9 +172,9 @@ function SlotEditor({ subPrograms, academicYear, onSaved }) {
   }
 
   return (
-    <div style={{ minWidth: 260 }}>
-      <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
-        Edit Slots — {academicYear}
+    <div style={{ minWidth: 280 }}>
+      <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 10 }}>
+        Edit Slots — AY {academicYear}
       </Text>
       {subPrograms.map(sp => (
         <div key={sp.programName} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -281,13 +291,15 @@ export default function FinancialAssistanceIndex() {
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
   const [othersData, setOthersData] = useState({ total: 0, programs: [] })
 
   const fetchPrograms = useCallback(() => {
     setLoading(true)
+    const semParam = `?semester=${encodeURIComponent(semesterFilter)}`
     Promise.all([
-      fetch(`${API_BASE}/scholarship_program_records`).then(r => r.json()),
+      fetch(`${API_BASE}/scholarship_program_records${semParam}`).then(r => r.json()),
       fetch(`${API_BASE}/scholarship_program_records/others`).then(r => r.json()).catch(() => ({ total: 0, programs: [] })),
       fetch(`${API_BASE}/scholarship_program_records/academic-years`).then(r => r.json()).catch(() => []),
     ]).then(([data, others, years]) => {
@@ -298,7 +310,7 @@ export default function FinancialAssistanceIndex() {
     }).catch(err => {
       console.error('Fetch Error:', err)
     }).finally(() => setLoading(false))
-  }, [])
+  }, [semesterFilter])
 
   useEffect(() => { fetchPrograms() }, [fetchPrograms])
 
@@ -356,6 +368,15 @@ export default function FinancialAssistanceIndex() {
                 <Option key={y} value={y}>{y}</Option>
               ))}
             </Select>
+            <Select
+              value={semesterFilter}
+              onChange={v => setSemesterFilter(v)}
+              style={{ width: 160 }}
+              allowClear={false}
+            >
+              <Option value="First">1st Semester</Option>
+              <Option value="Second">2nd Semester</Option>
+            </Select>
           </Space>
         </div>
       </div>
@@ -382,13 +403,13 @@ export default function FinancialAssistanceIndex() {
           }}>
             <EditOutlined style={{ color: '#1890ff', fontSize: 13 }} />
             <Text style={{ color: '#1d39c4', fontSize: 13 }}>
-              Select a specific academic year to edit slot counts inline.
+              Select a specific academic year to edit annual slot counts inline.
             </Text>
           </div>
         )}
 
         {/* Summary */}
-        <SummaryCards data={grandTotals} />
+        <SummaryCards data={grandTotals} academicYear={academicYearFilter} semester={semesterFilter} />
 
         {/* Section label */}
         <Text strong style={{ fontSize: 14, color: '#6b7280', display: 'block', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
