@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Typography, Space, Row, Col, Avatar, Spin, Modal, Button, Input, Popconfirm, message, Select, Upload } from 'antd'
+import { Card, Typography, Space, Row, Col, Avatar, Spin, Modal, Button, Input, Popconfirm, message, Select, Upload, Pagination } from 'antd'
 import {
     InfoCircleOutlined,
     ProjectOutlined,
@@ -81,6 +81,9 @@ export default function AboutUs() {
         role: '',
         profile_picture: '',
     })
+    const [leaderPage, setLeaderPage] = useState(1)
+    const [memberPage, setMemberPage] = useState(1)
+    const pageSize = 8
 
     useEffect(() => {
         setLoading(true)
@@ -494,8 +497,9 @@ export default function AboutUs() {
                             </Title>
 
                             {teamLeaders.length > 0 ? (
-                                <Row gutter={[24]} justify="center" style={{ marginBottom: 32 }}>
-                                    {teamLeaders.map((leader) => (
+                                <>
+                                <Row gutter={[24]} justify="center" style={{ marginBottom: 16 }}>
+                                    {teamLeaders.slice((leaderPage - 1) * pageSize, leaderPage * pageSize).map((leader) => (
                                         <Col key={leader.id || leader.email || leader.fname} xs={24} sm={12} md={8} lg={6}>
                                             <Card
                                                 bordered={false}
@@ -532,6 +536,19 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
+                                {teamLeaders.length > pageSize && (
+                                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                                        <Pagination
+                                            current={leaderPage}
+                                            pageSize={pageSize}
+                                            total={teamLeaders.length}
+                                            onChange={(page) => setLeaderPage(page)}
+                                            showSizeChanger={false}
+                                            size="small"
+                                        />
+                                    </div>
+                                )}
+                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team leaders found.</Text>
                             )}
@@ -545,8 +562,9 @@ export default function AboutUs() {
                                 Team Members
                             </Title>
                             {teamMembers.length > 0 ? (
+                                <>
                                 <Row gutter={[24]} justify="center">
-                                    {teamMembers.map((member) => (
+                                    {teamMembers.slice((memberPage - 1) * pageSize, memberPage * pageSize).map((member) => (
                                         <Col key={member.id} xs={24} sm={12} md={8} lg={6}>
                                             <Card
                                                 bordered={false}
@@ -583,6 +601,19 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
+                                {teamMembers.length > pageSize && (
+                                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                                        <Pagination
+                                            current={memberPage}
+                                            pageSize={pageSize}
+                                            total={teamMembers.length}
+                                            onChange={(page) => setMemberPage(page)}
+                                            showSizeChanger={false}
+                                            size="small"
+                                        />
+                                    </div>
+                                )}
+                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team members found yet.</Text>
                             )}
