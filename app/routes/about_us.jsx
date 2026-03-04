@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Card, Typography, Space, Row, Col, Avatar, Spin, Modal, Button, Input, Popconfirm, message, Select, Upload, Pagination } from 'antd'
+import { Card, Typography, Space, Row, Col, Avatar, Spin, Modal, Button, Input, Popconfirm, message, Select, Upload, Tabs } from 'antd'
 import {
     InfoCircleOutlined,
     ProjectOutlined,
@@ -61,6 +61,7 @@ class ErrorBoundary extends React.Component {
 export default function AboutUs() {
     const [teamLeaders, setTeamLeaders] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
+    const [teamInterns, setTeamInterns] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [selectedPerson, setSelectedPerson] = useState(null)
@@ -111,8 +112,10 @@ export default function AboutUs() {
                 const employees = Array.isArray(data) ? data : (data?.data || [])
                 const teamLeaderList = employees.filter(emp => emp.role === 'Team Leader')
                 const teamMemberList = employees.filter(emp => emp.role === 'Team Member')
+                const teamInternList = employees.filter(emp => emp.role === 'Intern')
                 setTeamLeaders(teamLeaderList)
                 setTeamMembers(teamMemberList)
+                setTeamInterns(teamInternList)
                 setLoading(false)
             })
             .catch(err => {
@@ -153,8 +156,10 @@ export default function AboutUs() {
             // Update the employee in the lists
             const updatedTeamLeaders = teamLeaders.map(l => l.id === editedEmployee.id ? editedEmployee : l)
             const updatedTeamMembers = teamMembers.map(m => m.id === editedEmployee.id ? editedEmployee : m)
+            const updatedTeamInterns = teamInterns.map(i => i.id === editedEmployee.id ? editedEmployee : i)
             setTeamLeaders(updatedTeamLeaders)
             setTeamMembers(updatedTeamMembers)
+            setTeamInterns(updatedTeamInterns)
             setSelectedPerson(editedEmployee)
             setIsEditMode(false)
             message.success('Employee updated successfully')
@@ -175,8 +180,10 @@ export default function AboutUs() {
             // Remove from lists
             const updatedTeamLeaders = teamLeaders.filter(l => l.id !== selectedPerson.id)
             const updatedTeamMembers = teamMembers.filter(m => m.id !== selectedPerson.id)
+            const updatedTeamInterns = teamInterns.filter(i => i.id !== selectedPerson.id)
             setTeamLeaders(updatedTeamLeaders)
             setTeamMembers(updatedTeamMembers)
+            setTeamInterns(updatedTeamInterns)
             setEditModalOpen(false)
             setSelectedPerson(null)
             message.success('Employee deleted successfully')
@@ -215,6 +222,8 @@ export default function AboutUs() {
                 setTeamLeaders([...teamLeaders, createdEmployee])
             } else if (createdEmployee.role === 'Team Member') {
                 setTeamMembers([...teamMembers, createdEmployee])
+            } else if (createdEmployee.role === 'Intern') {
+                setTeamInterns([...teamInterns, createdEmployee])
             }
 
             setAddModalOpen(false)
@@ -491,22 +500,22 @@ export default function AboutUs() {
 
                     {/* Team Leaders Section */}
                     {!loading && !error && (
-                        <div style={{ marginTop: 10, borderBottom: '1px solid #e8eaed', paddingBottom: 32 }}>
+                        <div style={{ marginTop: 10, borderBottom: '1px solid #e8eaed', paddingTop: 24, paddingBottom: 24 }}>
                             <Title level={4} style={{ color: '#1a1a1a', fontWeight: 600, marginBottom: 16 }}>
                                 Team Leaders
                             </Title>
 
                             {teamLeaders.length > 0 ? (
-                                <>
-                                <Row gutter={[24]} justify="center" style={{ marginBottom: 16 }}>
-                                    {teamLeaders.slice((leaderPage - 1) * pageSize, leaderPage * pageSize).map((leader) => (
-                                        <Col key={leader.id || leader.email || leader.fname} xs={24} sm={12} md={8} lg={6}>
+                                <Row gutter={[24, 24]} justify="center" style={{ marginBottom: 32, paddingLeft: 24, paddingRight: 24}}>
+                                    {teamLeaders.map((leader) => (
+                                        <Col key={leader.id || leader.email || leader.fname} xs={24} sm={12} md={8}>
                                             <Card
                                                 bordered={false}
                                                 style={{
                                                     textAlign: 'center',
                                                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                                                     borderRadius: 0
+                  
                                                 }}
                                                 bodyStyle={{ padding: 16 }}
                                             >
@@ -557,21 +566,20 @@ export default function AboutUs() {
 
                     {/* Team Members Section */}
                     {!loading && !error && (
-                        <div style={{ marginTop: 32 }}>
+                        <div style={{ marginTop: 32, paddingTop: 24, paddingBottom: 24 }}>
                             <Title level={4} style={{ color: '#1a1a1a', fontWeight: 600, marginBottom: 16 }}>
                                 Team Members
                             </Title>
                             {teamMembers.length > 0 ? (
-                                <>
-                                <Row gutter={[24]} justify="center">
-                                    {teamMembers.slice((memberPage - 1) * pageSize, memberPage * pageSize).map((member) => (
-                                        <Col key={member.id} xs={24} sm={12} md={8} lg={6}>
+                                <Row gutter={[24, 24]} justify="center" style={{ paddingLeft: 24, paddingRight: 24 }}>
+                                    {teamMembers.map((member) => (
+                                        <Col key={member.id} xs={24} sm={12} md={8}>
                                             <Card
                                                 bordered={false}
                                                 style={{
                                                     textAlign: 'center',
                                                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                                                    borderRadius: 0
+                                                    borderRadius: 0,
                                                 }}
                                                 bodyStyle={{ padding: 16 }}
                                             >
@@ -620,6 +628,57 @@ export default function AboutUs() {
                         </div>
                     )}
 
+                    {/* Interns Section */}
+                    {!loading && !error && (
+                        <div style={{ marginTop: 32, paddingTop: 24, paddingBottom: 24 }}>
+                            <Title level={4} style={{ color: '#1a1a1a', fontWeight: 600, marginBottom: 16 }}>
+                                Interns
+                            </Title>
+                            {teamInterns.length > 0 ? (
+                                <Row gutter={[24, 24]} justify="center" style={{ paddingLeft: 24, paddingRight: 24 }}>
+                                    {teamInterns.map((intern) => (
+                                        <Col key={intern.id} xs={24} sm={12} md={8}>
+                                            <Card
+                                                bordered={false}
+                                                style={{
+                                                    textAlign: 'center',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                                    borderRadius: 0
+                                                }}
+                                                bodyStyle={{ padding: 16 }}
+                                            >
+                                                <div style={{ marginBottom: 12 }}>
+                                                    <Avatar
+                                                        size={80}
+                                                        shape="square"
+                                                        src={intern.profile_picture}
+                                                        icon={<UserOutlined />}
+                                                        style={{ backgroundColor: '#faad14' }}
+                                                    />
+                                                </div>
+                                                <Text strong style={{ display: 'block', fontSize: 16, color: '#1a1a1a', marginBottom: 4 }}>
+                                                    {intern.fname}{intern.middle_initial && ' ' + intern.middle_initial + '.'} {intern.last_name}{intern.name_extension && ' ' + intern.name_extension}
+                                                </Text>
+                                                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                                                    <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 14 }}>
+                                                        <FileOutlined />
+                                                        {intern.position}
+                                                    </Text>
+                                                    <Text style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#6b7280', fontSize: 13 }}>
+                                                        <MailOutlined />
+                                                        {intern.email}
+                                                    </Text>
+                                                </Space>
+                                            </Card>
+                                        </Col>
+                                    ))}
+                                </Row>
+                            ) : (
+                                <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No interns found yet.</Text>
+                            )}
+                        </div>
+                    )}
+
                     {/* Edit Employee Modal */}
                     <Modal
                         title={selectedPerson ? "Employee Details" : "Select Employee to Edit"}
@@ -635,25 +694,92 @@ export default function AboutUs() {
                         {!selectedPerson ? (
                             <div>
                                 <Text style={{ marginBottom: 16, display: 'block' }}>Select an employee to edit:</Text>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    {[...teamLeaders, ...teamMembers].map((employee) => (
-                                        <Button
-                                            key={employee.id}
-                                            onClick={() => {
-                                                setSelectedPerson(employee)
-                                                setEditedEmployee({ ...employee })
-                                            }}
-                                            style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px' }}
-                                        >
-                                            <div style={{ textAlign: 'left', width: '100%' }}>
-                                                <div style={{ fontWeight: 600 }}>
-                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + '.'} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
+                                <Tabs
+                                    style={{ width: '100%' }}
+                                    items={[
+                                        {
+                                            key: 'leaders',
+                                            label: `Team Leaders (${teamLeaders.length})`,
+                                            children: teamLeaders.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                    {teamLeaders.map((employee) => (
+                                                        <Button
+                                                            key={employee.id}
+                                                            onClick={() => {
+                                                                setSelectedPerson(employee)
+                                                                setEditedEmployee({ ...employee })
+                                                            }}
+                                                            style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px' }}
+                                                        >
+                                                            <div style={{ textAlign: 'left', width: '100%' }}>
+                                                                <div style={{ fontWeight: 600 }}>
+                                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + '.'} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
+                                                                </div>
+                                                                <div style={{ fontSize: 12, color: '#6b7280' }}>{employee.position}</div>
+                                                            </div>
+                                                        </Button>
+                                                    ))}
                                                 </div>
-                                                <div style={{ fontSize: 12, color: '#6b7280' }}>{employee.position}</div>
-                                            </div>
-                                        </Button>
-                                    ))}
-                                </div>
+                                            ) : (
+                                                <Text style={{ color: '#6b7280' }}>No team leaders found.</Text>
+                                            ),
+                                        },
+                                        {
+                                            key: 'members',
+                                            label: `Team Members (${teamMembers.length})`,
+                                            children: teamMembers.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                    {teamMembers.map((employee) => (
+                                                        <Button
+                                                            key={employee.id}
+                                                            onClick={() => {
+                                                                setSelectedPerson(employee)
+                                                                setEditedEmployee({ ...employee })
+                                                            }}
+                                                            style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px' }}
+                                                        >
+                                                            <div style={{ textAlign: 'left', width: '100%' }}>
+                                                                <div style={{ fontWeight: 600 }}>
+                                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + '.'} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
+                                                                </div>
+                                                                <div style={{ fontSize: 12, color: '#6b7280' }}>{employee.position}</div>
+                                                            </div>
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <Text style={{ color: '#6b7280' }}>No team members found.</Text>
+                                            ),
+                                        },
+                                        {
+                                            key: 'interns',
+                                            label: `Interns (${teamInterns.length})`,
+                                            children: teamInterns.length > 0 ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                    {teamInterns.map((employee) => (
+                                                        <Button
+                                                            key={employee.id}
+                                                            onClick={() => {
+                                                                setSelectedPerson(employee)
+                                                                setEditedEmployee({ ...employee })
+                                                            }}
+                                                            style={{ justifyContent: 'flex-start', height: 'auto', padding: '12px' }}
+                                                        >
+                                                            <div style={{ textAlign: 'left', width: '100%' }}>
+                                                                <div style={{ fontWeight: 600 }}>
+                                                                    {employee.fname}{employee.middle_initial && ' ' + employee.middle_initial + '.'} {employee.last_name}{employee.name_extension && ' ' + employee.name_extension}
+                                                                </div>
+                                                                <div style={{ fontSize: 12, color: '#6b7280' }}>{employee.position}</div>
+                                                            </div>
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <Text style={{ color: '#6b7280' }}>No interns found.</Text>
+                                            ),
+                                        },
+                                    ]}
+                                />
                             </div>
                         ) : selectedPerson && (
                             <div>
@@ -878,6 +1004,16 @@ export default function AboutUs() {
                                         style={{ height: 50, textAlign: 'left' }}
                                     >
                                         Team Member
+                                    </Button>
+                                    <Button
+                                        onClick={() => {
+                                            setSelectedRoleForAdd('Intern')
+                                            setAddStep('details')
+                                        }}
+                                        size="large"
+                                        style={{ height: 50, textAlign: 'left' }}
+                                    >
+                                        Intern
                                     </Button>
                                 </div>
                             </div>
