@@ -118,10 +118,10 @@ export default function Header() {
       <div style={leftGroupStyle}>
         <div>
           <Text strong style={pageTitleStyle}>
-            Student Financial Assistance Programs
+            Commission on Higher Education
           </Text>
           <Text style={pageSubtitleStyle}>
-            Commission on Higher Education
+            Student Financial Assistance Program
           </Text>
         </div>
       </div>
