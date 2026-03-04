@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Form, Input, Button, Card, Typography, message } from 'antd'
-import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/AuthContext'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
@@ -24,7 +24,7 @@ export default function Login() {
 
   const onFinish = async (values) => {
     setLoading(true)
-    const result = await login(values.email, values.password)
+    const result = await login(values.username, values.password)
 
     if (result.success) {
       message.success('Login successful!')
@@ -68,7 +68,7 @@ export default function Login() {
                 marginBottom: 4
               }}
             >
-              Student Financial Assistance Programs
+              Commission on Higher Education
             </Text>
             <Text
               style={{
@@ -81,7 +81,7 @@ export default function Login() {
                 marginBottom: 24
               }}
             >
-              Commission on Higher Education
+              Student Financial Assistance Programs
             </Text>
           </div>
 
@@ -94,13 +94,13 @@ export default function Login() {
             className="w-full mt-2"
           >
             <Form.Item
-              name="email"
-              rules={[{ required: true, message: 'Please enter your email' }, { type: 'email', message: 'Enter a valid email' }]}
+              name="username"
+              rules={[{ required: true, message: 'Please enter your username' }]}
               style={{ marginBottom: 20 }}
             >
               <Input
-                prefix={<MailOutlined className="text-gray-400" />}
-                placeholder="Email"
+                prefix={<UserOutlined className="text-gray-400" />}
+                placeholder="Username"
                 className="h-12 rounded-lg border-gray-300 hover:border-blue-400 focus:border-blue-500"
               />
             </Form.Item>
