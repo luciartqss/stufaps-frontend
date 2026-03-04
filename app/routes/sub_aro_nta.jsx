@@ -177,7 +177,9 @@ export default function SUB_ARO_NTA() {
               </Select.Option>
             ))}
           </Select>
-          <Button size="small" icon={<PlusOutlined />} onClick={handleAddFiscalYear}>Add FY</Button>
+          {activeTab === 'SUB-ARO' && (
+            <Button size="small" icon={<PlusOutlined />} onClick={handleAddFiscalYear}>Add FY</Button>
+          )}
         </div>
 
         <Input
@@ -212,7 +214,7 @@ export default function SUB_ARO_NTA() {
             style={{ padding: '60px 0' }}
           />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(420px, 1fr))', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filteredFiles.map(f => (
               <Card
                 key={f.id}
