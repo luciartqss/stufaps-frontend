@@ -173,8 +173,13 @@ const STUDENT_FIELD_ALIASES = {
   dateOfBirth: ['dateofbirth', 'birthday', 'dob', 'birthdate'],
   contactNumber: ['contactnumber', 'contno'],
   emailAddress: ['emailaddress', 'emladd', 'email'],
-  streetBrgy: ['streetbrgy', 'stbrgy'],
-  municipalityCity: ['municipalitycity', 'muncity'],
+  civilStatus: ['civilstatus'],
+  street: ['street', 'stbrgy', 'streetbrgy'],
+  brgyPsgcCode: ['brgypsgccode'],
+  brgy: ['brgy', 'barangay'],
+  municipalityPsgcCode: ['municipalitypsgccode'],
+  municipality: ['municipality', 'muncity', 'municipalitycity'],
+  provincePsgcCode: ['provincepsgccode'],
   province: ['province', 'prov'],
   congressionalDistrict: ['congressionaldistrict', 'congdist'],
   zipCode: ['zipcode', 'zip'],
@@ -191,8 +196,10 @@ const STUDENT_FIELD_ALIASES = {
   authorityType: ['authoritytype', 'gprtype'],
   authorityNumber: ['authoritynumber', 'gprno'],
   series: ['series', 'gprseries'],
+  prioProgramCode: ['prioprogramcode'],
   priority: ['priority', 'prio'],
   basisCmo: ['basiscmo', 'priobasis', 'basiscmo'],
+  disciplineCode: ['disciplinecode'],
   scholarshipStatus: ['scholarshipstatus', 'schostatus'],
   replacement: ['replacement', 'remarks1'],
   reason: ['reason', 'remarks2'],
@@ -230,6 +237,22 @@ const buildAliasLookup = (aliasMap) => {
 const STUDENT_ALIAS_LOOKUP = buildAliasLookup(STUDENT_FIELD_ALIASES)
 const SEM_ALIAS_LOOKUP = buildAliasLookup(SEM_FIELD_ALIASES)
 
+// Expected positional column order for structure-based fallback (matches the original Excel template).
+// When header names don't match, the importer checks if the file's column count
+// is close to this list's length and maps columns by position instead.
+const STRUCTURAL_COLUMN_ORDER = [
+  'seq', 'inCharge', 'awardYear', 'scholarshipProgram', 'awardNumber',
+  'learnerReferenceNumber', 'surname', 'firstName', 'middleName', 'extension',
+  'sex', 'civilStatus', 'dateOfBirth', 'contactNumber', 'emailAddress',
+  'street', 'brgyPsgcCode', 'brgy', 'municipalityPsgcCode', 'municipality',
+  'provincePsgcCode', 'province', 'congressionalDistrict', 'zipCode',
+  'specialGroup', 'certificationNumber', 'nameOfInstitution', 'uii',
+  'institutionalType', 'regionSchoolLocated', 'prioProgramCode',
+  'degreeProgram', 'programMajor', 'disciplineCode', 'programDiscipline',
+  'programDegreeLevel', 'authorityType', 'authorityNumber', 'series',
+  'priority', 'basisCmo', 'scholarshipStatus', 'replacement', 'reason',
+]
+
 // Count how many cells in a row match known student/semester field aliases
 const countHeaderMatches = (row) => {
   if (!Array.isArray(row)) return { total: 0, studentKeys: new Set(), semKeys: new Set() }
@@ -249,23 +272,20 @@ const countHeaderMatches = (row) => {
 
 // Static student schema (2-tier max)
 const STATIC_SCHEMA = [
+  // ── Frozen identification columns (pinned when scrolling horizontally) ──
   { key: 'seq', label: 'SEQ', rowSpan: 3, width: 60 },
+  { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3, width: 140 },
+  { key: 'surname', label: 'SURNAME', rowSpan: 3, width: 140 },
+  { key: 'firstName', label: 'FIRST NAME', rowSpan: 3, width: 140 },
+  // ── Scrollable columns ──
+  { key: 'middleName', label: 'MIDDLE NAME', rowSpan: 3, width: 140 },
+  { key: 'extension', label: 'EXTENSION', rowSpan: 3, width: 80 },
+  { key: 'learnerReferenceNumber', label: 'LEARNER REFERENCE NUMBER', rowSpan: 3, width: 200 },
   { key: 'inCharge', label: 'IN-CHARGE', rowSpan: 3, width: 120 },
   { key: 'awardYear', label: 'AWARD YEAR', rowSpan: 3, width: 100 },
   { key: 'scholarshipProgram', label: 'SCHOLARSHIP PROGRAM', rowSpan: 3, width: 180 },
-  { key: 'awardNumber', label: 'AWARD NUMBER', rowSpan: 3, width: 140 },
-  { key: 'learnerReferenceNumber', label: 'LEARNER REFERENCE NUMBER', rowSpan: 3, width: 200 },
-  {
-    label: 'NAME OF GRANTEE',
-    colSpan: 4,
-    children: [
-      { key: 'surname', label: 'SURNAME', width: 140 },
-      { key: 'firstName', label: 'FIRST NAME', width: 140 },
-      { key: 'middleName', label: 'MIDDLE NAME', width: 140 },
-      { key: 'extension', label: 'EXTENSION', width: 80 },
-    ],
-  },
   { key: 'sex', label: 'SEX', rowSpan: 3, width: 80, type: 'select', options: ['Male', 'Female'] },
+  { key: 'civilStatus', label: 'CIVIL STATUS', rowSpan: 3, width: 120, type: 'select', options: ['Single', 'Married', 'Widowed', 'Separated', 'Divorced', ''] },
   { key: 'dateOfBirth', label: 'DATE OF BIRTH', rowSpan: 3, width: 120, type: 'date' },
   {
     label: 'CONTACT DETAILS',
@@ -277,10 +297,14 @@ const STATIC_SCHEMA = [
   },
   {
     label: 'COMPLETE ADDRESS',
-    colSpan: 5,
+    colSpan: 9,
     children: [
-      { key: 'streetBrgy', label: 'STREET_BRGY', width: 180 },
-      { key: 'municipalityCity', label: 'MUNICIPALITY_CITY', width: 160 },
+      { key: 'street', label: 'STREET', width: 180 },
+      { key: 'brgyPsgcCode', label: 'BRGY PSGC CODE', width: 140 },
+      { key: 'brgy', label: 'BRGY', width: 140 },
+      { key: 'municipalityPsgcCode', label: 'MUNICIPALITY PSGC CODE', width: 180 },
+      { key: 'municipality', label: 'MUNICIPALITY', width: 160 },
+      { key: 'provincePsgcCode', label: 'PROVINCE PSGC CODE', width: 160 },
       { key: 'province', label: 'PROVINCE', width: 140 },
       { key: 'congressionalDistrict', label: 'CONGRESSIONAL DISTRICT', width: 160 },
       { key: 'zipCode', label: 'ZIP CODE', width: 100 },
@@ -292,8 +316,10 @@ const STATIC_SCHEMA = [
   { key: 'uii', label: 'UII', rowSpan: 3, width: 100 },
   { key: 'institutionalType', label: 'INSTITUTIONAL TYPE', rowSpan: 3, width: 140 },
   { key: 'regionSchoolLocated', label: 'REGION WHERE THE SCHOOL IS LOCATED', rowSpan: 3, width: 220 },
+  { key: 'prioProgramCode', label: 'PRIORITY PROGRAM CODE', rowSpan: 3, width: 180 },
   { key: 'degreeProgram', label: 'DEGREE PROGRAM', rowSpan: 3, width: 200 },
   { key: 'programMajor', label: 'PROGRAM MAJOR', rowSpan: 3, width: 180 },
+  { key: 'disciplineCode', label: 'DISCIPLINE CODE', rowSpan: 3, width: 140 },
   { key: 'programDiscipline', label: 'PROGRAM DISCIPLINE', rowSpan: 3, width: 180 },
   { key: 'programDegreeLevel', label: 'PROGRAM DEGREE LEVEL', rowSpan: 3, width: 200, type: 'select', options: ['Pre-baccalaureate', 'Baccalaureate', 'Post Baccalaureate', 'Masters', 'Doctorate', ''] },
   {
@@ -364,7 +390,47 @@ const buildHeaders = (academicYears) => {
     semFirst.concat(semSecond).forEach(f => leafFields.push(f))
   })
 
-  return { row1, row2, row3, leafFields }
+  // ── Compute frozen column offsets (leftmost N leaf columns stay pinned) ──
+  const FROZEN_LEAF_COUNT = 4 // seq, awardNumber, surname, firstName
+  let frozenOffset = 0
+  for (let i = 0; i < Math.min(FROZEN_LEAF_COUNT, leafFields.length); i++) {
+    leafFields[i].frozen = true
+    leafFields[i].leftOffset = frozenOffset
+    frozenOffset += leafFields[i].width || 120
+  }
+  if (FROZEN_LEAF_COUNT > 0 && FROZEN_LEAF_COUNT <= leafFields.length) {
+    leafFields[FROZEN_LEAF_COUNT - 1].lastFrozen = true
+  }
+  const frozenWidth = frozenOffset
+
+  // Annotate header row1 cells with frozen info
+  let leafIdx = 0
+  row1.forEach(col => {
+    if (leafIdx < FROZEN_LEAF_COUNT) {
+      col.frozen = true
+      col.leftOffset = leafFields[leafIdx]?.leftOffset ?? 0
+    }
+    const span = col.children ? col.children.length : 1
+    const newLeafIdx = leafIdx + span
+    if (leafIdx < FROZEN_LEAF_COUNT && newLeafIdx >= FROZEN_LEAF_COUNT) {
+      col.lastFrozen = true
+    }
+    leafIdx = newLeafIdx
+  })
+
+  // Annotate header row2 cells with frozen info
+  row2.forEach(col => {
+    if (col.key) {
+      const lfIdx = leafFields.findIndex(f => f.key === col.key)
+      if (lfIdx >= 0 && leafFields[lfIdx]?.frozen) {
+        col.frozen = true
+        col.leftOffset = leafFields[lfIdx].leftOffset
+        if (lfIdx === FROZEN_LEAF_COUNT - 1) col.lastFrozen = true
+      }
+    }
+  })
+
+  return { row1, row2, row3, leafFields, frozenWidth }
 }
 
 // Map frontend keys to backend keys
@@ -380,11 +446,16 @@ const FRONTEND_TO_BACKEND_MAP = {
   middleName: 'middle_name',
   extension: 'extension',
   sex: 'sex',
+  civilStatus: 'civil_status',
   dateOfBirth: 'date_of_birth',
   contactNumber: 'contact_number',
   emailAddress: 'email_address',
-  streetBrgy: 'street_brgy',
-  municipalityCity: 'municipality_city',
+  street: 'street',
+  brgyPsgcCode: 'brgy_psgc_code',
+  brgy: 'brgy',
+  municipalityPsgcCode: 'municipality_psgc_code',
+  municipality: 'municipality',
+  provincePsgcCode: 'province_psgc_code',
   province: 'province',
   congressionalDistrict: 'congressional_district',
   zipCode: 'zip_code',
@@ -401,8 +472,10 @@ const FRONTEND_TO_BACKEND_MAP = {
   authorityType: 'authority_type',
   authorityNumber: 'authority_number',
   series: 'series',
+  prioProgramCode: 'prio_program_code',
   priority: 'is_priority',
   basisCmo: 'basis_cmo',
+  disciplineCode: 'discipline_code',
   scholarshipStatus: 'scholarship_status',
   replacement: 'replacement_info',
   reason: 'termination_reason',
@@ -576,7 +649,7 @@ export default function ImportBulk() {
   const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
   const [showConfirmModal, setShowConfirmModal] = useState(false)
 
-  const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields } = useMemo(
+  const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields, frozenWidth } = useMemo(
     () => buildHeaders(academicYears),
     [academicYears]
   )
@@ -675,7 +748,93 @@ export default function ImportBulk() {
         }
 
         if (bestIdx < 0 || bestScore < 5) {
-          message.error('Column headers not recognized – the file does not match the expected template.')
+          // ── Structure-based fallback: match columns by position ──
+          // Find the first row that looks like actual data (skip blanks / titles)
+          // and check if column count is close to the expected template.
+          const structColCount = STRUCTURAL_COLUMN_ORDER.length // 43 student columns
+          const tolerance = 8 // allow ±8 columns (extra AY / disbursement cols)
+
+          let structHeaderIdx = -1
+          // Try to find a header row by looking for a row whose column count is
+          // at least (structColCount - tolerance). Then data starts right after.
+          // Also accept files where the first row IS data (no header at all).
+          for (let i = 0; i < Math.min(allRows.length, 10); i += 1) {
+            const row = allRows[i] || []
+            const nonEmpty = row.filter(c => String(c ?? '').trim() !== '').length
+            if (nonEmpty >= structColCount - tolerance) {
+              structHeaderIdx = i
+              break
+            }
+          }
+
+          if (structHeaderIdx < 0) {
+            message.error('Format invalid — column headers and structure do not match the expected template.')
+            setFileLoadingState(null)
+            return
+          }
+
+          // Check if the found row is a header (has text-like cells) vs pure data.
+          // If >50% of the first structColCount cells are non-numeric strings, treat it as a header row.
+          const candidateRow = allRows[structHeaderIdx] || []
+          const sampleCells = candidateRow.slice(0, structColCount)
+          const textCells = sampleCells.filter(c => typeof c === 'string' && c.trim() !== '').length
+          const isHeaderRow = textCells / Math.max(sampleCells.length, 1) > 0.5
+          const structDataStart = isHeaderRow ? structHeaderIdx + 1 : structHeaderIdx
+
+          // Map columns by position
+          const structDataRows = allRows.slice(structDataStart).filter(row => {
+            if (!Array.isArray(row)) return false
+            return row.some(c => String(c ?? '').trim() !== '')
+          })
+
+          if (structDataRows.length === 0) {
+            message.error('Format invalid — no data rows found.')
+            setFileLoadingState(null)
+            return
+          }
+
+          setFileLoadingState({ phase: `Structure match: ${structDataRows.length} rows`, detail: `${structColCount} columns mapped by position` })
+          await new Promise(r => setTimeout(r, 0))
+
+          // Build leaf fields for empty AY (student fields only)
+          const { leafFields: structLeafFields } = buildHeaders(academicYears)
+          const structLeafMap = new Map()
+          structLeafFields.forEach(f => structLeafMap.set(f.key, f))
+
+          const normalized = structDataRows.map((row, idx) => {
+            const normalizedRow = {}
+            structLeafFields.forEach(f => { normalizedRow[f.key] = '' })
+            normalizedRow.seq = String(idx + 1)
+
+            STRUCTURAL_COLUMN_ORDER.forEach((fieldKey, colIdx) => {
+              if (colIdx >= (row?.length || 0)) return
+              if (fieldKey === 'seq') return // We generate seq ourselves
+              if (!structLeafMap.has(fieldKey)) return
+              let cellVal = row[colIdx]
+              if (cellVal === null || cellVal === undefined) cellVal = ''
+              const fieldConfig = structLeafMap.get(fieldKey)
+              if (typeof cellVal === 'number' && fieldConfig?.type === 'date') {
+                cellVal = excelDateToISO(cellVal)
+              }
+              if (typeof cellVal === 'string') {
+                cellVal = cellVal.trim()
+                if (isAmountKey(fieldKey)) cellVal = cellVal.replace(/,/g, '')
+              }
+              normalizedRow[fieldKey] = cellVal === undefined || cellVal === null ? '' : cellVal
+            })
+
+            // Derive scholarship program from award number
+            const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
+            if ((!normalizedRow.scholarshipProgram || isExcelError(normalizedRow.scholarshipProgram)) && normalizedRow.awardNumber) {
+              normalizedRow.scholarshipProgram = deriveScholarshipProgram(normalizedRow.awardNumber)
+            }
+
+            return normalizedRow
+          })
+
+          setData(normalized)
+          validateData(normalized)
+          message.success(`Loaded ${normalized.length} records from ${file.name} (matched by structure, ${structColCount} columns)`)
           setFileLoadingState(null)
           return
         }
@@ -1001,22 +1160,20 @@ export default function ImportBulk() {
       if (!newMap[idx]) newMap[idx] = { matches: [], reasons: [], tags: [] }
     }
 
-    // --- Phase 1: Missing Award No. + Status = Conflict ---
+    // --- Phase 1: Missing required fields = Conflict ---
+    // Required: Award Number, Scholarship Status, Surname, First Name
+    // (Middle Name and Extension are optional)
     rows.forEach((row, idx) => {
-      const awardNo = String(row.awardNumber || '').trim()
-      const status = String(row.scholarshipStatus || '').trim()
-      if (!awardNo && !status) {
+      const missing = []
+      if (!String(row.awardNumber || '').trim()) missing.push('Award Number')
+      if (!String(row.scholarshipStatus || '').trim()) missing.push('Scholarship Status')
+      if (!String(row.surname || '').trim()) missing.push('Surname')
+      if (!String(row.firstName || '').trim()) missing.push('First Name')
+
+      if (missing.length > 0) {
         ensureEntry(idx)
         newMap[idx].tags.push('missing_fields')
-        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing both Award Number and Scholarship Status' })
-      } else if (!awardNo) {
-        ensureEntry(idx)
-        newMap[idx].tags.push('missing_fields')
-        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing Award Number' })
-      } else if (!status) {
-        ensureEntry(idx)
-        newMap[idx].tags.push('missing_fields')
-        newMap[idx].reasons.push({ type: 'missing_fields', detail: 'Missing Scholarship Status' })
+        newMap[idx].reasons.push({ type: 'missing_fields', detail: `Missing: ${missing.join(', ')}` })
       }
     })
 
@@ -1122,7 +1279,7 @@ export default function ImportBulk() {
     }
     const c = validationCounts
     if (c.missingFields > 0) {
-      message.error(`${c.missingFields} row(s) missing Award Number and/or Scholarship Status. Fix or remove them first.`)
+      message.error(`${c.missingFields} row(s) missing required fields (Award Number, Status, or Name). Fix or remove them first.`)
       return
     }
     if (c.dbMatch > 0) {
@@ -1562,10 +1719,11 @@ export default function ImportBulk() {
         background: 'white'
       }}>
         <table
-          className="border-collapse"
           style={{ 
             minWidth: `${totalTableWidth}px`,
-            width: '100%'
+            width: '100%',
+            borderCollapse: 'separate',
+            borderSpacing: 0,
           }}
         >
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
@@ -1586,7 +1744,14 @@ export default function ImportBulk() {
                     border: '1px solid #0c7cd5',
                     whiteSpace: 'normal',
                     wordWrap: 'break-word',
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    background: '#1890ff',
+                    ...(col.frozen ? {
+                      position: 'sticky',
+                      left: col.leftOffset,
+                      zIndex: 14,
+                      ...(col.lastFrozen ? { boxShadow: '2px 0 5px rgba(0,0,0,0.1)' } : {}),
+                    } : {}),
                   }}
                 >
                   {col.label}
@@ -1605,6 +1770,7 @@ export default function ImportBulk() {
                   border: '1px solid #0c7cd5',
                   position: 'sticky',
                   right: 0,
+                  zIndex: 15,
                   background: '#1890ff'
                 }}
               >
@@ -1628,7 +1794,14 @@ export default function ImportBulk() {
                     border: '1px solid #0c7cd5',
                     whiteSpace: 'normal',
                     wordWrap: 'break-word',
-                    lineHeight: '1.2'
+                    lineHeight: '1.2',
+                    background: '#40a9ff',
+                    ...(col.frozen ? {
+                      position: 'sticky',
+                      left: col.leftOffset,
+                      zIndex: 14,
+                      ...(col.lastFrozen ? { boxShadow: '2px 0 5px rgba(0,0,0,0.1)' } : {}),
+                    } : {}),
                   }}
                 >
                   {col.label}
@@ -1693,7 +1866,14 @@ export default function ImportBulk() {
                           padding: 0,
                           border: '1px solid #f0f0f0',
                           wordWrap: 'break-word',
-                          whiteSpace: 'normal'
+                          whiteSpace: 'normal',
+                          ...(field.frozen ? {
+                            position: 'sticky',
+                            left: field.leftOffset,
+                            zIndex: 2,
+                            background: rowBg,
+                            ...(field.lastFrozen ? { boxShadow: '2px 0 5px rgba(0,0,0,0.06)' } : {}),
+                          } : {}),
                         }}
                       >
                         {field.key === 'seq' ? (
@@ -1770,6 +1950,7 @@ export default function ImportBulk() {
                         border: '1px solid #f0f0f0',
                         position: 'sticky',
                         right: 0,
+                        zIndex: 3,
                         background: rowBg,
                       }}
                     >

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
 import { API_BASE } from '../lib/config'
@@ -37,7 +37,7 @@ export function meta() {
   ]
 }
 
-function StatsCards({ financialAssistances = [] }) {
+function StatsCards({ financialAssistances = [], semester }) {
   // Handle empty data
   if (!financialAssistances || financialAssistances.length === 0) {
     return null;
@@ -174,10 +174,13 @@ export default function FinancialAssistanceEstatistikolar() {
   const [programs, setPrograms] = useState([])
 
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
 
-  useEffect(() => {
-    fetch(`${API_BASE}/scholarship_program_records/estat-count`)
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    const semParam = `?semester=${encodeURIComponent(semesterFilter)}`
+    fetch(`${API_BASE}/scholarship_program_records/estat-count${semParam}`)
       .then(res => {
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`)
@@ -185,9 +188,7 @@ export default function FinancialAssistanceEstatistikolar() {
         return res.json()
       })
       .then(data => {
-        console.log('API Response:', data)
         const programsData = data.data || data
-        console.log('Programs Data:', programsData)
         setFinancialAssistances(Array.isArray(programsData) ? programsData : [])
 
         const uniqueYears = [
@@ -206,14 +207,15 @@ export default function FinancialAssistanceEstatistikolar() {
 
         setPrograms([...uniquePrograms.sort()])
         setAcademicYears([...uniqueYears.sort()])
-        setLoading(false)
       })
       .catch(err => {
         console.error('Fetch Error:', err)
         setError(err.message)
-        setLoading(false)
       })
-  }, [])
+      .finally(() => setLoading(false))
+  }, [semesterFilter])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleAcademicYearChange = value => {
     setAcademicYearFilter(value || 'All')
@@ -290,6 +292,15 @@ export default function FinancialAssistanceEstatistikolar() {
                 <Option key={year} value={year}>{year}</Option>
               ))}
             </Select>
+            <Select
+              value={semesterFilter}
+              onChange={v => setSemesterFilter(v)}
+              style={{ width: 160 }}
+              allowClear={false}
+            >
+              <Option value="First">1st Semester</Option>
+              <Option value="Second">2nd Semester</Option>
+            </Select>
           </Space>
         </div>
       </div>
@@ -300,7 +311,7 @@ export default function FinancialAssistanceEstatistikolar() {
             const programData = filteredestatistikolar.filter(p => p.scholarship_program_name?.toUpperCase().trim() === program);
             return (
               <Col key={index} span={12}>
-                <StatsCards financialAssistances={programData} />
+                <StatsCards financialAssistances={programData} semester={semesterFilter} />
               </Col>
             );
           })}

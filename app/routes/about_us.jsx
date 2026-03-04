@@ -82,6 +82,9 @@ export default function AboutUs() {
         role: '',
         profile_picture: '',
     })
+    const [leaderPage, setLeaderPage] = useState(1)
+    const [memberPage, setMemberPage] = useState(1)
+    const pageSize = 8
 
     useEffect(() => {
         setLoading(true)
@@ -542,6 +545,19 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
+                                {teamLeaders.length > pageSize && (
+                                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                                        <Pagination
+                                            current={leaderPage}
+                                            pageSize={pageSize}
+                                            total={teamLeaders.length}
+                                            onChange={(page) => setLeaderPage(page)}
+                                            showSizeChanger={false}
+                                            size="small"
+                                        />
+                                    </div>
+                                )}
+                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team leaders found.</Text>
                             )}
@@ -593,6 +609,19 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
+                                {teamMembers.length > pageSize && (
+                                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                                        <Pagination
+                                            current={memberPage}
+                                            pageSize={pageSize}
+                                            total={teamMembers.length}
+                                            onChange={(page) => setMemberPage(page)}
+                                            showSizeChanger={false}
+                                            size="small"
+                                        />
+                                    </div>
+                                )}
+                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team members found yet.</Text>
                             )}

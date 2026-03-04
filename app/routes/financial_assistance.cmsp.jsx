@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
 // Row/Col kept for StatsCards grid and table layouts
@@ -41,7 +41,7 @@ export function meta() {
 }
 
 
-function StatsCards({ financialAssistances = [] }) {
+function StatsCards({ financialAssistances = [], semester }) {
   let totals;
 
   if (
@@ -143,6 +143,7 @@ export default function FinancialAssistanceCmsp() {
   const [error, setError] = useState(null)
   const [expandedSUC, setExpandedSUC] = useState(null)
   const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [semesterFilter, setSemesterFilter] = useState('First')
   const [programFilter, setProgramFilter] = useState('All')
 
   const [academicYears, setAcademicYears] = useState([])
@@ -150,14 +151,15 @@ export default function FinancialAssistanceCmsp() {
 
   const [expandedPrivate, setExpandedPrivate] = useState(null)
 
-  useEffect(() => {
-    fetch(`${API_BASE}/scholarship_program_records`)
+  const fetchData = useCallback(() => {
+    setLoading(true)
+    const semParam = `?semester=${encodeURIComponent(semesterFilter)}`
+    fetch(`${API_BASE}/scholarship_program_records${semParam}`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
         return res.json()
       })
       .then(data => {
-        console.log('API Response:', data)
         const programsData = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []
         setFinancialAssistances(programsData)
 
@@ -177,14 +179,15 @@ export default function FinancialAssistanceCmsp() {
 
         setPrograms([...uniquePrograms.sort()])
         setAcademicYears([...uniqueYears.sort()])
-        setLoading(false)
       })
       .catch(err => {
         console.error('Fetch Error:', err)
         setError(err.message)
-        setLoading(false)
       })
-  }, [])
+      .finally(() => setLoading(false))
+  }, [semesterFilter])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   const handleAcademicYearChange = value => {
     setAcademicYearFilter(value || 'All')
@@ -245,6 +248,15 @@ export default function FinancialAssistanceCmsp() {
                 <Option key={year} value={year}>{year}</Option>
               ))}
             </Select>
+            <Select
+              value={semesterFilter}
+              onChange={v => setSemesterFilter(v)}
+              style={{ width: 160 }}
+              allowClear={false}
+            >
+              <Option value="First">1st Semester</Option>
+              <Option value="Second">2nd Semester</Option>
+            </Select>
           </Space>
         </div>
       </div>
@@ -255,7 +267,7 @@ export default function FinancialAssistanceCmsp() {
             const programData = filteredCms.filter(p => p.scholarship_program_name === program);
             return (
               <Col key={index} span={6}>
-                <StatsCards financialAssistances={programData} />
+                <StatsCards financialAssistances={programData} semester={semesterFilter} />
               </Col>
             );
           })}

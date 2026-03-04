@@ -2,7 +2,6 @@ import { NavLink, useLocation } from 'react-router'
 import {
   DashboardOutlined,
   TeamOutlined,
-  DollarOutlined,
   InfoCircleOutlined,
   BarChartOutlined,
   FileTextOutlined,
@@ -10,7 +9,6 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import { useState, useMemo, useCallback } from 'react'
-// Note: DollarOutlined import kept for potential future use
 import { Layout, Menu, Typography } from 'antd'
 import CHEDLogo from '../assets/images/CHED_Logo.png'
 import { useAuth } from '../lib/AuthContext'
@@ -21,22 +19,22 @@ const { Text } = Typography
 // ── Static styles hoisted out of render ──────────────────────────────
 const siderBaseStyle = {
   backgroundColor: '#ffffff',
-  borderRight: '1px solid #e8e8e8',
   height: '100vh',
   position: 'fixed',
   left: 0,
   top: 0,
   bottom: 0,
   zIndex: 100,
-  boxShadow: '2px 0 8px rgba(0, 0, 0, 0.05)',
+  boxShadow: '2px 0 6px rgba(0, 0, 0, 0.04)',
+  willChange: 'contents',
+  contain: 'layout style',
 }
 
 const logoSectionStyle = {
   padding: '0 20px',
-  borderBottom: '1px solid #e8e8e8',
+  borderBottom: '1px solid #f0f0f0',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'flex-start',
   gap: '14px',
   height: '72px',
 }
@@ -96,13 +94,30 @@ const handleImgError = (e) => {
   e.target.nextSibling.style.display = 'flex'
 }
 
-// ── CSS moved to a module-level constant (parsed once, not every render) ──
+// ── Nuke every Ant Design menu transition / animation in one shot ──
 const SIDEBAR_CSS = `
+  /* Base reset: kill ALL transitions & animations inside the sidebar menu */
+  .ant-menu,
+  .ant-menu *,
+  .ant-menu *::before,
+  .ant-menu *::after {
+    transition: none !important;
+    animation: none !important;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+
+  /* Keep only a micro-fast hover/selected bg color change for visual feedback */
+  .ant-menu-item,
+  .ant-menu-submenu-title {
+    transition: background-color 80ms ease-out !important;
+  }
+
   .ant-menu-item {
     margin: 2px 0 !important;
-    border-radius: 4px !important;
-    height: 42px !important;
-    line-height: 42px !important;
+    border-radius: 6px !important;
+    height: 40px !important;
+    line-height: 40px !important;
   }
   .ant-menu-item a {
     color: #434343 !important;
@@ -133,9 +148,9 @@ const SIDEBAR_CSS = `
   }
   .ant-menu-submenu-title {
     margin: 2px 0 !important;
-    border-radius: 4px !important;
-    height: 42px !important;
-    line-height: 42px !important;
+    border-radius: 6px !important;
+    height: 40px !important;
+    line-height: 40px !important;
     color: #434343 !important;
     font-weight: 500 !important;
     font-size: 13.5px !important;
@@ -156,8 +171,8 @@ const SIDEBAR_CSS = `
   }
   .ant-menu-sub .ant-menu-item {
     padding-left: 48px !important;
-    height: 38px !important;
-    line-height: 38px !important;
+    height: 36px !important;
+    line-height: 36px !important;
   }
 `
 
