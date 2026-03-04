@@ -50,6 +50,13 @@ const fieldLabels = {
   scholarship_status: 'Status',
   learner_reference_number: 'LRN',
   basis_cmo: 'Basis (CMO)',
+  // Disbursement (StuFAPs) fields
+  nta: 'NTA',
+  fund_source: 'Fund Source',
+  voucher_tracking_no: 'Voucher Tracking No.',
+  mode_of_payment: 'Mode of Payment',
+  atm_account_no: 'ATM Account No.',
+  date_process: 'Date Processed',
 }
 
 const PAGE_SIZE = 15
@@ -63,6 +70,7 @@ const ISSUE_TYPES = [
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
 export default function DataQuality({ readOnly = false, canEdit = false }) {
@@ -162,6 +170,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     no_award_number: 0,
     duplicate_award_numbers: 0,
     incomplete_info: 0,
+    incomplete_stufaps: 0,
   })
   const [totalStudents, setTotalStudents] = useState(0)
   const [activeTab, setActiveTab] = useState('duplicate_award')
@@ -172,6 +181,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const [noLrn, setNoLrn] = useState({ students: [], total: 0, page: 1, loading: false })
   const [noAward, setNoAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incomplete, setIncomplete] = useState({ students: [], total: 0, page: 1, loading: false })
+  const [incompleteStufapsDisb, setIncompleteStufapsDisb] = useState({ students: [], total: 0, page: 1, loading: false })
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -188,6 +198,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         no_award_number: w.no_award_number?.count || 0,
         duplicate_award_numbers: w.duplicate_award_numbers?.count || 0,
         incomplete_info: w.incomplete_info?.count || 0,
+        incomplete_stufaps: w.incomplete_stufaps?.count || 0,
       })
       if (w.duplicate_award_numbers?.students) {
         setDupAward({ students: w.duplicate_award_numbers.students, total: w.duplicate_award_numbers.students.length, page: 1, loading: false })
@@ -231,6 +242,23 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }, [])
 
+  const fetchIncompleteStufapsDisb = useCallback(async (page = 1) => {
+    setIncompleteStufapsDisb(prev => ({ ...prev, loading: true }))
+    try {
+      const res = await fetch(`${API_URL}/dashboard/warnings/incomplete-stufaps?page=${page}&per_page=${PAGE_SIZE}`)
+      const data = await res.json()
+      setIncompleteStufapsDisb({
+        students: data.disbursements || [],
+        total: data.total || 0,
+        page: data.page || page,
+        loading: false,
+      })
+    } catch (err) {
+      console.error('Failed to fetch incomplete-stufaps:', err)
+      setIncompleteStufapsDisb(prev => ({ ...prev, loading: false }))
+    }
+  }, [])
+
   useEffect(() => { fetchCounts() }, [fetchCounts])
 
   useEffect(() => {
@@ -243,10 +271,15 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       no_lrn: { count: counts.no_lrn, data: noLrn, endpoint: 'no-lrn', setter: setNoLrn },
       no_award: { count: counts.no_award_number, data: noAward, endpoint: 'no-award-number', setter: setNoAward },
       incomplete: { count: counts.incomplete_info, data: incomplete, endpoint: 'incomplete-info', setter: setIncomplete },
+      incomplete_stufaps_disb: { count: counts.incomplete_stufaps, data: incompleteStufapsDisb, customFetch: fetchIncompleteStufapsDisb },
     }
     const cfg = tabConfig[activeTab]
     if (cfg && cfg.count > 0 && cfg.data.students.length === 0) {
-      fetchPaginated(cfg.endpoint, cfg.setter, 1)
+      if (cfg.customFetch) {
+        cfg.customFetch(1)
+      } else {
+        fetchPaginated(cfg.endpoint, cfg.setter, 1)
+      }
     }
   }, [activeTab, loading])
 
@@ -260,6 +293,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       no_lrn: counts.no_lrn,
       no_award: counts.no_award_number,
       incomplete: counts.incomplete_info,
+      incomplete_stufaps_disb: counts.incomplete_stufaps,
     }
     return map[key] || 0
   }, [counts])
@@ -382,7 +416,53 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       statusCol,
       viewCol,
     ],
-  }), [nameCol, statusCol, institutionCol, viewCol, missingTag])
+    incomplete_stufaps_disb: [
+      {
+        title: 'Name',
+        key: 'name',
+        render: (_, r) => {
+          const name = `${r.surname || ''}, ${r.first_name || ''}`.trim()
+          return <a onClick={() => navigate(`/students/${r.student_seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
+        },
+      },
+      { title: 'AY', dataIndex: 'academic_year', key: 'ay', width: 100 },
+      { title: 'Sem', dataIndex: 'semester', key: 'sem', width: 60, align: 'center' },
+      { title: 'CYL', dataIndex: 'curriculum_year_level', key: 'cyl', width: 60, align: 'center' },
+      {
+        title: 'Count',
+        dataIndex: 'missing_count',
+        key: 'missing_count',
+        width: 70,
+        align: 'center',
+        render: (count) => (
+          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
+        ),
+      },
+      {
+        title: 'Missing Fields',
+        dataIndex: 'missing_fields',
+        key: 'missing_fields',
+        render: (fields) => (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {(fields || []).map(f => (
+              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
+                {fieldLabels[f] || f}
+              </Tag>
+            ))}
+          </div>
+        ),
+      },
+      statusCol,
+      {
+        title: '',
+        key: 'action',
+        width: 60,
+        render: (_, r) => (
+          <a onClick={() => navigate(`/students/${r.student_seq}`)} style={{ color: '#0032a0', fontSize: 13 }}>View</a>
+        ),
+      },
+    ],
+  }), [nameCol, statusCol, institutionCol, viewCol, missingTag, navigate])
 
   // Group duplicate students by shared value for visual clarity
   const groupedDupAward = useMemo(() => {
@@ -424,9 +504,10 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       no_lrn: { data: noLrn, paginated: true, endpoint: 'no-lrn', setter: setNoLrn },
       no_award: { data: noAward, paginated: true, endpoint: 'no-award-number', setter: setNoAward },
       incomplete: { data: incomplete, paginated: true, endpoint: 'incomplete-info', setter: setIncomplete },
+      incomplete_stufaps_disb: { data: incompleteStufapsDisb, paginated: true, customFetch: fetchIncompleteStufapsDisb },
     }
     return map[tabKey] || { data: { students: [], total: 0, page: 1, loading: false }, paginated: false }
-  }, [dupAward, dupLrn, noUii, noLrn, noAward, incomplete])
+  }, [dupAward, dupLrn, noUii, noLrn, noAward, incomplete, incompleteStufapsDisb, fetchIncompleteStufapsDisb])
 
   const activeIssue = ISSUE_TYPES.find(t => t.key === activeTab)
 
@@ -439,7 +520,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     )
   }
 
-  const { data: tabData, paginated, endpoint, setter } = getTabData(activeTab)
+  const { data: tabData, paginated, endpoint, setter, customFetch } = getTabData(activeTab)
   const displayData = paginated
     ? tabData.students
     : tabData.students.slice((tabData.page - 1) * PAGE_SIZE, tabData.page * PAGE_SIZE)
@@ -665,7 +746,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                   columns={columnSets[activeTab] || []}
                   size="middle"
                   pagination={false}
-                  rowKey="seq"
+                  rowKey={activeTab === 'incomplete_stufaps_disb' ? 'id' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
                 />
                 {tabData.total > PAGE_SIZE && (
@@ -680,7 +761,11 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                       pageSize={PAGE_SIZE}
                       onChange={(page) => {
                         if (paginated) {
-                          fetchPaginated(endpoint, setter, page)
+                          if (customFetch) {
+                            customFetch(page)
+                          } else {
+                            fetchPaginated(endpoint, setter, page)
+                          }
                         }
                       }}
                       showSizeChanger={false}

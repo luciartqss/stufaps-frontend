@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
-import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
@@ -444,13 +444,28 @@ export default function StudentDetails() {
     }
   }
 
+  // StuFAPs-owned disbursement fields that should be complete
+  const STUFAPS_REQUIRED_DISB_FIELDS = ['nta', 'fund_source', 'voucher_tracking_no', 'mode_of_payment', 'atm_account_no', 'date_process']
+
+  const getDisbMissingCount = (record) => {
+    return STUFAPS_REQUIRED_DISB_FIELDS.filter(f => !record[f] || record[f] === '').length
+  }
+
   // Detail item for expanded row
-  const DetailItem = ({ label, value }) => (
-    <div style={{ marginBottom: 8 }}>
-      <Text style={{ fontSize: 12, color: '#8c8c8c', display: 'block', marginBottom: 2 }}>{label}</Text>
-      <Text style={{ fontSize: 13, color: value && value !== 'N/A' ? '#262626' : '#bfbfbf' }}>{value || '—'}</Text>
-    </div>
-  )
+  const DetailItem = ({ label, value, warn }) => {
+    const empty = !value || value === 'N/A' || value === '—'
+    return (
+      <div style={{
+        marginBottom: 8,
+        ...(warn && empty ? { background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 4, padding: '4px 8px', margin: '0 -8px 8px' } : {}),
+      }}>
+        <Text style={{ fontSize: 12, color: warn && empty ? '#d48806' : '#8c8c8c', display: 'block', marginBottom: 2 }}>
+          {label} {warn && empty && <span style={{ fontSize: 10, color: '#d48806' }}>(missing)</span>}
+        </Text>
+        <Text style={{ fontSize: 13, color: empty ? '#bfbfbf' : '#262626' }}>{empty ? '—' : value}</Text>
+      </div>
+    )
+  }
 
   // Expanded row content — grouped to match backend $fillable sections
   const expandedRowRender = (record) => (
@@ -462,12 +477,12 @@ export default function StudentDetails() {
             <div style={{ width: 3, height: 14, background: '#1677ff', borderRadius: 2 }} />
             <Text strong style={{ fontSize: 12, color: '#1677ff', textTransform: 'uppercase', letterSpacing: 0.5 }}>StuFAPs</Text>
           </div>
-          <DetailItem label="NTA" value={record.nta} />
-          <DetailItem label="Fund Source" value={record.fund_source} />
-          <DetailItem label="Voucher Tracking No." value={record.voucher_tracking_no} />
-          <DetailItem label="Mode of Payment" value={record.mode_of_payment} />
-          <DetailItem label="ATM Account No." value={record.atm_account_no} />
-          <DetailItem label="Date Process" value={formatDate(record.date_process)} />
+          <DetailItem label="NTA" value={record.nta} warn />
+          <DetailItem label="Fund Source" value={record.fund_source} warn />
+          <DetailItem label="Voucher Tracking No." value={record.voucher_tracking_no} warn />
+          <DetailItem label="Mode of Payment" value={record.mode_of_payment} warn />
+          <DetailItem label="ATM Account No." value={record.atm_account_no} warn />
+          <DetailItem label="Date Process" value={formatDate(record.date_process)} warn />
         </Col>
         {/* Accounting Fields */}
         <Col span={8}>
@@ -513,16 +528,12 @@ export default function StudentDetails() {
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
-      render: (text) => {
-        const colorMap = {
-          'Paid': 'green',
-          'Pending': 'orange',
-          'Processing': 'blue',
-          'Cancelled': 'red',
-        }
-        return text ? <Tag color={colorMap[text] || 'default'}>{text}</Tag> : <Text type="secondary">—</Text>
+      render: (_, record) => {
+        const accountingComplete = record.voucher_no && record.voucher_date && record.account_check_no
+        const cashierComplete = record.amount && record.lddap_no && record.disbursement_date
+        const isPaid = accountingComplete && cashierComplete
+        return <Tag color={isPaid ? 'green' : 'orange'}>{isPaid ? 'Paid' : 'Unpaid'}</Tag>
       },
     },
     {
@@ -531,6 +542,21 @@ export default function StudentDetails() {
       key: 'remarks',
       ellipsis: true,
       render: (text) => text || <Text type="secondary">—</Text>,
+    },
+    {
+      title: 'Completeness',
+      key: 'completeness',
+      width: 110,
+      align: 'center',
+      render: (_, record) => {
+        const missing = getDisbMissingCount(record)
+        if (missing === 0) return <Tag color="success" style={{ fontSize: 11 }}>Complete</Tag>
+        return (
+          <Tag color="warning" style={{ fontWeight: 600, fontSize: 11 }}>
+            {missing}/{STUFAPS_REQUIRED_DISB_FIELDS.length} missing
+          </Tag>
+        )
+      },
     },
     {
       title: 'Actions',
@@ -1148,20 +1174,10 @@ export default function StudentDetails() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 18, background: '#8c8c8c', borderRadius: 2 }} />
-              <Text strong style={{ fontSize: 14, color: '#262626' }}>Status & Remarks</Text>
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>Remarks</Text>
             </div>
             <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item name="status" label="Status">
-                  <Select placeholder="Select status" allowClear>
-                    <Select.Option value="Paid">Paid</Select.Option>
-                    <Select.Option value="Pending">Pending</Select.Option>
-                    <Select.Option value="Processing">Processing</Select.Option>
-                    <Select.Option value="Cancelled">Cancelled</Select.Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={16}>
+              <Col span={24}>
                 <Form.Item name="remarks" label="Remarks">
                   <Input.TextArea 
                     rows={2} 
