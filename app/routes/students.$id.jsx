@@ -242,15 +242,16 @@ export default function StudentDetails() {
     
     // Compare relevant fields (excluding id, timestamps, etc.)
     const fieldsToCompare = [
-      'sex', 'date_of_birth', 'special_group', 'certification_number', 'learner_reference_number',
+      'in_charge', 'award_year', 'scholarship_program', 'award_number', 'learner_reference_number',
       'surname', 'first_name', 'middle_name', 'extension',
-      'contact_number', 'email_address', 'street_brgy', 'municipality_city',
-      'province', 'congressional_district', 'zip_code', 'name_of_institution',
-      'uii', 'institutional_type', 'region', 'degree_program', 'program_major',
-      'program_discipline', 'program_degree_level', 'in_charge', 'award_year',
-      'scholarship_program', 'award_number', 'authority_type', 'authority_number',
-      'series', 'is_priority', 'basis_cmo', 'replacement_info', 'termination_reason',
-      'scholarship_status'
+      'sex', 'civil_status', 'date_of_birth', 'contact_number', 'email_address',
+      'street', 'brgy_psgc_code', 'brgy', 'municipality_psgc_code', 'municipality',
+      'province_psgc_code', 'province', 'congressional_district', 'zip_code',
+      'special_group', 'certification_number',
+      'name_of_institution', 'uii', 'institutional_type', 'region', 'prio_program_code',
+      'degree_program', 'program_major', 'discipline_code', 'program_discipline', 'program_degree_level',
+      'authority_type', 'authority_number', 'series', 'is_priority', 'basis_cmo',
+      'scholarship_status', 'replacement_info', 'termination_reason'
     ]
     
     return fieldsToCompare.some(field => {
@@ -599,14 +600,15 @@ export default function StudentDetails() {
 
   // Count incomplete fields — must match backend DashboardController $requiredFields exactly
   const requiredFields = [
-    'surname', 'first_name', 'sex', 'date_of_birth',
-    'contact_number', 'email_address', 'street_brgy', 'municipality_city',
-    'province', 'congressional_district', 'zip_code',
-    'name_of_institution', 'uii', 'institutional_type', 'region',
-    'degree_program', 'program_degree_level',
-    'in_charge', 'award_year', 'scholarship_program', 'award_number',
-    'authority_type', 'authority_number', 'series', 'scholarship_status',
-    'learner_reference_number', 'basis_cmo'
+    'in_charge', 'award_year', 'scholarship_program', 'award_number', 'learner_reference_number',
+    'surname', 'first_name', 'sex', 'civil_status', 'date_of_birth',
+    'contact_number', 'email_address',
+    'street', 'brgy_psgc_code', 'brgy', 'municipality_psgc_code', 'municipality',
+    'province_psgc_code', 'province', 'congressional_district', 'zip_code',
+    'name_of_institution', 'uii', 'institutional_type', 'region', 'prio_program_code',
+    'degree_program', 'discipline_code', 'program_degree_level',
+    'authority_type', 'authority_number', 'series',
+    'scholarship_status', 'basis_cmo'
   ]
   const getMissingFields = () => requiredFields.filter(f => !student[f] || student[f] === '')
   const getIncompleteCount = () => getMissingFields().length
@@ -755,6 +757,22 @@ export default function StudentDetails() {
                 handleChange={handleChange} 
               />
               <Field 
+                label="Civil Status" 
+                value={student.civil_status} 
+                field="civil_status" 
+                type="select" 
+                required
+                options={[
+                  { label: 'Single', value: 'Single' },
+                  { label: 'Married', value: 'Married' },
+                  { label: 'Widowed', value: 'Widowed' },
+                  { label: 'Separated', value: 'Separated' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field 
                 label="Date of Birth" 
                 value={student.date_of_birth ? `${formatDate(student.date_of_birth)} (${calculateAge(student.date_of_birth)} yrs)` : null} 
                 field="date_of_birth" 
@@ -790,12 +808,15 @@ export default function StudentDetails() {
             <Row gutter={[12, 8]}>
               <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Email Address" value={student.email_address} field="email_address" type="email" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Street / Barangay" value={student.street_brgy} field="street_brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="City / Municipality" value={student.municipality_city} field="municipality_city" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Street" value={student.street} field="street" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay" value={student.brgy} field="brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality" value={student.municipality} field="municipality" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Province" value={student.province} field="province" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Congressional District" value={student.congressional_district} field="congressional_district" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Col span={12} />
             </Row>
           </Card>
         </Col>
@@ -810,8 +831,10 @@ export default function StudentDetails() {
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Region" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
