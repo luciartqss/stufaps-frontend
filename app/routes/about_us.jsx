@@ -82,9 +82,6 @@ export default function AboutUs() {
         role: '',
         profile_picture: '',
     })
-    const [leaderPage, setLeaderPage] = useState(1)
-    const [memberPage, setMemberPage] = useState(1)
-    const pageSize = 8
 
     useEffect(() => {
         setLoading(true)
@@ -545,19 +542,6 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
-                                {teamLeaders.length > pageSize && (
-                                    <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                                        <Pagination
-                                            current={leaderPage}
-                                            pageSize={pageSize}
-                                            total={teamLeaders.length}
-                                            onChange={(page) => setLeaderPage(page)}
-                                            showSizeChanger={false}
-                                            size="small"
-                                        />
-                                    </div>
-                                )}
-                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team leaders found.</Text>
                             )}
@@ -609,26 +593,13 @@ export default function AboutUs() {
                                         </Col>
                                     ))}
                                 </Row>
-                                {teamMembers.length > pageSize && (
-                                    <div style={{ textAlign: 'center', marginTop: 16 }}>
-                                        <Pagination
-                                            current={memberPage}
-                                            pageSize={pageSize}
-                                            total={teamMembers.length}
-                                            onChange={(page) => setMemberPage(page)}
-                                            showSizeChanger={false}
-                                            size="small"
-                                        />
-                                    </div>
-                                )}
-                                </>
                             ) : (
                                 <Text style={{ display: 'block', color: '#6b7280', padding: '20px 0' }}>No team members found yet.</Text>
                             )}
                         </div>
                     )}
 
-                    {/* Interns Section */}
+                    {/* team Interns */}
                     {!loading && !error && (
                         <div style={{ marginTop: 32, paddingTop: 24, paddingBottom: 24 }}>
                             <Title level={4} style={{ color: '#1a1a1a', fontWeight: 600, marginBottom: 16 }}>
