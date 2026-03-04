@@ -61,6 +61,7 @@ const WARNING_CONFIG = [
   { key: 'incomplete_info', label: 'Incomplete Records', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96' },
   { key: 'incomplete_accounting', label: 'Incomplete Accounting', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality/accounting' },
   { key: 'incomplete_cashier', label: 'Incomplete Cashier', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality/cashier' },
+  { key: 'incomplete_stufaps', label: 'Incomplete StuFAPs Disb.', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality' },
   { key: 'no_award_number', label: 'Missing Award Number', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
   { key: 'no_lrn', label: 'Missing LRN', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
   { key: 'no_uii', label: 'Missing UII (Institutions)', severity: 'low', color: '#7c7c7c', bg: '#fafafa', border: '#d9d9d9' },
@@ -100,6 +101,7 @@ export default function Dashboard() {
       incomplete_info: { count: 0 },
       incomplete_accounting: { count: 0 },
       incomplete_cashier: { count: 0 },
+      incomplete_stufaps: { count: 0 },
     },
   })
 
@@ -164,6 +166,7 @@ export default function Dashboard() {
           incomplete_info: { count: 0 },
           incomplete_accounting: { count: 0 },
           incomplete_cashier: { count: 0 },
+          incomplete_stufaps: { count: 0 },
         },
       })
     } catch (err) {
@@ -221,7 +224,8 @@ export default function Dashboard() {
            (w.duplicate_award_numbers?.count || 0) +
            (w.incomplete_info?.count || 0) +
            (w.incomplete_accounting?.count || 0) +
-           (w.incomplete_cashier?.count || 0)
+           (w.incomplete_cashier?.count || 0) +
+           (w.incomplete_stufaps?.count || 0)
   }
 
   const getActiveWarnings = () => {

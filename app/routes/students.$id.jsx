@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
-import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
+import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
@@ -242,15 +242,16 @@ export default function StudentDetails() {
     
     // Compare relevant fields (excluding id, timestamps, etc.)
     const fieldsToCompare = [
-      'sex', 'date_of_birth', 'special_group', 'certification_number', 'learner_reference_number',
+      'in_charge', 'award_year', 'scholarship_program', 'award_number', 'learner_reference_number',
       'surname', 'first_name', 'middle_name', 'extension',
-      'contact_number', 'email_address', 'street_brgy', 'municipality_city',
-      'province', 'congressional_district', 'zip_code', 'name_of_institution',
-      'uii', 'institutional_type', 'region', 'degree_program', 'program_major',
-      'program_discipline', 'program_degree_level', 'in_charge', 'award_year',
-      'scholarship_program', 'award_number', 'authority_type', 'authority_number',
-      'series', 'is_priority', 'basis_cmo', 'replacement_info', 'termination_reason',
-      'scholarship_status'
+      'sex', 'civil_status', 'date_of_birth', 'contact_number', 'email_address',
+      'street', 'brgy_psgc_code', 'brgy', 'municipality_psgc_code', 'municipality',
+      'province_psgc_code', 'province', 'congressional_district', 'zip_code',
+      'special_group', 'certification_number',
+      'name_of_institution', 'uii', 'institutional_type', 'region', 'prio_program_code',
+      'degree_program', 'program_major', 'discipline_code', 'program_discipline', 'program_degree_level',
+      'authority_type', 'authority_number', 'series', 'is_priority', 'basis_cmo',
+      'scholarship_status', 'replacement_info', 'termination_reason'
     ]
     
     return fieldsToCompare.some(field => {
@@ -443,13 +444,28 @@ export default function StudentDetails() {
     }
   }
 
+  // StuFAPs-owned disbursement fields that should be complete
+  const STUFAPS_REQUIRED_DISB_FIELDS = ['nta', 'fund_source', 'voucher_tracking_no', 'mode_of_payment', 'atm_account_no', 'date_process']
+
+  const getDisbMissingCount = (record) => {
+    return STUFAPS_REQUIRED_DISB_FIELDS.filter(f => !record[f] || record[f] === '').length
+  }
+
   // Detail item for expanded row
-  const DetailItem = ({ label, value }) => (
-    <div style={{ marginBottom: 8 }}>
-      <Text style={{ fontSize: 12, color: '#8c8c8c', display: 'block', marginBottom: 2 }}>{label}</Text>
-      <Text style={{ fontSize: 13, color: value && value !== 'N/A' ? '#262626' : '#bfbfbf' }}>{value || '—'}</Text>
-    </div>
-  )
+  const DetailItem = ({ label, value, warn }) => {
+    const empty = !value || value === 'N/A' || value === '—'
+    return (
+      <div style={{
+        marginBottom: 8,
+        ...(warn && empty ? { background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 4, padding: '4px 8px', margin: '0 -8px 8px' } : {}),
+      }}>
+        <Text style={{ fontSize: 12, color: warn && empty ? '#d48806' : '#8c8c8c', display: 'block', marginBottom: 2 }}>
+          {label} {warn && empty && <span style={{ fontSize: 10, color: '#d48806' }}>(missing)</span>}
+        </Text>
+        <Text style={{ fontSize: 13, color: empty ? '#bfbfbf' : '#262626' }}>{empty ? '—' : value}</Text>
+      </div>
+    )
+  }
 
   // Expanded row content — grouped to match backend $fillable sections
   const expandedRowRender = (record) => (
@@ -461,12 +477,12 @@ export default function StudentDetails() {
             <div style={{ width: 3, height: 14, background: '#1677ff', borderRadius: 2 }} />
             <Text strong style={{ fontSize: 12, color: '#1677ff', textTransform: 'uppercase', letterSpacing: 0.5 }}>StuFAPs</Text>
           </div>
-          <DetailItem label="NTA" value={record.nta} />
-          <DetailItem label="Fund Source" value={record.fund_source} />
-          <DetailItem label="Voucher Tracking No." value={record.voucher_tracking_no} />
-          <DetailItem label="Mode of Payment" value={record.mode_of_payment} />
-          <DetailItem label="ATM Account No." value={record.atm_account_no} />
-          <DetailItem label="Date Process" value={formatDate(record.date_process)} />
+          <DetailItem label="NTA" value={record.nta} warn />
+          <DetailItem label="Fund Source" value={record.fund_source} warn />
+          <DetailItem label="Voucher Tracking No." value={record.voucher_tracking_no} warn />
+          <DetailItem label="Mode of Payment" value={record.mode_of_payment} warn />
+          <DetailItem label="ATM Account No." value={record.atm_account_no} warn />
+          <DetailItem label="Date Process" value={formatDate(record.date_process)} warn />
         </Col>
         {/* Accounting Fields */}
         <Col span={8}>
@@ -512,16 +528,12 @@ export default function StudentDetails() {
     },
     {
       title: 'Status',
-      dataIndex: 'status',
       key: 'status',
-      render: (text) => {
-        const colorMap = {
-          'Paid': 'green',
-          'Pending': 'orange',
-          'Processing': 'blue',
-          'Cancelled': 'red',
-        }
-        return text ? <Tag color={colorMap[text] || 'default'}>{text}</Tag> : <Text type="secondary">—</Text>
+      render: (_, record) => {
+        const accountingComplete = record.voucher_no && record.voucher_date && record.account_check_no
+        const cashierComplete = record.amount && record.lddap_no && record.disbursement_date
+        const isPaid = accountingComplete && cashierComplete
+        return <Tag color={isPaid ? 'green' : 'orange'}>{isPaid ? 'Paid' : 'Unpaid'}</Tag>
       },
     },
     {
@@ -530,6 +542,21 @@ export default function StudentDetails() {
       key: 'remarks',
       ellipsis: true,
       render: (text) => text || <Text type="secondary">—</Text>,
+    },
+    {
+      title: 'Completeness',
+      key: 'completeness',
+      width: 110,
+      align: 'center',
+      render: (_, record) => {
+        const missing = getDisbMissingCount(record)
+        if (missing === 0) return <Tag color="success" style={{ fontSize: 11 }}>Complete</Tag>
+        return (
+          <Tag color="warning" style={{ fontWeight: 600, fontSize: 11 }}>
+            {missing}/{STUFAPS_REQUIRED_DISB_FIELDS.length} missing
+          </Tag>
+        )
+      },
     },
     {
       title: 'Actions',
@@ -599,14 +626,15 @@ export default function StudentDetails() {
 
   // Count incomplete fields — must match backend DashboardController $requiredFields exactly
   const requiredFields = [
-    'surname', 'first_name', 'sex', 'date_of_birth',
-    'contact_number', 'email_address', 'street_brgy', 'municipality_city',
-    'province', 'congressional_district', 'zip_code',
-    'name_of_institution', 'uii', 'institutional_type', 'region',
-    'degree_program', 'program_degree_level',
-    'in_charge', 'award_year', 'scholarship_program', 'award_number',
-    'authority_type', 'authority_number', 'series', 'scholarship_status',
-    'learner_reference_number', 'basis_cmo'
+    'in_charge', 'award_year', 'scholarship_program', 'award_number', 'learner_reference_number',
+    'surname', 'first_name', 'sex', 'civil_status', 'date_of_birth',
+    'contact_number', 'email_address',
+    'street', 'brgy_psgc_code', 'brgy', 'municipality_psgc_code', 'municipality',
+    'province_psgc_code', 'province', 'congressional_district', 'zip_code',
+    'name_of_institution', 'uii', 'institutional_type', 'region', 'prio_program_code',
+    'degree_program', 'discipline_code', 'program_degree_level',
+    'authority_type', 'authority_number', 'series',
+    'scholarship_status', 'basis_cmo'
   ]
   const getMissingFields = () => requiredFields.filter(f => !student[f] || student[f] === '')
   const getIncompleteCount = () => getMissingFields().length
@@ -755,6 +783,22 @@ export default function StudentDetails() {
                 handleChange={handleChange} 
               />
               <Field 
+                label="Civil Status" 
+                value={student.civil_status} 
+                field="civil_status" 
+                type="select" 
+                required
+                options={[
+                  { label: 'Single', value: 'Single' },
+                  { label: 'Married', value: 'Married' },
+                  { label: 'Widowed', value: 'Widowed' },
+                  { label: 'Separated', value: 'Separated' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field 
                 label="Date of Birth" 
                 value={student.date_of_birth ? `${formatDate(student.date_of_birth)} (${calculateAge(student.date_of_birth)} yrs)` : null} 
                 field="date_of_birth" 
@@ -790,12 +834,15 @@ export default function StudentDetails() {
             <Row gutter={[12, 8]}>
               <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Email Address" value={student.email_address} field="email_address" type="email" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Street / Barangay" value={student.street_brgy} field="street_brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="City / Municipality" value={student.municipality_city} field="municipality_city" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Street" value={student.street} field="street" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay" value={student.brgy} field="brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality" value={student.municipality} field="municipality" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Province" value={student.province} field="province" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Congressional District" value={student.congressional_district} field="congressional_district" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Col span={12} />
             </Row>
           </Card>
         </Col>
@@ -810,8 +857,10 @@ export default function StudentDetails() {
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Region" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
@@ -1125,20 +1174,10 @@ export default function StudentDetails() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ width: 4, height: 18, background: '#8c8c8c', borderRadius: 2 }} />
-              <Text strong style={{ fontSize: 14, color: '#262626' }}>Status & Remarks</Text>
+              <Text strong style={{ fontSize: 14, color: '#262626' }}>Remarks</Text>
             </div>
             <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item name="status" label="Status">
-                  <Select placeholder="Select status" allowClear>
-                    <Select.Option value="Paid">Paid</Select.Option>
-                    <Select.Option value="Pending">Pending</Select.Option>
-                    <Select.Option value="Processing">Processing</Select.Option>
-                    <Select.Option value="Cancelled">Cancelled</Select.Option>
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={16}>
+              <Col span={24}>
                 <Form.Item name="remarks" label="Remarks">
                   <Input.TextArea 
                     rows={2} 

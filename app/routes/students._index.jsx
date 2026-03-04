@@ -24,12 +24,15 @@ const useDebounce = (value, delay) => {
 const SEM_FIELDS = [
   { key: 'nta', label: 'NTA' },
   { key: 'fundSource', label: 'FUND SOURCE' },
-  { key: 'amount', label: 'AMOUNT' },
-  { key: 'voucherNumber', label: 'VOUCHER NUMBER' },
+  { key: 'voucherTrackingNo', label: 'VOUCHER TRACKING NO.' },
   { key: 'modeOfPayment', label: 'MODE OF PAYMENT' },
+  { key: 'atmAccountNo', label: 'ATM ACCOUNT NO.' },
+  { key: 'dateProcess', label: 'DATE PROCESS' },
+  { key: 'voucherNo', label: 'VOUCHER NO.' },
+  { key: 'voucherDate', label: 'VOUCHER DATE' },
   { key: 'accountCheckNo', label: 'ACCOUNT/CHECK NO.' },
-  { key: 'paymentAmount', label: 'PAYMENT AMOUNT' },
-  { key: 'lddapNumber', label: 'LDDAP NUMBER' },
+  { key: 'amount', label: 'AMOUNT' },
+  { key: 'lddapNo', label: 'LDDAP NO.' },
   { key: 'disbursementDate', label: 'DISBURSEMENT DATE' },
   { key: 'status', label: 'STATUS' },
   { key: 'remarks', label: 'REMARKS' },
@@ -53,6 +56,7 @@ const STATIC_SCHEMA = [
     ],
   },
   { key: 'sex', label: 'SEX', rowSpan: 3 },
+  { key: 'civilStatus', label: 'CIVIL STATUS', rowSpan: 3 },
   { key: 'dateOfBirth', label: 'DATE OF BIRTH', rowSpan: 3 },
   {
     label: 'CONTACT DETAILS',
@@ -64,10 +68,14 @@ const STATIC_SCHEMA = [
   },
   {
     label: 'COMPLETE ADDRESS',
-    colSpan: 5,
+    colSpan: 9,
     children: [
-      { key: 'streetBrgy', label: 'STREET_BRGY' },
-      { key: 'municipalityCity', label: 'MUNICIPALITY_CITY' },
+      { key: 'street', label: 'STREET' },
+      { key: 'brgyPsgcCode', label: 'BRGY PSGC CODE' },
+      { key: 'brgy', label: 'BRGY' },
+      { key: 'municipalityPsgcCode', label: 'MUNICIPALITY PSGC CODE' },
+      { key: 'municipality', label: 'MUNICIPALITY' },
+      { key: 'provincePsgcCode', label: 'PROVINCE PSGC CODE' },
       { key: 'province', label: 'PROVINCE' },
       { key: 'congressionalDistrict', label: 'CONGRESSIONAL DISTRICT' },
       { key: 'zipCode', label: 'ZIP CODE' },
@@ -79,8 +87,10 @@ const STATIC_SCHEMA = [
   { key: 'uii', label: 'UII', rowSpan: 3 },
   { key: 'institutionalType', label: 'INSTITUTIONAL TYPE', rowSpan: 3 },
   { key: 'regionSchoolLocated', label: 'REGION WHERE THE SCHOOL IS LOCATED', rowSpan: 3 },
+  { key: 'prioProgramCode', label: 'PRIORITY PROGRAM CODE', rowSpan: 3 },
   { key: 'degreeProgram', label: 'DEGREE PROGRAM', rowSpan: 3 },
   { key: 'programMajor', label: 'PROGRAM MAJOR', rowSpan: 3 },
+  { key: 'disciplineCode', label: 'DISCIPLINE CODE', rowSpan: 3 },
   { key: 'programDiscipline', label: 'PROGRAM DISCIPLINE', rowSpan: 3 },
   { key: 'programDegreeLevel', label: 'PROGRAM DEGREE LEVEL', rowSpan: 3 },
   {
@@ -176,11 +186,16 @@ const STUDENT_TO_EXPORT = {
   middleName: 'middle_name',
   extension: 'extension',
   sex: 'sex',
+  civilStatus: 'civil_status',
   dateOfBirth: 'date_of_birth',
   contactNumber: 'contact_number',
   emailAddress: 'email_address',
-  streetBrgy: 'street_brgy',
-  municipalityCity: 'municipality_city',
+  street: 'street',
+  brgyPsgcCode: 'brgy_psgc_code',
+  brgy: 'brgy',
+  municipalityPsgcCode: 'municipality_psgc_code',
+  municipality: 'municipality',
+  provincePsgcCode: 'province_psgc_code',
   province: 'province',
   congressionalDistrict: 'congressional_district',
   zipCode: 'zip_code',
@@ -190,8 +205,10 @@ const STUDENT_TO_EXPORT = {
   uii: 'uii',
   institutionalType: 'institutional_type',
   regionSchoolLocated: 'region',
+  prioProgramCode: 'prio_program_code',
   degreeProgram: 'degree_program',
   programMajor: 'program_major',
+  disciplineCode: 'discipline_code',
   programDiscipline: 'program_discipline',
   programDegreeLevel: 'program_degree_level',
   authorityType: 'authority_type',
@@ -207,14 +224,14 @@ const STUDENT_TO_EXPORT = {
 const DISB_FIELD_MAP = {
   nta: 'nta',
   fundSource: 'fund_source',
-  amount: 'amount',
   voucherTrackingNo: 'voucher_tracking_no',
-  voucherNo: 'voucher_no',
-  voucherDate: 'voucher_date',
   modeOfPayment: 'mode_of_payment',
   atmAccountNo: 'atm_account_no',
   dateProcess: 'date_process',
+  voucherNo: 'voucher_no',
+  voucherDate: 'voucher_date',
   accountCheckNo: 'account_check_no',
+  amount: 'amount',
   lddapNo: 'lddap_no',
   disbursementDate: 'disbursement_date',
   status: 'status',
@@ -717,24 +734,19 @@ export default function StudentsIndex() {
   }
 
   // Handle "Extract Excel" button click - build XLSX with merged headers like bulk import
-  const handleExtractExcel = async () => {
+  const handleExtractExcel = () => {
     message.loading({ content: 'Preparing export...', key: 'export' })
     
     try {
-      // Fetch all filtered students for export (no pagination)
-      const queryString = buildQueryParams({ page: undefined, pageSize: undefined })
-      const response = await fetch(`${API_BASE}/students/export?${queryString}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch students for export')
-      }
-      const exportStudents = await response.json()
+      // Use the currently loaded (filtered) students directly
+      const exportStudents = students
 
       if (exportStudents.length === 0) {
         message.info({ content: 'No students to export', key: 'export' })
         return
       }
 
-      // Build academic years from export data
+      // Build academic years from current data
       const labels = new Set()
       exportStudents.forEach((s) => {
         (s.disbursements || []).forEach((d) => {
