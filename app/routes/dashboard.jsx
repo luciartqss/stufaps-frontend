@@ -1,4 +1,4 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Select, Statistic, Space, Button, Badge, Tooltip } from 'antd'
+import { Card, Row, Col, Typography, Spin, Empty, Select, Space, Button, Badge, Tooltip, Progress } from 'antd'
 import {
   TeamOutlined,
   CheckCircleOutlined,
@@ -10,7 +10,9 @@ import {
   RightOutlined,
   ExclamationCircleOutlined,
   AlertOutlined,
-  BankOutlined,
+  AuditOutlined,
+  FileTextOutlined,
+  WalletOutlined,
 } from '@ant-design/icons'
 import {
   PieChart,
@@ -90,8 +92,12 @@ export default function Dashboard() {
     },
     statusDistribution: [],
     scholarshipPrograms: [],
-    institutionTypes: [],
-    recentRegistrations: [],
+    dataQuality: {
+      total_disbursements: 0,
+      stufaps: { total: 0, incomplete: 0, complete: 0 },
+      accounting: { total: 0, incomplete: 0, complete: 0 },
+      cashier: { total: 0, incomplete: 0, complete: 0 },
+    },
     warnings: {
       no_uii: { count: 0 },
       no_lrn: { count: 0 },
@@ -152,11 +158,12 @@ export default function Dashboard() {
           program: item.scholarship_program || 'Unknown',
           count: parseInt(item.count) || 0,
         })),
-        institutionTypes: (data.institution_types || []).map(item => ({
-          type: item.institutional_type || 'Unknown',
-          count: parseInt(item.count) || 0,
-        })),
-        recentRegistrations: data.recent_registrations || [],
+        dataQuality: data.data_quality || {
+          total_disbursements: 0,
+          stufaps: { total: 0, incomplete: 0, complete: 0 },
+          accounting: { total: 0, incomplete: 0, complete: 0 },
+          cashier: { total: 0, incomplete: 0, complete: 0 },
+        },
         warnings: data.warnings || {
           no_uii: { count: 0 },
           no_lrn: { count: 0 },
@@ -232,52 +239,7 @@ export default function Dashboard() {
     return WARNING_CONFIG.filter(w => (dashboardData.warnings[w.key]?.count || 0) > 0)
   }
 
-  const formatStudentName = (record) => {
-    const parts = [record.surname, record.first_name]
-    if (record.middle_name) parts.push(record.middle_name.charAt(0) + '.')
-    if (record.extension) parts.push(record.extension)
-    return parts.join(', ')
-  }
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '—'
-    const d = new Date(dateStr)
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-  }
-
-  // Recent registrations table columns
-  const recentColumns = [
-    {
-      title: 'Name',
-      key: 'name',
-      ellipsis: true,
-      render: (_, r) => <Text strong style={{ fontSize: 13 }}>{formatStudentName(r)}</Text>,
-    },
-    {
-      title: 'Program',
-      dataIndex: 'degree_program',
-      key: 'degree_program',
-      ellipsis: true,
-      render: (v) => <Text style={{ fontSize: 13, color: '#595959' }}>{v || '—'}</Text>,
-    },
-    {
-      title: 'Status',
-      dataIndex: 'scholarship_status',
-      key: 'status',
-      width: 100,
-      render: (status) => {
-        const colorMap = { Active: 'green', Graduated: 'blue', Terminated: 'red' }
-        return <Tag color={colorMap[status] || 'default'} style={{ margin: 0 }}>{status || 'Unknown'}</Tag>
-      },
-    },
-    {
-      title: 'Added',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 120,
-      render: (v) => <Text style={{ fontSize: 12, color: '#8c8c8c' }}>{formatDate(v)}</Text>,
-    },
-  ]
 
   if (loading && !dashboardData.stats.totalStudents) {
     return (
@@ -572,74 +534,53 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* ── Bottom Panel: Institution Types + Recent Activity ── */}
+      {/* ── Bottom Panel: Data Quality Progress ── */}
       <Row gutter={[16, 16]}>
-        {/* Institution Type Distribution */}
-        <Col xs={24} lg={10}>
-          <Card
-            title={
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <BankOutlined style={{ color: '#8c8c8c', fontSize: 14 }} />
-                <Text strong style={{ fontSize: 15 }}>By Institution Type</Text>
-              </div>
-            }
-            style={sectionCardStyle}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            {dashboardData.institutionTypes.length > 0 ? (
-              <div>
-                {dashboardData.institutionTypes.slice(0, 6).map((item, idx) => {
-                  const max = Math.max(...dashboardData.institutionTypes.map(i => i.count))
-                  const pct = max > 0 ? (item.count / max) * 100 : 0
-                  return (
-                    <div key={idx} style={{ marginBottom: idx < dashboardData.institutionTypes.length - 1 ? 14 : 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={{ fontSize: 13, color: '#434343' }} ellipsis>{item.type}</Text>
-                        <Text strong style={{ fontSize: 13, color: '#1a1a1a', flexShrink: 0, marginLeft: 8 }}>{item.count.toLocaleString()}</Text>
-                      </div>
-                      <div style={{ height: 6, borderRadius: 3, background: '#f5f5f5', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 3, background: '#36cfc9', transition: 'width 0.6s ease' }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <Empty description="No institution data" style={{ padding: '40px 0' }} />
-            )}
-          </Card>
-        </Col>
-
-        {/* Recent Registrations */}
-        <Col xs={24} lg={14}>
-          <Card
-            title={<Text strong style={{ fontSize: 15 }}>Recent Registrations</Text>}
-            extra={
-              <Button type="link" size="small" onClick={() => navigate('/students')} style={{ padding: 0 }}>
-                View All <RightOutlined style={{ fontSize: 10 }} />
-              </Button>
-            }
-            style={sectionCardStyle}
-            styles={{ body: { padding: '4px 0 0' } }}
-          >
-            {dashboardData.recentRegistrations.length > 0 ? (
-              <Table
-                dataSource={dashboardData.recentRegistrations}
-                columns={recentColumns}
-                rowKey="student_id"
-                pagination={false}
-                size="small"
-                style={{ cursor: 'default' }}
-                onRow={(record) => ({
-                  onClick: () => navigate(`/students/${record.student_id}`),
-                  style: { cursor: 'pointer' },
-                })}
-              />
-            ) : (
-              <Empty description="No recent registrations" style={{ padding: '40px 0' }} />
-            )}
-          </Card>
-        </Col>
+        {[
+          { key: 'stufaps', label: 'StuFAPs', icon: <FileTextOutlined style={{ fontSize: 18, color: '#3b82f6' }} />, color: '#3b82f6', path: '/data-quality' },
+          { key: 'accounting', label: 'Accounting', icon: <AuditOutlined style={{ fontSize: 18, color: '#7c3aed' }} />, color: '#7c3aed', path: '/data-quality/accounting' },
+          { key: 'cashier', label: 'Cashier', icon: <WalletOutlined style={{ fontSize: 18, color: '#0891b2' }} />, color: '#0891b2', path: '/data-quality/cashier' },
+        ].map(({ key, label, icon, color, path }) => {
+          const dq = dashboardData.dataQuality[key] || { total: 0, incomplete: 0, complete: 0 }
+          const pct = dq.total > 0 ? Math.round((dq.complete / dq.total) * 100) : 0
+          return (
+            <Col xs={24} md={8} key={key}>
+              <Card
+                style={{ ...sectionCardStyle, cursor: 'pointer' }}
+                styles={{ body: { padding: '20px 24px' } }}
+                onClick={() => navigate(path)}
+                hoverable
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {icon}
+                  </div>
+                  <Text strong style={{ fontSize: 15 }}>{label}</Text>
+                </div>
+                <Progress
+                  percent={pct}
+                  strokeColor={color}
+                  trailColor="#f0f0f0"
+                  format={(p) => `${p}%`}
+                />
+                <Row gutter={16} style={{ marginTop: 12 }}>
+                  <Col span={8}>
+                    <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Total</Text>
+                    <Text strong style={{ fontSize: 16 }}>{dq.total.toLocaleString()}</Text>
+                  </Col>
+                  <Col span={8}>
+                    <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Complete</Text>
+                    <Text strong style={{ fontSize: 16, color: '#16a34a' }}>{dq.complete.toLocaleString()}</Text>
+                  </Col>
+                  <Col span={8}>
+                    <Text style={{ color: '#8c8c8c', fontSize: 12, display: 'block' }}>Incomplete</Text>
+                    <Text strong style={{ fontSize: 16, color: '#d4380d' }}>{dq.incomplete.toLocaleString()}</Text>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+          )
+        })}
       </Row>
     </div>
   )

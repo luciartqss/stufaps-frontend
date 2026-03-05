@@ -192,9 +192,7 @@ export default function FinancialAssistanceMSRS() {
 
     if (loading) return <div className="p-8">Loading...</div>
     if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
-    if (!Array.isArray(financialAssistances) || financialAssistances.length === 0) {
-        return <div className="p-8 text-yellow-600 bg-yellow-50 border border-yellow-300 rounded">No scholarship programs found. Make sure your backend is running and database is seeded.</div>
-    }
+
 
     const filteredMSRS = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
         if (p?.scholarship_program_name?.toUpperCase() !== 'MSRS') return false
