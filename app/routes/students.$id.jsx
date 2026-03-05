@@ -76,6 +76,7 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
         <Text strong style={{ fontSize: '13px', color: editFieldEmpty ? '#d97706' : showWarning ? '#d97706' : '#6b7280', display: 'block', marginBottom: '4px' }}>
           {label} {editFieldEmpty && <span style={{ color: '#d97706', fontSize: 11 }}>(incomplete)</span>}
           {showWarning && <span style={{ color: '#ef4444', fontSize: 11 }}>(missing)</span>}
+          {editMode && disabled && <span style={{ color: '#8c8c8c', fontSize: 11, fontWeight: 400 }}>(auto-filled)</span>}
         </Text>
         {editMode && field ? (
           disabled ? (
@@ -190,6 +191,45 @@ export default function StudentDetails() {
     }
   }
 
+  // Lookup function to auto-fill PSGC codes and ZIP code from location names
+  const lookupAndFillLocationCodes = async (currentData) => {
+    try {
+      const response = await api.post('/students/lookup-location-codes', {
+        province: currentData.province || null,
+        municipality: currentData.municipality || null,
+        brgy: currentData.brgy || null,
+      })
+
+      setFormData(prev => ({
+        ...prev,
+        ...(response.province_psgc_code !== undefined && { province_psgc_code: response.province_psgc_code }),
+        ...(response.municipality_psgc_code !== undefined && { municipality_psgc_code: response.municipality_psgc_code }),
+        ...(response.brgy_psgc_code !== undefined && { brgy_psgc_code: response.brgy_psgc_code }),
+        ...(response.zip_code !== undefined && { zip_code: response.zip_code }),
+      }))
+    } catch (err) {
+      console.error('Location lookup error:', err)
+    }
+  }
+
+  // Lookup function to auto-fill priority program code, discipline code, and program discipline from degree program
+  const lookupAndFillPriorityCode = async (currentData) => {
+    try {
+      const response = await api.post('/students/lookup-priority-code', {
+        degree_program: currentData.degree_program || null,
+      })
+
+      setFormData(prev => ({
+        ...prev,
+        ...(response.prio_program_code !== undefined && response.prio_program_code !== null && { prio_program_code: response.prio_program_code }),
+        ...(response.discipline_code !== undefined && response.discipline_code !== null && { discipline_code: response.discipline_code }),
+        ...(response.program_discipline !== undefined && response.program_discipline !== null && { program_discipline: response.program_discipline }),
+      }))
+    } catch (err) {
+      console.error('Priority code lookup error:', err)
+    }
+  }
+
   useEffect(() => {
     if (!id) {
       setError('No student ID provided')
@@ -226,12 +266,58 @@ export default function StudentDetails() {
         setFormData(newFormData)
       }
       
+      // Clear priority code fields when degree program changes
+      if (field === 'degree_program') {
+        newFormData.prio_program_code = null
+        newFormData.discipline_code = null
+        newFormData.program_discipline = null
+        setFormData({ ...newFormData })
+      }
+      
       // Debounce the lookup to avoid too many API calls
       if (window.lookupTimeout) {
         clearTimeout(window.lookupTimeout)
       }
       window.lookupTimeout = setTimeout(() => {
         lookupAndFillFields(newFormData)
+      }, 500)
+    }
+
+    // Trigger priority code lookup when degree program changes
+    if (field === 'degree_program') {
+      if (window.priorityCodeTimeout) {
+        clearTimeout(window.priorityCodeTimeout)
+      }
+      window.priorityCodeTimeout = setTimeout(() => {
+        lookupAndFillPriorityCode(newFormData)
+      }, 500)
+    }
+
+    // Trigger location code lookup when province, municipality, or barangay changes
+    if (['province', 'municipality', 'brgy'].includes(field)) {
+      // Clear dependent PSGC codes based on what changed
+      if (field === 'province') {
+        newFormData.province_psgc_code = null
+        newFormData.municipality_psgc_code = null
+        newFormData.brgy_psgc_code = null
+        newFormData.zip_code = null
+        setFormData({ ...newFormData })
+      } else if (field === 'municipality') {
+        newFormData.municipality_psgc_code = null
+        newFormData.brgy_psgc_code = null
+        newFormData.zip_code = null
+        setFormData({ ...newFormData })
+      } else if (field === 'brgy') {
+        newFormData.brgy_psgc_code = null
+        setFormData({ ...newFormData })
+      }
+
+      // Debounce the location lookup
+      if (window.locationLookupTimeout) {
+        clearTimeout(window.locationLookupTimeout)
+      }
+      window.locationLookupTimeout = setTimeout(() => {
+        lookupAndFillLocationCodes(newFormData)
       }, 500)
     }
   }
@@ -835,14 +921,14 @@ export default function StudentDetails() {
               <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Email Address" value={student.email_address} field="email_address" type="email" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Street" value={student.street} field="street" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Barangay" value={student.brgy} field="brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Municipality" value={student.municipality} field="municipality" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Province" value={student.province} field="province" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Congressional District" value={student.congressional_district} field="congressional_district" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
             </Row>
           </Card>
         </Col>
@@ -856,11 +942,11 @@ export default function StudentDetails() {
               <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Region" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Region of HEI" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
@@ -868,7 +954,6 @@ export default function StudentDetails() {
                 field="program_degree_level" 
                 type="select" 
                 required
-                disabled
                 options={[
                   { label: 'Pre-baccalaureate', value: 'Pre-baccalaureate' },
                   { label: 'Baccalaureate', value: 'Baccalaureate' },
