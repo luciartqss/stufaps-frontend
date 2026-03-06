@@ -680,6 +680,11 @@ export default function StudentsPdf() {
                   borderRadius: '6px',
                   border: '1px solid #d9d9d9'
                 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                    <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
+                      Person
+                    </Text>
+                  </div>
                   <Form.Item
                     label="Name"
                     labelCol={{ span: 6 }}

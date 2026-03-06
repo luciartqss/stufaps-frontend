@@ -104,6 +104,8 @@ export default function Header() {
     if (key === "logout") {
       logout();
       navigate("/");
+    } else if (key === "profile") {
+      navigate("/profile");
     }
   }, [logout, navigate]);
 

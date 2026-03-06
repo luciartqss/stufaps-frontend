@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('user', JSON.stringify(userData))
       if (permsData) localStorage.setItem('permissions', JSON.stringify(permsData))
 
-      return { success: true, user: userData, permissions: permsData }
+      return { success: true, user: userData, permissions: permsData, must_change_password: userData.must_change_password }
     } catch (err) {
       return { success: false, message: 'Unable to reach server' }
     }
@@ -150,10 +150,18 @@ export function AuthProvider({ children }) {
     return 'none'
   }, [permissions])
 
+  const clearMustChangePassword = useCallback(() => {
+    setUser((prev) => {
+      const updated = { ...prev, must_change_password: false }
+      localStorage.setItem('user', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
   const value = useMemo(() => ({
     isAuthenticated, user, permissions, login, logout, loading,
-    refreshPermissions, getAccess,
-  }), [isAuthenticated, user, permissions, loading, refreshPermissions, getAccess])
+    refreshPermissions, getAccess, clearMustChangePassword,
+  }), [isAuthenticated, user, permissions, loading, refreshPermissions, getAccess, clearMustChangePassword])
 
   return (
     <AuthContext.Provider value={value}>

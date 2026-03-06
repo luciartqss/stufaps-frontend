@@ -10,6 +10,7 @@ import {
 import Layout from './components/Layout'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import ForceChangePasswordModal from './components/ForceChangePasswordModal'
 
 import './app.css'
 
@@ -48,7 +49,7 @@ export { HtmlLayout as Layout }
 
 function AppContent() {
   const location = useLocation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user, clearMustChangePassword } = useAuth()
   
   // Public routes that don't need authentication or layout
   const publicRoutes = ['/']
@@ -62,6 +63,11 @@ function AppContent() {
   // Protected routes - wrap with Layout and ProtectedRoute
   return (
     <ProtectedRoute>
+      <ForceChangePasswordModal
+        open={!!user?.must_change_password}
+        userId={user?.id}
+        onSuccess={clearMustChangePassword}
+      />
       <Layout />
     </ProtectedRoute>
   )
