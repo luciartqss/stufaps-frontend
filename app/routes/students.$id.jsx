@@ -718,7 +718,7 @@ export default function StudentDetails() {
     'street', 'brgy_psgc_code', 'brgy', 'municipality_psgc_code', 'municipality',
     'province_psgc_code', 'province', 'congressional_district', 'zip_code',
     'name_of_institution', 'uii', 'institutional_type', 'region', 'prio_program_code',
-    'degree_program', 'discipline_code', 'program_degree_level',
+    'degree_program', 'discipline_code', 'program_discipline', 'program_degree_level',
     'authority_type', 'authority_number', 'series',
     'scholarship_status', 'basis_cmo'
   ]
@@ -947,7 +947,7 @@ export default function StudentDetails() {
               <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
                 value={student.program_degree_level} 

@@ -39,6 +39,7 @@ const fieldLabels = {
   prio_program_code: 'Priority Program Code',
   degree_program: 'Degree Program',
   discipline_code: 'Discipline Code',
+  program_discipline: 'Program Discipline',
   program_degree_level: 'Degree Level',
   in_charge: 'In-Charge',
   award_year: 'Award Year',
@@ -61,6 +62,15 @@ const fieldLabels = {
 
 const PAGE_SIZE = 15
 const GROUPS_PER_PAGE = 5
+
+// Fields that are auto-filled by StudentLookupService — if still missing, source data didn't match
+const AUTO_FILLED_FIELDS = new Set([
+  'uii', 'name_of_institution', 'institutional_type',          // HEI.json
+  'authority_type', 'authority_number', 'series',               // Program Offerings
+  'prio_program_code', 'discipline_code', 'program_discipline', // Priority Code
+  'province_psgc_code', 'municipality_psgc_code', 'brgy_psgc_code', // PSGC
+  'zip_code',                                                   // Zip Code
+])
 
 // Issue types in requested order
 const ISSUE_TYPES = [
@@ -405,11 +415,18 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         key: 'missing_fields',
         render: (fields) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => (
-              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
-                {fieldLabels[f] || f}
-              </Tag>
-            ))}
+            {(fields || []).map(f => {
+              const isAuto = AUTO_FILLED_FIELDS.has(f)
+              return (
+                <Tag
+                  key={f}
+                  color={isAuto ? 'cyan' : 'orange'}
+                  style={{ fontSize: 11, margin: 0 }}
+                >
+                  {isAuto && '⚙ '}{fieldLabels[f] || f}
+                </Tag>
+              )
+            })}
           </div>
         ),
       },
@@ -444,11 +461,18 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         key: 'missing_fields',
         render: (fields) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => (
-              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
-                {fieldLabels[f] || f}
-              </Tag>
-            ))}
+            {(fields || []).map(f => {
+              const isAuto = AUTO_FILLED_FIELDS.has(f)
+              return (
+                <Tag
+                  key={f}
+                  color={isAuto ? 'cyan' : 'orange'}
+                  style={{ fontSize: 11, margin: 0 }}
+                >
+                  {isAuto && '⚙ '}{fieldLabels[f] || f}
+                </Tag>
+              )
+            })}
           </div>
         ),
       },
@@ -601,7 +625,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
           }}
           styles={{ body: { padding: 0 } }}
           title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>
               <span style={{ fontSize: 16, fontWeight: 600 }}>{activeIssue?.label}</span>
               <Tag
@@ -618,6 +642,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
               >
                 {getCountForTab(activeTab)}
               </Tag>
+              {(activeTab === 'incomplete' || activeTab === 'incomplete_stufaps_disb') && (
+                <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span><Tag color="orange" style={{ fontSize: 11 }}>field</Tag> manual</span>
+                  <span><Tag color="cyan" style={{ fontSize: 11 }}>⚙ field</Tag> auto-filled</span>
+                </span>
+              )}
             </div>
           }
         >

@@ -2,8 +2,8 @@ import React, { useCallback, useMemo } from "react";
 import { Layout, Typography, Avatar, Space, Dropdown } from "antd";
 import {
   UserOutlined,
-  SettingOutlined,
   LogoutOutlined,
+  MoonOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router";
 import { useAuth } from "../lib/AuthContext";
@@ -81,9 +81,10 @@ const USER_MENU_ITEMS = [
     label: "Profile",
   },
   {
-    key: "settings",
-    icon: <SettingOutlined />,
-    label: "Settings",
+    key: "darkmode",
+    icon: <MoonOutlined />,
+    label: "Dark Mode (Work in progress)",
+    disabled: true,
   },
   {
     type: "divider",
