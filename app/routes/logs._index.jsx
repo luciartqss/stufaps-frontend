@@ -135,7 +135,7 @@ export default function LogsIndex() {
   // ── Rollback handler — simple confirm ──
   const handleRollback = (log) => {
     Modal.confirm({
-      title: 'Confirm Rollback',
+      title: 'Confirm Restore',
       icon: <ExclamationCircleOutlined />,
       content: (
         <div>
@@ -154,12 +154,12 @@ export default function LogsIndex() {
 
           <div style={{ marginTop: 8, padding: 10, background: '#f6f8fa', borderRadius: 6 }}>
             <Text type="secondary" style={{ fontSize: 12 }}>
-              Rollback creates a <strong>new version</strong> — history is never erased.
+              Restoring creates a <strong>new version</strong> — history is never erased.
             </Text>
           </div>
         </div>
       ),
-      okText: 'Rollback',
+      okText: 'Restore',
       okType: 'danger',
       cancelText: 'Cancel',
       onOk: async () => {
@@ -175,9 +175,9 @@ export default function LogsIndex() {
             fetchLogs(pagination.current, pagination.pageSize)
             setDetailModal({ visible: false, log: null })
           } else {
-            message.error(data.error || 'Rollback failed')
+            message.error(data.error || 'Restore failed')
           }
-        } catch { message.error('Rollback failed') }
+        } catch { message.error('Restore failed') }
       },
     })
   }
@@ -211,7 +211,7 @@ export default function LogsIndex() {
     if (log.can_rollback) {
       return (
         <Button size="small" type="primary" danger icon={<UndoOutlined />} onClick={() => handleRollback(log)} style={{ fontSize: 12 }}>
-          Rollback
+          Restore
         </Button>
       )
     }
@@ -250,7 +250,7 @@ export default function LogsIndex() {
         {log.rolled_back && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f5f5f5', border: '1px solid #e8e8e8', borderRadius: 6 }}>
             <Text style={{ fontSize: 12, color: '#8c8c8c' }}>
-              This action was rolled back
+              This action was restored
               {log.rolled_back_by && <> by <strong>{log.rolled_back_by.username}</strong> on {formatDisplayDate(log.rolled_back_by.created_at)}</>}
             </Text>
           </div>
@@ -301,6 +301,20 @@ export default function LogsIndex() {
           <div style={{ marginBottom: 16 }}>
             <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Created</Text>
             <div style={{ padding: '10px 14px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
+              {log.entity_type === 'User' ? (
+                <>
+                  {[{ label: 'Username', value: log.data_after?.username },
+                    { label: 'Role', value: log.data_after?.role },
+                    { label: 'Email', value: log.data_after?.email },
+                  ].filter(i => i.value).map(item => (
+                    <div key={item.label} style={{ marginBottom: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                      <Text style={{ fontSize: 12, color: '#52c41a' }}>{item.value}</Text>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
               {[{
                   label: 'Name',
                   value: log.context?.name || [log.data_after?.surname, log.data_after?.first_name].filter(Boolean).join(', '),
@@ -327,6 +341,8 @@ export default function LogsIndex() {
                   )}
                 </div>
               )}
+                </>
+              )}
             </div>
           </div>
         )}
@@ -336,6 +352,20 @@ export default function LogsIndex() {
           <div style={{ marginBottom: 16 }}>
             <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Deleted</Text>
             <div style={{ padding: '10px 14px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6 }}>
+              {log.entity_type === 'User' ? (
+                <>
+                  {[{ label: 'Username', value: log.data_before?.username },
+                    { label: 'Role', value: log.data_before?.role },
+                    { label: 'Email', value: log.data_before?.email },
+                  ].filter(i => i.value).map(item => (
+                    <div key={item.label} style={{ marginBottom: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                      <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value}</Text>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
               {[{
                   label: 'Name',
                   value: log.context?.name || [log.data_before?.surname, log.data_before?.first_name].filter(Boolean).join(', '),
@@ -361,6 +391,8 @@ export default function LogsIndex() {
                     <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text></>
                   )}
                 </div>
+              )}
+                </>
               )}
             </div>
           </div>
@@ -469,7 +501,7 @@ export default function LogsIndex() {
           { color: '#ff4d4f', label: 'Deleted', desc: 'Record removed' },
           { color: '#722ed1', label: 'Bulk Import', desc: 'Multiple records added' },
           { color: '#13c2c2', label: 'Bulk Update', desc: 'Multiple records changed' },
-          { color: '#d9d9d9', label: 'Rolled Back', desc: 'Action undone by rollback' },
+          { color: '#d9d9d9', label: 'Restored', desc: 'Action undone by restore' },
         ].map(item => (
           <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 170 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: item.color, flexShrink: 0 }} />
@@ -521,7 +553,7 @@ export default function LogsIndex() {
                   {isSuperseded && log.rolled_back_by && (
                     <div style={{ marginBottom: 6 }}>
                       <Text style={{ fontSize: 11, color: '#8c8c8c', fontStyle: 'italic' }}>
-                        Rolled back by {log.rolled_back_by.username} · {formatDisplayDate(log.rolled_back_by.created_at)}
+                        Restored by {log.rolled_back_by.username} · {formatDisplayDate(log.rolled_back_by.created_at)}
                       </Text>
                     </div>
                   )}
@@ -586,7 +618,7 @@ export default function LogsIndex() {
         title={
           <Space>
             <WarningOutlined style={{ color: '#fa8c16' }} />
-            <Text strong>Rollback Blocked</Text>
+            <Text strong>Restore Blocked</Text>
             <Text type="secondary">— {conflictModal.conflicts.length} conflict{conflictModal.conflicts.length !== 1 ? 's' : ''}</Text>
           </Space>
         }
@@ -594,7 +626,7 @@ export default function LogsIndex() {
         onCancel={() => setConflictModal({ visible: false, conflicts: [], log: null })}
         footer={
           <Text type="secondary" style={{ fontSize: 12 }}>
-            Roll back these changes first (newest first) to unblock this action.
+            Restore these changes first (newest first) to unblock this action.
           </Text>
         }
         width={520}
