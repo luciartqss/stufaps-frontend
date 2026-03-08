@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Button, Tag, Typography, Space, message, Modal, Empty, Row, Col, Pagination, Spin } from 'antd'
 import {
-  UndoOutlined, ArrowRightOutlined, HistoryOutlined,
+  UndoOutlined, ArrowRightOutlined,
   ClockCircleOutlined, UserOutlined, ExclamationCircleOutlined,
   WarningOutlined,
   PlusCircleOutlined, EditOutlined, DeleteOutlined
@@ -36,129 +36,6 @@ const getNodeStyle = (log) => {
     return { dot: '#d9d9d9', border: '#e8e8e8', icon: base.icon, label: base.label || log.action }
   }
   return NODE_STYLES[log.action] || { dot: '#8c8c8c', border: '#d9d9d9', icon: null, label: log.action }
-}
-
-// ── Confidence status config (used only in timeline modal for historical entries) ──
-const STATUS_CONFIG = {
-  SAFE:    { color: '#52c41a', bg: '#f6ffed', border: '#b7eb8f', label: 'Safe',    dot: '🟢' },
-  CAUTION: { color: '#faad14', bg: '#fffbe6', border: '#ffe58f', label: 'Caution', dot: '🟡' },
-  UNSAFE:  { color: '#ff4d4f', bg: '#fff2f0', border: '#ffccc7', label: 'Unsafe',  dot: '🔴' },
-}
-
-// ── Student field groups for detail view ──
-const STUDENT_FIELD_GROUPS = [
-  {
-    title: 'Personal Information',
-    fields: [
-      { key: 'surname', label: 'Surname' },
-      { key: 'first_name', label: 'First Name' },
-      { key: 'middle_name', label: 'Middle Name' },
-      { key: 'extension', label: 'Extension' },
-      { key: 'sex', label: 'Sex' },
-      { key: 'date_of_birth', label: 'Date of Birth' },
-      { key: 'learner_reference_number', label: 'LRN' },
-      { key: 'special_group', label: 'Special Group' },
-    ],
-  },
-  {
-    title: 'Contact & Address',
-    fields: [
-      { key: 'contact_number', label: 'Contact Number' },
-      { key: 'email_address', label: 'Email Address' },
-      { key: 'street_brgy', label: 'Street / Barangay' },
-      { key: 'municipality_city', label: 'Municipality / City' },
-      { key: 'province', label: 'Province' },
-      { key: 'congressional_district', label: 'Congressional District' },
-      { key: 'zip_code', label: 'Zip Code' },
-      { key: 'region', label: 'Region' },
-    ],
-  },
-  {
-    title: 'Institution & Program',
-    fields: [
-      { key: 'name_of_institution', label: 'Institution' },
-      { key: 'uii', label: 'UII' },
-      { key: 'institutional_type', label: 'Institutional Type' },
-      { key: 'degree_program', label: 'Degree Program' },
-      { key: 'program_major', label: 'Major' },
-      { key: 'program_discipline', label: 'Discipline' },
-      { key: 'program_degree_level', label: 'Degree Level' },
-    ],
-  },
-  {
-    title: 'Scholarship Details',
-    fields: [
-      { key: 'in_charge', label: 'In Charge' },
-      { key: 'award_year', label: 'Award Year' },
-      { key: 'scholarship_program', label: 'Scholarship Program' },
-      { key: 'award_number', label: 'Award Number' },
-      { key: 'certification_number', label: 'Certification No.' },
-      { key: 'authority_type', label: 'Authority Type' },
-      { key: 'authority_number', label: 'Authority Number' },
-      { key: 'series', label: 'Series' },
-      { key: 'is_priority', label: 'Priority' },
-      { key: 'basis_cmo', label: 'Basis CMO' },
-      { key: 'scholarship_status', label: 'Status' },
-      { key: 'replacement_info', label: 'Replacement Info' },
-      { key: 'termination_reason', label: 'Termination Reason' },
-    ],
-  },
-]
-
-// ── Record detail view (supports Student + generic entities) ──
-const RecordFormView = ({ data, action, entityType }) => {
-  if (!data) return <Text type="secondary" style={{ padding: 12, display: 'block' }}>No data recorded</Text>
-  const valueColor = action === 'delete' ? '#ff4d4f' : '#52c41a'
-
-  if (entityType === 'Student') {
-    return (
-      <div>
-        {STUDENT_FIELD_GROUPS.map(group => {
-          const hasAnyValue = group.fields.some(f => data[f.key] != null && data[f.key] !== '')
-          if (!hasAnyValue && action === 'create') return null
-          return (
-            <div key={group.title} style={{ marginBottom: 16 }}>
-              <Text strong style={{ fontSize: 13, color: '#0032a0', display: 'block', marginBottom: 8, borderBottom: '1px solid #f0f0f0', paddingBottom: 4 }}>
-                {group.title}
-              </Text>
-              <Row gutter={[16, 4]}>
-                {group.fields.map(field => {
-                  const val = data[field.key]
-                  const isEmpty = val == null || val === ''
-                  return (
-                    <Col xs={24} sm={12} md={8} key={field.key}>
-                      <div style={{ marginBottom: 6 }}>
-                        <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{field.label}</Text>
-                        {isEmpty
-                          ? <Text italic style={{ fontSize: 12, color: '#d9d9d9' }}>—</Text>
-                          : <Text style={{ fontSize: 12, color: valueColor }}>{String(val)}</Text>
-                        }
-                      </div>
-                    </Col>
-                  )
-                })}
-              </Row>
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  // Generic key-value for non-Student entities
-  const entries = Object.entries(data).filter(([k]) => !['created_at', 'updated_at', 'deleted_at', 'version'].includes(k))
-  return (
-    <Row gutter={[16, 8]}>
-      {entries.map(([key, val]) => (
-        <Col xs={24} sm={12} key={key}>
-          <div style={{ marginBottom: 6 }}>
-            <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>{key}</Text>
-            <Text style={{ fontSize: 12, color: valueColor }}>{val != null ? String(val) : '—'}</Text>
-          </div>
-        </Col>
-      ))}
-    </Row>
-  )
 }
 
 // ── Field comparison table ──
@@ -230,7 +107,6 @@ export default function LogsIndex() {
   // Modals
   const [detailModal, setDetailModal] = useState({ visible: false, log: null })
   const [conflictModal, setConflictModal] = useState({ visible: false, conflicts: [], log: null })
-  const [timelineModal, setTimelineModal] = useState({ visible: false, entityType: null, entityId: null, data: [], loading: false })
 
   // ── Fetch paginated logs from /logs/batched ──
   const fetchLogs = useCallback(async (page = 1, pageSize = 20) => {
@@ -256,19 +132,6 @@ export default function LogsIndex() {
 
   useEffect(() => { fetchLogs(1, pagination.pageSize) }, [])
 
-  // ── Fetch entity timeline (newest first) ──
-  const openTimeline = (entityType, entityId) => {
-    if (entityId === 0) return
-    setTimelineModal({ visible: true, entityType, entityId, data: [], loading: true })
-    fetch(`${API_URL}/logs/timeline/${entityType}/${entityId}`)
-      .then(res => res.json())
-      .then(data => setTimelineModal(prev => ({ ...prev, data: [...data].reverse(), loading: false })))
-      .catch(() => {
-        message.error('Failed to load timeline')
-        setTimelineModal(prev => ({ ...prev, loading: false }))
-      })
-  }
-
   // ── Rollback handler — simple confirm ──
   const handleRollback = (log) => {
     Modal.confirm({
@@ -280,12 +143,12 @@ export default function LogsIndex() {
 
           {log.action === 'bulk_create' && (
             <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6, padding: 12, marginBottom: 8 }}>
-              <Text strong style={{ color: '#cf1322' }}>This will permanently delete all {log.bulk_count || ''} imported records.</Text>
+              <Text strong style={{ color: '#cf1322' }}>This will permanently delete all {log.bulk_count || ''} imported students.</Text>
             </div>
           )}
           {log.action === 'bulk_update' && (
             <div style={{ background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6, padding: 12, marginBottom: 8 }}>
-              <Text strong style={{ color: '#cf1322' }}>This will reverse changes on {log.bulk_count || 'multiple'} records.</Text>
+              <Text strong style={{ color: '#cf1322' }}>This will reverse changes on {log.bulk_count || 'multiple'} students.</Text>
             </div>
           )}
 
@@ -368,13 +231,8 @@ export default function LogsIndex() {
           <span style={{ color: ns.dot, fontSize: 16 }}>{ns.icon}</span>
           <Text strong style={{ fontSize: 15 }}>{ns.label}</Text>
           <Text type="secondary">•</Text>
-          <Text type="secondary">{log.entity_type} {log.entity_id > 0 ? `#${log.entity_id}` : ''}</Text>
+          <Text type="secondary">{log.entity_type}</Text>
           {log.entity_id === 0 && <Tag color="purple" style={{ fontSize: 10, margin: 0 }}>Batch</Tag>}
-          <div style={{ marginLeft: 'auto' }}>
-            <Tag style={{ fontSize: 11, fontWeight: 600, borderRadius: 10, padding: '0 8px', color: ns.dot === '#d9d9d9' ? '#8c8c8c' : ns.dot, borderColor: ns.border, background: 'transparent' }}>
-              v{log.version}
-            </Tag>
-          </div>
         </div>
 
         {/* Description */}
@@ -384,7 +242,7 @@ export default function LogsIndex() {
         {log.action === 'rollback' && log.rollback_of && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: '#fff7e6', border: '1px solid #ffe58f', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <UndoOutlined style={{ color: '#fa8c16' }} />
-            <Text style={{ fontSize: 12, color: '#d48806' }}>Restored state from an earlier version (Log #{log.rollback_of})</Text>
+            <Text style={{ fontSize: 12, color: '#d48806' }}>Restored state from an earlier version</Text>
           </div>
         )}
 
@@ -398,48 +256,158 @@ export default function LogsIndex() {
           </div>
         )}
 
-        {/* Update / Rollback: field comparison */}
+        {/* Update / Rollback: identity context + field comparison */}
         {(log.action === 'update' || log.action === 'rollback') && log.data_before && log.data_after && log.changed_fields && (
           <div style={{ marginBottom: 16 }}>
+            {log.context && (
+              <div style={{ padding: '10px 14px', background: '#f6f8fa', border: '1px solid #e8eaed', borderRadius: 6, marginBottom: 10 }}>
+                {log.context.name && (
+                  <div style={{ marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>Name: </Text>
+                    <Text style={{ fontSize: 12, fontWeight: 500 }}>{log.context.name}</Text>
+                  </div>
+                )}
+                {log.context.award_number && (
+                  <div style={{ marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>Award No.: </Text>
+                    <Text style={{ fontSize: 12 }}>{log.context.award_number}</Text>
+                  </div>
+                )}
+                {log.context.learner_reference_number && (
+                  <div style={{ marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11 }}>LRN: </Text>
+                    <Text style={{ fontSize: 12 }}>{log.context.learner_reference_number}</Text>
+                  </div>
+                )}
+                {(log.context.academic_year || log.context.semester) && (
+                  <div style={{ marginBottom: 2 }}>
+                    {log.context.academic_year && (
+                      <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12 }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                    )}
+                    {log.context.semester && (
+                      <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12 }}>{log.context.semester}</Text></>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Changes</Text>
             <FieldsComparison record={log} />
           </div>
         )}
 
-        {/* Create: full record */}
-        {log.action === 'create' && log.data_after && (
+        {/* Create: summary */}
+        {log.action === 'create' && (log.context || log.data_after) && (
           <div style={{ marginBottom: 16 }}>
             <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Created</Text>
-            <RecordFormView data={log.data_after} action="create" entityType={log.entity_type} />
+            <div style={{ padding: '10px 14px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
+              {[{
+                  label: 'Name',
+                  value: log.context?.name || [log.data_after?.surname, log.data_after?.first_name].filter(Boolean).join(', '),
+                }, {
+                  label: 'Award No.',
+                  value: log.context?.award_number || log.data_after?.award_number,
+                }, {
+                  label: 'LRN',
+                  value: log.context?.learner_reference_number || log.data_after?.learner_reference_number,
+                },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                  <Text style={{ fontSize: 12, color: '#52c41a' }}>{item.value || '—'}</Text>
+                </div>
+              ))}
+              {(log.context?.academic_year || log.context?.semester) && (
+                <div style={{ marginBottom: 4 }}>
+                  {log.context.academic_year && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                  )}
+                  {log.context.semester && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.semester}</Text></>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Delete: full record */}
-        {log.action === 'delete' && log.data_before && (
+        {/* Delete: summary */}
+        {log.action === 'delete' && (log.context || log.data_before) && (
           <div style={{ marginBottom: 16 }}>
             <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Deleted</Text>
-            <RecordFormView data={log.data_before} action="delete" entityType={log.entity_type} />
+            <div style={{ padding: '10px 14px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6 }}>
+              {[{
+                  label: 'Name',
+                  value: log.context?.name || [log.data_before?.surname, log.data_before?.first_name].filter(Boolean).join(', '),
+                }, {
+                  label: 'Award No.',
+                  value: log.context?.award_number || log.data_before?.award_number,
+                }, {
+                  label: 'LRN',
+                  value: log.context?.learner_reference_number || log.data_before?.learner_reference_number,
+                },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                  <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value || '—'}</Text>
+                </div>
+              ))}
+              {(log.context?.academic_year || log.context?.semester) && (
+                <div style={{ marginBottom: 4 }}>
+                  {log.context.academic_year && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                  )}
+                  {log.context.semester && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text></>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* Bulk info */}
         {(log.action === 'bulk_create' || log.action === 'bulk_update') && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 6 }}>
-            <Text style={{ fontSize: 12 }}>{log.bulk_count || '?'} record(s) affected</Text>
-            {log.changed_fields?.length > 0 && (
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 4 }}>Fields: {log.changed_fields.join(', ')}</Text>
-            )}
+            <Text style={{ fontSize: 12 }}>{log.bulk_count || '?'} student{log.bulk_count !== 1 ? 's' : ''} affected</Text>
           </div>
         )}
         {log.action === 'bulk_update' && log.data_before && log.data_after && log.changed_fields && (
           <FieldsComparison record={log} />
         )}
 
-        {/* Rollback of create (soft-delete) — show deleted record */}
+        {/* Rollback of create (soft-delete) — show removed record summary */}
         {log.action === 'rollback' && log.data_before && (!log.data_after || Object.keys(log.data_after).length === 0) && (
           <div style={{ marginBottom: 16 }}>
-            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Before Removal</Text>
-            <RecordFormView data={log.data_before} action="delete" entityType={log.entity_type} />
+            <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, color: '#8c8c8c' }}>Record Removed</Text>
+            <div style={{ padding: '10px 14px', background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 6 }}>
+              {[{
+                  label: 'Name',
+                  value: log.context?.name || [log.data_before?.surname, log.data_before?.first_name].filter(Boolean).join(', '),
+                }, {
+                  label: 'Award No.',
+                  value: log.context?.award_number || log.data_before?.award_number,
+                }, {
+                  label: 'LRN',
+                  value: log.context?.learner_reference_number || log.data_before?.learner_reference_number,
+                },
+              ].map(item => (
+                <div key={item.label} style={{ marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                  <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value || '—'}</Text>
+                </div>
+              ))}
+              {(log.context?.academic_year || log.context?.semester) && (
+                <div style={{ marginBottom: 4 }}>
+                  {log.context.academic_year && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                  )}
+                  {log.context.semester && (
+                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text></>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -467,16 +435,7 @@ export default function LogsIndex() {
         </div>
 
         {/* Footer actions */}
-        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {log.entity_id > 0 ? (
-            <Button
-              type="link" size="small" icon={<HistoryOutlined />} style={{ padding: 0, fontSize: 12 }}
-              onClick={() => { setDetailModal({ visible: false, log: null }); openTimeline(log.entity_type, log.entity_id) }}
-            >
-              View full timeline
-            </Button>
-          ) : <div />}
-
+        <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 12, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <div onClick={e => e.stopPropagation()}>
             {renderNodeActions(log)}
           </div>
@@ -549,14 +508,6 @@ export default function LogsIndex() {
                       <span style={{ color: isSuperseded ? '#bfbfbf' : ns.dot, fontSize: 14 }}>{ns.icon}</span>
                       <Text strong style={{ fontSize: 13, color: isSuperseded ? '#8c8c8c' : '#262626' }}>{ns.label}</Text>
                       <Text type="secondary" style={{ fontSize: 12 }}>{log.entity_type}</Text>
-                      {log.entity_id > 0 && (
-                        <a
-                          onClick={(e) => { e.stopPropagation(); openTimeline(log.entity_type, log.entity_id) }}
-                          style={{ fontSize: 11, color: '#1890ff' }}
-                        >
-                          #{log.entity_id}
-                        </a>
-                      )}
                       {log.entity_id === 0 && <Tag color="purple" style={{ fontSize: 10, margin: 0, lineHeight: '16px', padding: '0 5px' }}>Batch</Tag>}
                     </Space>
                   </div>
@@ -651,96 +602,6 @@ export default function LogsIndex() {
         <ConflictList conflicts={conflictModal.conflicts} />
       </Modal>
 
-      {/* ── Entity Timeline Modal ── */}
-      <Modal
-        title={
-          <Space>
-            <HistoryOutlined style={{ color: '#0032a0' }} />
-            <Text strong>Timeline</Text>
-            <Text type="secondary">{timelineModal.entityType} #{timelineModal.entityId}</Text>
-          </Space>
-        }
-        open={timelineModal.visible}
-        onCancel={() => setTimelineModal({ visible: false, entityType: null, entityId: null, data: [], loading: false })}
-        footer={null}
-        width={600}
-        styles={{ body: { maxHeight: '75vh', overflowY: 'auto' } }}
-      >
-        {timelineModal.loading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
-        ) : timelineModal.data.length === 0 ? (
-          <Empty description="No history found" />
-        ) : (
-          <div>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <Tag color="blue">{timelineModal.data.length} version{timelineModal.data.length !== 1 ? 's' : ''}</Tag>
-              <Tag color="green">Current: v{timelineModal.data[0]?.version}</Tag>
-            </div>
-
-            <div className="audit-feed tl-compact">
-              {timelineModal.data.map((entry, idx) => {
-                const entryNs = getNodeStyle(entry)
-                const isFirst = idx === 0
-                const isActive = isFirst && !entry.rolled_back
-                const isRb = entry.action === 'rollback'
-
-                return (
-                  <div key={entry.id} className="tl-node" style={{ opacity: entry.rolled_back ? 0.45 : 1 }}>
-                    <div className="tl-dot" style={{ background: isActive ? '#52c41a' : entryNs.dot, boxShadow: isActive ? '0 0 0 3px #f6ffed, 0 0 0 5px #b7eb8f' : undefined }} />
-                    <div className="tl-card tl-card-compact" style={{ borderLeftColor: isActive ? '#b7eb8f' : entryNs.border }}>
-
-                      {/* Header */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                        <Space size={6}>
-                          <Text strong style={{ fontSize: 12, color: entry.rolled_back ? '#8c8c8c' : '#262626' }}>{entryNs.label}</Text>
-                          {isActive && <Tag color="green" style={{ fontSize: 10, margin: 0, lineHeight: '16px', padding: '0 5px', borderRadius: 4 }}>Current</Tag>}
-                          {entry.rolled_back && <Tag style={{ fontSize: 10, margin: 0, color: '#8c8c8c', borderColor: '#d9d9d9', background: '#f5f5f5' }}>Rolled back</Tag>}
-                          {isRb && entry.rollback_target_version && (
-                            <Text style={{ fontSize: 11, color: '#fa8c16' }}>restored from v{entry.rollback_target_version}</Text>
-                          )}
-                        </Space>
-                        <Tag style={{
-                          fontSize: 10, fontWeight: 600, margin: 0, borderRadius: 8, padding: '0 6px', background: 'transparent',
-                          color: isActive ? '#52c41a' : isRb ? '#fa8c16' : '#8c8c8c',
-                          borderColor: isActive ? '#b7eb8f' : entryNs.border,
-                        }}>v{entry.version}</Tag>
-                      </div>
-
-                      {/* Description */}
-                      <Text style={{ fontSize: 12, color: entry.rolled_back ? '#8c8c8c' : '#434343', display: 'block', marginBottom: 4 }}>
-                        {entry.description}
-                      </Text>
-
-                      {/* Meta */}
-                      <Text style={{ fontSize: 11, color: '#8c8c8c' }}>
-                        {entry.user?.username || 'System'}{entry.user_role ? ` (${entry.user_role})` : ''} · {formatDisplayDate(entry.created_at)}
-                      </Text>
-
-                      {/* Inline field changes (max 3 shown) */}
-                      {(entry.action === 'update' || isRb) && entry.changed_fields?.length > 0 && entry.data_before && entry.data_after && (
-                        <div style={{ marginTop: 6, padding: '5px 10px', background: isRb ? '#fff7e6' : '#f6f8fa', borderRadius: 4, fontSize: 12 }}>
-                          {entry.changed_fields.slice(0, 3).map(f => (
-                            <div key={f}>
-                              <Text type="secondary" style={{ fontSize: 11 }}>{f}: </Text>
-                              <Text delete style={{ color: '#ff4d4f', fontSize: 11 }}>{entry.data_before[f] ?? 'empty'}</Text>
-                              <Text style={{ color: '#bfbfbf', fontSize: 11 }}> → </Text>
-                              <Text style={{ color: isRb ? '#fa8c16' : '#52c41a', fontSize: 11 }}>{entry.data_after[f] ?? 'empty'}</Text>
-                            </div>
-                          ))}
-                          {entry.changed_fields.length > 3 && (
-                            <Text type="secondary" style={{ fontSize: 11 }}>+{entry.changed_fields.length - 3} more</Text>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </Modal>
-
       {/* ── CSS ── */}
       <style>{`
         .audit-feed {
@@ -784,23 +645,6 @@ export default function LogsIndex() {
         .tl-card:hover {
           box-shadow: 0 3px 12px rgba(0,0,0,0.08);
           transform: translateX(2px);
-        }
-        .tl-card-compact {
-          padding: 10px 14px;
-          cursor: default;
-        }
-        .tl-card-compact:hover {
-          transform: none;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        .tl-compact .tl-node {
-          margin-bottom: 8px;
-        }
-        .tl-compact .tl-dot {
-          top: 14px;
-          width: 8px;
-          height: 8px;
-          left: -25px;
         }
       `}</style>
     </div>

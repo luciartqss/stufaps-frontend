@@ -1,4 +1,4 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
+import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
@@ -73,13 +73,14 @@ const AUTO_FILLED_FIELDS = new Set([
 ])
 
 // Issue types in requested order
+// autoFixable = StudentLookupService can auto-fill these (UII from institution name, PSGC/zip/priority codes, authority info)
 const ISSUE_TYPES = [
   { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_award', label: 'Missing Award No.', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
+  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
   { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
@@ -578,41 +579,50 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         </div>
       </div>
 
-      {/* Issue Summary Cards with Progress */}
+      {/* Issue Summary Cards */}
       <div style={{ padding: '24px', background: '#fff', borderBottom: '1px solid #e8eaed' }}>
-        <Row gutter={[16, 16]}>
+        <div style={{ display: 'flex', gap: 12 }}>
           {ISSUE_TYPES.map(item => {
             const count = getCountForTab(item.key)
             const isActive = activeTab === item.key
             return (
-              <Col xs={12} sm={8} md={4} key={item.key}>
-                <Card
-                  size="small"
-                  hoverable
-                  style={{
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    borderColor: isActive ? item.color : '#f0f2f5',
-                    borderWidth: isActive ? 2 : 1,
-                    background: isActive ? `${item.color}08` : '#fff',
-                    boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  styles={{ body: { padding: '16px' } }}
-                  onClick={() => setActiveTab(item.key)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ color: item.color, fontSize: 14 }}>{item.icon}</span>
-                    <Text style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.2 }}>{item.label}</Text>
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
-                    {count}
-                  </div>
-                </Card>
-              </Col>
+              <Card
+                key={item.key}
+                size="small"
+                hoverable
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  borderColor: isActive ? item.color : '#f0f2f5',
+                  borderWidth: isActive ? 2 : 1,
+                  background: isActive ? `${item.color}08` : '#fff',
+                  boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
+                  transition: 'all 0.2s ease',
+                }}
+                styles={{ body: { padding: '16px' } }}
+                onClick={() => setActiveTab(item.key)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <span style={{ color: item.color, fontSize: 14 }}>{item.icon}</span>
+                  <Text style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.2 }}>{item.label}</Text>
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
+                  {count}
+                </div>
+                {item.autoFixable && count > 0 && (
+                  <Tag
+                    color="cyan"
+                    style={{ marginTop: 8, fontSize: 11, borderRadius: 4 }}
+                  >
+                    ⚙ auto-fixable
+                  </Tag>
+                )}
+              </Card>
             )
           })}
-        </Row>
+        </div>
       </div>
 
       {/* Table Section */}
