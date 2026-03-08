@@ -34,8 +34,8 @@ export const parseDate = (date) => {
 /**
  * Format a date for human-readable display.
  *
- * Date-only  → "January 15, 2026"
- * With time  → "January 15, 2026 — 3:30 PM"
+ * Date-only  → "03-08-2026"
+ * With time  → "03-08-2026 — 1:52 PM"
  */
 export const formatDisplayDate = (date) => {
   if (!date) return '-'
@@ -44,20 +44,20 @@ export const formatDisplayDate = (date) => {
 
   // Check if the original string has a time component
   if (typeof date === 'string' && /\d{1,2}:\d{2}\s*(AM|PM)/i.test(date)) {
-    return d.format('MMMM D, YYYY — h:mm A')
+    return d.format('MM-DD-YYYY — h:mm A')
   }
-  return d.format('MMMM D, YYYY')
+  return d.format('MM-DD-YYYY')
 }
 
 /**
  * Format a date for human-readable display (date only, no time).
- * → "January 15, 2026"
+ * → "03-08-2026"
  */
 export const formatDisplayDateOnly = (date) => {
   if (!date) return 'N/A'
   const d = parseDate(date)
   if (!d || !d.isValid()) return date
-  return d.format('MMMM D, YYYY')
+  return d.format('MM-DD-YYYY')
 }
 
 /**

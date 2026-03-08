@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag } from 'antd'
 import { InboxOutlined, DeleteOutlined, FilePdfOutlined, SearchOutlined, UploadOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Text, Title } = Typography
 const STORAGE_BASE = API_BASE.replace('/api', '/storage')
@@ -14,6 +15,8 @@ export function meta() {
 }
 
 export default function SUB_ARO_NTA() {
+  const { getAccess } = useAuth()
+  const canEdit = getAccess('sub-aro-nta') === 'full'
   const [fiscalYears, setFiscalYears] = useState([])
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [selectedFY, setSelectedFY] = useState(null)
@@ -144,9 +147,11 @@ export default function SUB_ARO_NTA() {
             <Title level={2} style={{ margin: 0, fontWeight: 600 }}>SUB-ARO / NTA</Title>
             <Text style={{ color: '#6b7280', fontSize: 14 }}>Sub Allotment Release Order / Notice of Transfer Allocation</Text>
           </div>
+          {canEdit && (
           <Button type="primary" icon={<UploadOutlined />} onClick={() => { form.resetFields(); setFileList([]); setIsModalVisible(true) }}>
             Upload File
           </Button>
+          )}
         </div>
       </div>
 
@@ -247,9 +252,11 @@ export default function SUB_ARO_NTA() {
                 </div>
 
                 {/* Delete */}
+                {canEdit && (
                 <Popconfirm title="Delete this file?" onConfirm={() => handleDelete(f.id)} okText="Delete" okButtonProps={{ danger: true }}>
                   <Button type="text" danger size="small" icon={<DeleteOutlined />} />
                 </Popconfirm>
+                )}
               </Card>
             ))}
           </div>

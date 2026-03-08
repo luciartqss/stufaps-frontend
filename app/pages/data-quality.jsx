@@ -1,4 +1,4 @@
-import { Card, Row, Col, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
+import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
@@ -39,6 +39,7 @@ const fieldLabels = {
   prio_program_code: 'Priority Program Code',
   degree_program: 'Degree Program',
   discipline_code: 'Discipline Code',
+  program_discipline: 'Program Discipline',
   program_degree_level: 'Degree Level',
   in_charge: 'In-Charge',
   award_year: 'Award Year',
@@ -62,14 +63,24 @@ const fieldLabels = {
 const PAGE_SIZE = 15
 const GROUPS_PER_PAGE = 5
 
+// Fields that are auto-filled by StudentLookupService — if still missing, source data didn't match
+const AUTO_FILLED_FIELDS = new Set([
+  'uii', 'name_of_institution', 'institutional_type',          // HEI.json
+  'authority_type', 'authority_number', 'series',               // Program Offerings
+  'prio_program_code', 'discipline_code', 'program_discipline', // Priority Code
+  'province_psgc_code', 'municipality_psgc_code', 'brgy_psgc_code', // PSGC
+  'zip_code',                                                   // Zip Code
+])
+
 // Issue types in requested order
+// autoFixable = StudentLookupService can auto-fill these (UII from institution name, PSGC/zip/priority codes, authority info)
 const ISSUE_TYPES = [
   { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_award', label: 'Missing Award No.', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
+  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
   { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
@@ -405,11 +416,18 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         key: 'missing_fields',
         render: (fields) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => (
-              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
-                {fieldLabels[f] || f}
-              </Tag>
-            ))}
+            {(fields || []).map(f => {
+              const isAuto = AUTO_FILLED_FIELDS.has(f)
+              return (
+                <Tag
+                  key={f}
+                  color={isAuto ? 'cyan' : 'orange'}
+                  style={{ fontSize: 11, margin: 0 }}
+                >
+                  {isAuto && '⚙ '}{fieldLabels[f] || f}
+                </Tag>
+              )
+            })}
           </div>
         ),
       },
@@ -444,11 +462,18 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         key: 'missing_fields',
         render: (fields) => (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => (
-              <Tag key={f} color="orange" style={{ fontSize: 11, margin: 0 }}>
-                {fieldLabels[f] || f}
-              </Tag>
-            ))}
+            {(fields || []).map(f => {
+              const isAuto = AUTO_FILLED_FIELDS.has(f)
+              return (
+                <Tag
+                  key={f}
+                  color={isAuto ? 'cyan' : 'orange'}
+                  style={{ fontSize: 11, margin: 0 }}
+                >
+                  {isAuto && '⚙ '}{fieldLabels[f] || f}
+                </Tag>
+              )
+            })}
           </div>
         ),
       },
@@ -554,41 +579,50 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         </div>
       </div>
 
-      {/* Issue Summary Cards with Progress */}
+      {/* Issue Summary Cards */}
       <div style={{ padding: '24px', background: '#fff', borderBottom: '1px solid #e8eaed' }}>
-        <Row gutter={[16, 16]}>
+        <div style={{ display: 'flex', gap: 12 }}>
           {ISSUE_TYPES.map(item => {
             const count = getCountForTab(item.key)
             const isActive = activeTab === item.key
             return (
-              <Col xs={12} sm={8} md={4} key={item.key}>
-                <Card
-                  size="small"
-                  hoverable
-                  style={{
-                    borderRadius: 12,
-                    cursor: 'pointer',
-                    borderColor: isActive ? item.color : '#f0f2f5',
-                    borderWidth: isActive ? 2 : 1,
-                    background: isActive ? `${item.color}08` : '#fff',
-                    boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
-                    transition: 'all 0.2s ease',
-                  }}
-                  styles={{ body: { padding: '16px' } }}
-                  onClick={() => setActiveTab(item.key)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span style={{ color: item.color, fontSize: 14 }}>{item.icon}</span>
-                    <Text style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.2 }}>{item.label}</Text>
-                  </div>
-                  <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
-                    {count}
-                  </div>
-                </Card>
-              </Col>
+              <Card
+                key={item.key}
+                size="small"
+                hoverable
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  borderColor: isActive ? item.color : '#f0f2f5',
+                  borderWidth: isActive ? 2 : 1,
+                  background: isActive ? `${item.color}08` : '#fff',
+                  boxShadow: isActive ? `0 2px 8px ${item.color}20` : '0 2px 8px rgba(0,0,0,0.04)',
+                  transition: 'all 0.2s ease',
+                }}
+                styles={{ body: { padding: '16px' } }}
+                onClick={() => setActiveTab(item.key)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <span style={{ color: item.color, fontSize: 14 }}>{item.icon}</span>
+                  <Text style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.2 }}>{item.label}</Text>
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
+                  {count}
+                </div>
+                {item.autoFixable && count > 0 && (
+                  <Tag
+                    color="cyan"
+                    style={{ marginTop: 8, fontSize: 11, borderRadius: 4 }}
+                  >
+                    ⚙ auto-fixable
+                  </Tag>
+                )}
+              </Card>
             )
           })}
-        </Row>
+        </div>
       </div>
 
       {/* Table Section */}
@@ -601,7 +635,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
           }}
           styles={{ body: { padding: 0 } }}
           title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>
               <span style={{ fontSize: 16, fontWeight: 600 }}>{activeIssue?.label}</span>
               <Tag
@@ -618,6 +652,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
               >
                 {getCountForTab(activeTab)}
               </Tag>
+              {(activeTab === 'incomplete' || activeTab === 'incomplete_stufaps_disb') && (
+                <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span><Tag color="orange" style={{ fontSize: 11 }}>field</Tag> manual</span>
+                  <span><Tag color="cyan" style={{ fontSize: 11 }}>⚙ field</Tag> auto-filled</span>
+                </span>
+              )}
             </div>
           }
         >
