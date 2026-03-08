@@ -262,30 +262,36 @@ export default function LogsIndex() {
             {log.context && (
               <div style={{ padding: '10px 14px', background: '#f6f8fa', border: '1px solid #e8eaed', borderRadius: 6, marginBottom: 10 }}>
                 {log.context.name && (
-                  <div style={{ marginBottom: 2 }}>
-                    <Text type="secondary" style={{ fontSize: 11 }}>Name: </Text>
+                  <div style={{ display: 'flex', marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>Name</Text>
                     <Text style={{ fontSize: 12, fontWeight: 500 }}>{log.context.name}</Text>
                   </div>
                 )}
                 {log.context.award_number && (
-                  <div style={{ marginBottom: 2 }}>
-                    <Text type="secondary" style={{ fontSize: 11 }}>Award No.: </Text>
+                  <div style={{ display: 'flex', marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>Award No.</Text>
                     <Text style={{ fontSize: 12 }}>{log.context.award_number}</Text>
                   </div>
                 )}
                 {log.context.learner_reference_number && (
-                  <div style={{ marginBottom: 2 }}>
-                    <Text type="secondary" style={{ fontSize: 11 }}>LRN: </Text>
+                  <div style={{ display: 'flex', marginBottom: 2 }}>
+                    <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>LRN</Text>
                     <Text style={{ fontSize: 12 }}>{log.context.learner_reference_number}</Text>
                   </div>
                 )}
                 {(log.context.academic_year || log.context.semester) && (
-                  <div style={{ marginBottom: 2 }}>
+                  <div style={{ display: 'flex', gap: 16, marginBottom: 2 }}>
                     {log.context.academic_year && (
-                      <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12 }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                      <div style={{ display: 'flex' }}>
+                        <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>AY</Text>
+                        <Text style={{ fontSize: 12 }}>{log.context.academic_year}</Text>
+                      </div>
                     )}
                     {log.context.semester && (
-                      <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12 }}>{log.context.semester}</Text></>
+                      <div style={{ display: 'flex' }}>
+                        <Text type="secondary" style={{ fontSize: 11, minWidth: 32, flexShrink: 0 }}>Sem</Text>
+                        <Text style={{ fontSize: 12 }}>{log.context.semester}</Text>
+                      </div>
                     )}
                   </div>
                 )}
@@ -307,8 +313,8 @@ export default function LogsIndex() {
                     { label: 'Role', value: log.data_after?.role },
                     { label: 'Email', value: log.data_after?.email },
                   ].filter(i => i.value).map(item => (
-                    <div key={item.label} style={{ marginBottom: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                    <div key={item.label} style={{ display: 'flex', marginBottom: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>{item.label}</Text>
                       <Text style={{ fontSize: 12, color: '#52c41a' }}>{item.value}</Text>
                     </div>
                   ))}
@@ -326,18 +332,24 @@ export default function LogsIndex() {
                   value: log.context?.learner_reference_number || log.data_after?.learner_reference_number,
                 },
               ].map(item => (
-                <div key={item.label} style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                <div key={item.label} style={{ display: 'flex', marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>{item.label}</Text>
                   <Text style={{ fontSize: 12, color: '#52c41a' }}>{item.value || '—'}</Text>
                 </div>
               ))}
               {(log.context?.academic_year || log.context?.semester) && (
-                <div style={{ marginBottom: 4 }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 4 }}>
                   {log.context.academic_year && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>AY</Text>
+                      <Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.academic_year}</Text>
+                    </div>
                   )}
                   {log.context.semester && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.semester}</Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 32, flexShrink: 0 }}>Sem</Text>
+                      <Text style={{ fontSize: 12, color: '#52c41a' }}>{log.context.semester}</Text>
+                    </div>
                   )}
                 </div>
               )}
@@ -358,8 +370,8 @@ export default function LogsIndex() {
                     { label: 'Role', value: log.data_before?.role },
                     { label: 'Email', value: log.data_before?.email },
                   ].filter(i => i.value).map(item => (
-                    <div key={item.label} style={{ marginBottom: 4 }}>
-                      <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                    <div key={item.label} style={{ display: 'flex', marginBottom: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>{item.label}</Text>
                       <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value}</Text>
                     </div>
                   ))}
@@ -377,18 +389,24 @@ export default function LogsIndex() {
                   value: log.context?.learner_reference_number || log.data_before?.learner_reference_number,
                 },
               ].map(item => (
-                <div key={item.label} style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                <div key={item.label} style={{ display: 'flex', marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>{item.label}</Text>
                   <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value || '—'}</Text>
                 </div>
               ))}
               {(log.context?.academic_year || log.context?.semester) && (
-                <div style={{ marginBottom: 4 }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 4 }}>
                   {log.context.academic_year && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>AY</Text>
+                      <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text>
+                    </div>
                   )}
                   {log.context.semester && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 32, flexShrink: 0 }}>Sem</Text>
+                      <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text>
+                    </div>
                   )}
                 </div>
               )}
@@ -424,18 +442,24 @@ export default function LogsIndex() {
                   value: log.context?.learner_reference_number || log.data_before?.learner_reference_number,
                 },
               ].map(item => (
-                <div key={item.label} style={{ marginBottom: 4 }}>
-                  <Text type="secondary" style={{ fontSize: 11 }}>{item.label}: </Text>
+                <div key={item.label} style={{ display: 'flex', marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>{item.label}</Text>
                   <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{item.value || '—'}</Text>
                 </div>
               ))}
               {(log.context?.academic_year || log.context?.semester) && (
-                <div style={{ marginBottom: 4 }}>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 4 }}>
                   {log.context.academic_year && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>AY: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text><Text style={{ fontSize: 12, color: '#d9d9d9' }}> · </Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 72, flexShrink: 0 }}>AY</Text>
+                      <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.academic_year}</Text>
+                    </div>
                   )}
                   {log.context.semester && (
-                    <><Text type="secondary" style={{ fontSize: 11 }}>Sem: </Text><Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text></>
+                    <div style={{ display: 'flex' }}>
+                      <Text type="secondary" style={{ fontSize: 11, minWidth: 32, flexShrink: 0 }}>Sem</Text>
+                      <Text style={{ fontSize: 12, color: '#ff4d4f' }}>{log.context.semester}</Text>
+                    </div>
                   )}
                 </div>
               )}

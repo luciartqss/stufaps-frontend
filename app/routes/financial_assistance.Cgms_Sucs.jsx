@@ -18,8 +18,8 @@ const { Option } = Select
 
 export function meta() {
   return [
-    { title: 'Cash Grant to Medical Students Enrolled in State Universities and Colleges (CGMS-SUCs) | StuFAPs' },
-    { name: 'description', content: 'Manage CGMS-SUCs records' },
+    { title: 'Student Monetary Assistance for Recovery and Transition (SMART) | StuFAPs' },
+    { name: 'description', content: 'Manage SMART records' },
   ]
 }
 
@@ -179,7 +179,8 @@ export default function FinancialAssistancescgms_sucs() {
   const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
 
   const filteredCgms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    if (p?.scholarship_program_name?.toUpperCase() !== 'CGMSSUCS') return false
+    const name = p?.scholarship_program_name?.toUpperCase()
+    if (name !== 'CGMSSUCS' && name !== 'SMART') return false
     if (academicYearFilter && academicYearFilter !== 'All') {
       return (p.academic_year || p.Academic_year) === academicYearFilter
     }
@@ -192,8 +193,8 @@ export default function FinancialAssistancescgms_sucs() {
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>CGMS-SUCs</Title>
-            <Text style={{ color: '#6b7280', fontSize: 16 }}>Cash Grant to Medical Students Enrolled in State Universities and Colleges</Text>
+            <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>SMART</Title>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>Student Monetary Assistance for Recovery and Transition</Text>
           </div>
           <Space size={12}>
             <FilterOutlined style={{ color: '#6b7280' }} />

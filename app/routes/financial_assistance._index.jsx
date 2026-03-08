@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Typography, Card, Select, Progress, Spin, Tag, Row, Col, Space, InputNumber, message, Popover, Button } from 'antd'
+import { Typography, Card, Select, Progress, Spin, Tag, Row, Col, Space, InputNumber, message, Button, Modal, Badge, Table, Empty } from 'antd'
 import {
   TeamOutlined, ContactsOutlined, UserOutlined,
-  WarningOutlined, EditOutlined, CheckOutlined, CloseOutlined,
+  WarningOutlined, CheckOutlined,
   RightOutlined, QuestionCircleOutlined, FilterOutlined,
-  InfoCircleOutlined, CalendarOutlined,
+  InfoCircleOutlined, CalendarOutlined, SettingOutlined,
 } from '@ant-design/icons'
 
 import { API_BASE } from '../lib/config'
@@ -29,7 +29,7 @@ const CODE_LABELS = {
   FULLPESFAGAD: 'Full PESFA-GAD', HALFPESFAGAD: 'Half PESFA-GAD',
   FULLESTAT: 'Full Estat', HALFESTAT: 'Half Estat', ESTATISTIKOLAR: 'Estatistikolar',
   COSCHO: 'CoScho', MSRS: 'MSRS', SIDASGP: 'SIDA-SGP',
-  ACEFGIAHEP: 'ACEF-GIAHEP', MTPSP: 'MTP-SP', CGMSSUCS: 'CGMS-SUCs', SNPLP: 'SNPLP',
+  ACEFGIAHEP: 'ACEF-GIAHEP', MTPSP: 'MTP-SP', CGMSSUCS: 'CGMS-SUCs', SMART: 'SMART', SNPLP: 'SNPLP',
 }
 
 /* ── Program definitions ── */
@@ -41,7 +41,7 @@ const PROGRAMS = [
   { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Sugarcane Industry Development Act Grant', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
   { key: 'acef_giahep', label: 'ACEF-GIAHEP', fullName: 'Agricultural Competitiveness Enhancement Fund', link: '/financial_assistance/Acef_Giahep', codes: ['ACEFGIAHEP'], color: '#52c41a' },
   { key: 'mtp_sp', label: 'MTP-SP', fullName: 'Medical Technologists and Pharmacists Scholarship', link: '/financial_assistance/Mtp_Sp', codes: ['MTPSP'], color: '#2f54eb' },
-  { key: 'cgms_sucs', label: 'CGMS-SUCs', fullName: 'Cash Grant to Medical Students in SUCs', link: '/financial_assistance/Cgms_Sucs', codes: ['CGMSSUCS'], color: '#f5222d' },
+  { key: 'smart', label: 'SMART', fullName: 'Student Monetary Assistance for Recovery and Transition', link: '/financial_assistance/Cgms_Sucs', codes: ['CGMSSUCS', 'SMART'], color: '#f5222d' },
   { key: 'snplp', label: 'SNPLP', fullName: 'Student Nurses Licensure Preparation', link: '/financial_assistance/Snplp', codes: ['SNPLP'], color: '#a0d911' },
 ]
 
@@ -62,21 +62,6 @@ function getTotals(assistances, codes) {
     filled: filtered.reduce((s, p) => s + (Number(p?.total_students) || 0), 0),
     unfilled: filtered.reduce((s, p) => s + (Number(p?.unfilled_slot) || 0), 0),
   }
-}
-
-function getSubPrograms(assistances, codes) {
-  return codes.map(code => {
-    const nc = norm(code)
-    const match = assistances.find(p => norm(p.scholarship_program_name) === nc)
-    return {
-      code: nc.toUpperCase(),
-      label: CODE_LABELS[code.replace(/-/g, '').toUpperCase()] || code,
-      slots: Number(match?.total_slot) || 0,
-      filled: Number(match?.total_students) || 0,
-      unfilled: Number(match?.unfilled_slot) || 0,
-      programName: match?.scholarship_program_name || code.replace(/-/g, '').toUpperCase(),
-    }
-  })
 }
 
 function pct(part, whole) {
@@ -131,37 +116,89 @@ function SummaryCards({ data, academicYear, semester }) {
   )
 }
 
-/* ── Inline Slot Editor (popover content) ── */
-function SlotEditor({ subPrograms, academicYear, onSaved }) {
+/* ── Manage Slots Modal ── */
+function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSaved }) {
   const [edits, setEdits] = useState({})
   const [saving, setSaving] = useState(false)
 
-  const handleChange = (programName, value) => {
-    setEdits(prev => ({ ...prev, [programName]: value }))
+  // Build a matrix: rows = sub-programs (within each parent program), columns = years
+  const rows = useMemo(() => {
+    const result = []
+    for (const prog of PROGRAMS) {
+      for (const code of prog.codes) {
+        const nc = norm(code)
+        result.push({
+          key: nc,
+          program: prog.label,
+          programColor: prog.color,
+          subProgram: CODE_LABELS[code.replace(/-/g, '').toUpperCase()] || code,
+          code: nc,
+        })
+      }
+    }
+    return result
+  }, [])
+
+  // Lookup current slot value for a code + year
+  const getSlot = useCallback((code, year) => {
+    const match = allAssistances.find(
+      a => norm(a.scholarship_program_name) === code && (a.Academic_year || a.academic_year) === year
+    )
+    return match ? Number(match.total_slot) || 0 : null // null = no record exists
+  }, [allAssistances])
+
+  const editKey = (code, year) => `${code}__${year}`
+
+  const handleChange = (code, year, value) => {
+    setEdits(prev => ({ ...prev, [editKey(code, year)]: value }))
   }
 
-  const hasChanges = Object.keys(edits).some(k => {
-    const sp = subPrograms.find(s => s.programName === k)
-    return sp && edits[k] !== sp.slots
-  })
+  const getDisplayValue = (code, year) => {
+    const ek = editKey(code, year)
+    if (ek in edits) return edits[ek]
+    return getSlot(code, year)
+  }
+
+  // Count how many cells are missing (null = no record, or 0)
+  const missingCount = useMemo(() => {
+    let count = 0
+    for (const row of rows) {
+      for (const year of academicYears) {
+        const val = getDisplayValue(row.code, year)
+        if (val === null || val === 0) count++
+      }
+    }
+    return count
+  }, [rows, academicYears, edits, allAssistances])
+
+  const changedEntries = useMemo(() => {
+    return Object.entries(edits).filter(([key, val]) => {
+      const [code, year] = key.split('__')
+      const original = getSlot(code, year)
+      return val !== original
+    })
+  }, [edits, getSlot])
 
   const handleSave = async () => {
-    const changes = Object.entries(edits).filter(([k, v]) => {
-      const sp = subPrograms.find(s => s.programName === k)
-      return sp && v !== sp.slots
-    })
-    if (changes.length === 0) return
-
+    if (changedEntries.length === 0) return
     setSaving(true)
     try {
-      await Promise.all(changes.map(([programName, slots]) =>
-        fetch(`${API_BASE}/scholarship_program_records/upsert-slots`, {
+      // Find the programName from allAssistances for each code, or use the normalized code
+      await Promise.all(changedEntries.map(([key, slots]) => {
+        const [code, year] = key.split('__')
+        const match = allAssistances.find(a => norm(a.scholarship_program_name) === code)
+        const programName = match?.scholarship_program_name || code.toUpperCase()
+        return fetch(`${API_BASE}/scholarship_program_records/upsert-slots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ scholarship_program_name: programName, Academic_year: academicYear, total_slot: slots }),
+          body: JSON.stringify({
+            scholarship_program_name: programName,
+            Academic_year: year,
+            total_slot: slots ?? 0,
+          }),
         }).then(r => { if (!r.ok) throw new Error('Failed') })
-      ))
-      message.success('Slots updated')
+      }))
+      message.success(`Updated ${changedEntries.length} slot${changedEntries.length > 1 ? 's' : ''}`)
       setEdits({})
       onSaved()
     } catch {
@@ -171,56 +208,130 @@ function SlotEditor({ subPrograms, academicYear, onSaved }) {
     }
   }
 
-  return (
-    <div style={{ minWidth: 280 }}>
-      <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 10 }}>
-        Edit Slots — AY {academicYear}
-      </Text>
-      {subPrograms.map(sp => (
-        <div key={sp.programName} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-          <Text style={{ fontSize: 12, color: '#595959', flex: 1, minWidth: 0 }} ellipsis>{sp.label}</Text>
+  const columns = [
+    {
+      title: 'Program',
+      dataIndex: 'program',
+      width: 100,
+      fixed: 'left',
+      onCell: (_, index) => {
+        // Merge cells for same parent program
+        const row = rows[index]
+        const prevRow = index > 0 ? rows[index - 1] : null
+        if (prevRow && prevRow.program === row.program) return { rowSpan: 0 }
+        let span = 1
+        for (let i = index + 1; i < rows.length && rows[i].program === row.program; i++) span++
+        return { rowSpan: span }
+      },
+      render: (text, record) => (
+        <Text strong style={{ color: record.programColor, fontSize: 12 }}>{text}</Text>
+      ),
+    },
+    {
+      title: 'Sub-Program',
+      dataIndex: 'subProgram',
+      width: 120,
+      fixed: 'left',
+      render: text => <Text style={{ fontSize: 12 }}>{text}</Text>,
+    },
+    ...academicYears.map(year => ({
+      title: <Text style={{ fontSize: 12 }}>{year}</Text>,
+      key: year,
+      width: 110,
+      align: 'center',
+      render: (_, record) => {
+        const val = getDisplayValue(record.code, year)
+        const isMissing = val === null || val === 0
+        const ek = editKey(record.code, year)
+        const isEdited = ek in edits && edits[ek] !== getSlot(record.code, year)
+        return (
           <InputNumber
             size="small"
             min={0}
-            value={edits[sp.programName] ?? sp.slots}
-            onChange={v => handleChange(sp.programName, v)}
-            style={{ width: 80 }}
+            value={val ?? undefined}
+            placeholder="—"
+            onChange={v => handleChange(record.code, year, v)}
             controls={false}
+            style={{
+              width: 80,
+              background: isEdited ? '#e6f7ff' : isMissing ? '#fff7e6' : undefined,
+              borderColor: isEdited ? '#1890ff' : isMissing ? '#ffc53d' : undefined,
+            }}
           />
-          <Text style={{ fontSize: 11, color: '#8c8c8c', width: 50, textAlign: 'right' }}>{sp.filled} filled</Text>
+        )
+      },
+    })),
+  ]
+
+  return (
+    <Modal
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <SettingOutlined />
+          <span>Manage Annual Slots</span>
+          {missingCount > 0 && (
+            <Tag color="warning" style={{ margin: 0, fontSize: 11 }}>
+              {missingCount} missing
+            </Tag>
+          )}
         </div>
-      ))}
-      {hasChanges && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8, gap: 6 }}>
-          <Button size="small" onClick={() => setEdits({})} icon={<CloseOutlined />}>Cancel</Button>
-          <Button size="small" type="primary" loading={saving} onClick={handleSave} icon={<CheckOutlined />}>Save</Button>
+      }
+      open={open}
+      onCancel={onClose}
+      width={Math.min(340 + academicYears.length * 120, 900)}
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: '#8c8c8c' }}>
+            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#fff7e6', border: '1px solid #ffc53d', borderRadius: 2, marginRight: 4 }} />No slots</span>
+            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#e6f7ff', border: '1px solid #1890ff', borderRadius: 2, marginRight: 4 }} />Edited</span>
+          </div>
+          <Space>
+            <Button onClick={onClose}>Cancel</Button>
+            <Button
+              type="primary"
+              loading={saving}
+              disabled={changedEntries.length === 0}
+              onClick={handleSave}
+              icon={<CheckOutlined />}
+            >
+              Save {changedEntries.length > 0 ? `(${changedEntries.length})` : ''}
+            </Button>
+          </Space>
         </div>
+      }
+    >
+      {academicYears.length === 0 ? (
+        <Empty description="No academic years found. Add disbursement data first." />
+      ) : (
+        <Table
+          dataSource={rows}
+          columns={columns}
+          pagination={false}
+          size="small"
+          bordered
+          scroll={{ x: 'max-content' }}
+          style={{ marginTop: 8 }}
+        />
       )}
-    </div>
+    </Modal>
   )
 }
 
 /* ── Program Card ── */
-function ProgramCard({ program, totals, subPrograms, canEdit, academicYear, onSaved }) {
+function ProgramCard({ program, totals }) {
   const exceeded = totals.filled > totals.slots && totals.slots > 0
   const fillPct = parseFloat(pct(totals.filled, totals.slots))
-  const isSpecificYear = academicYear && academicYear !== 'All'
-
-  const slotsContent = (
-    <div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{totals.slots.toLocaleString()}</div>
-      <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
-    </div>
-  )
+  const noSlots = totals.slots === 0
 
   return (
     <Card
       style={{
         borderRadius: 12,
-        borderLeft: `3px solid ${exceeded ? '#ff4d4f' : program.color}`,
+        borderLeft: `3px solid ${exceeded ? '#ff4d4f' : noSlots ? '#d9d9d9' : program.color}`,
         boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         height: '100%',
         transition: 'box-shadow 0.2s ease',
+        opacity: noSlots ? 0.7 : 1,
       }}
       bodyStyle={{ padding: '16px 20px' }}
     >
@@ -230,6 +341,7 @@ function ProgramCard({ program, totals, subPrograms, canEdit, academicYear, onSa
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Text strong style={{ fontSize: 15 }}>{program.label}</Text>
             {exceeded && <Tag color="error" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: 0 }}>Exceeded</Tag>}
+            {noSlots && <Tag color="default" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: 0 }}>No Slots</Tag>}
           </div>
           <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {program.fullName}
@@ -241,44 +353,41 @@ function ProgramCard({ program, totals, subPrograms, canEdit, academicYear, onSa
       </div>
 
       {/* Fill bar */}
-      <Progress
-        percent={Math.min(fillPct, 100)}
-        size="small"
-        strokeColor={exceeded ? '#ff4d4f' : program.color}
-        trailColor="#f0f0f0"
-        showInfo={false}
-        style={{ marginBottom: 12 }}
-      />
+      {!noSlots && (
+        <Progress
+          percent={Math.min(fillPct, 100)}
+          size="small"
+          strokeColor={exceeded ? '#ff4d4f' : program.color}
+          trailColor="#f0f0f0"
+          showInfo={false}
+          style={{ marginBottom: 12 }}
+        />
+      )}
 
       {/* Stats */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', textAlign: 'center' }}>
-        {/* Slots — editable via popover when admin + specific AY selected */}
-        {canEdit && isSpecificYear && subPrograms.length > 0 ? (
-          <Popover
-            trigger="click"
-            placement="bottom"
-            content={<SlotEditor subPrograms={subPrograms} academicYear={academicYear} onSaved={onSaved} />}
-          >
-            <div style={{ cursor: 'pointer', position: 'relative' }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#1890ff' }}>
-                {totals.slots.toLocaleString()}
-                <EditOutlined style={{ fontSize: 10, marginLeft: 4, color: '#bfbfbf' }} />
-              </div>
+      <div style={{ display: 'flex', justifyContent: noSlots ? 'center' : 'space-between', textAlign: 'center' }}>
+        {noSlots ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {totals.filled > 0 ? `${totals.filled.toLocaleString()} students disbursed` : 'No data yet'}
+          </Text>
+        ) : (
+          <>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{totals.slots.toLocaleString()}</div>
               <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
             </div>
-          </Popover>
-        ) : slotsContent}
-
-        {[
-          { label: 'Filled', value: totals.filled, color: '#52c41a' },
-          { label: 'Unfilled', value: totals.unfilled, color: exceeded ? '#ff4d4f' : '#faad14' },
-          { label: 'Fill Rate', value: `${fillPct}%`, color: exceeded ? '#ff4d4f' : '#1890ff' },
-        ].map((s, i) => (
-          <div key={i}>
-            <div style={{ fontSize: 15, fontWeight: 600, color: s.color }}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</div>
-            <Text type="secondary" style={{ fontSize: 11 }}>{s.label}</Text>
-          </div>
-        ))}
+            {[
+              { label: 'Filled', value: totals.filled, color: '#52c41a' },
+              { label: 'Unfilled', value: totals.unfilled, color: exceeded ? '#ff4d4f' : '#faad14' },
+              { label: 'Fill Rate', value: `${fillPct}%`, color: exceeded ? '#ff4d4f' : '#1890ff' },
+            ].map((s, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: s.color }}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</div>
+                <Text type="secondary" style={{ fontSize: 11 }}>{s.label}</Text>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </Card>
   )
@@ -294,6 +403,7 @@ export default function FinancialAssistanceIndex() {
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
   const [othersData, setOthersData] = useState({ total: 0, programs: [] })
+  const [slotsModalOpen, setSlotsModalOpen] = useState(false)
 
   const fetchPrograms = useCallback(() => {
     setLoading(true)
@@ -337,6 +447,13 @@ export default function FinancialAssistanceIndex() {
     })
   }, [filteredAssistances])
 
+  const noSlotsPrograms = useMemo(() => {
+    return PROGRAMS.filter(p => {
+      const t = getTotals(filteredAssistances, p.codes)
+      return t.slots === 0
+    })
+  }, [filteredAssistances])
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
@@ -356,6 +473,16 @@ export default function FinancialAssistanceIndex() {
             <Text style={{ color: '#6b7280', fontSize: 14 }}>CHED Memorandum Order</Text>
           </div>
           <Space size={12}>
+            {isMasterAdmin && (
+              <Badge count={noSlotsPrograms.length} size="small" offset={[-4, 0]}>
+                <Button
+                  icon={<SettingOutlined />}
+                  onClick={() => setSlotsModalOpen(true)}
+                >
+                  Manage Slots
+                </Button>
+              </Badge>
+            )}
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
               value={academicYearFilter}
@@ -395,16 +522,21 @@ export default function FinancialAssistanceIndex() {
           </div>
         )}
 
-        {/* Admin hint */}
-        {isMasterAdmin && academicYearFilter === 'All' && (
+        {/* No slots warning */}
+        {isMasterAdmin && noSlotsPrograms.length > 0 && (
           <div style={{
-            background: '#f0f5ff', border: '1px solid #d6e4ff', borderRadius: 8,
-            padding: '8px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8,
+            background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 8,
+            padding: '10px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <EditOutlined style={{ color: '#1890ff', fontSize: 13 }} />
-            <Text style={{ color: '#1d39c4', fontSize: 13 }}>
-              Select a specific academic year to edit annual slot counts inline.
-            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <InfoCircleOutlined style={{ color: '#faad14', fontSize: 16 }} />
+              <Text style={{ color: '#ad6800', fontSize: 13 }}>
+                <strong>{noSlotsPrograms.length} program{noSlotsPrograms.length > 1 ? 's' : ''}</strong> with no slots configured{academicYearFilter !== 'All' ? ` for AY ${academicYearFilter}` : ''}: {noSlotsPrograms.map(p => p.label).join(', ')}
+              </Text>
+            </div>
+            <Button size="small" type="link" onClick={() => setSlotsModalOpen(true)} style={{ color: '#ad6800', fontWeight: 500 }}>
+              Configure
+            </Button>
           </div>
         )}
 
@@ -420,54 +552,49 @@ export default function FinancialAssistanceIndex() {
         <Row gutter={[16, 16]}>
           {PROGRAMS.map(prog => {
             const totals = getTotals(filteredAssistances, prog.codes)
-            const subPrograms = getSubPrograms(filteredAssistances, prog.codes)
             return (
               <Col xs={24} sm={12} lg={8} key={prog.key}>
-                <ProgramCard
-                  program={prog}
-                  totals={totals}
-                  subPrograms={subPrograms}
-                  canEdit={isMasterAdmin}
-                  academicYear={academicYearFilter}
-                  onSaved={fetchPrograms}
-                />
+                <ProgramCard program={prog} totals={totals} />
               </Col>
             )
           })}
-
-          {/* Others card */}
-          {othersData.total > 0 && (
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                style={{ borderRadius: 12, borderLeft: '3px solid #d9d9d9', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', height: '100%' }}
-                bodyStyle={{ padding: '16px 20px' }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <QuestionCircleOutlined style={{ color: '#8c8c8c', fontSize: 15 }} />
-                      <Text strong style={{ fontSize: 15 }}>Others</Text>
-                    </div>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 2 }}>Unclassified programs</Text>
-                  </div>
-                  <Tag style={{ fontSize: 13, fontWeight: 600, padding: '2px 10px', margin: 0 }}>{othersData.total}</Tag>
-                </div>
-                <div style={{ maxHeight: 100, overflowY: 'auto' }}>
-                  {othersData.programs?.map((p, i) => (
-                    <div key={i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '4px 0', borderBottom: i < othersData.programs.length - 1 ? '1px solid #f5f5f5' : 'none',
-                    }}>
-                      <Text style={{ fontSize: 12, color: '#595959' }}>{p.scholarship_program || 'Blank'}</Text>
-                      <Tag style={{ fontSize: 11, margin: 0 }}>{p.student_count}</Tag>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            </Col>
-          )}
         </Row>
+
+        {/* Others — subtle footer banner */}
+        {othersData.total > 0 && (
+          <div style={{
+            marginTop: 24, padding: '12px 16px', background: '#fafafa', borderRadius: 8,
+            border: '1px solid #f0f0f0',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: othersData.programs?.length > 0 ? 8 : 0 }}>
+              <QuestionCircleOutlined style={{ color: '#8c8c8c', fontSize: 13 }} />
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                <strong>{othersData.total}</strong> students in unclassified programs
+              </Text>
+            </div>
+            {othersData.programs?.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {othersData.programs.map((p, i) => (
+                  <Tag key={i} style={{ margin: 0, fontSize: 11 }}>
+                    {p.scholarship_program || 'Blank'} ({p.student_count})
+                  </Tag>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Manage Slots Modal */}
+      {isMasterAdmin && (
+        <ManageSlotsModal
+          open={slotsModalOpen}
+          onClose={() => setSlotsModalOpen(false)}
+          academicYears={academicYears}
+          allAssistances={financialAssistances}
+          onSaved={fetchPrograms}
+        />
+      )}
     </div>
   )
 }
