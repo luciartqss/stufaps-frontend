@@ -58,15 +58,15 @@ const sectionCardStyle = {
 
 // Warning definitions ordered by severity (critical first)
 const WARNING_CONFIG = [
-  { key: 'duplicate_award_numbers', label: 'Duplicate Award Numbers', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e' },
-  { key: 'duplicate_lrn', label: 'Duplicate LRN', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e' },
-  { key: 'incomplete_info', label: 'Incomplete Records', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96' },
-  { key: 'incomplete_accounting', label: 'Incomplete Accounting', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality/accounting' },
-  { key: 'incomplete_cashier', label: 'Incomplete Cashier', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality/cashier' },
-  { key: 'incomplete_stufaps', label: 'Incomplete StuFAPs Disb.', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', path: '/data-quality' },
-  { key: 'no_award_number', label: 'Missing Award Number', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
-  { key: 'no_lrn', label: 'Missing LRN', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f' },
-  { key: 'no_uii', label: 'Missing UII (Institutions)', severity: 'low', color: '#7c7c7c', bg: '#fafafa', border: '#d9d9d9' },
+  { key: 'duplicate_award_numbers', label: 'Duplicate Award Numbers', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e', icon: <ExclamationCircleOutlined />, path: '/data-quality?tab=duplicate_award' },
+  { key: 'duplicate_lrn', label: 'Duplicate LRN', severity: 'critical', color: '#cf1322', bg: '#fff1f0', border: '#ffa39e', icon: <ExclamationCircleOutlined />, path: '/data-quality?tab=duplicate_lrn' },
+  { key: 'incomplete_info', label: 'Incomplete Records', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', icon: <WarningOutlined />, path: '/data-quality?tab=incomplete' },
+  { key: 'incomplete_accounting', label: 'Incomplete Accounting', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', icon: <AuditOutlined />, path: '/data-quality/accounting' },
+  { key: 'incomplete_cashier', label: 'Incomplete Cashier', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', icon: <WalletOutlined />, path: '/data-quality/cashier' },
+  { key: 'incomplete_stufaps', label: 'Incomplete StuFAPs Disb.', severity: 'high', color: '#d4380d', bg: '#fff2e8', border: '#ffbb96', icon: <FileTextOutlined />, path: '/data-quality?tab=incomplete_stufaps_disb' },
+  { key: 'no_award_number', label: 'Missing Award Number', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f', icon: <FileTextOutlined />, path: '/data-quality?tab=no_award' },
+  { key: 'no_lrn', label: 'Missing LRN', severity: 'medium', color: '#d48806', bg: '#fffbe6', border: '#ffe58f', icon: <TeamOutlined />, path: '/data-quality?tab=no_lrn' },
+  { key: 'no_uii', label: 'Missing UII (Institutions)', severity: 'low', color: '#7c7c7c', bg: '#fafafa', border: '#d9d9d9', icon: <TeamOutlined />, path: '/data-quality?tab=no_uii' },
 ]
 
 export default function Dashboard() {
@@ -407,61 +407,65 @@ export default function Dashboard() {
 
       {/* ── Data Quality Alerts ── */}
       {totalWarnings > 0 && (
-        <Card
-          style={{ ...sectionCardStyle, marginBottom: 20, borderColor: '#ffd666' }}
-          styles={{ body: { padding: '16px 20px' } }}
-          title={
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <AlertOutlined style={{ color: '#d48806', fontSize: 16 }} />
-              <Text strong style={{ fontSize: 15 }}>Attention Required</Text>
+              <AlertOutlined style={{ color: '#d48806', fontSize: 18 }} />
+              <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>Attention Required</Text>
               <Badge count={totalWarnings} style={{ backgroundColor: '#faad14' }} />
             </div>
-          }
-          extra={
             <Button type="link" size="small" onClick={() => navigate('/data-quality')} style={{ padding: 0 }}>
               View All <RightOutlined style={{ fontSize: 10 }} />
             </Button>
-          }
-        >
-          <Row gutter={[12, 10]}>
+          </div>
+          <Row gutter={[12, 12]}>
             {activeWarnings.map((w) => {
               const count = dashboardData.warnings[w.key]?.count || 0
+              const severityColor = w.severity === 'critical' ? '#ff4d4f' : w.severity === 'high' ? '#ff7a45' : w.severity === 'medium' ? '#faad14' : '#8c8c8c'
+              const pct = dashboardData.stats.totalStudents > 0 ? Math.min(Math.round((count / dashboardData.stats.totalStudents) * 100), 100) : 0
               return (
-                <Col xs={24} sm={12} md={8} key={w.key}>
-                  <div
+                <Col xs={12} sm={8} md={8} key={w.key}>
+                  <Card
+                    hoverable
                     onClick={() => navigate(w.path || '/data-quality')}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      background: w.bg,
+                      borderRadius: 10,
                       border: `1px solid ${w.border}`,
-                      cursor: 'pointer',
-                      transition: 'opacity 0.2s',
+                      background: w.bg,
+                      height: '100%',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.85')}
-                    onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+                    styles={{ body: { padding: '16px 18px' } }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                      <WarningOutlined style={{ color: w.color, fontSize: 14, flexShrink: 0 }} />
-                      <Text style={{ color: w.color, fontSize: 13, fontWeight: 500 }} ellipsis>{w.label}</Text>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                          <span style={{ color: w.color, fontSize: 14 }}>{w.icon}</span>
+                          <Text style={{ color: w.color, fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.3 }} ellipsis>
+                            {w.severity}
+                          </Text>
+                        </div>
+                        <Text strong style={{ fontSize: 22, color: '#1a1a1a', display: 'block', lineHeight: 1.1 }}>
+                          {count.toLocaleString()}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: '#595959', display: 'block', marginTop: 4 }} ellipsis>
+                          {w.label}
+                        </Text>
+                      </div>
+                      <Progress
+                        type="circle"
+                        percent={pct}
+                        size={48}
+                        strokeColor={severityColor}
+                        trailColor={`${severityColor}20`}
+                        format={(p) => <span style={{ fontSize: 11, fontWeight: 600, color: severityColor }}>{p}%</span>}
+                      />
                     </div>
-                    <Badge
-                      count={count}
-                      style={{
-                        backgroundColor: w.severity === 'critical' ? '#ff4d4f' : w.severity === 'high' ? '#ff7a45' : '#faad14',
-                        fontSize: 11,
-                        flexShrink: 0,
-                      }}
-                    />
-                  </div>
+                  </Card>
                 </Col>
               )
             })}
           </Row>
-        </Card>
+        </div>
       )}
 
       {/* ── Distribution Analysis (2 columns) ── */}

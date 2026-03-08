@@ -734,14 +734,20 @@ export default function StudentsIndex() {
   }
 
   // Handle "Extract Excel" button click - build XLSX with merged headers like bulk import
-  const handleExtractExcel = () => {
+  const handleExtractExcel = async () => {
     message.loading({ content: 'Preparing export...', key: 'export' })
     
     try {
-      // Use the currently loaded (filtered) students directly
-      const exportStudents = students
+      // Fetch ALL matching students (with current filters, no pagination) from the export endpoint
+      const queryString = buildQueryParams({ page: undefined, pageSize: undefined })
+      const params = new URLSearchParams(queryString)
+      params.delete('page')
+      params.delete('pageSize')
+      const res = await fetch(`${API_BASE}/students/export?${params}`)
+      if (!res.ok) throw new Error('Failed to fetch students for export')
+      const exportStudents = await res.json()
 
-      if (exportStudents.length === 0) {
+      if (!exportStudents.length) {
         message.info({ content: 'No students to export', key: 'export' })
         return
       }

@@ -13,7 +13,6 @@ export function meta() {
 }
 
 export default function StudentsPdf() {
-  const [students, setStudents] = useState([])
   const [program, setProgram] = useState()
   const [semester, setSemester] = useState()
   const [academicYear, setAcademicYear] = useState()
@@ -75,17 +74,17 @@ export default function StudentsPdf() {
     }
   }, [])
 
-  // Fetch students for filter options
+  // Fetch filter options from dedicated endpoint
+  const [filterOptions, setFilterOptions] = useState({ scholarshipPrograms: [], academicYears: [], semesters: [] })
+
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchFilterOptions = async () => {
       try {
         setLoadingOptions(true)
-        const res = await fetch(`${API_BASE}/students`)
+        const res = await fetch(`${API_BASE}/students/filter-options`)
         if (!res.ok) throw new Error('Failed to fetch')
         const data = await res.json()
-        // Handle paginated response (data.data) or direct array
-        const studentsArray = Array.isArray(data) ? data : (data.data || [])
-        setStudents(studentsArray)
+        setFilterOptions(data)
       } catch (err) {
         console.error(err)
         message.error('Unable to load filter options')
@@ -93,7 +92,7 @@ export default function StudentsPdf() {
         setLoadingOptions(false)
       }
     }
-    fetchStudents()
+    fetchFilterOptions()
   }, [])
 
   // Load saved form data on mount
@@ -110,29 +109,19 @@ export default function StudentsPdf() {
     }
   }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition, saveFormData])
 
-  // Derive filter options
+  // Derive filter options from dedicated endpoint
   const programOptions = useMemo(() => {
-    const set = new Set()
-    students.forEach((s) => s?.scholarship_program && set.add(s.scholarship_program))
-    return Array.from(set).sort()
-  }, [students])
+    return (filterOptions.scholarshipPrograms || []).slice().sort()
+  }, [filterOptions])
 
   const academicYearOptions = useMemo(() => {
-    const set = new Set()
-    students.forEach((s) => {
-      (s?.disbursements || []).forEach((d) => d?.academic_year && set.add(d.academic_year))
-    })
-    return Array.from(set).sort()
-  }, [students])
+    return (filterOptions.academicYears || []).slice().sort()
+  }, [filterOptions])
 
   const semesterOptions = useMemo(() => {
-    const set = new Set()
-    students.forEach((s) => {
-      (s?.disbursements || []).forEach((d) => d?.semester && set.add(d.semester))
-    })
-    const arr = Array.from(set)
+    const arr = filterOptions.semesters || []
     return arr.length ? arr : ['First', 'Second']
-  }, [students])
+  }, [filterOptions])
 
   const canGenerate = Boolean(program && semester && academicYear)
 
@@ -316,9 +305,9 @@ export default function StudentsPdf() {
   }
 
   return (
-    <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ margin: '-24px', background: '#f5f5f5', minHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
       {/* Header - Filters */}
-      <Card style={{ marginBottom: '24px' }}>
+      <Card style={{ marginBottom: 0, borderRadius: 0 }}>
         <div style={{ marginBottom: '24px' }}>
           <div style={{ marginBottom: '16px' }}>
             <Title level={3} style={{ margin: '0 0 8px 0', color: '#262626', textAlign: 'left' }}>
@@ -341,7 +330,11 @@ export default function StudentsPdf() {
                   loading={loadingOptions}
                   style={{ width: '100%' }}
                   optionFilterProp="label"
-                  options={programOptions.map((opt) => ({ label: opt, value: opt }))}
+                  options={programOptions.map((opt) => ({
+                    label: opt,
+                    value: opt,
+                    disabled: /^(COSCHO|MSRS)$/i.test(opt),
+                  }))}
                 />
               </Form.Item>
 
@@ -432,8 +425,8 @@ export default function StudentsPdf() {
             )}
           </Space>
         }
-        style={{ flex: 1, marginBottom: '24px', minHeight: '500px' }}
-        styles={{ body: { padding: '16px', height: '500px', display: 'flex', flexDirection: 'column' } }}
+        style={{ flex: 1, marginBottom: 0, borderRadius: 0 }}
+        styles={{ body: { padding: '16px', height: '80vh', display: 'flex', flexDirection: 'column' } }}
       >
         {loadingPreview ? (
           <div style={{ 
@@ -505,7 +498,8 @@ export default function StudentsPdf() {
       </Card>
 
       {/* Footer - Signatories */}
-      <Card 
+      <Card
+        style={{ borderRadius: 0 }}
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserOutlined />

@@ -1,4 +1,4 @@
-import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message } from 'antd'
+import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message, Tooltip } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
@@ -8,7 +8,7 @@ import {
   EditOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
 
 const { Title, Text } = Typography
@@ -64,28 +64,23 @@ const PAGE_SIZE = 15
 const GROUPS_PER_PAGE = 5
 
 // Fields that are auto-filled by StudentLookupService — if still missing, source data didn't match
-const AUTO_FILLED_FIELDS = new Set([
-  'uii', 'name_of_institution', 'institutional_type',          // HEI.json
-  'authority_type', 'authority_number', 'series',               // Program Offerings
-  'prio_program_code', 'discipline_code', 'program_discipline', // Priority Code
-  'province_psgc_code', 'municipality_psgc_code', 'brgy_psgc_code', // PSGC
-  'zip_code',                                                   // Zip Code
-])
-
 // Issue types in requested order
-// autoFixable = StudentLookupService can auto-fill these (UII from institution name, PSGC/zip/priority codes, authority info)
 const ISSUE_TYPES = [
   { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_award', label: 'Missing Award No.', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
-  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined />, autoFixable: true },
+  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
+const VALID_TABS = ['duplicate_award', 'no_award', 'duplicate_lrn', 'no_lrn', 'no_uii', 'incomplete', 'incomplete_stufaps_disb']
+
 export default function DataQuality({ readOnly = false, canEdit = false }) {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'duplicate_award'
   const [loading, setLoading] = useState(true)
 
   // Bulk Edit state
@@ -184,7 +179,11 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     incomplete_stufaps: 0,
   })
   const [totalStudents, setTotalStudents] = useState(0)
-  const [activeTab, setActiveTab] = useState('duplicate_award')
+  const [activeTab, setActiveTabState] = useState(initialTab)
+  const setActiveTab = useCallback((tab) => {
+    setActiveTabState(tab)
+    setSearchParams({ tab }, { replace: true })
+  }, [setSearchParams])
 
   const [dupAward, setDupAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [dupLrn, setDupLrn] = useState({ students: [], total: 0, page: 1, loading: false })
@@ -259,7 +258,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       const res = await fetch(`${API_URL}/dashboard/warnings/incomplete-stufaps?page=${page}&per_page=${PAGE_SIZE}`)
       const data = await res.json()
       setIncompleteStufapsDisb({
-        students: data.disbursements || [],
+        students: data.students || [],
         total: data.total || 0,
         page: data.page || page,
         loading: false,
@@ -414,22 +413,18 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         title: 'Missing Fields',
         dataIndex: 'missing_fields',
         key: 'missing_fields',
-        render: (fields) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => {
-              const isAuto = AUTO_FILLED_FIELDS.has(f)
-              return (
-                <Tag
-                  key={f}
-                  color={isAuto ? 'cyan' : 'orange'}
-                  style={{ fontSize: 11, margin: 0 }}
-                >
-                  {isAuto && '⚙ '}{fieldLabels[f] || f}
-                </Tag>
-              )
-            })}
-          </div>
-        ),
+        render: (fields) => {
+          const count = (fields || []).length
+          if (!count) return <Text type="secondary" style={{ fontSize: 12 }}>—</Text>
+          const list = fields.map(f => fieldLabels[f] || f).join(', ')
+          return (
+            <Tooltip title={list}>
+              <Tag color="orange" style={{ fontSize: 12, cursor: 'default' }}>
+                {count} missing field{count !== 1 ? 's' : ''}
+              </Tag>
+            </Tooltip>
+          )
+        },
       },
       statusCol,
       viewCol,
@@ -443,38 +438,15 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
           return <a onClick={() => navigate(`/students/${r.student_seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
         },
       },
-      { title: 'AY', dataIndex: 'academic_year', key: 'ay', width: 100 },
-      { title: 'Sem', dataIndex: 'semester', key: 'sem', width: 60, align: 'center' },
-      { title: 'CYL', dataIndex: 'curriculum_year_level', key: 'cyl', width: 60, align: 'center' },
+      { title: 'Program', dataIndex: 'scholarship_program', key: 'program' },
       {
-        title: 'Count',
-        dataIndex: 'missing_count',
-        key: 'missing_count',
-        width: 70,
+        title: 'Missing Fields',
+        dataIndex: 'missing_field_count',
+        key: 'missing_field_count',
+        width: 140,
         align: 'center',
         render: (count) => (
           <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
-        ),
-      },
-      {
-        title: 'Missing Fields',
-        dataIndex: 'missing_fields',
-        key: 'missing_fields',
-        render: (fields) => (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {(fields || []).map(f => {
-              const isAuto = AUTO_FILLED_FIELDS.has(f)
-              return (
-                <Tag
-                  key={f}
-                  color={isAuto ? 'cyan' : 'orange'}
-                  style={{ fontSize: 11, margin: 0 }}
-                >
-                  {isAuto && '⚙ '}{fieldLabels[f] || f}
-                </Tag>
-              )
-            })}
-          </div>
         ),
       },
       statusCol,
@@ -611,14 +583,6 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                 <div style={{ fontSize: 28, fontWeight: 700, color: count > 0 ? item.color : '#52c41a', lineHeight: 1 }}>
                   {count}
                 </div>
-                {item.autoFixable && count > 0 && (
-                  <Tag
-                    color="cyan"
-                    style={{ marginTop: 8, fontSize: 11, borderRadius: 4 }}
-                  >
-                    ⚙ auto-fixable
-                  </Tag>
-                )}
               </Card>
             )
           })}
@@ -652,12 +616,6 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
               >
                 {getCountForTab(activeTab)}
               </Tag>
-              {(activeTab === 'incomplete' || activeTab === 'incomplete_stufaps_disb') && (
-                <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span><Tag color="orange" style={{ fontSize: 11 }}>field</Tag> manual</span>
-                  <span><Tag color="cyan" style={{ fontSize: 11 }}>⚙ field</Tag> auto-filled</span>
-                </span>
-              )}
             </div>
           }
         >
@@ -786,7 +744,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                   columns={columnSets[activeTab] || []}
                   size="middle"
                   pagination={false}
-                  rowKey={activeTab === 'incomplete_stufaps_disb' ? 'id' : 'seq'}
+                  rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
                 />
                 {tabData.total > PAGE_SIZE && (
