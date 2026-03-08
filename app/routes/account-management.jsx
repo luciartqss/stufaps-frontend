@@ -135,7 +135,7 @@ export default function AccountManagement() {
 
         const res = await fetch(`${API_BASE}/users/${editingUser.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload),
         })
         const data = await res.json()
@@ -161,7 +161,7 @@ export default function AccountManagement() {
 
         const res = await fetch(`${API_BASE}/users`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload),
         })
         const data = await res.json()
@@ -177,7 +177,7 @@ export default function AccountManagement() {
       form.resetFields()
       setEditingUser(null)
       setModalOpen(false)
-      fetchUsers()
+      await fetchUsers()
     } catch (err) {
       if (err.errorFields) return
       message.error(err.message)
@@ -186,7 +186,7 @@ export default function AccountManagement() {
 
   const handleDelete = async (user) => {
     try {
-      const res = await fetch(`${API_BASE}/users/${user.id}`, { method: 'DELETE' })
+      const res = await fetch(`${API_BASE}/users/${user.id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Failed to delete')
       message.success(data.message)

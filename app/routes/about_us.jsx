@@ -18,6 +18,7 @@ import {
     CameraOutlined,
 } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
+import { useAuth } from '../lib/AuthContext'
 
 const { Text, Title } = Typography
 
@@ -59,6 +60,8 @@ class ErrorBoundary extends React.Component {
 }
 
 export default function AboutUs() {
+    const { getAccess } = useAuth()
+    const canEdit = getAccess('about_us') === 'full'
     const [teamLeaders, setTeamLeaders] = useState([])
     const [teamMembers, setTeamMembers] = useState([])
     const [teamInterns, setTeamInterns] = useState([])
@@ -456,6 +459,7 @@ export default function AboutUs() {
 
                     </Space>
                     <br /> <br />
+                    {canEdit && (<>
                     <Button
                         type="primary"
                         icon={<EditOutlined />}
@@ -478,6 +482,7 @@ export default function AboutUs() {
                     >
                         Add Employee
                     </Button>
+                    </>)}
 
                     {/* Loading State */}
                     {loading && (
@@ -812,6 +817,7 @@ export default function AboutUs() {
                                             </Text>
                                         </div>
                                         <Space style={{ width: '100%', marginTop: 24, gap: 8 }}>
+                                            {canEdit && (<>
                                             <Button
                                                 type="primary"
                                                 icon={<EditOutlined />}
@@ -835,6 +841,7 @@ export default function AboutUs() {
                                                     Delete
                                                 </Button>
                                             </Popconfirm>
+                                            </>)}
                                         </Space>
                                     </div>
                                 ) : (

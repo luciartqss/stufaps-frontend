@@ -112,20 +112,34 @@ export function AuthProvider({ children }) {
     // Master admin gets full access to everything
     if (role === 'master_admin') return 'full'
 
-    // Accounting role: only data-quality-accounting
+    // Accounting role: data-quality-accounting + sub-aro-nta read-only + about_us read-only
     if (role === 'accounting') {
-      return section === 'data-quality-accounting' ? 'full' : 'none'
+      if (section === 'data-quality-accounting') return 'full'
+      if (section === 'sub-aro-nta') return 'read-only'
+      if (section === 'about_us') return 'read-only'
+      return 'none'
     }
 
-    // Cashier role: only data-quality-cashier
+    // Cashier role: only data-quality-cashier + about_us read-only
     if (role === 'cashier') {
-      return section === 'data-quality-cashier' ? 'full' : 'none'
+      if (section === 'data-quality-cashier') return 'full'
+      if (section === 'about_us') return 'read-only'
+      return 'none'
     }
 
     // StuFAPs role
     if (role === 'stufaps') {
       // Logs and account management are master_admin only
       if (section === 'account-management' || section === 'logs') return 'none'
+
+      // About Us: read-only for stufaps
+      if (section === 'about_us') return 'read-only'
+
+      // Financial assistance (CMO): read-only for stufaps
+      if (section === 'financial_assistance') return 'read-only'
+
+      // SUB-ARO/NTA: full access for stufaps
+      if (section === 'sub-aro-nta') return 'full'
 
       // Data quality sections
       if (section === 'data-quality-accounting') {
