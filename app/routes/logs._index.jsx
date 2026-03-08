@@ -82,7 +82,7 @@ const ConflictList = ({ conflicts }) => {
             <span style={{ color: ns.dot, fontSize: 14, marginTop: 2 }}>{ns.icon}</span>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text strong style={{ fontSize: 12 }}>{ns.label} — {c.entity_id > 0 ? `#${c.entity_id}` : 'Batch'}</Text>
+                <Text strong style={{ fontSize: 12 }}>{ns.label} — {c.entity_id > 0 ? c.entity_type || 'Record' : 'Batch'}</Text>
                 <Text type="secondary" style={{ fontSize: 11 }}>{formatDisplayDate(c.created_at)}</Text>
               </div>
               <Text style={{ fontSize: 12, color: '#595959', display: 'block' }}>{c.description}</Text>
@@ -369,7 +369,7 @@ export default function LogsIndex() {
         {/* Bulk info */}
         {(log.action === 'bulk_create' || log.action === 'bulk_update') && (
           <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f9f0ff', border: '1px solid #d3adf7', borderRadius: 6 }}>
-            <Text style={{ fontSize: 12 }}>{log.bulk_count || '?'} student{log.bulk_count !== 1 ? 's' : ''} affected</Text>
+            <Text style={{ fontSize: 12 }}>{log.bulk_count || '?'} {(log.entity_type || 'record').toLowerCase()}{log.bulk_count !== 1 ? 's' : ''} affected</Text>
           </div>
         )}
         {log.action === 'bulk_update' && log.data_before && log.data_after && log.changed_fields && (
