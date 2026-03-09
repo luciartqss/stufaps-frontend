@@ -1266,12 +1266,11 @@ export default function ImportBulk() {
     }
 
     // --- Phase 1: Missing required fields = Conflict ---
-    // Required: Award Number, Scholarship Status, Surname, First Name
-    // (Middle Name and Extension are optional)
+    // Required: Award Number, Surname, First Name
+    // (Scholarship Status, Middle Name and Extension are optional)
     rows.forEach((row, idx) => {
       const missing = []
       if (!String(row.awardNumber || '').trim()) missing.push('Award Number')
-      if (!String(row.scholarshipStatus || '').trim()) missing.push('Scholarship Status')
       if (!String(row.surname || '').trim()) missing.push('Surname')
       if (!String(row.firstName || '').trim()) missing.push('First Name')
 
