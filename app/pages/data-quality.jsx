@@ -64,23 +64,23 @@ const PAGE_SIZE = 15
 const GROUPS_PER_PAGE = 5
 
 // Fields that are auto-filled by StudentLookupService — if still missing, source data didn't match
-// Issue types in requested order
+// Issue types in alphabetical order
 const ISSUE_TYPES = [
-  { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_award', label: 'Missing Award No.', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
-  { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
+  { key: 'duplicate_award', label: 'Duplicate Award No.', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'no_uii', label: 'Missing UII', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
+  { key: 'no_status', label: 'Missing Status', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
-const VALID_TABS = ['duplicate_award', 'no_award', 'duplicate_lrn', 'no_lrn', 'no_uii', 'incomplete', 'incomplete_stufaps_disb']
+const VALID_TABS = ['no_award', 'duplicate_award', 'no_lrn', 'duplicate_lrn', 'no_status', 'incomplete', 'incomplete_stufaps_disb']
 
 export default function DataQuality({ readOnly = false, canEdit = false }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'duplicate_award'
+  const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'no_award'
   const [loading, setLoading] = useState(true)
 
   // Bulk Edit state
@@ -170,8 +170,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }
   const [counts, setCounts] = useState({
-    no_uii: 0,
     no_lrn: 0,
+    no_status: 0,
     duplicate_lrn: 0,
     no_award_number: 0,
     duplicate_award_numbers: 0,
@@ -187,9 +187,9 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   const [dupAward, setDupAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [dupLrn, setDupLrn] = useState({ students: [], total: 0, page: 1, loading: false })
-  const [noUii, setNoUii] = useState({ institutions: [], totalInstitutions: 0, page: 1, loading: false })
   const [noLrn, setNoLrn] = useState({ students: [], total: 0, page: 1, loading: false })
   const [noAward, setNoAward] = useState({ students: [], total: 0, page: 1, loading: false })
+  const [noStatus, setNoStatus] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incomplete, setIncomplete] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incompleteStufapsDisb, setIncompleteStufapsDisb] = useState({ students: [], total: 0, page: 1, loading: false })
 
@@ -202,8 +202,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       const w = data.warnings || {}
       setTotalStudents(data.stats?.totalStudents || 0)
       setCounts({
-        no_uii: w.no_uii?.count || 0,
         no_lrn: w.no_lrn?.count || 0,
+        no_status: w.no_status?.count || 0,
         duplicate_lrn: w.duplicate_lrn?.count || 0,
         no_award_number: w.no_award_number?.count || 0,
         duplicate_award_numbers: w.duplicate_award_numbers?.count || 0,
@@ -235,23 +235,6 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }, [])
 
-  const fetchNoUii = useCallback(async (page = 1) => {
-    setNoUii(prev => ({ ...prev, loading: true }))
-    try {
-      const res = await fetch(`${API_URL}/dashboard/warnings/no-uii?page=${page}&per_page=${PAGE_SIZE}`)
-      const data = await res.json()
-      setNoUii({
-        institutions: data.institutions || [],
-        totalInstitutions: data.total_institutions || 0,
-        page: data.page || page,
-        loading: false,
-      })
-    } catch (err) {
-      console.error('Failed to fetch no-uii:', err)
-      setNoUii(prev => ({ ...prev, loading: false }))
-    }
-  }, [])
-
   const fetchIncompleteStufapsDisb = useCallback(async (page = 1) => {
     setIncompleteStufapsDisb(prev => ({ ...prev, loading: true }))
     try {
@@ -273,13 +256,10 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   useEffect(() => {
     if (loading) return
-    if (activeTab === 'no_uii' && counts.no_uii > 0 && noUii.institutions.length === 0) {
-      fetchNoUii(1)
-      return
-    }
     const tabConfig = {
       no_lrn: { count: counts.no_lrn, data: noLrn, endpoint: 'no-lrn', setter: setNoLrn },
       no_award: { count: counts.no_award_number, data: noAward, endpoint: 'no-award-number', setter: setNoAward },
+      no_status: { count: counts.no_status, data: noStatus, endpoint: 'no-status', setter: setNoStatus },
       incomplete: { count: counts.incomplete_info, data: incomplete, endpoint: 'incomplete-info', setter: setIncomplete },
       incomplete_stufaps_disb: { count: counts.incomplete_stufaps, data: incompleteStufapsDisb, customFetch: fetchIncompleteStufapsDisb },
     }
@@ -299,8 +279,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     const map = {
       duplicate_award: counts.duplicate_award_numbers,
       duplicate_lrn: counts.duplicate_lrn,
-      no_uii: counts.no_uii,
       no_lrn: counts.no_lrn,
+      no_status: counts.no_status,
       no_award: counts.no_award_number,
       incomplete: counts.incomplete_info,
       incomplete_stufaps_disb: counts.incomplete_stufaps,
@@ -389,12 +369,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       statusCol,
       viewCol,
     ],
-    no_uii: [
+    no_status: [
       nameCol,
-      missingTag('UII'),
+      missingTag('Status'),
       { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
+      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       institutionCol,
-      statusCol,
       viewCol,
     ],
     incomplete: [
@@ -497,14 +477,14 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     const map = {
       duplicate_award: { data: dupAward, paginated: false },
       duplicate_lrn: { data: dupLrn, paginated: false },
-      no_uii: { data: { students: [], total: noUii.totalInstitutions, page: noUii.page, loading: noUii.loading }, paginated: false },
       no_lrn: { data: noLrn, paginated: true, endpoint: 'no-lrn', setter: setNoLrn },
+      no_status: { data: noStatus, paginated: true, endpoint: 'no-status', setter: setNoStatus },
       no_award: { data: noAward, paginated: true, endpoint: 'no-award-number', setter: setNoAward },
       incomplete: { data: incomplete, paginated: true, endpoint: 'incomplete-info', setter: setIncomplete },
       incomplete_stufaps_disb: { data: incompleteStufapsDisb, paginated: true, customFetch: fetchIncompleteStufapsDisb },
     }
     return map[tabKey] || { data: { students: [], total: 0, page: 1, loading: false }, paginated: false }
-  }, [dupAward, dupLrn, noUii, noLrn, noAward, incomplete, incompleteStufapsDisb, fetchIncompleteStufapsDisb])
+  }, [dupAward, dupLrn, noLrn, noStatus, noAward, incomplete, incompleteStufapsDisb, fetchIncompleteStufapsDisb])
 
   const activeIssue = ISSUE_TYPES.find(t => t.key === activeTab)
 
@@ -619,48 +599,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
             </div>
           }
         >
-          <Spin spinning={tabData.loading || noUii.loading} indicator={<LoadingOutlined />}>
-            {activeTab === 'no_uii' ? (
-              <>
-                <Table
-                  dataSource={noUii.institutions}
-                  columns={[
-                    {
-                      title: 'Institution',
-                      dataIndex: 'institution',
-                      key: 'institution',
-                      render: (v) => <Text style={{ fontWeight: 500 }}>{v}</Text>,
-                    },
-                    {
-                      title: 'Students',
-                      dataIndex: 'student_count',
-                      key: 'student_count',
-                      width: 100,
-                      align: 'center',
-                      render: (count) => (
-                        <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
-                      ),
-                    },
-                  ]}
-                  size="middle"
-                  pagination={false}
-                  rowKey="institution"
-                  locale={{ emptyText: <Empty description="No issues found" /> }}
-                />
-                {noUii.totalInstitutions > PAGE_SIZE && (
-                  <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
-                    <Pagination
-                      size="small"
-                      current={noUii.page}
-                      total={noUii.totalInstitutions}
-                      pageSize={PAGE_SIZE}
-                      onChange={(page) => fetchNoUii(page)}
-                      showSizeChanger={false}
-                    />
-                  </div>
-                )}
-              </>
-            ) : (activeTab === 'duplicate_award' || activeTab === 'duplicate_lrn') ? (
+          <Spin spinning={tabData.loading} indicator={<LoadingOutlined />}>
+            {(activeTab === 'duplicate_award' || activeTab === 'duplicate_lrn') ? (
               <div style={{ padding: '16px' }}>
                 {(() => {
                   const groups = activeTab === 'duplicate_award' ? groupedDupAward : groupedDupLrn
