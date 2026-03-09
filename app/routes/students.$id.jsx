@@ -616,10 +616,8 @@ export default function StudentDetails() {
       title: 'Status',
       key: 'status',
       render: (_, record) => {
-        const accountingComplete = record.voucher_no && record.voucher_date && record.account_check_no
-        const cashierComplete = record.amount && record.lddap_no && record.disbursement_date
-        const isPaid = accountingComplete && cashierComplete
-        return <Tag color={isPaid ? 'green' : 'orange'}>{isPaid ? 'Paid' : 'Unpaid'}</Tag>
+        const hasLddap = record.lddap_no && record.lddap_no.trim() !== ''
+        return <Tag color={hasLddap ? 'green' : 'orange'}>{hasLddap ? 'Paid' : 'Unpaid'}</Tag>
       },
     },
     {

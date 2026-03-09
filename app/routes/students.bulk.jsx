@@ -190,89 +190,8 @@ const deriveScholarshipProgram = (awardNumber = '') => {
   return ''
 }
 
-// Name-based alias map: student field key → array of sanitized aliases
-const STUDENT_FIELD_ALIASES = {
-  seq: ['seq'],
-  inCharge: ['incharge'],
-  awardYear: ['awardyear', 'awyr'],
-  scholarshipProgram: ['scholarshipprogram', 'schoprog'],
-  awardNumber: ['awardnumber', 'awno'],
-  learnerReferenceNumber: ['learnerreferencenumber', 'lrn'],
-  surname: ['surname', 'sname'],
-  firstName: ['firstname', 'fname'],
-  middleName: ['middlename', 'mname'],
-  extension: ['extension', 'ename', 'ext', 'nameextension'],
-  sex: ['sex', 'gender'],
-  dateOfBirth: ['dateofbirth', 'birthday', 'dob', 'birthdate'],
-  contactNumber: ['contactnumber', 'contno'],
-  emailAddress: ['emailaddress', 'emladd', 'email'],
-  civilStatus: ['civilstatus'],
-  street: ['street', 'stbrgy', 'streetbrgy'],
-  brgyPsgcCode: ['brgypsgccode'],
-  brgy: ['brgy', 'barangay'],
-  municipalityPsgcCode: ['municipalitypsgccode'],
-  municipality: ['municipality', 'muncity', 'municipalitycity'],
-  provincePsgcCode: ['provincepsgccode'],
-  province: ['province', 'prov'],
-  congressionalDistrict: ['congressionaldistrict', 'congdist'],
-  zipCode: ['zipcode', 'zip'],
-  specialGroup: ['specialgroup', 'spgrp'],
-  certificationNumber: ['certificationnumber', 'certno', 'certificationnumberifapplicable'],
-  nameOfInstitution: ['nameofinstitution', 'hei', 'institution'],
-  uii: ['uii'],
-  institutionalType: ['institutionaltype', 'insttype'],
-  regionSchoolLocated: ['regionwheretheschoolislocated', 'region', 'regionschool'],
-  degreeProgram: ['degreeprogram', 'progname'],
-  programMajor: ['programmajor', 'progmjr'],
-  programDiscipline: ['programdiscipline', 'progdiscp'],
-  programDegreeLevel: ['programdegreelevel', 'proglvl', 'degreelevel'],
-  authorityType: ['authoritytype', 'gprtype'],
-  authorityNumber: ['authoritynumber', 'gprno'],
-  series: ['series', 'gprseries'],
-  prioProgramCode: ['prioprogramcode'],
-  priority: ['priority', 'prio'],
-  basisCmo: ['basiscmo', 'priobasis', 'basiscmo'],
-  disciplineCode: ['disciplinecode'],
-  scholarshipStatus: ['scholarshipstatus', 'schostatus'],
-  replacement: ['replacement', 'remarks1'],
-  reason: ['reason', 'remarks2'],
-}
-
-// Semester field aliases (used inside AY blocks)
-const SEM_FIELD_ALIASES = {
-  nta: ['nta'],
-  fundSource: ['fundsource'],
-  voucherTrackingNo: ['vouchertrackingno', 'vouchertracking'],
-  modeOfPayment: ['modeofpayment'],
-  atmAccountNo: ['atmaccountno', 'atmaccount'],
-  dateProcess: ['dateprocess'],
-  voucherNo: ['voucherno', 'vouchernumber'],
-  voucherDate: ['voucherdate'],
-  accountCheckNo: ['accountcheckno'],
-  amount: ['amount'],
-  lddapNo: ['lddapno', 'lddapnumber'],
-  disbursementDate: ['disbursementdate'],
-  status: ['status'],
-  remarks: ['remarks'],
-}
-
-// CYL aliases
-const CYL_ALIASES = ['curriculumyearlevel', 'cyl', 'yearlevel']
-
-// Build reverse lookup: sanitized alias string → field key
-const buildAliasLookup = (aliasMap) => {
-  const lookup = new Map()
-  Object.entries(aliasMap).forEach(([fieldKey, aliases]) => {
-    aliases.forEach((alias) => lookup.set(alias, fieldKey))
-  })
-  return lookup
-}
-const STUDENT_ALIAS_LOOKUP = buildAliasLookup(STUDENT_FIELD_ALIASES)
-const SEM_ALIAS_LOOKUP = buildAliasLookup(SEM_FIELD_ALIASES)
-
-// Expected positional column order for structure-based fallback (matches the original Excel template).
-// When header names don't match, the importer checks if the file's column count
-// is close to this list's length and maps columns by position instead.
+// Expected positional column order (matches the original Excel template).
+// Columns are mapped strictly by position — no header-name matching.
 const STRUCTURAL_COLUMN_ORDER = [
   'seq', 'inCharge', 'awardYear', 'scholarshipProgram', 'awardNumber',
   'learnerReferenceNumber', 'surname', 'firstName', 'middleName', 'extension',
@@ -285,23 +204,6 @@ const STRUCTURAL_COLUMN_ORDER = [
   'programDegreeLevel', 'authorityType', 'authorityNumber', 'series',
   'priority', 'basisCmo', 'scholarshipStatus', 'replacement', 'reason',
 ]
-
-// Count how many cells in a row match known student/semester field aliases
-const countHeaderMatches = (row) => {
-  if (!Array.isArray(row)) return { total: 0, studentKeys: new Set(), semKeys: new Set() }
-  const studentKeys = new Set()
-  const semKeys = new Set()
-  row.forEach((cell) => {
-    const san = sanitize(String(cell || ''))
-    if (!san) return
-    const sk = STUDENT_ALIAS_LOOKUP.get(san)
-    if (sk) studentKeys.add(sk)
-    const semk = SEM_ALIAS_LOOKUP.get(san)
-    if (semk) semKeys.add(semk)
-    if (CYL_ALIASES.includes(san)) studentKeys.add('__cyl__')
-  })
-  return { total: studentKeys.size + semKeys.size, studentKeys, semKeys }
-}
 
 // Static student schema (2-tier max)
 const STATIC_SCHEMA = [
@@ -821,384 +723,167 @@ export default function ImportBulk() {
 
         const allRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
 
-        // ── Step 1: Find the header row by NAME matching ──
-        // Scan the first 30 rows (headers are never deeper than that).
-        let bestIdx = -1
-        let bestScore = 0
-        const scanLimit = Math.min(allRows.length, 30)
+        // ── Structure-based parsing: map columns strictly by position ──
+        const STUDENT_COL_COUNT = STRUCTURAL_COLUMN_ORDER.length // 43
+        const AY_BLOCK_SIZE = 1 + SEM_FIELDS.length * 2 // 1 CYL + 14×2 = 29
+        const SEM_FIELD_KEYS = SEM_FIELDS.map(f => f.key)
 
-        for (let i = 0; i < scanLimit; i += 1) {
-          const { total } = countHeaderMatches(allRows[i] || [])
-          if (total > bestScore) {
-            bestScore = total
-            bestIdx = i
+        // ── Step 1: Find header/data boundary ──
+        // Look for the first row (within the first 10) with enough filled cells.
+        const tolerance = 8
+        let structHeaderIdx = -1
+        for (let i = 0; i < Math.min(allRows.length, 10); i += 1) {
+          const row = allRows[i] || []
+          const nonEmpty = row.filter(c => String(c ?? '').trim() !== '').length
+          if (nonEmpty >= STUDENT_COL_COUNT - tolerance) {
+            structHeaderIdx = i
+            break
           }
         }
 
-        // Also try combining 3 consecutive rows (merged header blocks)
-        for (let i = 0; i < scanLimit - 2; i += 1) {
-          const combined = []
-          const r0 = allRows[i] || []
-          const r1 = allRows[i + 1] || []
-          const r2 = allRows[i + 2] || []
-          const len = Math.max(r0.length, r1.length, r2.length)
-          for (let c = 0; c < len; c += 1) {
-            combined.push(r2[c] || r1[c] || r0[c] || '')
-          }
-          const { total } = countHeaderMatches(combined)
-          if (total > bestScore) {
-            bestScore = total
-            bestIdx = i
-          }
+        if (structHeaderIdx < 0) {
+          message.error('Format invalid — column structure does not match the expected template.')
+          setFileLoadingState(null)
+          return
         }
 
-        if (bestIdx < 0 || bestScore < 5) {
-          // ── Structure-based fallback: match columns by position ──
-          // Find the first row that looks like actual data (skip blanks / titles)
-          // and check if column count is close to the expected template.
-          const structColCount = STRUCTURAL_COLUMN_ORDER.length // 43 student columns
-          const tolerance = 8 // allow ±8 columns (extra AY / disbursement cols)
+        // Does the found row look like a header (text-heavy) or actual data?
+        const candidateRow = allRows[structHeaderIdx] || []
+        const sampleCells = candidateRow.slice(0, STUDENT_COL_COUNT)
+        const textCells = sampleCells.filter(c => typeof c === 'string' && c.trim() !== '').length
+        const isHeaderRow = textCells / Math.max(sampleCells.length, 1) > 0.5
+        const dataStart = isHeaderRow ? structHeaderIdx + 1 : structHeaderIdx
 
-          let structHeaderIdx = -1
-          // Try to find a header row by looking for a row whose column count is
-          // at least (structColCount - tolerance). Then data starts right after.
-          // Also accept files where the first row IS data (no header at all).
-          for (let i = 0; i < Math.min(allRows.length, 10); i += 1) {
+        // ── Step 2: Detect AY blocks from extra columns ──
+        const totalCols = Math.max(
+          ...allRows.slice(0, Math.min(dataStart + 1, allRows.length)).map(r => (r || []).length),
+          0,
+        )
+        const extraCols = totalCols - STUDENT_COL_COUNT
+        const ayBlockCount = extraCols > 0 ? Math.max(1, Math.round(extraCols / AY_BLOCK_SIZE)) : 0
+
+        // ── Step 3: Detect AY labels from the header rows ──
+        const detectedAyLabels = []
+        if (ayBlockCount > 0) {
+          const scanEnd = Math.min(dataStart, allRows.length)
+          for (let i = 0; i < scanEnd; i += 1) {
             const row = allRows[i] || []
-            const nonEmpty = row.filter(c => String(c ?? '').trim() !== '').length
-            if (nonEmpty >= structColCount - tolerance) {
-              structHeaderIdx = i
-              break
-            }
-          }
-
-          if (structHeaderIdx < 0) {
-            message.error('Format invalid — column headers and structure do not match the expected template.')
-            setFileLoadingState(null)
-            return
-          }
-
-          // Check if the found row is a header (has text-like cells) vs pure data.
-          // If >50% of the first structColCount cells are non-numeric strings, treat it as a header row.
-          const candidateRow = allRows[structHeaderIdx] || []
-          const sampleCells = candidateRow.slice(0, structColCount)
-          const textCells = sampleCells.filter(c => typeof c === 'string' && c.trim() !== '').length
-          const isHeaderRow = textCells / Math.max(sampleCells.length, 1) > 0.5
-          const structDataStart = isHeaderRow ? structHeaderIdx + 1 : structHeaderIdx
-
-          // Map columns by position
-          const structDataRows = allRows.slice(structDataStart).filter(row => {
-            if (!Array.isArray(row)) return false
-            return row.some(c => String(c ?? '').trim() !== '')
-          })
-
-          if (structDataRows.length === 0) {
-            message.error('Format invalid — no data rows found.')
-            setFileLoadingState(null)
-            return
-          }
-
-          setFileLoadingState({ phase: `Structure match: ${structDataRows.length} rows`, detail: `${structColCount} columns mapped by position` })
-          await new Promise(r => setTimeout(r, 0))
-
-          // Build leaf fields for empty AY (student fields only)
-          const { leafFields: structLeafFields } = buildHeaders(academicYears)
-          const structLeafMap = new Map()
-          structLeafFields.forEach(f => structLeafMap.set(f.key, f))
-
-          const normalized = structDataRows.map((row, idx) => {
-            const normalizedRow = {}
-            structLeafFields.forEach(f => { normalizedRow[f.key] = '' })
-            normalizedRow.seq = String(idx + 1)
-
-            STRUCTURAL_COLUMN_ORDER.forEach((fieldKey, colIdx) => {
-              if (colIdx >= (row?.length || 0)) return
-              if (fieldKey === 'seq') return // We generate seq ourselves
-              if (!structLeafMap.has(fieldKey)) return
-              let cellVal = row[colIdx]
-              if (cellVal === null || cellVal === undefined) cellVal = ''
-              const fieldConfig = structLeafMap.get(fieldKey)
-              if (typeof cellVal === 'number' && fieldConfig?.type === 'date') {
-                cellVal = excelDateToISO(cellVal)
+            row.forEach(cell => {
+              const ayLabel = deriveAyLabelFromKey(String(cell || ''))
+              if (ayLabel && !detectedAyLabels.includes(ayLabel)) {
+                detectedAyLabels.push(ayLabel)
               }
-              if (typeof cellVal === 'string') {
-                cellVal = cellVal.trim()
-                if (isAmountKey(fieldKey)) cellVal = cellVal.replace(/,/g, '')
-              }
-              normalizedRow[fieldKey] = cellVal === undefined || cellVal === null ? '' : cellVal
             })
+          }
+          detectedAyLabels.sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
+        }
 
-            // Derive scholarship program from award number
-            const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
-            if ((!normalizedRow.scholarshipProgram || isExcelError(normalizedRow.scholarshipProgram)) && normalizedRow.awardNumber) {
-              normalizedRow.scholarshipProgram = deriveScholarshipProgram(normalizedRow.awardNumber)
-            }
+        // If fewer labels detected than blocks, generate sequential placeholders
+        while (detectedAyLabels.length < ayBlockCount) {
+          const baseYear = detectedAyLabels.length > 0
+            ? parseInt(detectedAyLabels[detectedAyLabels.length - 1].split('-')[0], 10) + 1
+            : 2020 + detectedAyLabels.length
+          detectedAyLabels.push(`${baseYear}-${baseYear + 1}`)
+        }
 
-            return normalizedRow
+        const fileAys = detectedAyLabels.map(label => ({ id: makeAyId(label), label }))
+
+        // ── Step 4: Build column mapping (student + AY blocks by position) ──
+        const { leafFields: structLeafFields } = buildHeaders(fileAys)
+        const structLeafMap = new Map()
+        structLeafFields.forEach(f => structLeafMap.set(f.key, f))
+
+        // Map student columns (first 43) by position
+        const colMap = new Map()
+        STRUCTURAL_COLUMN_ORDER.forEach((fieldKey, colIdx) => {
+          if (structLeafMap.has(fieldKey)) colMap.set(colIdx, structLeafMap.get(fieldKey))
+        })
+
+        // Map AY columns by position (after the 43 student columns)
+        // Each AY block = 1 CYL + 14 First-Semester fields + 14 Second-Semester fields
+        fileAys.forEach((ay, ayIdx) => {
+          const ayStart = STUDENT_COL_COUNT + ayIdx * AY_BLOCK_SIZE
+
+          // CYL
+          const cylKey = `${ay.id}__cyl`
+          if (structLeafMap.has(cylKey)) colMap.set(ayStart, structLeafMap.get(cylKey))
+
+          // First Semester (14 fields)
+          SEM_FIELD_KEYS.forEach((fKey, fIdx) => {
+            const fullKey = `${ay.id}__first__${fKey}`
+            if (structLeafMap.has(fullKey)) colMap.set(ayStart + 1 + fIdx, structLeafMap.get(fullKey))
           })
 
-          setData(normalized)
-          validateData(normalized)
-          message.success(`Loaded ${normalized.length} records from ${file.name} (matched by structure, ${structColCount} columns)`)
-          setFileLoadingState(null)
-          return
-        }
-
-        // Determine header block: could be 1, 2, or 3 rows.
-        // We look at 3 rows starting at bestIdx (if available).
-        const topRowRaw = allRows[bestIdx] || []
-        const midRowRaw = bestIdx + 1 < allRows.length ? (allRows[bestIdx + 1] || []) : []
-        const leafRowRaw = bestIdx + 2 < allRows.length ? (allRows[bestIdx + 2] || []) : []
-
-        const maxColCount = Math.max(topRowRaw.length, midRowRaw.length, leafRowRaw.length)
-        if (maxColCount <= 0) {
-          message.error('Header rows are empty.')
-          setFileLoadingState(null)
-          return
-        }
-
-        // Fill-forward helper (for merged cells in parent rows)
-        const fillForward = (row = [], maxLen) => {
-          const filled = Array.from({ length: maxLen }, (_, i) => row[i])
-          for (let i = 0; i < filled.length; i += 1) {
-            if (filled[i] === undefined || filled[i] === null || filled[i] === '') {
-              filled[i] = i > 0 ? filled[i - 1] : filled[i]
-            }
-          }
-          return filled
-        }
-
-        const topRow = fillForward(topRowRaw, maxColCount)
-        const midRow = fillForward(midRowRaw, maxColCount)
-        const leafRow = Array.from({ length: maxColCount }, (_, i) => leafRowRaw[i] ?? '')
-
-        // ── Step 2: Determine how many header rows were used ──
-        // Check if rows bestIdx+1 and bestIdx+2 are also part of the header
-        // (contain sub-headers / group labels rather than data).
-        const headerRowCount = (() => {
-          // If the combined 3-row score was the best, use 3
-          const { total: scoreRow0 } = countHeaderMatches(topRowRaw)
-          if (scoreRow0 === bestScore) {
-            // Single row was enough – but check if next rows are sub-headers
-            const { total: s1 } = countHeaderMatches(midRowRaw)
-            const { total: s2 } = countHeaderMatches(leafRowRaw)
-            if (s1 >= 3 || s2 >= 3) return 3
-            if (s1 >= 1) return 2
-            return 1
-          }
-          return 3
-        })()
-
-        // ── Step 3: Build effective label per column (bottom-up priority) ──
-        // For each column, the effective label = first non-empty from leaf → mid → top
-        const effectiveLabels = Array.from({ length: maxColCount }, (_, c) => {
-          const lf = sanitize(String(leafRow[c] || ''))
-          const md = sanitize(String(midRow[c] || ''))
-          const tp = sanitize(String(topRow[c] || ''))
-          return lf || md || tp || ''
+          // Second Semester (14 fields)
+          SEM_FIELD_KEYS.forEach((fKey, fIdx) => {
+            const fullKey = `${ay.id}__second__${fKey}`
+            if (structLeafMap.has(fullKey)) colMap.set(ayStart + 1 + SEM_FIELD_KEYS.length + fIdx, structLeafMap.get(fullKey))
+          })
         })
 
-        // ── Step 4: Map static student columns by name ──
-        const colToFieldKey = new Map() // colIdx → field key (string)
-        const usedStudentFields = new Set()
+        const mappedCount = colMap.size
 
-        for (let c = 0; c < maxColCount; c += 1) {
-          const label = effectiveLabels[c]
-          if (!label) continue
-          const fieldKey = STUDENT_ALIAS_LOOKUP.get(label)
-          if (fieldKey && !usedStudentFields.has(fieldKey)) {
-            usedStudentFields.add(fieldKey)
-            colToFieldKey.set(c, { type: 'student', key: fieldKey })
-          }
-        }
-
-        // ── Step 5: Detect AY labels from parent rows ──
-        const colAyLabel = new Map()
-        for (let c = 0; c < maxColCount; c += 1) {
-          const ay =
-            deriveAyLabelFromKey(String(topRow[c] || '')) ||
-            deriveAyLabelFromKey(String(midRow[c] || '')) ||
-            deriveAyLabelFromKey(String(leafRow[c] || ''))
-          if (ay) colAyLabel.set(c, ay)
-        }
-        const detectedAyLabels = Array.from(new Set(colAyLabel.values()))
-          .sort((a, b) => parseInt(a.slice(0, 4), 10) - parseInt(b.slice(0, 4), 10))
-
-        // ── Step 6: Detect semester context from parent rows ──
-        const colSemester = new Map()
-        const checkSem = (str) => {
-          const san = sanitize(String(str || ''))
-          if (san.includes('first') || san.includes('1st')) return 'First'
-          if (san.includes('second') || san.includes('2nd')) return 'Second'
-          return null
-        }
-        for (let c = 0; c < maxColCount; c += 1) {
-          const sem = checkSem(midRow[c]) || checkSem(topRow[c]) || checkSem(leafRow[c])
-          if (sem) colSemester.set(c, sem)
-        }
-
-        // ── Step 7: Map AY disbursement columns by name ──
-        // For each unmapped column that has an AY context:
-        //   - check if it's CYL
-        //   - check if its name matches a semester field alias
-        const fileAys = detectedAyLabels.length > 0
-          ? detectedAyLabels.map((label) => ({ id: makeAyId(label), label }))
-          : academicYears
-
-        // Track used semester fields per AY+semester to avoid double mapping
-        const usedAySemFields = new Map() // 'ayLabel__sem__fieldKey' → true
-
-        for (let c = 0; c < maxColCount; c += 1) {
-          if (colToFieldKey.has(c)) continue
-          const label = effectiveLabels[c]
-          if (!label) continue
-
-          const ayLabel = colAyLabel.get(c)
-          if (!ayLabel) continue
-
-          const ayObj = fileAys.find(a => a.label === ayLabel)
-          if (!ayObj) continue
-
-          // Check CYL
-          if (CYL_ALIASES.includes(label)) {
-            const cylKey = `${ayObj.id}__cyl`
-            colToFieldKey.set(c, { type: 'cyl', key: cylKey, ayLabel })
-            continue
-          }
-
-          // Check semester field
-          const semFieldKey = SEM_ALIAS_LOOKUP.get(label)
-          if (semFieldKey) {
-            const sem = colSemester.get(c) || null
-            if (sem) {
-              const semPrefix = sem === 'First' ? 'first' : 'second'
-              const fullKey = `${ayObj.id}__${semPrefix}__${semFieldKey}`
-              const trackKey = `${ayLabel}__${semPrefix}__${semFieldKey}`
-              if (!usedAySemFields.has(trackKey)) {
-                usedAySemFields.set(trackKey, true)
-                colToFieldKey.set(c, { type: 'semester', key: fullKey, ayLabel, semester: sem })
-              }
-            }
-          }
-        }
-
-        // ── Step 8: Validate minimum required fields ──
-        const hasSurname = usedStudentFields.has('surname')
-        const hasFirstName = usedStudentFields.has('firstName')
-        if (!hasSurname && !hasFirstName) {
-          message.error('Could not find surname/first name columns – please check the file format.')
-          setFileLoadingState(null)
-          return
-        }
-
-        // Build the actual AY list for the table
-        const { leafFields: nextLeafFields } = buildHeaders(fileAys)
-
-        // Build a quick lookup: field key → leafField config
-        const leafFieldMap = new Map()
-        nextLeafFields.forEach(f => leafFieldMap.set(f.key, f))
-
-        // Build final colIdx → leafField mapping
-        const colToField = new Map()
-        let mappedCount = 0
-        colToFieldKey.forEach(({ key }, colIdx) => {
-          const lf = leafFieldMap.get(key)
-          if (lf) {
-            colToField.set(colIdx, lf)
-            mappedCount += 1
-          }
-        })
-
-        setFileLoadingState({ phase: 'Mapping columns...', detail: `${mappedCount} columns mapped${detectedAyLabels.length > 0 ? `, ${detectedAyLabels.length} AY` : ''}` })
+        setFileLoadingState({ phase: `Structure match: mapping columns...`, detail: `${mappedCount} columns mapped${fileAys.length > 0 ? `, ${fileAys.length} AY detected` : ''}` })
         await new Promise(r => setTimeout(r, 0))
 
-        // ── Step 9: Extract data rows ──
-        // Data starts after the header block
-        const dataStartIdx = bestIdx + headerRowCount
-        const dataRowsRaw = allRows.slice(dataStartIdx)
-
-        // Build set of known header tokens to filter out stray header-like rows in data
-        const headerSanSet = new Set()
-        ;[topRow, midRow, leafRow].forEach(r => r.forEach(v => {
-          const s = sanitize(String(v || ''))
-          if (s) headerSanSet.add(s)
-        }))
-        // Add all known aliases
-        STUDENT_ALIAS_LOOKUP.forEach((_, alias) => headerSanSet.add(alias))
-        SEM_ALIAS_LOOKUP.forEach((_, alias) => headerSanSet.add(alias))
-        CYL_ALIASES.forEach(a => headerSanSet.add(a))
-        ;['nameofgrantee', 'contactdetails', 'completeaddress', 'governmentauthority',
-          'priorityprogram', 'firstsemester', 'secondsemester', 'academicyear'
-        ].forEach(t => headerSanSet.add(t))
-
-        const dataRows = dataRowsRaw.filter((row) => {
+        // ── Step 5: Extract and filter data rows ──
+        const dataRows = allRows.slice(dataStart).filter(row => {
           if (!Array.isArray(row)) return false
-          const nonEmpty = row.filter(cell => {
-            const s = String(cell ?? '').trim()
-            return s !== ''
-          })
-          if (nonEmpty.length === 0) return false
-          // Skip row if >40% of its non-empty cells are known header tokens
-          const tokens = nonEmpty.map(cell => sanitize(String(cell || ''))).filter(Boolean)
-          if (tokens.length > 0) {
-            const hits = tokens.filter(t => headerSanSet.has(t)).length
-            if (hits / tokens.length >= 0.4) return false
-          }
-          return true
+          return row.some(c => String(c ?? '').trim() !== '')
         })
+
+        if (dataRows.length === 0) {
+          message.error('Format invalid — no data rows found.')
+          setFileLoadingState(null)
+          return
+        }
 
         setFileLoadingState({ phase: `Processing ${dataRows.length} rows...`, detail: `${mappedCount} columns mapped` })
         await new Promise(r => setTimeout(r, 0))
 
-        // ── Step 10: Normalize data rows ──
+        // ── Step 6: Normalize data rows ──
+        const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
+
         const normalized = dataRows.map((row, idx) => {
           const normalizedRow = {}
-          nextLeafFields.forEach(f => { normalizedRow[f.key] = '' })
+          structLeafFields.forEach(f => { normalizedRow[f.key] = '' })
           normalizedRow.seq = String(idx + 1)
 
           if (Array.isArray(row)) {
             row.forEach((value, colIdx) => {
-              const field = colToField.get(colIdx)
+              const field = colMap.get(colIdx)
               if (!field) return
+              if (field.key === 'seq') return // We generate seq ourselves
               let cellVal = value
               if (cellVal === null || cellVal === undefined) cellVal = ''
-
               if (typeof cellVal === 'number' && field.type === 'date') {
                 cellVal = excelDateToISO(cellVal)
               }
-
               if (typeof cellVal === 'string') {
                 cellVal = cellVal.trim()
                 if (isAmountKey(field.key)) cellVal = cellVal.replace(/,/g, '')
               }
-
               normalizedRow[field.key] = cellVal === undefined || cellVal === null ? '' : cellVal
             })
+          }
+
+          // Derive scholarship program from award number
+          if ((!normalizedRow.scholarshipProgram || isExcelError(normalizedRow.scholarshipProgram)) && normalizedRow.awardNumber) {
+            normalizedRow.scholarshipProgram = deriveScholarshipProgram(normalizedRow.awardNumber)
           }
 
           return normalizedRow
         })
 
-        // ── Step 11: Derive scholarship program from award number ──
-        // LibreOffice doesn't cache formula results or doesn't support IFS(),
-        // so cells come through as empty, #NAME?, #VALUE!, etc.
-        // Fill them from the award number prefix.
-        const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
-        normalized.forEach((row) => {
-          if ((!row.scholarshipProgram || isExcelError(row.scholarshipProgram)) && row.awardNumber) {
-            row.scholarshipProgram = deriveScholarshipProgram(row.awardNumber)
-          }
-        })
-
-        // Log mapping summary
-        console.log('Name-based mapping:', mappedCount, 'columns mapped')
-        console.log('Student fields found:', Array.from(usedStudentFields))
+        console.log('Structure-based mapping:', mappedCount, 'columns mapped')
+        console.log('Student columns:', STUDENT_COL_COUNT)
         console.log('Detected AYs:', detectedAyLabels)
+        console.log('AY blocks:', ayBlockCount, '×', AY_BLOCK_SIZE, 'cols')
 
         setFileLoadingState({ phase: `Loaded ${normalized.length} records`, detail: 'Checking for duplicates...' })
         await new Promise(r => setTimeout(r, 0))
 
-        // Set AYs detected from the file so disbursement keys line up at submit time
+        // Set AYs detected from the file
         if (fileAys.length > 0) {
           setAcademicYears(fileAys)
         }
