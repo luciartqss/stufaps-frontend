@@ -3,43 +3,10 @@ import { Typography, message, Button, Space, Input, Select, DatePicker, Tag, Pag
 import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
-import { useBlocker } from 'react-router'
 import dayjs from 'dayjs'
 
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
-
-// ── Import progress persistence ──
-const IMPORT_STORAGE_KEY = 'stufaps_bulk_import_progress'
-
-const saveImportProgress = (progress) => {
-  try {
-    sessionStorage.setItem(IMPORT_STORAGE_KEY, JSON.stringify({
-      ...progress,
-      savedAt: Date.now(),
-    }))
-  } catch { /* ignore quota errors */ }
-}
-
-const loadImportProgress = () => {
-  try {
-    const raw = sessionStorage.getItem(IMPORT_STORAGE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw)
-    // Expire after 30 minutes
-    if (Date.now() - data.savedAt > 30 * 60 * 1000) {
-      sessionStorage.removeItem(IMPORT_STORAGE_KEY)
-      return null
-    }
-    return data
-  } catch {
-    return null
-  }
-}
-
-const clearImportProgress = () => {
-  try { sessionStorage.removeItem(IMPORT_STORAGE_KEY) } catch { /* */ }
-}
 
 const { Title, Text } = Typography
 
@@ -551,7 +518,9 @@ const convertDisbursementsToBackend = (rows = [], academicYears = [], studentSeq
             }
           }
 
-          if (hasData) {
+          // Include disbursement if any semester field has data,
+          // OR if curriculum_year_level is set (meaning the AY row has data)
+          if (hasData || (cyl && cyl !== '')) {
             disbursements.push(payload)
           }
         }
@@ -624,91 +593,14 @@ export default function ImportBulk() {
   const [importResult, setImportResult] = useState(null) // null | { status, imported, disbursements, failedStudents, failedDisbursements }
   const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [isImporting, setIsImportingState] = useState(false) // true while import is in progress
-  const isImportingRef = useRef(false) // mirror for event handlers (avoids stale closures)
-  const [showBlockerModal, setShowBlockerModal] = useState(false)
-  const blockerProceedRef = useRef(null)
   const abortControllerRef = useRef(null) // to cancel ongoing import
-  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
-  const [recoveryData, setRecoveryData] = useState(null)
 
-  // Synchronously update both state and ref so the beforeunload handler
-  // always sees the latest value — no async useEffect gap.
-  const setIsImporting = useCallback((val) => {
-    isImportingRef.current = val
-    setIsImportingState(val)
-  }, [])
-
-  // ── Navigation blocker (React Router) ──
-  const blocker = useBlocker(
-    useCallback(({ currentLocation, nextLocation }) => {
-      if (!isImporting) return false
-      return currentLocation.pathname !== nextLocation.pathname
-    }, [isImporting])
-  )
-
-  useEffect(() => {
-    if (blocker.state === 'blocked' && isImporting) {
-      setShowBlockerModal(true)
-    }
-  }, [blocker.state, isImporting])
-
-  // ── Browser close/refresh guard ──
-  // Registered ONCE on mount so the handler is never removed while the
-  // browser's native "Leave page?" dialog is open (removing it mid-dialog
-  // can cause some browsers to proceed with the navigation even if the
-  // user clicks Cancel).
-  useEffect(() => {
-    const beforeUnloadHandler = (e) => {
-      if (!isImportingRef.current) return        // nothing to guard
-      e.preventDefault()
-      // A non-empty string is required — some browsers (Chromium tab close)
-      // ignore a falsy / empty returnValue and skip the confirmation dialog.
-      e.returnValue = 'Import is in progress. If you leave, some data may not be saved.'
-      return e.returnValue
-    }
-
-    // Cleanup only fires when the page actually unloads (user confirmed Leave)
-    const unloadHandler = () => {
-      if (!isImportingRef.current) return
-
-      // Abort in-flight requests
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      // Send cleanup request to delete pending records from the database.
-      // sendBeacon is guaranteed to fire even during page unload.
-      const saved = loadImportProgress()
-      if (saved?.batchId) {
-        const blob = new Blob(
-          [JSON.stringify({ batch_id: saved.batchId })],
-          { type: 'application/json' }
-        )
-        navigator.sendBeacon(`${API_BASE}/students/cleanup-batch`, blob)
-      }
-
-      // Clear sessionStorage so recovery modal won't show on next load
-      clearImportProgress()
-    }
-
-    window.addEventListener('beforeunload', beforeUnloadHandler)
-    window.addEventListener('unload', unloadHandler)
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnloadHandler)
-      window.removeEventListener('unload', unloadHandler)
-    }
-  }, []) // ← empty deps: mount/unmount only
-
-  // ── Check for interrupted import on mount ──
-  useEffect(() => {
-    const saved = loadImportProgress()
-    if (saved && !saved.done) {
-      setRecoveryData(saved)
-      setShowRecoveryModal(true)
-    } else {
-      clearImportProgress()
-    }
+  // Reset all import-related state to a clean slate
+  const resetImportState = useCallback(() => {
+    setUploadProgress(null)
+    setImportResult(null)
+    setLoading(false)
+    abortControllerRef.current = null
   }, [])
 
   const { row1: headerRow1, row2: headerRow2, row3: headerRow3, leafFields, frozenWidth } = useMemo(
@@ -761,6 +653,9 @@ export default function ImportBulk() {
 
     // Reset input so the same file can be re-uploaded
     event.target.value = ''
+
+    // Clear any stale import state from a previous operation
+    resetImportState()
 
     setFileLoadingState({ phase: 'Reading file...', detail: file.name })
     const reader = new FileReader()
@@ -1268,13 +1163,10 @@ export default function ImportBulk() {
     // Setup abort controller for cancellation
     abortControllerRef.current = new AbortController()
     setLoading(true)
-    setIsImporting(true)   // ref is set synchronously — beforeunload works immediately
     setUploadProgress({ current: 0, total: 1, done: false, phase: 'Checking for duplicates...' })
-    saveImportProgress({ phase: 'resolve', current: 0, total: backendData.length, done: false })
 
     try {
       // --- Phase 0: Chunked resolve check ---
-      // Split into chunks to avoid sending huge payloads on LAN
       let allClean = []
       let allDuplicates = []
 
@@ -1282,11 +1174,9 @@ export default function ImportBulk() {
         const end = Math.min(offset + RESOLVE_CHUNK_SIZE, backendData.length)
         const studentSlice = backendData.slice(offset, end)
 
-        // Get disbursements that belong to this slice (by _import_index)
         const sliceIndices = new Set()
         for (let i = offset; i < end; i++) sliceIndices.add(i)
         const disbSlice = taggedDisb.filter(d => sliceIndices.has(d._import_index))
-        // Re-index for this chunk
         const reindexedDisb = disbSlice.map(d => ({ ...d, _import_index: d._import_index - offset }))
 
         setUploadProgress({ current: 0, total: 1, done: false, phase: `Checking duplicates... (${Math.min(end, backendData.length)}/${backendData.length})` })
@@ -1303,7 +1193,6 @@ export default function ImportBulk() {
         }
 
         const resolveChunk = await resolveRes.json()
-        // Re-map indices back to global
         const chunkClean = (resolveChunk.clean || []).map(c => ({ ...c, import_index: c.import_index + offset }))
         const chunkDups = (resolveChunk.duplicates || []).map(d => ({ ...d, import_index: d.import_index + offset }))
         allClean.push(...chunkClean)
@@ -1312,10 +1201,7 @@ export default function ImportBulk() {
 
       // If any duplicates found, go to resolution page
       if (allDuplicates.length > 0) {
-        setUploadProgress(null)
-        setLoading(false)
-        setIsImporting(false)
-        clearImportProgress()
+        resetImportState()
 
         const cleanIndices = new Set(allClean.map(c => c.import_index))
         const cleanDisbursements = taggedDisb.filter(d => cleanIndices.has(d._import_index))
@@ -1354,12 +1240,11 @@ export default function ImportBulk() {
       let imported = 0
       let totalDisbursementsImported = 0
       let totalDisbursementsFailed = 0
-      const failedChunks = [] // Track which chunks failed for reporting
-      const failedStudentDetails = [] // { name, awardNumber } for students that failed
-      const failedDisbursementDetails = [] // { name, awardNumber, ay, semester } for disbursement errors
+      const failedChunks = []
+      const failedStudentDetails = []
+      const failedDisbursementDetails = []
 
       for (let offset = 0; offset < totalStudents; offset += STUDENT_CHUNK_SIZE) {
-        // Check if import was cancelled
         if (abortControllerRef.current?.signal?.aborted) {
           throw new Error('Import cancelled by user')
         }
@@ -1371,13 +1256,10 @@ export default function ImportBulk() {
         const totalChunks = Math.ceil(totalStudents / STUDENT_CHUNK_SIZE)
 
         setUploadProgress({ current: imported, total: totalStudents, done: false, phase: `Importing batch ${chunkNum}/${totalChunks}... (${imported}/${totalStudents} students)` })
-        saveImportProgress({ phase: 'importing', current: imported, total: totalStudents, done: false, batchId: bulkBatchId, chunkNum })
 
-        // Build disbursements for this chunk with _chunk_index (relative to chunk)
         const chunkDisbursements = buildChunkDisbursements(dataChunk, academicYears)
 
         try {
-          // Atomic: students + disbursements in one transaction
           const response = await fetchWithRetry(`${API_BASE}/students/import-atomic`, {
             method: 'POST',
             headers: userHeaders,
@@ -1391,12 +1273,10 @@ export default function ImportBulk() {
             const errText = await response.text().catch(() => '')
             console.error(`Chunk ${chunkNum} failed:`, errText)
             failedChunks.push({ chunkNum, offset, count: studentChunk.length, error: errText || response.status })
-            // Record each student in the failed chunk
             for (let i = offset; i < end; i++) {
               const row = data[i]
               if (row) failedStudentDetails.push({ name: `${row.surname || ''}, ${row.firstName || ''}`.trim(), awardNumber: row.awardNumber || '' })
             }
-            // Don't throw — continue with next chunk so we save as much as possible
           } else {
             const respJson = await response.json().catch(() => null)
             const created = respJson?.data || []
@@ -1406,11 +1286,8 @@ export default function ImportBulk() {
             if (disbErrors.length > 0) {
               totalDisbursementsFailed += disbErrors.length
               console.warn(`Chunk ${chunkNum} disbursement errors:`, disbErrors)
-              // Map disbursement errors back to student names
               const seqToStudent = new Map()
-              created.forEach((s) => {
-                if (s.seq) seqToStudent.set(String(s.seq), s)
-              })
+              created.forEach((s) => { if (s.seq) seqToStudent.set(String(s.seq), s) })
               disbErrors.forEach((de) => {
                 const student = de.student_seq ? seqToStudent.get(String(de.student_seq)) : null
                 failedDisbursementDetails.push({
@@ -1426,7 +1303,6 @@ export default function ImportBulk() {
           if (err.message === 'Import cancelled by user') throw err
           console.error(`Chunk ${chunkNum} error after retries:`, err)
           failedChunks.push({ chunkNum, offset, count: studentChunk.length, error: err.message })
-          // Record each student in the failed chunk
           for (let i = offset; i < end; i++) {
             const row = data[i]
             if (row) failedStudentDetails.push({ name: `${row.surname || ''}, ${row.firstName || ''}`.trim(), awardNumber: row.awardNumber || '' })
@@ -1434,7 +1310,6 @@ export default function ImportBulk() {
         }
 
         setUploadProgress({ current: imported, total: totalStudents, done: false, phase: `Importing batch ${chunkNum}/${totalChunks}... (${imported}/${totalStudents} students)` })
-        saveImportProgress({ phase: 'importing', current: imported, total: totalStudents, done: false, batchId: bulkBatchId, chunkNum })
       }
 
       // Finalize batch: mark all pending records as confirmed
@@ -1445,10 +1320,8 @@ export default function ImportBulk() {
             method: 'POST',
             headers: { ...userHeaders, 'Content-Type': 'application/json' },
             body: JSON.stringify({ batch_id: bulkBatchId }),
-            signal: abortControllerRef.current?.signal,
           })
         } catch (err) {
-          // If finalize fails, the records stay pending and will be cleaned up later
           console.error('Finalize batch failed:', err)
           message.error('Import saved but finalization failed. Records may not be visible until an admin finalizes the batch.')
         }
@@ -1463,12 +1336,8 @@ export default function ImportBulk() {
       }
 
       // --- Done ---
-      setUploadProgress(prev => ({ ...prev, done: true }))
-      saveImportProgress({ phase: 'done', current: imported, total: totalStudents, done: true, batchId: bulkBatchId, failedChunks, totalDisbursementsImported, totalDisbursementsFailed })
-
       const failedStudentCount = failedChunks.reduce((sum, c) => sum + c.count, 0)
 
-      // Show result in the progress modal (replaces loading view)
       setImportResult({
         status: failedChunks.length > 0 ? 'partial' : totalDisbursementsFailed > 0 ? 'warning' : 'success',
         imported,
@@ -1479,8 +1348,7 @@ export default function ImportBulk() {
         totalDisbursementsFailed,
         failedDisbursementDetails,
       })
-
-      // Don't clear or navigate yet — user must click OK in the result view
+      setUploadProgress(prev => ({ ...prev, done: true }))
     } catch (error) {
       console.error('Import error:', error)
       if (error.message === 'Import cancelled by user') {
@@ -1490,18 +1358,9 @@ export default function ImportBulk() {
       }
       setUploadProgress(null)
       setImportResult(null)
-      // Don't clear import progress on error — keep it for recovery info
+    } finally {
       setLoading(false)
-      setIsImporting(false)
       abortControllerRef.current = null
-    }
-    // NOTE: no finally block — isImporting stays true until user clicks OK in result modal
-  }
-
-  // Cancel an ongoing import
-  const handleCancelImport = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
     }
   }
 
@@ -2163,13 +2022,8 @@ export default function ImportBulk() {
             <Button
               type="primary"
               onClick={() => {
-                clearImportProgress()
+                resetImportState()
                 handleClear()
-                setUploadProgress(null)
-                setImportResult(null)
-                setLoading(false)
-                setIsImporting(false)
-                abortControllerRef.current = null
                 navigate('/students')
               }}
             >
@@ -2216,7 +2070,7 @@ export default function ImportBulk() {
                       okText: 'Yes, Cancel',
                       cancelText: 'Keep Going',
                       centered: true,
-                      onOk: handleCancelImport,
+                      onOk: () => { if (abortControllerRef.current) abortControllerRef.current.abort() },
                     })
                   }}
                 >
@@ -2331,125 +2185,6 @@ export default function ImportBulk() {
         </div>
       </Modal>
 
-      {/* Navigation Blocker Modal — shown when user tries to navigate during import */}
-      <Modal
-        open={showBlockerModal}
-        title={
-          <span style={{ color: '#ff4d4f' }}>
-            <WarningOutlined style={{ marginRight: 8 }} />
-            Import In Progress
-          </span>
-        }
-        onOk={() => {
-          setShowBlockerModal(false)
-          handleCancelImport()
-          // Wait briefly for abort, then proceed
-          setTimeout(() => {
-            if (blocker.state === 'blocked') blocker.proceed()
-          }, 500)
-        }}
-        onCancel={() => {
-          setShowBlockerModal(false)
-          if (blocker.state === 'blocked') blocker.reset()
-        }}
-        okText="Leave & Cancel Import"
-        cancelText="Stay on Page"
-        okButtonProps={{ danger: true }}
-        centered
-        width={460}
-        maskClosable={false}
-      >
-        <div style={{ padding: '12px 0' }}>
-          <Text style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>
-            An import is currently in progress. If you leave this page, the remaining batches will not be sent.
-          </Text>
-          <Text style={{ fontSize: 13, display: 'block', color: '#8c8c8c' }}>
-            Students and disbursements already saved will remain in the database.
-          </Text>
-        </div>
-      </Modal>
-
-      {/* Recovery Modal — shown when a previous import was interrupted */}
-      <Modal
-        open={showRecoveryModal}
-        title={
-          <span>
-            <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
-            Previous Import Was Interrupted
-          </span>
-        }
-        onOk={() => {
-          setShowRecoveryModal(false)
-          clearImportProgress()
-          setRecoveryData(null)
-        }}
-        onCancel={() => {
-          setShowRecoveryModal(false)
-          clearImportProgress()
-          setRecoveryData(null)
-        }}
-        okText="Got It"
-        cancelText={null}
-        centered
-        width={480}
-        footer={[
-          recoveryData?.batchId && (
-            <Button
-              key="cleanup"
-              danger
-              onClick={async () => {
-                try {
-                  const userHeaders = {}
-                  const user = JSON.parse(localStorage.getItem('user') || '{}')
-                  if (user?.id) userHeaders['X-User-Id'] = user.id.toString()
-                  await fetch(`${API_BASE}/students/cleanup-batch`, {
-                    method: 'POST',
-                    headers: { ...userHeaders, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ batch_id: recoveryData.batchId }),
-                  })
-                  message.success('Incomplete import data cleaned up successfully.')
-                } catch (err) {
-                  console.error('Cleanup failed:', err)
-                  message.error('Failed to clean up incomplete import data.')
-                }
-                setShowRecoveryModal(false)
-                clearImportProgress()
-                setRecoveryData(null)
-              }}
-            >
-              Clean Up Incomplete Data
-            </Button>
-          ),
-          <Button key="ok" type="primary" onClick={() => { setShowRecoveryModal(false); clearImportProgress(); setRecoveryData(null) }}>
-            Got It
-          </Button>
-        ].filter(Boolean)}
-      >
-        {recoveryData && (
-          <div style={{ padding: '12px 0' }}>
-            <Text style={{ fontSize: 14, display: 'block', marginBottom: 12 }}>
-              A previous bulk import was interrupted before it could finish.
-            </Text>
-            <div style={{ background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 6, padding: '12px 16px', marginBottom: 12 }}>
-              <Text style={{ fontSize: 13 }}>
-                <strong>{recoveryData.current || 0}</strong> of <strong>{recoveryData.total || '?'}</strong> students
-                were being imported (phase: {recoveryData.phase || 'unknown'}).
-              </Text>
-            </div>
-            {recoveryData.batchId ? (
-              <Text style={{ fontSize: 13, color: '#8c8c8c', display: 'block' }}>
-                Incomplete records are hidden and won't affect normal operations. Click <strong>"Clean Up Incomplete Data"</strong> to
-                permanently remove them, or <strong>"Got It"</strong> to dismiss this notice.
-              </Text>
-            ) : (
-              <Text style={{ fontSize: 13, color: '#8c8c8c', display: 'block' }}>
-                Data that was already saved is in the database. You may need to check for partially imported records
-                before re-importing.
-              </Text>
-            )}
-          </div>
-        )}
-      </Modal>
     </div>
   )
 }

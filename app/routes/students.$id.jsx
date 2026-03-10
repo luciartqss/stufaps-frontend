@@ -476,7 +476,33 @@ export default function StudentDetails() {
     setDisbursementLoading(true)
     try {
       const values = await disbursementForm.validateFields()
-      
+
+      // Check for duplicate academic year + semester on create
+      if (disbursementModal.mode === 'create') {
+        const existing = (student.disbursements || []).find(
+          d => d.academic_year === values.academic_year && d.semester === values.semester
+        )
+        if (existing) {
+          message.error(`A disbursement record for ${values.academic_year} – ${values.semester} Semester already exists.`)
+          setDisbursementLoading(false)
+          return
+        }
+      }
+
+      // On edit, check that we're not changing into a duplicate
+      if (disbursementModal.mode === 'edit') {
+        const existing = (student.disbursements || []).find(
+          d => d.id !== disbursementModal.record.id &&
+               d.academic_year === values.academic_year &&
+               d.semester === values.semester
+        )
+        if (existing) {
+          message.error(`A disbursement record for ${values.academic_year} – ${values.semester} Semester already exists.`)
+          setDisbursementLoading(false)
+          return
+        }
+      }
+
       // Format the data
       const formattedData = {
         ...values,
@@ -1127,7 +1153,7 @@ export default function StudentDetails() {
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="semester" label="Semester">
+                <Form.Item name="semester" label="Semester" rules={[{ required: true, message: 'Please select semester' }]}>
                   <Select placeholder="Select semester">
                     <Select.Option value="First">First</Select.Option>
                     <Select.Option value="Second">Second</Select.Option>
