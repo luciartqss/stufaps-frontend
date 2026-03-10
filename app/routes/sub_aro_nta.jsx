@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag } from 'antd'
+import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag, Tooltip } from 'antd'
 import { InboxOutlined, DeleteOutlined, FilePdfOutlined, SearchOutlined, UploadOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
@@ -97,14 +97,30 @@ export default function SUB_ARO_NTA() {
       fd.append('yearsuffix', values.yearsuffix)
       fd.append('number_count', values.number_count)
       fd.append('filetype', activeTab)
-      const res = await fetch(`${API_BASE}/sub-aro-nta-files`, { method: 'POST', body: fd })
-      if (!res.ok) throw new Error()
+      
+      const res = await fetch(`${API_BASE}/sub-aro-nta-files`, {
+        method: 'POST',
+        body: fd
+      })
+      
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('Upload error response:', res.status, errorText)
+        try {
+          const errorJson = JSON.parse(errorText)
+          console.error('Error details:', errorJson)
+        } catch (e) {}
+        throw new Error(`Server responded with ${res.status}`)
+      }
       message.success('File uploaded')
       setIsModalVisible(false)
       form.resetFields()
       setFileList([])
       fetchAll()
-    } catch { message.error('Upload failed') }
+    } catch (err) {
+      console.error('Upload error details:', err)
+      message.error(`Upload failed: ${err.message}`)
+    }
     finally { setLoading(false) }
   }
 
@@ -240,12 +256,14 @@ export default function SUB_ARO_NTA() {
                 {/* Info */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text strong style={{ fontSize: 13, display: 'block' }}>{getTitle(f)}</Text>
-                  <Text
-                    style={{ fontSize: 12, color: '#1890ff', cursor: 'pointer', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                    onClick={() => openFile(f.file)}
-                  >
-                    {f.filename}
-                  </Text>
+                  <Tooltip title={f.filename} placement="top">
+                    <Text
+                      style={{ fontSize: 12, color: '#1890ff', cursor: 'pointer', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      onClick={() => openFile(f.file)}
+                    >
+                      {f.filename}
+                    </Text>
+                  </Tooltip>
                   <Text type="secondary" style={{ fontSize: 11 }}>
                     {new Date(f.created_at).toLocaleDateString()}
                   </Text>
@@ -287,7 +305,7 @@ export default function SUB_ARO_NTA() {
             </Upload.Dragger>
           </Form.Item>
 
-          <Form.Item name="filename" label="File Name" rules={[{ required: true, message: 'Required' }, { max: 255 }]}>
+          <Form.Item name="filename" label="File Name" rules={[{ required: true, message: 'Required' }]}>
             <Input placeholder="e.g., Budget Report - January" />
           </Form.Item>
 

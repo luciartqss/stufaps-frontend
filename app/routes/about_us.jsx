@@ -306,144 +306,72 @@ export default function AboutUs() {
                     </Text>
                 </div>
 
-                {/* What We Do Section */}
+                {/* VISION Section */}
                 <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
                     <Space size={12} align="start">
                         <ProjectOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
                         <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-                            What We Do
+                            Vision
                         </Title>
                     </Space>
-                    <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
-                        <ol className="list-decimal">
-                            <li style={{ marginBottom: 12 }}>
-                                <Text strong>Manage Student Profiles</Text> - Keep track of student information and academic status
-                                in one centralized system, making it easy to find and update records.
-                            </li>
-                            <li style={{ marginBottom: 12 }}>
-                                <Text strong>Administer Scholarship Programs</Text> - Support different types of scholarships and
-                                programs your institution offers, making it easier to manage eligibility and requirements.
-                            </li>
-                            <li style={{ marginBottom: 12 }}>
-                                <Text strong>Process and Track Payments</Text> - Manage the disbursement of scholarship funds to
-                                students and keep complete records of every transaction and payment history.
-                            </li>
-                            <li>
-                                <Text strong>Ensure Accountability</Text> - Maintain complete records of all activities and transactions
-                                so your institution can demonstrate transparency and compliance.
-                            </li>
-                        </ol>
-                    </Typography>
+                    <Text style={{ display: 'block', marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                        Philippine higher education system that is equitable and producing locally responsive, innovative, and globally competitive graduates and lifelong learners.
+                    </Text>
                 </div>
 
-                {/* Why It Matters Section */}
+                {/* MISSION Section */}
                 <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
                     <Space size={12} align="start">
                         <BulbOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
                         <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-                            Why It Matters
+                            Mission
                         </Title>
                     </Space>
-                    <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
-                        <div>
-                            <Space size={8} align="start" style={{ marginBottom: 8 }}>
-                                <UserOutlined style={{ fontSize: 20, color: '#1890ff' }} />
-                                <Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Support Students</Text>
-                            </Space>
-                            <Text style={{ display: 'block', color: '#6b7280', fontSize: 14 }}>
-                                Students get the financial support they need to focus on their education rather than worrying about costs.
-                            </Text>
-                        </div>
-                        <div>
-                            <Space size={8} align="start" style={{ marginBottom: 8 }}>
-                                <CheckCircleOutlined style={{ fontSize: 20, color: '#52c41a' }} />
-                                <Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Simplify Administration</Text>
-                            </Space>
-                            <Text style={{ display: 'block', color: '#6b7280', fontSize: 14 }}>
-                                Staff spend less time on paperwork and manual processes, and more time helping students succeed.
-                            </Text>
-                        </div>
-                        <div>
-                            <Space size={8} align="start" style={{ marginBottom: 8 }}>
-                                <AuditOutlined style={{ fontSize: 20, color: '#faad14' }} />
-                                <Text strong style={{ color: '#1a1a1a', fontSize: 16 }}>Increase Transparency</Text>
-                            </Space>
-                            <Text style={{ display: 'block', color: '#6b7280', fontSize: 14 }}>
-                                Everyone involved knows exactly how funds are being distributed and can track the process from start to finish.
-                            </Text>
-                        </div>
-                    </div>
+                    <Text style={{ display: 'block', marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                        To promote equitable access and ensure quality and relevance of higher education institutions and their programs.
+                    </Text>
                 </div>
 
-                {/* Who We Serve Section */}
-                <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
-                    <Space size={12} align="start">
-                        <TeamOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
-                        <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-                            Who We Serve
-                        </Title>
-                    </Space>
-                    <Typography style={{ marginTop: 12, color: '#6b7280', fontSize: 16 }}>
-                        <ul className="list-disc" style={{ paddingLeft: 20 }}>
-                            <li style={{ marginBottom: 8 }}>
-                                <Text strong>Educational Institutions</Text> - Colleges and universities that want to streamline their
-                                scholarship management and financial aid processes.
-                            </li>
-                            <li style={{ marginBottom: 8 }}>
-                                <Text strong>Students</Text> - Students seeking scholarships and financial aid with transparent,
-                                efficient access to support programs.
-                            </li>
-                            <li style={{ marginBottom: 8 }}>
-                                <Text strong>Finance Teams</Text> - Administrative staff who manage budgets, process payments, and
-                                need clear records of all transactions.
-                            </li>
-                            <li>
-                                <Text strong>Institution Leaders</Text> - Decision makers who need insights into how aid is being
-                                distributed and student support outcomes.
-                            </li>
-                        </ul>
-                    </Typography>
-                </div>
-
-                {/* Key Features Section */}
-                <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
-                    <Space size={12} align="start">
-                        <GiftOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
-                        <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-                            Key Features
-                        </Title>
-                    </Space>
-                    <Typography style={{ marginTop: 12, color: '#6b7280', fontSize: 16 }}>
-                        <ul className="list-disc" style={{ paddingLeft: 20 }}>
-                            <li style={{ marginBottom: 8 }}>Multi-institution support with isolated data and configurations</li>
-                            <li style={{ marginBottom: 8 }}>Real-time dashboards with key metrics and financial overview</li>
-                            <li style={{ marginBottom: 8 }}>Advanced search and filtering for student and program records</li>
-                            <li style={{ marginBottom: 8 }}>Batch processing for bulk disbursements and fund distribution</li>
-                            <li style={{ marginBottom: 8 }}>Comprehensive reporting and flexible data export functionality</li>
-                            <li style={{ marginBottom: 8 }}>Secure APIs for third-party integrations and system connections</li>
-                            <li style={{ marginBottom: 8 }}>Activity logging and audit trails for full compliance</li>
-                            <li>Role-based access control with granular permission management</li>
-                        </ul>
-                    </Typography>
-                </div>
-
-                {/* Our Commitment Section */}
+                {/* QUALITY POLICY Section */}
                 <div style={{ padding: '12px 24px 24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
                     <Space size={12} align="start">
                         <SafetyOutlined style={{ marginTop: 6, fontSize: 24, color: '#6b7280' }} />
                         <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
-                            Our Commitment
+                            Quality Policy
                         </Title>
                     </Space>
-                    <Text style={{ display: 'block', marginTop: 8, color: '#6b7280', fontSize: 16 }}>
-                        We are committed to making financial aid administration simpler, fairer, and more transparent. Every feature
-                        we build is designed with one goal in mind: helping deserving students access the education they deserve.
+                    <Text style={{ display: 'block', marginTop: 12, color: '#6b7280', fontSize: 16, fontWeight: 600 }}>
+                        We, at the Commission on Higher Education (CHED), shall lead the Philippine higher education sector to:
                     </Text>
-                    <Text style={{ display: 'block', marginTop: 12, color: '#6b7280', fontSize: 16 }}>
-                        By using STUFAPS, your institution joins a community dedicated to removing financial barriers to education
-                        and ensuring equitable access to scholarship opportunities for qualified students across all Higher Education
-                        Institutions.
-                    </Text>
+                    <Typography style={{ marginTop: 8, color: '#6b7280', fontSize: 16 }}>
+                        <ul className="list-disc" style={{ paddingLeft: 20 }}>
+                            <li style={{ marginBottom: 12 }}>
+                                Cultivate an equitable and sustainable higher education landscape that produces locally responsive, innovative, globally competitive graduates, and lifelong learners;
+                            </li>
+                            <li style={{ marginBottom: 12 }}>
+                                Harmonize mandates to promote inclusive access to higher education, ensure sustainable quality assurance of programs, and assert relevance of institutions;
+                            </li>
+                            <li style={{ marginBottom: 12 }}>
+                                Exemplify resilience and humility in service, integrity, excellence, and development-driven mindset; and,
+                            </li>
+                            <li style={{ marginBottom: 12 }}>
+                                Demonstrate commitment to fulfill statutory and regulatory requirements to maintain and achieve continual improvement in our Quality Management System to achieve our vision.
+                            </li>
+                        </ul>
+
+                        <br />
+
+                        <p>The Commission on Higher Education Regional Office IV (CHEDRO IV) commits to uphold equitable, inclusive, and quality higher education through effective and efficient service.</p>
+
+                        <br />
+
+                        <p>CHEDRO IV shall strictly adhere to laws, policies, and mandates to deliver services to its stakeholders with accountability, integrity, and excellence.</p>
+
+                        <br />
+
+                        <p>CHEDRO IV proactively adopts continual improvement in all its procedures, processes, and systems to achieve its vision.</p>
+
+                    </Typography>
                 </div>
 
                 {/* Stufaps UNIT team Section */}
@@ -453,35 +381,31 @@ export default function AboutUs() {
                         <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>
                             Meet the Team
                         </Title>
-
-
-
-
                     </Space>
                     <br /> <br />
                     {canEdit && (<>
-                    <Button
-                        type="primary"
-                        icon={<EditOutlined />}
-                        onClick={() => {
-                            setSelectedPerson(null)
-                            setEditModalOpen(true)
-                            setIsEditMode(false)
-                        }}
-                    >
-                        Edit Employees
-                    </Button>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            setAddModalOpen(true)
-                            setAddStep('role')
-                        }}
-                        style={{ marginLeft: 8 }}
-                    >
-                        Add Employee
-                    </Button>
+                        <Button
+                            type="primary"
+                            icon={<EditOutlined />}
+                            onClick={() => {
+                                setSelectedPerson(null)
+                                setEditModalOpen(true)
+                                setIsEditMode(false)
+                            }}
+                        >
+                            Edit Employees
+                        </Button>
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => {
+                                setAddModalOpen(true)
+                                setAddStep('role')
+                            }}
+                            style={{ marginLeft: 8 }}
+                        >
+                            Add Employee
+                        </Button>
                     </>)}
 
                     {/* Loading State */}
@@ -508,7 +432,7 @@ export default function AboutUs() {
                             </Title>
 
                             {teamLeaders.length > 0 ? (
-                                <Row gutter={[24, 24]} justify="center" style={{ marginBottom: 32, paddingLeft: 24, paddingRight: 24}}>
+                                <Row gutter={[24, 24]} justify="center" style={{ marginBottom: 32, paddingLeft: 24, paddingRight: 24 }}>
                                     {teamLeaders.map((leader) => (
                                         <Col key={leader.id || leader.email || leader.fname} xs={24} sm={12} md={8}>
                                             <Card
@@ -517,7 +441,7 @@ export default function AboutUs() {
                                                     textAlign: 'center',
                                                     boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
                                                     borderRadius: 0
-                  
+
                                                 }}
                                                 bodyStyle={{ padding: 16 }}
                                             >
@@ -818,29 +742,29 @@ export default function AboutUs() {
                                         </div>
                                         <Space style={{ width: '100%', marginTop: 24, gap: 8 }}>
                                             {canEdit && (<>
-                                            <Button
-                                                type="primary"
-                                                icon={<EditOutlined />}
-                                                onClick={handleEnterEditMode}
-                                                style={{ flex: 1 }}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Popconfirm
-                                                title="Delete Employee"
-                                                description="Are you sure you want to delete this employee?"
-                                                onConfirm={handleDeleteEmployee}
-                                                okText="Yes"
-                                                cancelText="No"
-                                            >
                                                 <Button
-                                                    danger
-                                                    icon={<DeleteOutlined />}
+                                                    type="primary"
+                                                    icon={<EditOutlined />}
+                                                    onClick={handleEnterEditMode}
                                                     style={{ flex: 1 }}
                                                 >
-                                                    Delete
+                                                    Edit
                                                 </Button>
-                                            </Popconfirm>
+                                                <Popconfirm
+                                                    title="Delete Employee"
+                                                    description="Are you sure you want to delete this employee?"
+                                                    onConfirm={handleDeleteEmployee}
+                                                    okText="Yes"
+                                                    cancelText="No"
+                                                >
+                                                    <Button
+                                                        danger
+                                                        icon={<DeleteOutlined />}
+                                                        style={{ flex: 1 }}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </Popconfirm>
                                             </>)}
                                         </Space>
                                     </div>
