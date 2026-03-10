@@ -35,7 +35,7 @@ const CODE_LABELS = {
 /* ── Program definitions ── */
 const PROGRAMS = [
   { key: 'cmsp', label: 'CMSP', fullName: 'CHED Merit Scholarship Program', link: '/financial_assistance/cmsp', codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'], color: '#1890ff' },
-  { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['FULL-ESTAT', 'HALF-ESTAT', 'ESTATISTIKOLAR'], color: '#722ed1' },
+  { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['ESTATISTIKOLAR'], color: '#722ed1' },
   { key: 'coscho', label: 'CoScho', fullName: 'Coconut Farmers and Farmworkers Scholarship', link: '/financial_assistance/CoScho', codes: ['COSCHO'], color: '#13c2c2' },
   { key: 'msrs', label: 'MSRS', fullName: 'Medical Scholarship and Return Service', link: '/financial_assistance/msrs', codes: ['MSRS'], color: '#eb2f96' },
   { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Sugarcane Industry Development Act Grant', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
@@ -73,7 +73,7 @@ function SummaryCards({ data, academicYear, semester }) {
   const isSpecificYear = academicYear && academicYear !== 'All'
   const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
 
-  const slotsTitle = isSpecificYear ? 'Annual Slots' : 'Total Slots'
+  const slotsTitle = isSpecificYear ? 'Cumulative Slots' : 'Total Slots'
   const filledTitle = `Disbursed (${semShort})`
   const unfilledTitle = `Not Yet Disbursed (${semShort})`
 
@@ -122,10 +122,12 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
   const [saving, setSaving] = useState(false)
 
   // Build a matrix: rows = sub-programs (within each parent program), columns = years
+  // Use slotCodes (if defined) so program-name-only entries like ESTATISTIKOLAR
+  // don't appear as a separate slot row.
   const rows = useMemo(() => {
     const result = []
     for (const prog of PROGRAMS) {
-      for (const code of prog.codes) {
+      for (const code of (prog.slotCodes || prog.codes)) {
         const nc = norm(code)
         result.push({
           key: nc,
@@ -424,16 +426,66 @@ export default function FinancialAssistanceIndex() {
 
   useEffect(() => { fetchPrograms() }, [fetchPrograms])
 
+  // Sort academic years so we can compute cumulative slots up to the selected year
+  const sortedYears = useMemo(() => [...academicYears].sort(), [academicYears])
+
   const filteredAssistances = useMemo(() => {
     if (academicYearFilter && academicYearFilter !== 'All') {
-      return financialAssistances.filter(
+      // Determine all years up to (and including) the selected year
+      const yearIdx = sortedYears.indexOf(academicYearFilter)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+
+      // Records from all years up to selected (for cumulative slot totals)
+      const recordsUpTo = financialAssistances.filter(p => {
+        const ay = p.academic_year || p.Academic_year
+        return ay !== 'All' && yearsUpTo.includes(ay)
+      })
+
+      // Records from the selected year only (for student / disbursement counts)
+      const currentRecords = financialAssistances.filter(
         p => (p.academic_year || p.Academic_year) === academicYearFilter
       )
+
+      // Sum slots per program across all years up to selected
+      const cumSlots = {}
+      for (const r of recordsUpTo) {
+        const k = norm(r.scholarship_program_name)
+        cumSlots[k] = (cumSlots[k] || 0) + (Number(r.total_slot) || 0)
+      }
+
+      // Merge: current-year records get their slots replaced with cumulative value
+      const seen = new Set()
+      const result = currentRecords.map(r => {
+        const k = norm(r.scholarship_program_name)
+        seen.add(k)
+        const cs = cumSlots[k] || 0
+        const filled = Number(r.total_students) || 0
+        return { ...r, total_slot: cs, unfilled_slot: Math.max(0, cs - filled) }
+      })
+
+      // Add programs that have slots in earlier years but no current-year record
+      for (const [k, slots] of Object.entries(cumSlots)) {
+        if (!seen.has(k) && slots > 0) {
+          const sample = recordsUpTo.find(r => norm(r.scholarship_program_name) === k)
+          if (sample) {
+            result.push({
+              ...sample,
+              academic_year: academicYearFilter,
+              Academic_year: academicYearFilter,
+              total_slot: slots,
+              total_students: 0,
+              unfilled_slot: slots,
+            })
+          }
+        }
+      }
+
+      return result
     }
     return financialAssistances.filter(
       p => (p.academic_year || p.Academic_year) === 'All'
     )
-  }, [financialAssistances, academicYearFilter])
+  }, [financialAssistances, academicYearFilter, sortedYears])
 
   const grandTotals = useMemo(() => {
     const allCodes = PROGRAMS.flatMap(p => p.codes)
