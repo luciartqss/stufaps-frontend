@@ -178,14 +178,48 @@ export default function FinancialAssistancescgms_sucs() {
 
   const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
 
-  const filteredCgms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    const name = p?.scholarship_program_name?.toUpperCase()
-    if (name !== 'CGMSSUCS' && name !== 'SMART') return false
+  const sortedYears = [...academicYears].sort()
+
+  const filteredCgms = (() => {
+    const allData = (Array.isArray(financialAssistances) ? financialAssistances : [])
+      .filter(p => p?.scholarship_program_name?.toUpperCase() === 'SMART')
+
     if (academicYearFilter && academicYearFilter !== 'All') {
-      return (p.academic_year || p.Academic_year) === academicYearFilter
+      const yearIdx = sortedYears.indexOf(academicYearFilter)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+      const recordsUpTo = allData.filter(p => {
+        const ay = p.academic_year || p.Academic_year
+        return ay !== 'All' && yearsUpTo.includes(ay)
+      })
+      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === academicYearFilter)
+
+      const cumSlots = {}
+      for (const r of recordsUpTo) {
+        const k = r.scholarship_program_name?.toUpperCase().trim()
+        cumSlots[k] = (cumSlots[k] || 0) + (Number(r.total_slot) || 0)
+      }
+
+      const seen = new Set()
+      const result = currentRecords.map(r => {
+        const k = r.scholarship_program_name?.toUpperCase().trim()
+        seen.add(k)
+        const cs = cumSlots[k] || 0
+        const filled = Number(r.total_students) || 0
+        return { ...r, total_slot: cs, unfilled_slot: Math.max(0, cs - filled) }
+      })
+
+      for (const [k, slots] of Object.entries(cumSlots)) {
+        if (!seen.has(k) && slots > 0) {
+          const s = recordsUpTo.find(r => r.scholarship_program_name?.toUpperCase().trim() === k)
+          if (s) result.push({ ...s, academic_year: academicYearFilter, Academic_year: academicYearFilter, total_slot: slots, total_students: 0, unfilled_slot: slots })
+        }
+      }
+
+      return result
     }
-    return (p.academic_year || p.Academic_year) === 'All'
-  })
+
+    return allData.filter(p => (p.academic_year || p.Academic_year) === 'All')
+  })()
 
   return (
     <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>

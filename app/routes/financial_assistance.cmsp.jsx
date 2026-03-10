@@ -206,25 +206,54 @@ export default function FinancialAssistanceCmsp() {
   ];
 
 
-  const filteredCms = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
-    const programName = p?.scholarship_program_name?.toUpperCase().trim();
+  const sortedYears = [...academicYears].sort()
 
-    // Only keep allowed programs
-    if (!allowedPrograms.includes(programName)) return false;
+  const filteredCms = (() => {
+    const allData = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
+      const programName = p?.scholarship_program_name?.toUpperCase().trim()
+      if (!allowedPrograms.includes(programName)) return false
+      if (programFilter && programFilter !== 'All') {
+        if (programName !== programFilter.toUpperCase().trim()) return false
+      }
+      return true
+    })
 
-    // Apply program filter if not "All"
-    if (programFilter && programFilter !== 'All') {
-      if (programName !== programFilter.toUpperCase().trim()) return false;
-    }
-
-    // Apply academic year filter if not "All"
     if (academicYearFilter && academicYearFilter !== 'All') {
-      return (p.academic_year || p.Academic_year) === academicYearFilter;
+      const yearIdx = sortedYears.indexOf(academicYearFilter)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+      const recordsUpTo = allData.filter(p => {
+        const ay = p.academic_year || p.Academic_year
+        return ay !== 'All' && yearsUpTo.includes(ay)
+      })
+      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === academicYearFilter)
+
+      const cumSlots = {}
+      for (const r of recordsUpTo) {
+        const k = r.scholarship_program_name?.toUpperCase().trim()
+        cumSlots[k] = (cumSlots[k] || 0) + (Number(r.total_slot) || 0)
+      }
+
+      const seen = new Set()
+      const result = currentRecords.map(r => {
+        const k = r.scholarship_program_name?.toUpperCase().trim()
+        seen.add(k)
+        const cs = cumSlots[k] || 0
+        const filled = Number(r.total_students) || 0
+        return { ...r, total_slot: cs, unfilled_slot: Math.max(0, cs - filled) }
+      })
+
+      for (const [k, slots] of Object.entries(cumSlots)) {
+        if (!seen.has(k) && slots > 0) {
+          const s = recordsUpTo.find(r => r.scholarship_program_name?.toUpperCase().trim() === k)
+          if (s) result.push({ ...s, academic_year: academicYearFilter, Academic_year: academicYearFilter, total_slot: slots, total_students: 0, unfilled_slot: slots })
+        }
+      }
+
+      return result
     }
 
-    // Default: keep "All" row when year filter is All
-    return (p.academic_year || p.Academic_year) === 'All';
-  });
+    return allData.filter(p => (p.academic_year || p.Academic_year) === 'All')
+  })()
 
   return (
     <div style={{ background: '#fff', margin: -24, minHeight: 'calc(100vh - 72px)' }}>

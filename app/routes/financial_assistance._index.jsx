@@ -27,21 +27,21 @@ const CODE_LABELS = {
   FULLSSPGAD: 'Full SSP-GAD', HALFSSPGAD: 'Half SSP-GAD',
   FULLPESFA: 'Full PESFA', HALFPESFA: 'Half PESFA',
   FULLPESFAGAD: 'Full PESFA-GAD', HALFPESFAGAD: 'Half PESFA-GAD',
-  FULLESTAT: 'Full Estat', HALFESTAT: 'Half Estat', ESTATISTIKOLAR: 'Estatistikolar',
+  FSSPESTAT: 'FSSP-ESTAT (Full)', HSSPESTAT: 'HSSP-ESTAT (Half)',
   COSCHO: 'CoScho', MSRS: 'MSRS', SIDASGP: 'SIDA-SGP',
-  ACEFGIAHEP: 'ACEF-GIAHEP', MTPSP: 'MTP-SP', CGMSSUCS: 'CGMS-SUCs', SMART: 'SMART', SNPLP: 'SNPLP',
+  ACEFGIAHEP: 'ACEF-GIAHEP', MTPSP: 'MTP-SP', SMART: 'SMART', SNPLP: 'SNPLP',
 }
 
 /* ── Program definitions ── */
 const PROGRAMS = [
   { key: 'cmsp', label: 'CMSP', fullName: 'CHED Merit Scholarship Program', link: '/financial_assistance/cmsp', codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'], color: '#1890ff' },
-  { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['ESTATISTIKOLAR'], color: '#722ed1' },
+  { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['ESTATISTIKOLAR', 'FSSP-ESTAT', 'HSSP-ESTAT', 'FULLESTAT', 'HALFESTAT'], slotCodes: ['FSSP-ESTAT', 'HSSP-ESTAT'], color: '#722ed1' },
   { key: 'coscho', label: 'CoScho', fullName: 'Coconut Farmers and Farmworkers Scholarship', link: '/financial_assistance/CoScho', codes: ['COSCHO'], color: '#13c2c2' },
   { key: 'msrs', label: 'MSRS', fullName: 'Medical Scholarship and Return Service', link: '/financial_assistance/msrs', codes: ['MSRS'], color: '#eb2f96' },
   { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Sugarcane Industry Development Act Grant', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
   { key: 'acef_giahep', label: 'ACEF-GIAHEP', fullName: 'Agricultural Competitiveness Enhancement Fund', link: '/financial_assistance/Acef_Giahep', codes: ['ACEFGIAHEP'], color: '#52c41a' },
   { key: 'mtp_sp', label: 'MTP-SP', fullName: 'Medical Technologists and Pharmacists Scholarship', link: '/financial_assistance/Mtp_Sp', codes: ['MTPSP'], color: '#2f54eb' },
-  { key: 'smart', label: 'SMART', fullName: 'Student Monetary Assistance for Recovery and Transition', link: '/financial_assistance/Cgms_Sucs', codes: ['CGMSSUCS', 'SMART'], color: '#f5222d' },
+  { key: 'smart', label: 'SMART', fullName: 'Student Monetary Assistance for Recovery and Transition', link: '/financial_assistance/Cgms_Sucs', codes: ['SMART'], color: '#f5222d' },
   { key: 'snplp', label: 'SNPLP', fullName: 'Student Nurses Licensure Preparation', link: '/financial_assistance/Snplp', codes: ['SNPLP'], color: '#a0d911' },
 ]
 
@@ -135,6 +135,7 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
           programColor: prog.color,
           subProgram: CODE_LABELS[code.replace(/-/g, '').toUpperCase()] || code,
           code: nc,
+          originalCode: code, // preserve un-normalized name for DB saves
         })
       }
     }
@@ -185,11 +186,12 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
     if (changedEntries.length === 0) return
     setSaving(true)
     try {
-      // Find the programName from allAssistances for each code, or use the normalized code
+      // Find the programName from allAssistances for each code, or use the original code
       await Promise.all(changedEntries.map(([key, slots]) => {
         const [code, year] = key.split('__')
+        const row = rows.find(r => r.code === code)
         const match = allAssistances.find(a => norm(a.scholarship_program_name) === code)
-        const programName = match?.scholarship_program_name || code.toUpperCase()
+        const programName = match?.scholarship_program_name || row?.originalCode || code.toUpperCase()
         return fetch(`${API_BASE}/scholarship_program_records/upsert-slots`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
