@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag, Tooltip } from 'antd'
-import { InboxOutlined, DeleteOutlined, FilePdfOutlined, SearchOutlined, UploadOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons'
+import { InboxOutlined, DeleteOutlined, FilePdfOutlined, SearchOutlined, UploadOutlined, PlusOutlined, CalendarOutlined, EditOutlined } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
 
@@ -27,6 +27,7 @@ export default function SUB_ARO_NTA() {
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('SUB-ARO')
+  const [editingFileId, setEditingFileId] = useState(null)
 
   /* ── Fetch ── */
   const fetchAll = useCallback(async () => {
@@ -37,7 +38,6 @@ export default function SUB_ARO_NTA() {
       ])
       setFiscalYears(Array.isArray(fyRes) ? fyRes : [])
       setUploadedFiles(Array.isArray(filesRes) ? filesRes : [])
-      if (!selectedFY && fyRes.length > 0) setSelectedFY(fyRes[0].year_suffix)
     } catch (err) {
       console.error('Fetch error:', err)
     } finally {
@@ -59,7 +59,12 @@ export default function SUB_ARO_NTA() {
         `${f.yearsuffix}-${f.number_count}`.toLowerCase().includes(q)
       )
     }
-    return list
+    // Sort: latest years first, then newest files first
+    return list.sort((a, b) => {
+      const yearDiff = (b.yearsuffix || '').localeCompare(a.yearsuffix || '')
+      if (yearDiff !== 0) return yearDiff
+      return new Date(b.created_at) - new Date(a.created_at)
+    })
   }, [uploadedFiles, activeTab, selectedFY, searchQuery])
 
   /* ── File counts per tab ── */
@@ -86,20 +91,26 @@ export default function SUB_ARO_NTA() {
     } catch { message.error('Failed to add fiscal year') }
   }
 
-  /* ── Upload ── */
+  /* ── Upload / Edit ── */
   const handleSubmitFile = async (values) => {
-    if (fileList.length === 0) { message.error('Please select a PDF file'); return }
+    // For create: file is required. For edit: file is optional
+    if (!editingFileId && fileList.length === 0) { message.error('Please select a PDF file'); return }
     setLoading(true)
     try {
       const fd = new FormData()
-      fd.append('file', fileList[0].originFileObj)
+      if (fileList.length > 0) {
+        fd.append('file', fileList[0].originFileObj)
+      }
       fd.append('filename', values.filename)
       fd.append('yearsuffix', values.yearsuffix)
       fd.append('number_count', values.number_count)
       fd.append('filetype', activeTab)
       
-      const res = await fetch(`${API_BASE}/sub-aro-nta-files`, {
-        method: 'POST',
+      const url = editingFileId ? `${API_BASE}/sub-aro-nta-files/${editingFileId}` : `${API_BASE}/sub-aro-nta-files`
+      const method = editingFileId ? 'PUT' : 'POST'
+      
+      const res = await fetch(url, {
+        method: method,
         body: fd
       })
       
@@ -112,16 +123,29 @@ export default function SUB_ARO_NTA() {
         } catch (e) {}
         throw new Error(`Server responded with ${res.status}`)
       }
-      message.success('File uploaded')
+      message.success(editingFileId ? 'File updated' : 'File uploaded')
       setIsModalVisible(false)
       form.resetFields()
       setFileList([])
+      setEditingFileId(null)
       fetchAll()
     } catch (err) {
       console.error('Upload error details:', err)
-      message.error(`Upload failed: ${err.message}`)
+      message.error(`Operation failed: ${err.message}`)
     }
     finally { setLoading(false) }
+  }
+
+  /* ── Edit handler ── */
+  const handleEditFile = (file) => {
+    setEditingFileId(file.id)
+    form.setFieldsValue({
+      filename: file.filename,
+      yearsuffix: file.yearsuffix,
+      number_count: file.number_count,
+    })
+    setFileList([])
+    setIsModalVisible(true)
   }
 
   /* ── Delete ── */
@@ -135,9 +159,14 @@ export default function SUB_ARO_NTA() {
   }
 
   /* ── Helpers ── */
-  const getTitle = (f) => f.filetype === 'NTA'
-    ? `NTA-${f.yearsuffix || '??'}-${f.number_count}`
-    : `CHEDRO IV-${f.yearsuffix || '??'}-${f.number_count}`
+  const getTitle = (f) => {
+    if (f.filetype === 'NTA') {
+      return `NTA-${f.yearsuffix || '??'}-${f.number_count}`
+    } else {
+      const fy = fiscalYears.find(y => y.year_suffix === f.yearsuffix)
+      return `CHEDRO IV-${fy?.fiscal_year || '????'}-${f.number_count}`
+    }
+  }
 
   const openFile = (path) => window.open(`${STORAGE_BASE}/${path}`, '_blank')
 
@@ -231,7 +260,7 @@ export default function SUB_ARO_NTA() {
         {/* File grid */}
         {filteredFiles.length === 0 ? (
           <Empty
-            description={searchQuery.trim() ? 'No files match your search' : selectedFY ? `No ${activeTab} files for this fiscal year` : 'Select a fiscal year'}
+            description={searchQuery.trim() ? 'No files match your search' : `No ${activeTab} files found`}
             style={{ padding: '60px 0' }}
           />
         ) : (
@@ -269,11 +298,14 @@ export default function SUB_ARO_NTA() {
                   </Text>
                 </div>
 
-                {/* Delete */}
+                {/* Actions */}
                 {canEdit && (
-                <Popconfirm title="Delete this file?" onConfirm={() => handleDelete(f.id)} okText="Delete" okButtonProps={{ danger: true }}>
-                  <Button type="text" danger size="small" icon={<DeleteOutlined />} />
-                </Popconfirm>
+                <Space size={4}>
+                  <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditFile(f)} />
+                  <Popconfirm title="Delete this file?" onConfirm={() => handleDelete(f.id)} okText="Delete" okButtonProps={{ danger: true }}>
+                    <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+                  </Popconfirm>
+                </Space>
                 )}
               </Card>
             ))}
@@ -281,18 +313,18 @@ export default function SUB_ARO_NTA() {
         )}
       </div>
 
-      {/* Upload Modal */}
+      {/* Upload / Edit Modal */}
       <Modal
-        title={`Upload ${activeTab} File`}
+        title={editingFileId ? `Edit ${activeTab} File` : `Upload ${activeTab} File`}
         open={isModalVisible}
         onOk={form.submit}
-        onCancel={() => setIsModalVisible(false)}
+        onCancel={() => { setIsModalVisible(false); setEditingFileId(null) }}
         confirmLoading={loading}
         width={480}
-        okText="Upload"
+        okText={editingFileId ? 'Update' : 'Upload'}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmitFile} style={{ marginTop: 16 }}>
-          <Form.Item label="PDF File" required>
+          <Form.Item label="PDF File" required={!editingFileId}>
             <Upload.Dragger
               fileList={fileList}
               onChange={({ fileList: fl }) => setFileList(fl.slice(-1))}
@@ -301,7 +333,7 @@ export default function SUB_ARO_NTA() {
               beforeUpload={() => false}
             >
               <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-              <p className="ant-upload-text">Click or drag a PDF here</p>
+              <p className="ant-upload-text">{editingFileId ? 'Upload new PDF (optional)' : 'Click or drag a PDF here'}</p>
             </Upload.Dragger>
           </Form.Item>
 
@@ -323,16 +355,19 @@ export default function SUB_ARO_NTA() {
             <Form.Item
               name="number_count"
               label="Reference No."
-              rules={[{ required: true, message: 'Required' }, { pattern: /^\d{2}-\d+$/, message: 'Format: XX-XXXX' }]}
+              rules={[{ required: true, message: 'Required' }]}
               style={{ flex: 1 }}
             >
-              <Input placeholder="e.g., 25-001" />
+              <Input placeholder="e.g., 001" />
             </Form.Item>
           </Space>
 
           <div style={{ padding: '8px 12px', background: '#fafafa', borderRadius: 6, fontSize: 13, color: '#8c8c8c' }}>
             Title preview: <strong style={{ color: '#262626' }}>
-              {activeTab === 'NTA' ? 'NTA' : 'CHEDRO IV'}-{form.getFieldValue('yearsuffix') || 'YY'}-{form.getFieldValue('number_count') || 'XX-XXXX'}
+              {activeTab === 'NTA'
+                ? `NTA-${form.getFieldValue('yearsuffix') || 'YY'}-${form.getFieldValue('number_count') || ''}`
+                : `CHEDRO IV-${selectedFYObj?.fiscal_year || 'YYYY'}-${form.getFieldValue('number_count') || ''}`
+              }
             </strong>
           </div>
         </Form>
