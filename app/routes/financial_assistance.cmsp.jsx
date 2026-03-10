@@ -1,15 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
-// Row/Col kept for StatsCards grid and table layouts
+import { Card, Tag, Typography, Space, Select, Row, Col, Progress } from 'antd'
 import { API_BASE } from '../lib/config'
 import {
-  ContactsOutlined,
-  RightOutlined,
   SnippetsOutlined,
-  TeamOutlined,
   FilterOutlined,
-  UserOutlined,
   ProjectOutlined,
   FundOutlined,
   FundProjectionScreenOutlined,
@@ -27,11 +22,9 @@ import {
   UserSwitchOutlined,
   SolutionOutlined,
   FileTextOutlined,
-  InfoCircleOutlined
 } from '@ant-design/icons'
 const { Text, Title } = Typography
 const { Option } = Select
-import { Progress } from 'antd'
 
 export function meta() {
   return [
@@ -40,100 +33,85 @@ export function meta() {
   ]
 }
 
+const SUB_PROGRAMS = [
+  { code: 'FULLSSP',       label: 'Full-SSP',        color: '#1890ff' },
+  { code: 'HALFSSP',       label: 'Half-SSP',        color: '#52c41a' },
+  { code: 'FULLSSPGAD',    label: 'Full-SSP GAD',    color: '#722ed1' },
+  { code: 'HALFSSPGAD',    label: 'Half-SSP GAD',    color: '#eb2f96' },
+  { code: 'FULLPESFA',     label: 'Full-PESFA',      color: '#fa8c16' },
+  { code: 'HALFPESFA',     label: 'Half-PESFA',      color: '#13c2c2' },
+  { code: 'FULLPESFAGAD',  label: 'Full-PESFA GAD',  color: '#2f54eb' },
+  { code: 'HALFPESFAGAD',  label: 'Half-PESFA GAD',  color: '#f5222d' },
+]
 
-function StatsCards({ financialAssistances = [], semester }) {
-  let totals;
+const pct = (filled, slots) => (slots > 0 ? ((filled / slots) * 100).toFixed(1) : '0.0')
 
-  if (
-    financialAssistances.length === 1 &&
-    (financialAssistances[0].academic_year === 'All' ||
-      financialAssistances[0].Academic_year === 'All')
-  ) {
-    const row = financialAssistances[0];
-    totals = {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-    };
-  } else {
-    totals = {
-      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
-      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
-      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
-    };
-  }
-
-  const fillPct = totals.totalSlots > 0 ? Math.round((totals.totalFilled / totals.totalSlots) * 100) : 0;
-  const exceeded = totals.totalFilled > totals.totalSlots;
-
-  const formatProgramName = name => {
-    if (!name) return '';
-    return name
-      .replace(/SSP/g, '-SSP')       // turn FULLSSP → FULL SSP
-      .replace(/PESFA/g, '-PESFA')   // turn FULLPESFA → FULL PESFA
-      .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
-      .trim();
-  };
+function SubProgramCard({ program, data }) {
+  const slots = Number(data?.total_slot) || 0
+  const filled = Number(data?.total_students) || 0
+  const unfilled = Math.max(0, slots - filled)
+  const exceeded = filled > slots && slots > 0
+  const noSlots = slots === 0
+  const fillPct = parseFloat(pct(filled, slots))
 
   return (
     <Card
-      hoverable
       style={{
         borderRadius: 12,
-        border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
+        borderLeft: `3px solid ${exceeded ? '#ff4d4f' : noSlots ? '#d9d9d9' : program.color}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
         height: '100%',
-        transition: 'all 0.2s ease',
+        opacity: noSlots ? 0.7 : 1,
       }}
-      bodyStyle={{ padding: 20 }}
+      bodyStyle={{ padding: '16px 20px' }}
     >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>
-              {formatProgramName(financialAssistances[0]?.scholarship_program_name)}
-            </Text>
-            {exceeded && (
-              <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
-                Exceeded
-              </Tag>
-            )}
-          </div>
+          <Text strong style={{ fontSize: 15 }}>{program.label}</Text>
+          {exceeded && <Tag color="error" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: '0 0 0 8px' }}>Exceeded</Tag>}
+          {noSlots && <Tag color="default" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: '0 0 0 8px' }}>No Slots</Tag>}
         </div>
-        <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
       </div>
 
-      {/* Progress */}
-      <Progress
-        percent={Math.min(fillPct, 100)}
-        size="small"
-        strokeColor={exceeded ? '#ff4d4f' : '#1890ff'}
-        trailColor="#f0f0f0"
-        showInfo={false}
-        style={{ marginBottom: 5 }}
-      />
+      {!noSlots && (
+        <Progress
+          percent={Math.min(fillPct, 100)}
+          size="small"
+          strokeColor={exceeded ? '#ff4d4f' : program.color}
+          trailColor="#f0f0f0"
+          showInfo={false}
+          style={{ marginBottom: 12 }}
+        />
+      )}
 
-      {/* Stats row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.totalSlots}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.totalFilled}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.totalUnfilled}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
-        </div>
+      <div style={{ display: 'flex', justifyContent: noSlots ? 'center' : 'space-between', textAlign: 'center' }}>
+        {noSlots ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {filled > 0 ? `${filled.toLocaleString()} students disbursed` : 'No data yet'}
+          </Text>
+        ) : (
+          <>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{slots.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#52c41a' }}>{filled.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Disbursed</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{unfilled.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
+            </div>
+          </>
+        )}
       </div>
     </Card>
-  );
+  )
 }
 
 
@@ -142,7 +120,7 @@ export default function FinancialAssistanceCmsp() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [expandedSUC, setExpandedSUC] = useState(null)
-  const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [programFilter, setProgramFilter] = useState('All')
 
@@ -189,8 +167,16 @@ export default function FinancialAssistanceCmsp() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
+
+  useEffect(() => {
+    if (sortedYears.length > 0 && !sortedYears.includes(academicYearFilter)) {
+      setAcademicYearFilter(sortedYears[sortedYears.length - 1])
+    }
+  }, [sortedYears])
+
   const handleAcademicYearChange = value => {
-    setAcademicYearFilter(value || 'All')
+    setAcademicYearFilter(value)
   }
 
   const handleProgramChange = value => {
@@ -205,9 +191,6 @@ export default function FinancialAssistanceCmsp() {
     'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
   ];
 
-
-  const sortedYears = [...academicYears].sort()
-
   const filteredCms = (() => {
     const allData = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
       const programName = p?.scholarship_program_name?.toUpperCase().trim()
@@ -218,14 +201,16 @@ export default function FinancialAssistanceCmsp() {
       return true
     })
 
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      const yearIdx = sortedYears.indexOf(academicYearFilter)
-      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+    const targetYear = academicYearFilter
+
+    if (targetYear) {
+      const yearIdx = sortedYears.indexOf(targetYear)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [targetYear]
       const recordsUpTo = allData.filter(p => {
         const ay = p.academic_year || p.Academic_year
         return ay !== 'All' && yearsUpTo.includes(ay)
       })
-      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === academicYearFilter)
+      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === targetYear)
 
       const cumSlots = {}
       for (const r of recordsUpTo) {
@@ -245,7 +230,7 @@ export default function FinancialAssistanceCmsp() {
       for (const [k, slots] of Object.entries(cumSlots)) {
         if (!seen.has(k) && slots > 0) {
           const s = recordsUpTo.find(r => r.scholarship_program_name?.toUpperCase().trim() === k)
-          if (s) result.push({ ...s, academic_year: academicYearFilter, Academic_year: academicYearFilter, total_slot: slots, total_students: 0, unfilled_slot: slots })
+          if (s) result.push({ ...s, academic_year: targetYear, Academic_year: targetYear, total_slot: slots, total_students: 0, unfilled_slot: slots })
         }
       }
 
@@ -268,13 +253,13 @@ export default function FinancialAssistanceCmsp() {
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
               value={academicYearFilter}
-              allowClear
               size="middle"
-              style={{ width: 160 }}
+              style={{ width: 200 }}
               onChange={handleAcademicYearChange}
+              allowClear={false}
             >
-              {academicYears.map(year => (
-                <Option key={year} value={year}>{year}</Option>
+              {[...sortedYears].reverse().map((year, i) => (
+                <Option key={year} value={year}>{year}{i === 0 ? ' (Current)' : ''}</Option>
               ))}
             </Select>
             <Select
@@ -291,14 +276,18 @@ export default function FinancialAssistanceCmsp() {
       </div>
 
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
+        {/* Per-program cards */}
+        <Text strong style={{ fontSize: 14, color: '#6b7280', display: 'block', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Sub-Programs
+        </Text>
         <Row gutter={[16, 16]}>
-          {allowedPrograms.map((program, index) => {
-            const programData = filteredCms.filter(p => p.scholarship_program_name === program);
+          {SUB_PROGRAMS.map(prog => {
+            const record = filteredCms.find(r => r.scholarship_program_name?.toUpperCase().trim() === prog.code)
             return (
-              <Col key={index} span={6}>
-                <StatsCards financialAssistances={programData} semester={semesterFilter} />
+              <Col xs={24} sm={12} lg={8} xl={6} key={prog.code}>
+                <SubProgramCard program={prog} data={record || {}} />
               </Col>
-            );
+            )
           })}
         </Row>
       </div>

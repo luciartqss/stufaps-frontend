@@ -1230,9 +1230,9 @@ export default function ImportBulk() {
       message.error(`${c.missingFields} row(s) missing required fields (Award Number, Status, or Name). Fix or remove them first.`)
       return
     }
+    // db_match rows are allowed — the resolve-import flow will handle duplicates
     if (c.dbMatch > 0) {
-      message.error(`${c.dbMatch} row(s) already exist in the database. Remove them first.`)
-      return
+      message.info(`${c.dbMatch} row(s) already exist in the database. They will be sent to the resolve page.`)
     }
     setShowConfirmModal(true)
   }

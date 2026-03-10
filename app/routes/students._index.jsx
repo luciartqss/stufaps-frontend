@@ -340,26 +340,32 @@ export default function StudentsIndex() {
   // Debounced search value for API calls
   const debouncedSearch = useDebounce(searchValue, 300)
 
+  // Helper: pick override value if key is explicitly present, else fall back to state.
+  // Using 'in' instead of ?? so that clearing a filter (undefined/null) takes effect
+  // instead of silently falling back to the stale state value.
+  const pick = (overrides, key, fallback) =>
+    key in overrides ? overrides[key] : fallback
+
   // Sync filter state to URL search params
   const syncSearchParams = (overrides = {}) => {
     const filters = {
-      search: overrides.search ?? searchValue,
-      status: overrides.status ?? statusFilter,
-      program: overrides.program ?? programFilter,
-      academicYear: overrides.academicYear ?? academicYearFilter,
-      semester: overrides.semester ?? semesterFilter,
-      course: overrides.course ?? courseFilter,
-      region: overrides.region ?? regionFilter,
-      province: overrides.province ?? provinceFilter,
-      city: overrides.city ?? cityFilter,
-      school: overrides.school ?? schoolFilter,
-      priority: overrides.priority ?? priorityFilter,
-      specialGroup: overrides.specialGroup ?? specialGroupFilter,
-      authorityType: overrides.authorityType ?? authorityTypeFilter,
-      awardYear: overrides.awardYear ?? awardYearFilter,
-      sortBy: overrides.sortBy ?? sortBy,
-      page: overrides.page ?? pagination.current,
-      pageSize: overrides.pageSize ?? pagination.pageSize,
+      search: pick(overrides, 'search', searchValue),
+      status: pick(overrides, 'status', statusFilter),
+      program: pick(overrides, 'program', programFilter),
+      academicYear: pick(overrides, 'academicYear', academicYearFilter),
+      semester: pick(overrides, 'semester', semesterFilter),
+      course: pick(overrides, 'course', courseFilter),
+      region: pick(overrides, 'region', regionFilter),
+      province: pick(overrides, 'province', provinceFilter),
+      city: pick(overrides, 'city', cityFilter),
+      school: pick(overrides, 'school', schoolFilter),
+      priority: pick(overrides, 'priority', priorityFilter),
+      specialGroup: pick(overrides, 'specialGroup', specialGroupFilter),
+      authorityType: pick(overrides, 'authorityType', authorityTypeFilter),
+      awardYear: pick(overrides, 'awardYear', awardYearFilter),
+      sortBy: pick(overrides, 'sortBy', sortBy),
+      page: pick(overrides, 'page', pagination.current),
+      pageSize: pick(overrides, 'pageSize', pagination.pageSize),
     }
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
@@ -414,23 +420,23 @@ export default function StudentsIndex() {
     const params = new URLSearchParams()
     
     const currentFilters = {
-      search: overrides.search ?? searchValue,
-      status: overrides.status ?? statusFilter,
-      program: overrides.program ?? programFilter,
-      academicYear: overrides.academicYear ?? academicYearFilter,
-      semester: overrides.semester ?? semesterFilter,
-      course: overrides.course ?? courseFilter,
-      region: overrides.region ?? regionFilter,
-      province: overrides.province ?? provinceFilter,
-      city: overrides.city ?? cityFilter,
-      school: overrides.school ?? schoolFilter,
-      priority: overrides.priority ?? priorityFilter,
-      specialGroup: overrides.specialGroup ?? specialGroupFilter,
-      authorityType: overrides.authorityType ?? authorityTypeFilter,
-      awardYear: overrides.awardYear ?? awardYearFilter,
-      sortBy: overrides.sortBy ?? sortBy,
-      page: overrides.page ?? pagination.current,
-      pageSize: overrides.pageSize ?? pagination.pageSize,
+      search: pick(overrides, 'search', searchValue),
+      status: pick(overrides, 'status', statusFilter),
+      program: pick(overrides, 'program', programFilter),
+      academicYear: pick(overrides, 'academicYear', academicYearFilter),
+      semester: pick(overrides, 'semester', semesterFilter),
+      course: pick(overrides, 'course', courseFilter),
+      region: pick(overrides, 'region', regionFilter),
+      province: pick(overrides, 'province', provinceFilter),
+      city: pick(overrides, 'city', cityFilter),
+      school: pick(overrides, 'school', schoolFilter),
+      priority: pick(overrides, 'priority', priorityFilter),
+      specialGroup: pick(overrides, 'specialGroup', specialGroupFilter),
+      authorityType: pick(overrides, 'authorityType', authorityTypeFilter),
+      awardYear: pick(overrides, 'awardYear', awardYearFilter),
+      sortBy: pick(overrides, 'sortBy', sortBy),
+      page: pick(overrides, 'page', pagination.current),
+      pageSize: pick(overrides, 'pageSize', pagination.pageSize),
     }
 
     Object.entries(currentFilters).forEach(([key, value]) => {
@@ -918,11 +924,14 @@ export default function StudentsIndex() {
     fetchStudents({ search: value, page: 1 })
   }
 
-  // Generic filter change handler — applies immediately
+  // Generic filter change handler — applies immediately.
+  // Ant Design Select passes undefined when cleared; normalise to null so the
+  // 'key in overrides' check in pick() correctly recognises the cleared state.
   const handleFilterChange = (key, setter) => (value) => {
-    setter(value)
-    syncSearchParams({ [key]: value, page: 1 })
-    applyFilters({ [key]: value })
+    const val = value === undefined ? null : value
+    setter(val)
+    syncSearchParams({ [key]: val, page: 1 })
+    applyFilters({ [key]: val })
   }
 
   const handleResetFilters = () => {
@@ -1022,20 +1031,26 @@ export default function StudentsIndex() {
   // Build active filters list for the summary bar
   const activeFilters = useMemo(() => {
     const filters = []
-    if (searchValue) filters.push({ key: 'search', label: `Search: "${searchValue}"`, clear: () => { setSearchValue(''); applyFilters({ search: '' }) } })
-    if (statusFilter) filters.push({ key: 'status', label: `Status: ${statusFilter}`, clear: () => { setStatusFilter(null); applyFilters({ status: null }) } })
-    if (programFilter) filters.push({ key: 'program', label: `Program: ${programFilter}`, clear: () => { setProgramFilter(null); applyFilters({ program: null }) } })
-    if (academicYearFilter) filters.push({ key: 'ay', label: `AY: ${academicYearFilter}`, clear: () => { setAcademicYearFilter(null); applyFilters({ academicYear: null }) } })
-    if (semesterFilter) filters.push({ key: 'sem', label: `Semester: ${semesterFilter}`, clear: () => { setSemesterFilter(null); applyFilters({ semester: null }) } })
-    if (awardYearFilter) filters.push({ key: 'awardYear', label: `Award Year: ${awardYearFilter}`, clear: () => { setAwardYearFilter(null); applyFilters({ awardYear: null }) } })
-    if (courseFilter) filters.push({ key: 'course', label: `Course: ${courseFilter}`, clear: () => { setCourseFilter(null); applyFilters({ course: null }) } })
-    if (regionFilter) filters.push({ key: 'region', label: `Region: ${regionFilter}`, clear: () => { setRegionFilter(null); applyFilters({ region: null }) } })
-    if (provinceFilter) filters.push({ key: 'province', label: `Province: ${provinceFilter}`, clear: () => { setProvinceFilter(null); applyFilters({ province: null }) } })
-    if (cityFilter) filters.push({ key: 'city', label: `City: ${cityFilter}`, clear: () => { setCityFilter(null); applyFilters({ city: null }) } })
-    if (schoolFilter) filters.push({ key: 'school', label: `School: ${schoolFilter}`, clear: () => { setSchoolFilter(null); applyFilters({ school: null }) } })
-    if (priorityFilter) filters.push({ key: 'priority', label: `Priority: ${priorityFilter}`, clear: () => { setPriorityFilter(null); applyFilters({ priority: null }) } })
-    if (specialGroupFilter) filters.push({ key: 'specialGroup', label: `Special Group: ${specialGroupFilter}`, clear: () => { setSpecialGroupFilter(null); applyFilters({ specialGroup: null }) } })
-    if (authorityTypeFilter) filters.push({ key: 'authorityType', label: `Authority: ${authorityTypeFilter}`, clear: () => { setAuthorityTypeFilter(null); applyFilters({ authorityType: null }) } })
+    const clearFilter = (key, setter) => () => {
+      setter(key === 'search' ? '' : null)
+      const override = { [key]: key === 'search' ? '' : null, page: 1 }
+      syncSearchParams(override)
+      fetchStudents(override)
+    }
+    if (searchValue) filters.push({ key: 'search', label: `Search: "${searchValue}"`, clear: clearFilter('search', setSearchValue) })
+    if (statusFilter) filters.push({ key: 'status', label: `Status: ${statusFilter}`, clear: clearFilter('status', setStatusFilter) })
+    if (programFilter) filters.push({ key: 'program', label: `Program: ${programFilter}`, clear: clearFilter('program', setProgramFilter) })
+    if (academicYearFilter) filters.push({ key: 'academicYear', label: `AY: ${academicYearFilter}`, clear: clearFilter('academicYear', setAcademicYearFilter) })
+    if (semesterFilter) filters.push({ key: 'semester', label: `Semester: ${semesterFilter}`, clear: clearFilter('semester', setSemesterFilter) })
+    if (awardYearFilter) filters.push({ key: 'awardYear', label: `Award Year: ${awardYearFilter}`, clear: clearFilter('awardYear', setAwardYearFilter) })
+    if (courseFilter) filters.push({ key: 'course', label: `Course: ${courseFilter}`, clear: clearFilter('course', setCourseFilter) })
+    if (regionFilter) filters.push({ key: 'region', label: `Region: ${regionFilter}`, clear: clearFilter('region', setRegionFilter) })
+    if (provinceFilter) filters.push({ key: 'province', label: `Province: ${provinceFilter}`, clear: clearFilter('province', setProvinceFilter) })
+    if (cityFilter) filters.push({ key: 'city', label: `City: ${cityFilter}`, clear: clearFilter('city', setCityFilter) })
+    if (schoolFilter) filters.push({ key: 'school', label: `School: ${schoolFilter}`, clear: clearFilter('school', setSchoolFilter) })
+    if (priorityFilter) filters.push({ key: 'priority', label: `Priority: ${priorityFilter}`, clear: clearFilter('priority', setPriorityFilter) })
+    if (specialGroupFilter) filters.push({ key: 'specialGroup', label: `Special Group: ${specialGroupFilter}`, clear: clearFilter('specialGroup', setSpecialGroupFilter) })
+    if (authorityTypeFilter) filters.push({ key: 'authorityType', label: `Authority: ${authorityTypeFilter}`, clear: clearFilter('authorityType', setAuthorityTypeFilter) })
     return filters
   }, [searchValue, statusFilter, programFilter, academicYearFilter, semesterFilter, awardYearFilter, courseFilter, regionFilter, provinceFilter, cityFilter, schoolFilter, priorityFilter, specialGroupFilter, authorityTypeFilter])
 

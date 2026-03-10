@@ -34,50 +34,40 @@ import { Progress } from 'antd'
 
 export function meta() {
   return [
-    { title: 'Scholarship Program for Coconut Farmers and Their Families (CoScho) | StuFAPs' },
-    { name: 'description', content: 'Manage Estatistikolar records' },
+    { title: 'Scholarship Program for Coconut Farmers and their Families (CoScho) | StuFAPs' },
+    { name: 'description', content: 'Manage CoScho records' },
   ]
 }
 
 function StatsCards({ financialAssistances = [], semester }) {
-  const isSpecificSem = true
   const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
 
-  let totals;
-
-  if (financialAssistances.length === 1 && (financialAssistances[0].academic_year === 'All' || financialAssistances[0].Academic_year === 'All')) {
-    const row = financialAssistances[0];
-    totals = {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-    };
-  } else {
-    totals = {
-      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
-      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
-      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
-    };
+  const totals = {
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
   }
+
+  const exceeded = totals.totalFilled > totals.totalSlots && totals.totalSlots > 0
 
   const statsConfig = [
     {
-      title: 'Total Slots',
+      title: 'Cumulative Slots',
       value: totals.totalSlots,
       icon: <ContactsOutlined />,
       color: '#1890ff',
       bgColor: '#e6f7ff',
     },
     {
-      title: isSpecificSem ? `Disbursed (${semShort})` : 'Filled Slots',
+      title: `Disbursed (${semShort})`,
       value: totals.totalFilled,
-      icon: <TeamOutlined />,
-      color: '#52c41a',
-      bgColor: '#f6ffed',
+      icon: exceeded ? <WarningOutlined /> : <TeamOutlined />,
+      color: exceeded ? '#ff4d4f' : '#52c41a',
+      bgColor: exceeded ? '#fff2f0' : '#f6ffed',
       percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
     },
     {
-      title: isSpecificSem ? `Not Yet Disbursed (${semShort})` : 'Unfilled Slots',
+      title: `Not Yet Disbursed (${semShort})`,
       value: totals.totalUnfilled,
       icon: <UserOutlined />,
       color: '#faad14',
@@ -87,8 +77,21 @@ function StatsCards({ financialAssistances = [], semester }) {
   ]
 
   return (
-    <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-      {statsConfig.map((stat, index) => (
+    <>
+      {exceeded && (
+        <div style={{
+          background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8,
+          padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8,
+          marginBottom: 12,
+        }}>
+          <WarningOutlined style={{ color: '#ff4d4f', fontSize: 14 }} />
+          <Text style={{ color: '#cf1322', fontSize: 13 }}>
+            <strong>Slots Exceeded</strong> — Disbursed students exceed available slots
+          </Text>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        {statsConfig.map((stat, index) => (
           <Card
             key={index}
             style={{
@@ -110,8 +113,7 @@ function StatsCards({ financialAssistances = [], semester }) {
                 {stat.title}
               </Text>
               <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.prefix || ''}
-                {stat.formatter ? stat.formatter(stat.value) : stat.value.toLocaleString()}
+                {stat.value.toLocaleString()}
               </Text>
               {stat.percentage && (
                 <>
@@ -144,8 +146,9 @@ function StatsCards({ financialAssistances = [], semester }) {
               {stat.icon}
             </div>
           </Card>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -156,7 +159,7 @@ export default function FinancialAssistanceCoScho() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
 
@@ -191,26 +194,33 @@ export default function FinancialAssistanceCoScho() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const handleAcademicYearChange = value => { setAcademicYearFilter(value || 'All') }
+  const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
+
+  useEffect(() => {
+    if (sortedYears.length > 0 && !sortedYears.includes(academicYearFilter)) {
+      setAcademicYearFilter(sortedYears[sortedYears.length - 1])
+    }
+  }, [sortedYears])
+
+  const handleAcademicYearChange = value => { setAcademicYearFilter(value) }
 
   if (loading) return <div className="p-8">Loading...</div>
   if (error) return <div className="p-8 text-red-600 bg-red-50 border border-red-300 rounded">Error: {error}</div>
-
-
-  const sortedYears = [...academicYears].sort()
 
   const filteredcoScho = (() => {
     const allData = (Array.isArray(financialAssistances) ? financialAssistances : [])
       .filter(p => p?.scholarship_program_name?.toUpperCase() === 'COSCHO')
 
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      const yearIdx = sortedYears.indexOf(academicYearFilter)
-      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+    const targetYear = academicYearFilter
+
+    if (targetYear) {
+      const yearIdx = sortedYears.indexOf(targetYear)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [targetYear]
       const recordsUpTo = allData.filter(p => {
         const ay = p.academic_year || p.Academic_year
         return ay !== 'All' && yearsUpTo.includes(ay)
       })
-      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === academicYearFilter)
+      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === targetYear)
 
       const cumSlots = {}
       for (const r of recordsUpTo) {
@@ -230,7 +240,7 @@ export default function FinancialAssistanceCoScho() {
       for (const [k, slots] of Object.entries(cumSlots)) {
         if (!seen.has(k) && slots > 0) {
           const s = recordsUpTo.find(r => r.scholarship_program_name?.toUpperCase().trim() === k)
-          if (s) result.push({ ...s, academic_year: academicYearFilter, Academic_year: academicYearFilter, total_slot: slots, total_students: 0, unfilled_slot: slots })
+          if (s) result.push({ ...s, academic_year: targetYear, Academic_year: targetYear, total_slot: slots, total_students: 0, unfilled_slot: slots })
         }
       }
 
@@ -247,19 +257,19 @@ export default function FinancialAssistanceCoScho() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>CoScho</Title>
-            <Text style={{ color: '#6b7280', fontSize: 16 }}>Scholarship Program for Coconut Farmers and Their Families</Text>
+            <Text style={{ color: '#6b7280', fontSize: 16 }}>Scholarship Program for Coconut Farmers and their Families</Text>
           </div>
           <Space size={12}>
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
               value={academicYearFilter}
-              allowClear
               size="middle"
-              style={{ width: 160 }}
+              style={{ width: 200 }}
               onChange={handleAcademicYearChange}
+              allowClear={false}
             >
-              {academicYears.map(year => (
-                <Option key={year} value={year}>{year}</Option>
+              {[...sortedYears].reverse().map((year, i) => (
+                <Option key={year} value={year}>{year}{i === 0 ? ' (Current)' : ''}</Option>
               ))}
             </Select>
             <Select
