@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
 import { Typography, message, Button, Space, Input, Select, DatePicker, Tag, Pagination, Popover, Progress, Modal, Divider } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined } from '@ant-design/icons'
+import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import { useBlocker } from 'react-router'
@@ -172,6 +172,45 @@ const excelDateToISO = (value) => {
   if (!parsed) return value
   const pad = (n) => String(n).padStart(2, '0')
   return `${parsed.y}-${pad(parsed.m)}-${pad(parsed.d)}`
+}
+
+// ── Date format detection ──
+// Scan all text-based date values in the file and determine if the format
+// is MM-DD-YYYY or DD-MM-YYYY by looking for any unambiguous value where
+// one part > 12 (can't be a month), then apply that format to ALL dates.
+// Falls back to MM-DD-YYYY (PH standard) when every date is ambiguous.
+const detectDateFormat = (textDates) => {
+  // textDates: array of raw string values from date columns
+  for (const raw of textDates) {
+    const s = String(raw ?? '').trim()
+    // Match patterns: MM-DD-YYYY, MM/DD/YYYY, MM.DD.YYYY, etc.
+    const m = s.match(/^(\d{1,2})[\-\/\.](\d{1,2})[\-\/\.](\d{4})$/)
+    if (!m) continue
+    const a = Number(m[1])
+    const b = Number(m[2])
+    if (a > 12 && b <= 12) return 'DD-MM-YYYY' // first part can't be month
+    if (b > 12 && a <= 12) return 'MM-DD-YYYY' // second part can't be month
+  }
+  return 'MM-DD-YYYY' // default: PH/US convention
+}
+
+// Normalize a text date string to ISO YYYY-MM-DD given a detected format
+const normalizeTextDate = (raw, format) => {
+  const s = String(raw ?? '').trim()
+  if (!s) return ''
+
+  // Already ISO? (YYYY-MM-DD from excelDateToISO)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+
+  const m = s.match(/^(\d{1,2})[\-\/\.](\d{1,2})[\-\/\.](\d{4})$/)
+  if (!m) return s // can't parse — leave as-is for backend to handle
+
+  const pad = (n) => String(n).padStart(2, '0')
+  if (format === 'DD-MM-YYYY') {
+    return `${m[3]}-${pad(m[2])}-${pad(m[1])}` // YYYY-MM-DD
+  }
+  // MM-DD-YYYY (default)
+  return `${m[3]}-${pad(m[1])}-${pad(m[2])}` // YYYY-MM-DD
 }
 
 const isAmountKey = (key = '') => /amount/.test(String(key).toLowerCase())
@@ -579,16 +618,26 @@ export default function ImportBulk() {
   const [pageSize, setPageSize] = useState(20)
   const [duplicateMap, setDuplicateMap] = useState({}) // { rowIndex: { matches: [...], checking: false } }
   const [duplicateChecking, setDuplicateChecking] = useState(false)
+  const [conflictNavIndex, setConflictNavIndex] = useState(-1) // current conflict navigation position
   const [needsValidation, setNeedsValidation] = useState(false) // true when data changed since last validation
   const [uploadProgress, setUploadProgress] = useState(null) // { current, total, done, phase }
+  const [importResult, setImportResult] = useState(null) // null | { status, imported, disbursements, failedStudents, failedDisbursements }
   const [fileLoadingState, setFileLoadingState] = useState(null) // null | { phase, detail }
   const [showConfirmModal, setShowConfirmModal] = useState(false)
-  const [isImporting, setIsImporting] = useState(false) // true while import is in progress
+  const [isImporting, setIsImportingState] = useState(false) // true while import is in progress
+  const isImportingRef = useRef(false) // mirror for event handlers (avoids stale closures)
   const [showBlockerModal, setShowBlockerModal] = useState(false)
   const blockerProceedRef = useRef(null)
   const abortControllerRef = useRef(null) // to cancel ongoing import
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [recoveryData, setRecoveryData] = useState(null)
+
+  // Synchronously update both state and ref so the beforeunload handler
+  // always sees the latest value — no async useEffect gap.
+  const setIsImporting = useCallback((val) => {
+    isImportingRef.current = val
+    setIsImportingState(val)
+  }, [])
 
   // ── Navigation blocker (React Router) ──
   const blocker = useBlocker(
@@ -605,18 +654,24 @@ export default function ImportBulk() {
   }, [blocker.state, isImporting])
 
   // ── Browser close/refresh guard ──
+  // Registered ONCE on mount so the handler is never removed while the
+  // browser's native "Leave page?" dialog is open (removing it mid-dialog
+  // can cause some browsers to proceed with the navigation even if the
+  // user clicks Cancel).
   useEffect(() => {
-    if (!isImporting) return
-
-    // Show native "Leave page?" dialog
     const beforeUnloadHandler = (e) => {
+      if (!isImportingRef.current) return        // nothing to guard
       e.preventDefault()
+      // A non-empty string is required — some browsers (Chromium tab close)
+      // ignore a falsy / empty returnValue and skip the confirmation dialog.
       e.returnValue = 'Import is in progress. If you leave, some data may not be saved.'
       return e.returnValue
     }
 
-    // If the user actually leaves (confirmed refresh/close), clean up everything
+    // Cleanup only fires when the page actually unloads (user confirmed Leave)
     const unloadHandler = () => {
+      if (!isImportingRef.current) return
+
       // Abort in-flight requests
       if (abortControllerRef.current) {
         abortControllerRef.current.abort()
@@ -638,12 +693,12 @@ export default function ImportBulk() {
     }
 
     window.addEventListener('beforeunload', beforeUnloadHandler)
-    window.addEventListener('pagehide', unloadHandler)
+    window.addEventListener('unload', unloadHandler)
     return () => {
       window.removeEventListener('beforeunload', beforeUnloadHandler)
-      window.removeEventListener('pagehide', unloadHandler)
+      window.removeEventListener('unload', unloadHandler)
     }
-  }, [isImporting])
+  }, []) // ← empty deps: mount/unmount only
 
   // ── Check for interrupted import on mount ──
   useEffect(() => {
@@ -724,43 +779,91 @@ export default function ImportBulk() {
         const allRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true, blankrows: false })
 
         // ── Structure-based parsing: map columns strictly by position ──
-        const STUDENT_COL_COUNT = STRUCTURAL_COLUMN_ORDER.length // 43
-        const AY_BLOCK_SIZE = 1 + SEM_FIELDS.length * 2 // 1 CYL + 14×2 = 29
+        const STUDENT_COL_COUNT = STRUCTURAL_COLUMN_ORDER.length // 44 static student columns
+        const AY_BLOCK_SIZE = 1 + SEM_FIELDS.length * 2 // 1 CYL + 14×2 = 29 per AY
         const SEM_FIELD_KEYS = SEM_FIELDS.map(f => f.key)
 
-        // ── Step 1: Find header/data boundary ──
-        // Look for the first row (within the first 10) with enough filled cells.
-        const tolerance = 8
-        let structHeaderIdx = -1
-        for (let i = 0; i < Math.min(allRows.length, 10); i += 1) {
+        // ── Step 1: Find data start by scanning for SEQ = 1 ──
+        // The first column of the template is always "SEQ" and the first data row
+        // has value 1. This reliably skips any title rows, descriptions, blank
+        // rows, and multi-level header rows regardless of file layout.
+        let dataStart = -1
+        for (let i = 0; i < allRows.length; i += 1) {
           const row = allRows[i] || []
-          const nonEmpty = row.filter(c => String(c ?? '').trim() !== '').length
-          if (nonEmpty >= STUDENT_COL_COUNT - tolerance) {
-            structHeaderIdx = i
-            break
+          const firstCell = row[0]
+          // Check if first cell is the number 1 (or string "1")
+          if (firstCell !== null && firstCell !== undefined && String(firstCell).trim() === '1') {
+            // Verify this is actually a data row — it should have more than just "1"
+            const nonEmpty = row.filter(c => String(c ?? '').trim() !== '').length
+            if (nonEmpty >= 3) {
+              dataStart = i
+              break
+            }
           }
         }
 
-        if (structHeaderIdx < 0) {
-          message.error('Format invalid — column structure does not match the expected template.')
+        if (dataStart < 0) {
           setFileLoadingState(null)
+          Modal.error({
+            title: 'Invalid File Format',
+            content: 'Could not find the start of the data. The first column must be SEQ and the first data row must start with the number 1.',
+            centered: true,
+          })
           return
         }
 
-        // Does the found row look like a header (text-heavy) or actual data?
-        const candidateRow = allRows[structHeaderIdx] || []
-        const sampleCells = candidateRow.slice(0, STUDENT_COL_COUNT)
-        const textCells = sampleCells.filter(c => typeof c === 'string' && c.trim() !== '').length
-        const isHeaderRow = textCells / Math.max(sampleCells.length, 1) > 0.5
-        const dataStart = isHeaderRow ? structHeaderIdx + 1 : structHeaderIdx
+        // ── Step 2: Strict column structure validation ──
+        // Compute effective column count by finding the rightmost non-empty cell
+        // across header rows and first few data rows (ignores trailing empty columns Excel may add)
+        let effectiveTotalCols = 0
+        const colScanRows = allRows.slice(0, Math.min(dataStart + 10, allRows.length))
+        for (const scanRow of colScanRows) {
+          if (!Array.isArray(scanRow)) continue
+          for (let c = scanRow.length - 1; c >= 0; c--) {
+            if (String(scanRow[c] ?? '').trim() !== '') {
+              effectiveTotalCols = Math.max(effectiveTotalCols, c + 1)
+              break
+            }
+          }
+        }
 
-        // ── Step 2: Detect AY blocks from extra columns ──
-        const totalCols = Math.max(
-          ...allRows.slice(0, Math.min(dataStart + 1, allRows.length)).map(r => (r || []).length),
-          0,
-        )
-        const extraCols = totalCols - STUDENT_COL_COUNT
-        const ayBlockCount = extraCols > 0 ? Math.max(1, Math.round(extraCols / AY_BLOCK_SIZE)) : 0
+        // Validate: must have at least STUDENT_COL_COUNT columns
+        if (effectiveTotalCols < STUDENT_COL_COUNT) {
+          setFileLoadingState(null)
+          Modal.error({
+            title: 'Invalid File Format',
+            content: 'The file has fewer columns than expected. Please make sure you are using the correct template.',
+            centered: true,
+          })
+          return
+        }
+
+        const extraCols = effectiveTotalCols - STUDENT_COL_COUNT
+
+        // Validate: extra columns (beyond student columns) must form complete AY blocks
+        // Each AY block requires exactly AY_BLOCK_SIZE columns: 1 CYL + 14 First Sem + 14 Second Sem
+        if (extraCols > 0 && extraCols % AY_BLOCK_SIZE !== 0) {
+          const remainder = extraCols % AY_BLOCK_SIZE
+          const halfBlock = 1 + SEM_FIELDS.length // 15 = CYL + one semester
+          const isLikelyOneSemester = (remainder === halfBlock) || (remainder === SEM_FIELDS.length) || (extraCols === halfBlock)
+          setFileLoadingState(null)
+          if (isLikelyOneSemester) {
+            Modal.error({
+              title: 'Invalid File Format',
+              content: 'It looks like one of the Academic Years only has one semester. Each Academic Year must have both First Semester and Second Semester columns.',
+              centered: true,
+            })
+          } else {
+            Modal.error({
+              title: 'Invalid File Format',
+              content: 'The file has extra columns that don\'t match the expected format. Each Academic Year must be a complete block with Curriculum Year Level, First Semester, and Second Semester columns.',
+              centered: true,
+            })
+          }
+          return
+        }
+
+        const ayBlockCount = extraCols > 0 ? extraCols / AY_BLOCK_SIZE : 0
 
         // ── Step 3: Detect AY labels from the header rows ──
         const detectedAyLabels = []
@@ -833,15 +936,35 @@ export default function ImportBulk() {
         })
 
         if (dataRows.length === 0) {
-          message.error('Format invalid — no data rows found.')
           setFileLoadingState(null)
+          Modal.error({
+            title: 'Invalid File Format',
+            content: 'No data was found in the file. Make sure the file has student records starting with SEQ number 1.',
+            centered: true,
+          })
           return
         }
 
         setFileLoadingState({ phase: `Processing ${dataRows.length} rows...`, detail: `${mappedCount} columns mapped` })
         await new Promise(r => setTimeout(r, 0))
 
-        // ── Step 6: Normalize data rows ──
+        // ── Step 6: Detect date format from text dates ──
+        // Collect all text-based date cell values so we can determine MM-DD vs DD-MM
+        const textDateSamples = []
+        for (const row of dataRows) {
+          if (!Array.isArray(row)) continue
+          row.forEach((value, colIdx) => {
+            const field = colMap.get(colIdx)
+            if (!field || field.type !== 'date') return
+            if (typeof value === 'string' && value.trim()) {
+              textDateSamples.push(value)
+            }
+          })
+        }
+        const detectedDateFormat = detectDateFormat(textDateSamples)
+        console.log('Detected date format:', detectedDateFormat, `(from ${textDateSamples.length} text date samples)`)
+
+        // ── Step 7: Normalize data rows ──
         const isExcelError = (v) => typeof v === 'string' && /^#[A-Z0-9/]+[!?]?$/.test(v.trim())
 
         const normalized = dataRows.map((row, idx) => {
@@ -858,6 +981,10 @@ export default function ImportBulk() {
               if (cellVal === null || cellVal === undefined) cellVal = ''
               if (typeof cellVal === 'number' && field.type === 'date') {
                 cellVal = excelDateToISO(cellVal)
+              }
+              // Normalize text dates to ISO YYYY-MM-DD using detected format
+              if (field.type === 'date' && typeof cellVal === 'string' && cellVal.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(cellVal.trim())) {
+                cellVal = normalizeTextDate(cellVal, detectedDateFormat)
               }
               if (typeof cellVal === 'string') {
                 cellVal = cellVal.trim()
@@ -890,10 +1017,15 @@ export default function ImportBulk() {
         setData(normalized)
         validateData(normalized)
 
-        message.success(`Loaded ${normalized.length} records from ${file.name} | ${mappedCount} columns mapped${detectedAyLabels.length > 0 ? ` | AY: ${detectedAyLabels.join(', ')}` : ''}`)
+        setFileLoadingState(null)
       } catch (error) {
         console.error(error)
-        message.error('Error parsing file')
+        setFileLoadingState(null)
+        Modal.error({
+          title: 'Error Reading File',
+          content: 'Something went wrong while reading the file. Please check that you are uploading a valid Excel file using the correct template.',
+          centered: true,
+        })
       } finally {
         setFileLoadingState(null)
       }
@@ -1007,6 +1139,7 @@ export default function ImportBulk() {
     setDuplicateMap(newMap)
     setDuplicateChecking(false)
     setNeedsValidation(false)
+    setConflictNavIndex(-1)
   }, [])
 
   // --- Validation counts ---
@@ -1135,7 +1268,7 @@ export default function ImportBulk() {
     // Setup abort controller for cancellation
     abortControllerRef.current = new AbortController()
     setLoading(true)
-    setIsImporting(true)
+    setIsImporting(true)   // ref is set synchronously — beforeunload works immediately
     setUploadProgress({ current: 0, total: 1, done: false, phase: 'Checking for duplicates...' })
     saveImportProgress({ phase: 'resolve', current: 0, total: backendData.length, done: false })
 
@@ -1222,6 +1355,8 @@ export default function ImportBulk() {
       let totalDisbursementsImported = 0
       let totalDisbursementsFailed = 0
       const failedChunks = [] // Track which chunks failed for reporting
+      const failedStudentDetails = [] // { name, awardNumber } for students that failed
+      const failedDisbursementDetails = [] // { name, awardNumber, ay, semester } for disbursement errors
 
       for (let offset = 0; offset < totalStudents; offset += STUDENT_CHUNK_SIZE) {
         // Check if import was cancelled
@@ -1256,6 +1391,11 @@ export default function ImportBulk() {
             const errText = await response.text().catch(() => '')
             console.error(`Chunk ${chunkNum} failed:`, errText)
             failedChunks.push({ chunkNum, offset, count: studentChunk.length, error: errText || response.status })
+            // Record each student in the failed chunk
+            for (let i = offset; i < end; i++) {
+              const row = data[i]
+              if (row) failedStudentDetails.push({ name: `${row.surname || ''}, ${row.firstName || ''}`.trim(), awardNumber: row.awardNumber || '' })
+            }
             // Don't throw — continue with next chunk so we save as much as possible
           } else {
             const respJson = await response.json().catch(() => null)
@@ -1266,12 +1406,31 @@ export default function ImportBulk() {
             if (disbErrors.length > 0) {
               totalDisbursementsFailed += disbErrors.length
               console.warn(`Chunk ${chunkNum} disbursement errors:`, disbErrors)
+              // Map disbursement errors back to student names
+              const seqToStudent = new Map()
+              created.forEach((s) => {
+                if (s.seq) seqToStudent.set(String(s.seq), s)
+              })
+              disbErrors.forEach((de) => {
+                const student = de.student_seq ? seqToStudent.get(String(de.student_seq)) : null
+                failedDisbursementDetails.push({
+                  name: student ? `${student.surname || ''}, ${student.first_name || ''}`.trim() : 'Unknown',
+                  awardNumber: student?.award_number || '',
+                  ay: de.academic_year || '',
+                  semester: de.semester || '',
+                })
+              })
             }
           }
         } catch (err) {
           if (err.message === 'Import cancelled by user') throw err
           console.error(`Chunk ${chunkNum} error after retries:`, err)
           failedChunks.push({ chunkNum, offset, count: studentChunk.length, error: err.message })
+          // Record each student in the failed chunk
+          for (let i = offset; i < end; i++) {
+            const row = data[i]
+            if (row) failedStudentDetails.push({ name: `${row.surname || ''}, ${row.firstName || ''}`.trim(), awardNumber: row.awardNumber || '' })
+          }
         }
 
         setUploadProgress({ current: imported, total: totalStudents, done: false, phase: `Importing batch ${chunkNum}/${totalChunks}... (${imported}/${totalStudents} students)` })
@@ -1306,26 +1465,22 @@ export default function ImportBulk() {
       // --- Done ---
       setUploadProgress(prev => ({ ...prev, done: true }))
       saveImportProgress({ phase: 'done', current: imported, total: totalStudents, done: true, batchId: bulkBatchId, failedChunks, totalDisbursementsImported, totalDisbursementsFailed })
-      await new Promise(r => setTimeout(r, 1200))
 
       const failedStudentCount = failedChunks.reduce((sum, c) => sum + c.count, 0)
-      if (failedChunks.length > 0) {
-        message.warning(
-          `Import partially complete. ${imported} students and ${totalDisbursementsImported} disbursements saved. ` +
-          `${failedStudentCount} student(s) in ${failedChunks.length} batch(es) failed. ` +
-          `Check console for details or retry.`,
-          8
-        )
-      } else if (totalDisbursementsFailed > 0) {
-        message.warning(`Import done. ${imported} students saved, but ${totalDisbursementsFailed} disbursement(s) had errors.`, 6)
-      } else {
-        message.success(`Import complete! ${imported} students and ${totalDisbursementsImported} disbursements saved.`)
-      }
 
-      clearImportProgress()
-      handleClear()
-      setUploadProgress(null)
-      navigate('/students')
+      // Show result in the progress modal (replaces loading view)
+      setImportResult({
+        status: failedChunks.length > 0 ? 'partial' : totalDisbursementsFailed > 0 ? 'warning' : 'success',
+        imported,
+        totalStudents,
+        disbursementsImported: totalDisbursementsImported,
+        failedStudentCount,
+        failedStudentDetails,
+        totalDisbursementsFailed,
+        failedDisbursementDetails,
+      })
+
+      // Don't clear or navigate yet — user must click OK in the result view
     } catch (error) {
       console.error('Import error:', error)
       if (error.message === 'Import cancelled by user') {
@@ -1334,12 +1489,13 @@ export default function ImportBulk() {
         message.error(error.message || 'Something went wrong during import')
       }
       setUploadProgress(null)
+      setImportResult(null)
       // Don't clear import progress on error — keep it for recovery info
-    } finally {
       setLoading(false)
       setIsImporting(false)
       abortControllerRef.current = null
     }
+    // NOTE: no finally block — isImporting stays true until user clicks OK in result modal
   }
 
   // Cancel an ongoing import
@@ -1505,39 +1661,73 @@ export default function ImportBulk() {
               <>
                 <Tag color="green" icon={<CheckCircleOutlined />}>{validationCounts.valid} Valid</Tag>
                 {validationCounts.missingFields > 0 && (
-                  <Tag
-                    color="red"
-                    icon={<StopOutlined />}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      // Find the first row with missing_fields tag
-                      const firstConflictIndex = data.findIndex((_, idx) => {
-                        const info = duplicateMap[idx]
-                        return info?.tags?.includes('missing_fields')
-                      })
-                      if (firstConflictIndex === -1) return
-                      // Calculate which page it's on and navigate there
-                      const targetPage = Math.floor(firstConflictIndex / pageSize) + 1
-                      setCurrentPage(targetPage)
-                      // Scroll to the row after the page renders
-                      setTimeout(() => {
-                        const row = document.querySelector(`tr[data-row-index="${firstConflictIndex}"]`)
-                        if (row) {
-                          row.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                          // Brief highlight flash
-                          row.style.outline = '2px solid #ff4d4f'
-                          row.style.outlineOffset = '-1px'
-                          setTimeout(() => { row.style.outline = ''; row.style.outlineOffset = '' }, 2000)
-                        }
-                      }, 100)
-                    }}
-                  >
+                  <Tag color="red" icon={<StopOutlined />}>
                     {validationCounts.missingFields} Missing Fields
                   </Tag>
                 )}
                 {validationCounts.dbMatch > 0 && (
                   <Tag color="purple" icon={<WarningOutlined />}>{validationCounts.dbMatch} DB Match</Tag>
                 )}
+                {validationCounts.flagged > 0 && (() => {
+                  // Collect all conflict indices
+                  const conflictIndices = []
+                  data.forEach((_, idx) => {
+                    const info = duplicateMap[idx]
+                    const tags = info?.tags || []
+                    if (tags.includes('missing_fields') || tags.includes('db_match')) conflictIndices.push(idx)
+                  })
+                  if (conflictIndices.length === 0) return null
+
+                  const currentPos = conflictNavIndex >= 0 && conflictNavIndex < conflictIndices.length ? conflictNavIndex : -1
+
+                  const goToConflict = (pos) => {
+                    const targetIdx = conflictIndices[pos]
+                    if (targetIdx === undefined) return
+                    setConflictNavIndex(pos)
+                    const targetPage = Math.floor(targetIdx / pageSize) + 1
+                    setCurrentPage(targetPage)
+                    setTimeout(() => {
+                      const row = document.querySelector(`tr[data-row-index="${targetIdx}"]`)
+                      if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                        row.style.outline = '2px solid #ff4d4f'
+                        row.style.outlineOffset = '-1px'
+                        setTimeout(() => { row.style.outline = ''; row.style.outlineOffset = '' }, 2000)
+                      }
+                    }, 100)
+                  }
+
+                  return (
+                    <Space size={2} style={{ marginLeft: 4 }}>
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<LeftOutlined />}
+                        disabled={currentPos <= 0}
+                        onClick={() => goToConflict(currentPos <= 0 ? 0 : currentPos - 1)}
+                        style={{ padding: '0 4px', height: 22, fontSize: 11 }}
+                        title="Previous conflict"
+                      />
+                      <Button
+                        size="small"
+                        type="link"
+                        onClick={() => goToConflict(currentPos < 0 ? 0 : currentPos)}
+                        style={{ padding: '0 4px', height: 22, fontSize: 11 }}
+                      >
+                        {currentPos >= 0 ? `${currentPos + 1}/${conflictIndices.length}` : `Go to conflict`}
+                      </Button>
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<RightOutlined />}
+                        disabled={currentPos >= conflictIndices.length - 1}
+                        onClick={() => goToConflict(currentPos < 0 ? 0 : currentPos + 1)}
+                        style={{ padding: '0 4px', height: 22, fontSize: 11 }}
+                        title="Next conflict"
+                      />
+                    </Space>
+                  )
+                })()}
               </>
             )}
           </Space>
@@ -1964,17 +2154,35 @@ export default function ImportBulk() {
         )}
       </Modal>
 
-      {/* Upload Progress Modal */}
+      {/* Upload Progress / Import Result Modal */}
       <Modal
         open={!!uploadProgress}
         closable={false}
-        footer={null}
+        footer={importResult ? (
+          <div style={{ textAlign: 'right' }}>
+            <Button
+              type="primary"
+              onClick={() => {
+                clearImportProgress()
+                handleClear()
+                setUploadProgress(null)
+                setImportResult(null)
+                setLoading(false)
+                setIsImporting(false)
+                abortControllerRef.current = null
+                navigate('/students')
+              }}
+            >
+              OK
+            </Button>
+          </div>
+        ) : null}
         centered
         maskClosable={false}
-        width={420}
+        width={importResult ? 540 : 420}
         keyboard={false}
       >
-        {uploadProgress && (
+        {uploadProgress && !importResult && (
           <div style={{ textAlign: 'center', padding: '24px 0 8px' }}>
             {uploadProgress.done ? (
               <CheckCircleOutlined style={{ fontSize: 40, color: '#52c41a', marginBottom: 16 }} />
@@ -2014,6 +2222,71 @@ export default function ImportBulk() {
                 >
                   Cancel Import
                 </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {importResult && (
+          <div style={{ padding: '8px 0' }}>
+            {/* Title row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              {importResult.status === 'success' ? (
+                <CheckCircleOutlined style={{ fontSize: 28, color: '#52c41a' }} />
+              ) : (
+                <WarningOutlined style={{ fontSize: 28, color: importResult.status === 'partial' ? '#fa8c16' : '#faad14' }} />
+              )}
+              <div style={{ fontSize: 18, fontWeight: 600, color: '#1f2937' }}>
+                {importResult.status === 'success' ? 'Import Successful' : importResult.status === 'partial' ? 'Import Partially Complete' : 'Import Complete (with Warnings)'}
+              </div>
+            </div>
+
+            {/* Success summary */}
+            <div style={{ background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6, padding: '10px 14px', marginBottom: 12 }}>
+              <Text style={{ fontSize: 13 }}>
+                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 6 }} />
+                <strong>{importResult.imported}</strong> student{importResult.imported !== 1 ? 's' : ''} and <strong>{importResult.disbursementsImported}</strong> disbursement{importResult.disbursementsImported !== 1 ? 's' : ''} saved to the database.
+              </Text>
+            </div>
+
+            {/* Failed students */}
+            {importResult.failedStudentDetails?.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ background: '#fff7e6', border: '1px solid #ffd591', borderRadius: 6, padding: '10px 14px' }}>
+                  <Text style={{ fontSize: 13, color: '#ad6800', display: 'block', marginBottom: 8 }}>
+                    <WarningOutlined style={{ marginRight: 6 }} />
+                    <strong>{importResult.failedStudentCount}</strong> student{importResult.failedStudentCount !== 1 ? 's' : ''} failed to import:
+                  </Text>
+                  <div style={{ maxHeight: 160, overflowY: 'auto', fontSize: 12 }}>
+                    {importResult.failedStudentDetails.map((s, i) => (
+                      <div key={i} style={{ padding: '3px 0', borderBottom: i < importResult.failedStudentDetails.length - 1 ? '1px solid #ffe7ba' : 'none' }}>
+                        <strong>{s.name || '—'}</strong>
+                        {s.awardNumber && <span style={{ color: '#8c8c8c', marginLeft: 8 }}>{s.awardNumber}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Failed disbursements */}
+            {importResult.failedDisbursementDetails?.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ background: '#fff1f0', border: '1px solid #ffa39e', borderRadius: 6, padding: '10px 14px' }}>
+                  <Text style={{ fontSize: 13, color: '#a8071a', display: 'block', marginBottom: 8 }}>
+                    <WarningOutlined style={{ marginRight: 6 }} />
+                    <strong>{importResult.totalDisbursementsFailed}</strong> disbursement{importResult.totalDisbursementsFailed !== 1 ? 's' : ''} had errors:
+                  </Text>
+                  <div style={{ maxHeight: 160, overflowY: 'auto', fontSize: 12 }}>
+                    {importResult.failedDisbursementDetails.map((d, i) => (
+                      <div key={i} style={{ padding: '3px 0', borderBottom: i < importResult.failedDisbursementDetails.length - 1 ? '1px solid #ffccc7' : 'none' }}>
+                        <strong>{d.name || '—'}</strong>
+                        {d.awardNumber && <span style={{ color: '#8c8c8c', marginLeft: 8 }}>{d.awardNumber}</span>}
+                        {(d.ay || d.semester) && <span style={{ color: '#8c8c8c', marginLeft: 8 }}>({d.ay}{d.semester ? ` ${d.semester}` : ''})</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
           </div>
