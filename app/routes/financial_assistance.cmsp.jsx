@@ -42,98 +42,115 @@ export function meta() {
 
 
 function StatsCards({ financialAssistances = [], semester }) {
-  let totals;
+  const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
 
-  if (
-    financialAssistances.length === 1 &&
-    (financialAssistances[0].academic_year === 'All' ||
-      financialAssistances[0].Academic_year === 'All')
-  ) {
-    const row = financialAssistances[0];
-    totals = {
-      totalSlots: Number(row?.total_slot) || 0,
-      totalFilled: Number(row?.total_students) || 0,
-      totalUnfilled: Number(row?.unfilled_slot) || 0,
-    };
-  } else {
-    totals = {
-      totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
-      totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
-      totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
-    };
+  const totals = {
+    totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
+    totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
+    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
   }
 
-  const fillPct = totals.totalSlots > 0 ? Math.round((totals.totalFilled / totals.totalSlots) * 100) : 0;
-  const exceeded = totals.totalFilled > totals.totalSlots;
+  const exceeded = totals.totalFilled > totals.totalSlots && totals.totalSlots > 0
 
-  const formatProgramName = name => {
-    if (!name) return '';
-    return name
-      .replace(/SSP/g, '-SSP')       // turn FULLSSP → FULL SSP
-      .replace(/PESFA/g, '-PESFA')   // turn FULLPESFA → FULL PESFA
-      .replace(/GAD/g, '-GAD')       // turn FULLSSPGAD → FULL SSP GAD
-      .trim();
-  };
+  const statsConfig = [
+    {
+      title: 'Cumulative Slots',
+      value: totals.totalSlots,
+      icon: <ContactsOutlined />,
+      color: '#1890ff',
+      bgColor: '#e6f7ff',
+    },
+    {
+      title: `Disbursed (${semShort})`,
+      value: totals.totalFilled,
+      icon: exceeded ? <WarningOutlined /> : <TeamOutlined />,
+      color: exceeded ? '#ff4d4f' : '#52c41a',
+      bgColor: exceeded ? '#fff2f0' : '#f6ffed',
+      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
+    },
+    {
+      title: `Not Yet Disbursed (${semShort})`,
+      value: totals.totalUnfilled,
+      icon: <UserOutlined />,
+      color: '#faad14',
+      bgColor: '#fffbe6',
+      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
+    },
+  ]
 
   return (
-    <Card
-      hoverable
-      style={{
-        borderRadius: 12,
-        border: exceeded ? '1px solid #ff4d4f' : '1px solid #f0f0f0',
-        height: '100%',
-        transition: 'all 0.2s ease',
-      }}
-      bodyStyle={{ padding: 20 }}
-    >
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 3 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Text strong style={{ fontSize: 16, color: '#1a1a1a' }}>
-              {formatProgramName(financialAssistances[0]?.scholarship_program_name)}
-            </Text>
-            {exceeded && (
-              <Tag color="error" icon={<WarningOutlined />} style={{ fontSize: 11, margin: 0 }}>
-                Exceeded
-              </Tag>
-            )}
-          </div>
+    <>
+      {exceeded && (
+        <div style={{
+          background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8,
+          padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8,
+          marginBottom: 12,
+        }}>
+          <WarningOutlined style={{ color: '#ff4d4f', fontSize: 14 }} />
+          <Text style={{ color: '#cf1322', fontSize: 13 }}>
+            <strong>Slots Exceeded</strong> — Disbursed students exceed available slots
+          </Text>
         </div>
-        <RightOutlined style={{ color: '#bfbfbf', fontSize: 12 }} />
+      )}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+        {statsConfig.map((stat, index) => (
+          <Card
+            key={index}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              borderRadius: 12,
+              border: 'none',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            }}
+            bodyStyle={{
+              padding: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ overflow: 'hidden', flex: 1 }}>
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                {stat.title}
+              </Text>
+              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
+                {stat.value.toLocaleString()}
+              </Text>
+              {stat.percentage && (
+                <>
+                  <Progress percent={parseFloat(stat.percentage)}
+                    showInfo={false}
+                    strokeColor={stat.color}
+                    style={{ marginBottom: 8 }}
+                  />
+                  <Text style={{ fontSize: 12, color: stat.color }}>
+                    {stat.percentage}% of total
+                  </Text>
+                </>
+              )}
+            </div>
+            <div
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 12,
+                backgroundColor: stat.bgColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 20,
+                color: stat.color,
+                flexShrink: 0,
+              }}
+            >
+              {stat.icon}
+            </div>
+          </Card>
+        ))}
       </div>
-
-      {/* Progress */}
-      <Progress
-        percent={Math.min(fillPct, 100)}
-        size="small"
-        strokeColor={exceeded ? '#ff4d4f' : '#1890ff'}
-        trailColor="#f0f0f0"
-        showInfo={false}
-        style={{ marginBottom: 5 }}
-      />
-
-      {/* Stats row */}
-      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{totals.totalSlots}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#52c41a' }}>{totals.totalFilled}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Filled</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{totals.totalUnfilled}</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
-          <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
-        </div>
-      </div>
-    </Card>
-  );
+    </>
+  )
 }
 
 
@@ -142,7 +159,7 @@ export default function FinancialAssistanceCmsp() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [expandedSUC, setExpandedSUC] = useState(null)
-  const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [programFilter, setProgramFilter] = useState('All')
 
@@ -189,8 +206,16 @@ export default function FinancialAssistanceCmsp() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+  const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
+
+  useEffect(() => {
+    if (sortedYears.length > 0 && !sortedYears.includes(academicYearFilter)) {
+      setAcademicYearFilter(sortedYears[sortedYears.length - 1])
+    }
+  }, [sortedYears])
+
   const handleAcademicYearChange = value => {
-    setAcademicYearFilter(value || 'All')
+    setAcademicYearFilter(value)
   }
 
   const handleProgramChange = value => {
@@ -205,9 +230,6 @@ export default function FinancialAssistanceCmsp() {
     'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'
   ];
 
-
-  const sortedYears = [...academicYears].sort()
-
   const filteredCms = (() => {
     const allData = (Array.isArray(financialAssistances) ? financialAssistances : []).filter(p => {
       const programName = p?.scholarship_program_name?.toUpperCase().trim()
@@ -218,14 +240,16 @@ export default function FinancialAssistanceCmsp() {
       return true
     })
 
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      const yearIdx = sortedYears.indexOf(academicYearFilter)
-      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+    const targetYear = academicYearFilter
+
+    if (targetYear) {
+      const yearIdx = sortedYears.indexOf(targetYear)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [targetYear]
       const recordsUpTo = allData.filter(p => {
         const ay = p.academic_year || p.Academic_year
         return ay !== 'All' && yearsUpTo.includes(ay)
       })
-      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === academicYearFilter)
+      const currentRecords = allData.filter(p => (p.academic_year || p.Academic_year) === targetYear)
 
       const cumSlots = {}
       for (const r of recordsUpTo) {
@@ -245,7 +269,7 @@ export default function FinancialAssistanceCmsp() {
       for (const [k, slots] of Object.entries(cumSlots)) {
         if (!seen.has(k) && slots > 0) {
           const s = recordsUpTo.find(r => r.scholarship_program_name?.toUpperCase().trim() === k)
-          if (s) result.push({ ...s, academic_year: academicYearFilter, Academic_year: academicYearFilter, total_slot: slots, total_students: 0, unfilled_slot: slots })
+          if (s) result.push({ ...s, academic_year: targetYear, Academic_year: targetYear, total_slot: slots, total_students: 0, unfilled_slot: slots })
         }
       }
 
@@ -268,13 +292,13 @@ export default function FinancialAssistanceCmsp() {
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
               value={academicYearFilter}
-              allowClear
               size="middle"
-              style={{ width: 160 }}
+              style={{ width: 200 }}
               onChange={handleAcademicYearChange}
+              allowClear={false}
             >
-              {academicYears.map(year => (
-                <Option key={year} value={year}>{year}</Option>
+              {[...sortedYears].reverse().map((year, i) => (
+                <Option key={year} value={year}>{year}{i === 0 ? ' (Current)' : ''}</Option>
               ))}
             </Select>
             <Select
@@ -291,16 +315,7 @@ export default function FinancialAssistanceCmsp() {
       </div>
 
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
-        <Row gutter={[16, 16]}>
-          {allowedPrograms.map((program, index) => {
-            const programData = filteredCms.filter(p => p.scholarship_program_name === program);
-            return (
-              <Col key={index} span={6}>
-                <StatsCards financialAssistances={programData} semester={semesterFilter} />
-              </Col>
-            );
-          })}
-        </Row>
+        <StatsCards financialAssistances={filteredCms} semester={semesterFilter} />
       </div>
 
       <div style={{ padding: '12px 24px 0' }}>

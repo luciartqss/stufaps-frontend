@@ -36,13 +36,13 @@ const CODE_LABELS = {
 const PROGRAMS = [
   { key: 'cmsp', label: 'CMSP', fullName: 'CHED Merit Scholarship Program', link: '/financial_assistance/cmsp', codes: ['FULLSSP', 'HALFSSP', 'HALFSSPGAD', 'FULLSSPGAD', 'FULLPESFA', 'HALFPESFA', 'HALFPESFAGAD', 'FULLPESFAGAD'], color: '#1890ff' },
   { key: 'estatistikolar', label: 'Estatistikolar', fullName: 'CHED Scholarship for Future Statisticians', link: '/financial_assistance/estatistikolar', codes: ['ESTATISTIKOLAR', 'FSSP-ESTAT', 'HSSP-ESTAT', 'FULLESTAT', 'HALFESTAT'], slotCodes: ['FSSP-ESTAT', 'HSSP-ESTAT'], color: '#722ed1' },
-  { key: 'coscho', label: 'CoScho', fullName: 'Coconut Farmers and Farmworkers Scholarship', link: '/financial_assistance/CoScho', codes: ['COSCHO'], color: '#13c2c2' },
+  { key: 'coscho', label: 'CoScho', fullName: 'Scholarship Program for Coconut Farmers and their Families', link: '/financial_assistance/CoScho', codes: ['COSCHO'], color: '#13c2c2' },
   { key: 'msrs', label: 'MSRS', fullName: 'Medical Scholarship and Return Service', link: '/financial_assistance/msrs', codes: ['MSRS'], color: '#eb2f96' },
-  { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Sugarcane Industry Development Act Grant', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
-  { key: 'acef_giahep', label: 'ACEF-GIAHEP', fullName: 'Agricultural Competitiveness Enhancement Fund', link: '/financial_assistance/Acef_Giahep', codes: ['ACEFGIAHEP'], color: '#52c41a' },
-  { key: 'mtp_sp', label: 'MTP-SP', fullName: 'Medical Technologists and Pharmacists Scholarship', link: '/financial_assistance/Mtp_Sp', codes: ['MTPSP'], color: '#2f54eb' },
-  { key: 'smart', label: 'SMART', fullName: 'Student Monetary Assistance for Recovery and Transition', link: '/financial_assistance/Cgms_Sucs', codes: ['SMART'], color: '#f5222d' },
-  { key: 'snplp', label: 'SNPLP', fullName: 'Student Nurses Licensure Preparation', link: '/financial_assistance/Snplp', codes: ['SNPLP'], color: '#a0d911' },
+  { key: 'sida_sgp', label: 'SIDA-SGP', fullName: 'Scholarship for Children and Dependents of Sugarcane Industry Workers and Small Sugarcane Farmers', link: '/financial_assistance/Sida_Sgp', codes: ['SIDASGP'], color: '#fa8c16' },
+  { key: 'acef_giahep', label: 'ACEF-GIAHEP', fullName: 'Agricultural Competitiveness Enhancement Fund-Grants-In-Aid for Higher Education Program', link: '/financial_assistance/Acef_Giahep', codes: ['ACEFGIAHEP'], color: '#52c41a' },
+  { key: 'mtp_sp', label: 'MTP-SP', fullName: 'Medical Technologist and Pharmacists Scholarship', link: '/financial_assistance/Mtp_Sp', codes: ['MTPSP'], color: '#2f54eb' },
+  { key: 'smart', label: 'SMART', fullName: 'Student Monetary Assistance for Recovery and Transition', link: '/financial_assistance/Smart', codes: ['SMART'], color: '#f5222d' },
+  { key: 'snplp', label: 'SNPLP', fullName: 'Study Now Pay Later Program', link: '/financial_assistance/Snplp', codes: ['SNPLP'], color: '#a0d911' },
 ]
 
 /* ── Helpers ── */
@@ -72,6 +72,7 @@ function pct(part, whole) {
 function SummaryCards({ data, academicYear, semester }) {
   const isSpecificYear = academicYear && academicYear !== 'All'
   const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
+  const exceeded = data.filled > data.slots && data.slots > 0
 
   const slotsTitle = isSpecificYear ? 'Cumulative Slots' : 'Total Slots'
   const filledTitle = `Disbursed (${semShort})`
@@ -79,7 +80,7 @@ function SummaryCards({ data, academicYear, semester }) {
 
   const cards = [
     { title: slotsTitle, value: data.slots, icon: isSpecificYear ? <CalendarOutlined /> : <ContactsOutlined />, color: '#1890ff', bg: '#e6f7ff' },
-    { title: filledTitle, value: data.filled, icon: <TeamOutlined />, color: '#52c41a', bg: '#f6ffed', pct: pct(data.filled, data.slots) },
+    { title: filledTitle, value: data.filled, icon: exceeded ? <WarningOutlined /> : <TeamOutlined />, color: exceeded ? '#ff4d4f' : '#52c41a', bg: exceeded ? '#fff2f0' : '#f6ffed', pct: pct(data.filled, data.slots) },
     { title: unfilledTitle, value: data.unfilled, icon: <UserOutlined />, color: '#faad14', bg: '#fffbe6', pct: pct(data.unfilled, data.slots) },
   ]
 
@@ -403,7 +404,7 @@ export default function FinancialAssistanceIndex() {
   const isMasterAdmin = permissions?.role === 'master_admin'
   const [financialAssistances, setFinancialAssistances] = useState([])
   const [loading, setLoading] = useState(true)
-  const [academicYearFilter, setAcademicYearFilter] = useState('All')
+  const [academicYearFilter, setAcademicYearFilter] = useState(null)
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
   const [othersData, setOthersData] = useState({ total: 0, programs: [] })
@@ -428,24 +429,32 @@ export default function FinancialAssistanceIndex() {
 
   useEffect(() => { fetchPrograms() }, [fetchPrograms])
 
-  // Sort academic years so we can compute cumulative slots up to the selected year
+  // Sort academic years ascending for cumulative slot computation
   const sortedYears = useMemo(() => [...academicYears].sort(), [academicYears])
 
-  const filteredAssistances = useMemo(() => {
-    if (academicYearFilter && academicYearFilter !== 'All') {
-      // Determine all years up to (and including) the selected year
-      const yearIdx = sortedYears.indexOf(academicYearFilter)
-      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [academicYearFilter]
+  // Auto-select latest year when data loads or filter is cleared
+  useEffect(() => {
+    if (sortedYears.length > 0 && !sortedYears.includes(academicYearFilter)) {
+      setAcademicYearFilter(sortedYears[sortedYears.length - 1])
+    }
+  }, [sortedYears])
 
-      // Records from all years up to selected (for cumulative slot totals)
+  const filteredAssistances = useMemo(() => {
+    const targetYear = academicYearFilter
+
+    if (targetYear) {
+      const yearIdx = sortedYears.indexOf(targetYear)
+      const yearsUpTo = yearIdx >= 0 ? sortedYears.slice(0, yearIdx + 1) : [targetYear]
+
+      // Records from all years up to target (for cumulative slot totals)
       const recordsUpTo = financialAssistances.filter(p => {
         const ay = p.academic_year || p.Academic_year
         return ay !== 'All' && yearsUpTo.includes(ay)
       })
 
-      // Records from the selected year only (for student / disbursement counts)
+      // Records from the target year only (for student / disbursement counts)
       const currentRecords = financialAssistances.filter(
-        p => (p.academic_year || p.Academic_year) === academicYearFilter
+        p => (p.academic_year || p.Academic_year) === targetYear
       )
 
       // Sum slots per program across all years up to selected
@@ -472,8 +481,8 @@ export default function FinancialAssistanceIndex() {
           if (sample) {
             result.push({
               ...sample,
-              academic_year: academicYearFilter,
-              Academic_year: academicYearFilter,
+              academic_year: targetYear,
+              Academic_year: targetYear,
               total_slot: slots,
               total_students: 0,
               unfilled_slot: slots,
@@ -540,13 +549,12 @@ export default function FinancialAssistanceIndex() {
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
               value={academicYearFilter}
-              onChange={v => setAcademicYearFilter(v || 'All')}
-              style={{ width: 150 }}
+              onChange={v => setAcademicYearFilter(v)}
+              style={{ width: 200 }}
               allowClear={false}
             >
-              <Option value="All">All Years</Option>
-              {academicYears.map(y => (
-                <Option key={y} value={y}>{y}</Option>
+              {[...sortedYears].reverse().map((y, i) => (
+                <Option key={y} value={y}>{y}{i === 0 ? ' (Current)' : ''}</Option>
               ))}
             </Select>
             <Select
@@ -585,7 +593,7 @@ export default function FinancialAssistanceIndex() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <InfoCircleOutlined style={{ color: '#faad14', fontSize: 16 }} />
               <Text style={{ color: '#ad6800', fontSize: 13 }}>
-                <strong>{noSlotsPrograms.length} program{noSlotsPrograms.length > 1 ? 's' : ''}</strong> with no slots configured{academicYearFilter !== 'All' ? ` for AY ${academicYearFilter}` : ''}: {noSlotsPrograms.map(p => p.label).join(', ')}
+                <strong>{noSlotsPrograms.length} program{noSlotsPrograms.length > 1 ? 's' : ''}</strong> with no slots configured{academicYearFilter ? ` for AY ${academicYearFilter}` : ''}: {noSlotsPrograms.map(p => p.label).join(', ')}
               </Text>
             </div>
             <Button size="small" type="link" onClick={() => setSlotsModalOpen(true)} style={{ color: '#ad6800', fontWeight: 500 }}>
