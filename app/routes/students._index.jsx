@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined } from '@ant-design/icons'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown } from 'antd'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
@@ -330,6 +330,7 @@ export default function StudentsIndex() {
   const [specialGroupFilter, setSpecialGroupFilter] = useState(searchParams.get('specialGroup') || null)
   const [authorityTypeFilter, setAuthorityTypeFilter] = useState(searchParams.get('authorityType') || null)
   const [awardYearFilter, setAwardYearFilter] = useState(searchParams.get('awardYear') || null)
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'name_asc')
   const [pagination, setPagination] = useState({
     current: parseInt(searchParams.get('page'), 10) || 1,
     pageSize: parseInt(searchParams.get('pageSize'), 10) || 10,
@@ -356,12 +357,15 @@ export default function StudentsIndex() {
       specialGroup: overrides.specialGroup ?? specialGroupFilter,
       authorityType: overrides.authorityType ?? authorityTypeFilter,
       awardYear: overrides.awardYear ?? awardYearFilter,
+      sortBy: overrides.sortBy ?? sortBy,
       page: overrides.page ?? pagination.current,
       pageSize: overrides.pageSize ?? pagination.pageSize,
     }
     const params = new URLSearchParams()
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== null && value !== undefined && value !== '' && value !== 1 && key !== 'pageSize') {
+        // Don't persist default sort
+        if (key === 'sortBy' && value === 'name_asc') return
         params.set(key, value)
       }
       // Always keep pageSize if not default
@@ -424,6 +428,7 @@ export default function StudentsIndex() {
       specialGroup: overrides.specialGroup ?? specialGroupFilter,
       authorityType: overrides.authorityType ?? authorityTypeFilter,
       awardYear: overrides.awardYear ?? awardYearFilter,
+      sortBy: overrides.sortBy ?? sortBy,
       page: overrides.page ?? pagination.current,
       pageSize: overrides.pageSize ?? pagination.pageSize,
     }
@@ -678,7 +683,7 @@ export default function StudentsIndex() {
 
   // Handle "Add Student" button click
   const handleAddStudent = async () => {
-    navigate('/students/create')
+    navigate('/students/bulk')
   }
 
   // Build rows for export
@@ -913,32 +918,11 @@ export default function StudentsIndex() {
     fetchStudents({ search: value, page: 1 })
   }
 
-  // Handle status filter
-  const handleStatusChange = (value) => {
-    setStatusFilter(value)
-    syncSearchParams({ status: value, page: 1 })
-    applyFilters({ status: value })
-  }
-
-  // Handle program filter
-  const handleProgramChange = (value) => {
-    setProgramFilter(value)
-    syncSearchParams({ program: value, page: 1 })
-    applyFilters({ program: value })
-  }
-
-  // Handle academic year filter
-  const handleAcademicYearChange = (value) => {
-    setAcademicYearFilter(value)
-    syncSearchParams({ academicYear: value, page: 1 })
-    applyFilters({ academicYear: value })
-  }
-
-  // Handle semester filter
-  const handleSemesterChange = (value) => {
-    setSemesterFilter(value)
-    syncSearchParams({ semester: value, page: 1 })
-    applyFilters({ semester: value })
+  // Generic filter change handler — applies immediately
+  const handleFilterChange = (key, setter) => (value) => {
+    setter(value)
+    syncSearchParams({ [key]: value, page: 1 })
+    applyFilters({ [key]: value })
   }
 
   const handleResetFilters = () => {
@@ -956,6 +940,7 @@ export default function StudentsIndex() {
     setSpecialGroupFilter(null)
     setAuthorityTypeFilter(null)
     setAwardYearFilter(null)
+    setSortBy('name_asc')
     setSearchParams({}, { replace: true })
     fetchStudents({
       search: '',
@@ -972,16 +957,30 @@ export default function StudentsIndex() {
       specialGroup: null,
       authorityType: null,
       awardYear: null,
+      sortBy: 'name_asc',
       page: 1,
     })
     setFiltersDrawerOpen(false)
   }
 
-  const handleApplyDrawerFilters = () => {
-    syncSearchParams({ page: 1 })
-    applyFilters({})
-    setFiltersDrawerOpen(false)
-  }
+  // Count active filters (excluding search, which is always visible)
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (statusFilter) count++
+    if (programFilter) count++
+    if (academicYearFilter) count++
+    if (semesterFilter) count++
+    if (awardYearFilter) count++
+    if (courseFilter) count++
+    if (regionFilter) count++
+    if (provinceFilter) count++
+    if (cityFilter) count++
+    if (schoolFilter) count++
+    if (priorityFilter) count++
+    if (specialGroupFilter) count++
+    if (authorityTypeFilter) count++
+    return count
+  }, [statusFilter, programFilter, academicYearFilter, semesterFilter, awardYearFilter, courseFilter, regionFilter, provinceFilter, cityFilter, schoolFilter, priorityFilter, specialGroupFilter, authorityTypeFilter])
 
   // Handle pagination change
   const handleTableChange = (page, pageSize) => {
@@ -1044,149 +1043,82 @@ export default function StudentsIndex() {
     <div style={{ padding: 0, margin: 0 }}>
       <Title level={2} style={{ margin: '0 0 6px 0' }}>Students</Title>
 
-      <Space direction="vertical" style={{ width: '100%', marginBottom: '6px' }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          <Space wrap>
-            <Popover content={searchInstructions} title="How to use Search" trigger="click">
-              <Button
-                icon={<InfoCircleOutlined />}
-                size="middle"
-                style={{ marginRight: 4, padding: 0, width: 32, height: 32, minWidth: 32 }}
-                type="text"
-              />
-            </Popover>
-            <Search
-              placeholder="Search students..."
-              allowClear
-              enterButton="Search"
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 6 }}>
+        <Space wrap>
+          <Popover content={searchInstructions} title="How to use Search" trigger="click">
+            <Button
+              icon={<InfoCircleOutlined />}
               size="middle"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onSearch={handleSearch}
-              style={{ width: 300 }}
+              style={{ padding: 0, width: 32, height: 32, minWidth: 32 }}
+              type="text"
             />
-            <Select
-              placeholder="Status"
-              allowClear
-              size="middle"
-              style={{ width: 140 }}
-              value={statusFilter}
-              onChange={handleStatusChange}
-            >
-              {statusValues.map((status) => (
-                <Option key={status} value={status}>
-                  {status}
-                </Option>
-              ))}
-            </Select>
-            <Select
-              placeholder="Program"
-              allowClear
-              size="middle"
-              style={{ width: 150 }}
-              onChange={handleProgramChange}
-              value={programFilter}
-            >
-              {scholarshipPrograms.map((program) => {
-                const isAssigned = isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(program)
-                return (
-                  <Option key={program} value={program}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {program}
-                      {!isMasterAdmin && isAssigned && (
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
-                      )}
-                    </span>
-                  </Option>
-                )
-              })}
-            </Select>
-            <Select
-              placeholder="Academic Year"
-              allowClear
-              showSearch
-              size="middle"
-              style={{ width: 160 }}
-              value={academicYearFilter}
-              onChange={handleAcademicYearChange}
-            >
-              {academicYears.map((year) => {
-                const isAssigned = isMasterAdmin || assignedYears.includes('ALL') || assignedYears.includes(year)
-                return (
-                  <Option key={year} value={year}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {year}
-                      {!isMasterAdmin && isAssigned && (
-                        <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
-                      )}
-                    </span>
-                  </Option>
-                )
-              })}
-            </Select>
-            <Select
-              placeholder="Semester"
-              allowClear
-              size="middle"
-              style={{ width: 140 }}
-              value={semesterFilter}
-              onChange={handleSemesterChange}
-            >
-              {semesters.map((sem) => (
-                <Option key={sem} value={sem}>{sem}</Option>
-              ))}
-            </Select>
-            <Button
-              size="middle"
-              icon={<FilterOutlined />}
-              onClick={() => setFiltersDrawerOpen(true)}
-            >
-              More Filters
+          </Popover>
+          <Search
+            placeholder="Search students..."
+            allowClear
+            enterButton="Search"
+            size="middle"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onSearch={handleSearch}
+            style={{ width: 300 }}
+          />
+          <Dropdown
+            menu={{
+              items: [
+                { key: 'name_asc', label: 'Name A → Z' },
+                { key: 'name_desc', label: 'Name Z → A' },
+                { key: 'award_asc', label: 'Award No. ↑' },
+                { key: 'award_desc', label: 'Award No. ↓' },
+              ],
+              selectedKeys: [sortBy],
+              onClick: ({ key }) => {
+                setSortBy(key)
+                syncSearchParams({ sortBy: key, page: 1 })
+                fetchStudents({ sortBy: key, page: 1 })
+              },
+            }}
+            trigger={['click']}
+          >
+            <Button size="middle" icon={<SortAscendingOutlined />}>
+              Sort
             </Button>
-          </Space>
-          <Space>
-            <Button
-              type="default"
-              size="middle"
-              icon={<FilePdfOutlined />}
-              style={{
-                color: '#dc2626',
-                borderColor: '#dc2626',
-                fontWeight: 500,
-                width: 160
-              }}
-              onClick={handlePrintMasterlist}
-            >
-              Print masterlist
-            </Button>
-            <Button
-              type="default"
-              size="middle"
-              icon={<FileExcelOutlined />}
-              style={{
-                backgroundColor: '#ecfdf3',
-                color: '#16a34a',
-                borderColor: '#16a34a',
-                fontWeight: 600,
-                width: 140,
-              }}
-              onClick={handleExtractExcel}
-            >
-              Extract Excel
-            </Button>
-            {canAdd && (
-              <Button
-                type="primary"
-                size="middle"
-                style={{ width: 120 }}
-                onClick={handleAddStudent}
-              >
-                Add Student
-              </Button>
-            )}
-          </Space>
+          </Dropdown>
+          <Button
+            size="middle"
+            icon={<FilterOutlined />}
+            onClick={() => setFiltersDrawerOpen(true)}
+            style={activeFilterCount > 0 ? { borderColor: '#1677ff', color: '#1677ff' } : {}}
+          >
+            Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+          </Button>
         </Space>
-      </Space>
+        <Space wrap>
+          <Button
+            type="default"
+            size="middle"
+            icon={<FilePdfOutlined />}
+            style={{ color: '#dc2626', borderColor: '#dc2626', fontWeight: 500 }}
+            onClick={handlePrintMasterlist}
+          >
+            Print masterlist
+          </Button>
+          <Button
+            type="default"
+            size="middle"
+            icon={<FileExcelOutlined />}
+            style={{ backgroundColor: '#ecfdf3', color: '#16a34a', borderColor: '#16a34a', fontWeight: 600 }}
+            onClick={handleExtractExcel}
+          >
+            Extract Excel
+          </Button>
+          {canAdd && (
+            <Button type="primary" size="middle" onClick={handleAddStudent}>
+              Add Student
+            </Button>
+          )}
+        </Space>
+      </div>
 
       {/* Active Filters Summary */}
       {activeFilters.length > 0 && (
@@ -1327,20 +1259,55 @@ export default function StudentsIndex() {
       <Drawer
         title="Filters"
         placement="right"
-        width={420}
+        width={380}
         onClose={() => setFiltersDrawerOpen(false)}
         open={filtersDrawerOpen}
         extra={(
-          <Space>
-            <Button onClick={handleResetFilters}>Reset</Button>
-            <Button type="primary" onClick={handleApplyDrawerFilters}>Apply</Button>
-          </Space>
+          <Button size="small" onClick={handleResetFilters} disabled={activeFilterCount === 0}>
+            Reset all
+          </Button>
         )}
       >
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space direction="vertical" style={{ width: '100%' }} size={16}>
+          {/* Scholarship & Status */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Academic & Term</div>
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#8b5cf6', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Scholarship & Status</div>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Select
+                placeholder="Status"
+                allowClear
+                size="middle"
+                style={{ width: '100%' }}
+                value={statusFilter}
+                onChange={handleFilterChange('status', setStatusFilter)}
+              >
+                {statusValues.map((status) => (
+                  <Option key={status} value={status}>{status}</Option>
+                ))}
+              </Select>
+              <Select
+                placeholder="Scholarship Program"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: '100%' }}
+                value={programFilter}
+                onChange={handleFilterChange('program', setProgramFilter)}
+              >
+                {scholarshipPrograms.map((program) => {
+                  const isAssigned = isMasterAdmin || assignedPrograms.includes('ALL') || assignedPrograms.includes(program)
+                  return (
+                    <Option key={program} value={program}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {program}
+                        {!isMasterAdmin && isAssigned && (
+                          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                        )}
+                      </span>
+                    </Option>
+                  )
+                })}
+              </Select>
               <Select
                 placeholder="Award Year"
                 allowClear
@@ -1348,10 +1315,52 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={awardYearFilter}
-                onChange={(value) => setAwardYearFilter(value)}
+                onChange={handleFilterChange('awardYear', setAwardYearFilter)}
               >
                 {awardYears.map((year) => (
                   <Option key={year} value={year}>{year}</Option>
+                ))}
+              </Select>
+            </Space>
+          </div>
+
+          {/* Academic & Term */}
+          <div>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#0891b2', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Academic & Term</div>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Select
+                placeholder="Academic Year"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: '100%' }}
+                value={academicYearFilter}
+                onChange={handleFilterChange('academicYear', setAcademicYearFilter)}
+              >
+                {academicYears.map((year) => {
+                  const isAssigned = isMasterAdmin || assignedYears.includes('ALL') || assignedYears.includes(year)
+                  return (
+                    <Option key={year} value={year}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {year}
+                        {!isMasterAdmin && isAssigned && (
+                          <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                        )}
+                      </span>
+                    </Option>
+                  )
+                })}
+              </Select>
+              <Select
+                placeholder="Semester"
+                allowClear
+                size="middle"
+                style={{ width: '100%' }}
+                value={semesterFilter}
+                onChange={handleFilterChange('semester', setSemesterFilter)}
+              >
+                {semesters.map((sem) => (
+                  <Option key={sem} value={sem}>{sem}</Option>
                 ))}
               </Select>
               <Select
@@ -1361,7 +1370,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={courseFilter}
-                onChange={(value) => setCourseFilter(value)}
+                onChange={handleFilterChange('course', setCourseFilter)}
               >
                 {courses.map((course) => (
                   <Option key={course} value={course}>{course}</Option>
@@ -1370,18 +1379,32 @@ export default function StudentsIndex() {
             </Space>
           </div>
 
+          {/* School & Location */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>School & Location</div>
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#16a34a', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>School & Location</div>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Select
+                placeholder="School / Institution"
+                allowClear
+                showSearch
+                size="middle"
+                style={{ width: '100%' }}
+                value={schoolFilter}
+                onChange={handleFilterChange('school', setSchoolFilter)}
+              >
+                {schools.map((school) => (
+                  <Option key={school} value={school}>{school}</Option>
+                ))}
+              </Select>
               <Space wrap style={{ width: '100%' }}>
                 <Select
                   placeholder="Region"
                   allowClear
                   showSearch
                   size="middle"
-                  style={{ width: 185 }}
+                  style={{ width: 170 }}
                   value={regionFilter}
-                  onChange={(value) => setRegionFilter(value)}
+                  onChange={handleFilterChange('region', setRegionFilter)}
                 >
                   {regions.map((region) => (
                     <Option key={region} value={region}>{region}</Option>
@@ -1392,9 +1415,9 @@ export default function StudentsIndex() {
                   allowClear
                   showSearch
                   size="middle"
-                  style={{ width: 185 }}
+                  style={{ width: 170 }}
                   value={provinceFilter}
-                  onChange={(value) => setProvinceFilter(value)}
+                  onChange={handleFilterChange('province', setProvinceFilter)}
                 >
                   {provinces.map((province) => (
                     <Option key={province} value={province}>{province}</Option>
@@ -1408,39 +1431,27 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={cityFilter}
-                onChange={(value) => setCityFilter(value)}
+                onChange={handleFilterChange('city', setCityFilter)}
               >
                 {cities.map((city) => (
                   <Option key={city} value={city}>{city}</Option>
                 ))}
               </Select>
-              <Select
-                placeholder="School / Institution Name"
-                allowClear
-                showSearch
-                size="middle"
-                style={{ width: '100%' }}
-                value={schoolFilter}
-                onChange={(value) => setSchoolFilter(value)}
-              >
-                {schools.map((school) => (
-                  <Option key={school} value={school}>{school}</Option>
-                ))}
-              </Select>
             </Space>
           </div>
 
+          {/* Tags & Authority */}
           <div>
-            <div style={{ fontWeight: 600, marginBottom: 8 }}>Scholarship & Tags</div>
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#d97706', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>Tags & Authority</div>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
               <Space wrap style={{ width: '100%' }}>
                 <Select
                   placeholder="Priority Program"
                   allowClear
                   size="middle"
-                  style={{ width: 185 }}
+                  style={{ width: 170 }}
                   value={priorityFilter}
-                  onChange={(value) => setPriorityFilter(value)}
+                  onChange={handleFilterChange('priority', setPriorityFilter)}
                 >
                   {priorities.map((p) => (
                     <Option key={String(p)} value={p}>{String(p)}</Option>
@@ -1451,9 +1462,9 @@ export default function StudentsIndex() {
                   allowClear
                   showSearch
                   size="middle"
-                  style={{ width: 185 }}
+                  style={{ width: 170 }}
                   value={specialGroupFilter}
-                  onChange={(value) => setSpecialGroupFilter(value)}
+                  onChange={handleFilterChange('specialGroup', setSpecialGroupFilter)}
                 >
                   {specialGroups.map((group) => (
                     <Option key={group} value={group}>{group}</Option>
@@ -1467,7 +1478,7 @@ export default function StudentsIndex() {
                 size="middle"
                 style={{ width: '100%' }}
                 value={authorityTypeFilter}
-                onChange={(value) => setAuthorityTypeFilter(value)}
+                onChange={handleFilterChange('authorityType', setAuthorityTypeFilter)}
               >
                 {authorityTypes.map((type) => (
                   <Option key={type} value={type}>{type}</Option>
