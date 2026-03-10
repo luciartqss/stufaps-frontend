@@ -5,7 +5,7 @@ import {
   TeamOutlined, ContactsOutlined, UserOutlined,
   WarningOutlined, CheckOutlined,
   RightOutlined, QuestionCircleOutlined, FilterOutlined,
-  InfoCircleOutlined, CalendarOutlined, SettingOutlined,
+  InfoCircleOutlined, CalendarOutlined, SettingOutlined, EyeOutlined,
 } from '@ant-design/icons'
 
 import { API_BASE } from '../lib/config'
@@ -117,8 +117,8 @@ function SummaryCards({ data, academicYear, semester }) {
   )
 }
 
-/* ── Manage Slots Modal ── */
-function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSaved }) {
+/* ── Manage / View Slots Modal ── */
+function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSaved, readOnly = false }) {
   const [edits, setEdits] = useState({})
   const [saving, setSaving] = useState(false)
 
@@ -249,6 +249,13 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
         const isMissing = val === null || val === 0
         const ek = editKey(record.code, year)
         const isEdited = ek in edits && edits[ek] !== getSlot(record.code, year)
+        if (readOnly) {
+          return (
+            <Text style={{ fontSize: 13, color: isMissing ? '#d9d9d9' : undefined }}>
+              {val != null ? val.toLocaleString() : '—'}
+            </Text>
+          )
+        }
         return (
           <InputNumber
             size="small"
@@ -272,9 +279,9 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
     <Modal
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <SettingOutlined />
-          <span>Manage Annual Slots</span>
-          {missingCount > 0 && (
+          {readOnly ? <EyeOutlined /> : <SettingOutlined />}
+          <span>{readOnly ? 'Annual Slots' : 'Manage Annual Slots'}</span>
+          {!readOnly && missingCount > 0 && (
             <Tag color="warning" style={{ margin: 0, fontSize: 11 }}>
               {missingCount} missing
             </Tag>
@@ -285,24 +292,28 @@ function ManageSlotsModal({ open, onClose, academicYears, allAssistances, onSave
       onCancel={onClose}
       width={Math.min(340 + academicYears.length * 120, 900)}
       footer={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: '#8c8c8c' }}>
-            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#fff7e6', border: '1px solid #ffc53d', borderRadius: 2, marginRight: 4 }} />No slots</span>
-            <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#e6f7ff', border: '1px solid #1890ff', borderRadius: 2, marginRight: 4 }} />Edited</span>
+        readOnly ? (
+          <Button onClick={onClose}>Close</Button>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11, color: '#8c8c8c' }}>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#fff7e6', border: '1px solid #ffc53d', borderRadius: 2, marginRight: 4 }} />No slots</span>
+              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#e6f7ff', border: '1px solid #1890ff', borderRadius: 2, marginRight: 4 }} />Edited</span>
+            </div>
+            <Space>
+              <Button onClick={onClose}>Cancel</Button>
+              <Button
+                type="primary"
+                loading={saving}
+                disabled={changedEntries.length === 0}
+                onClick={handleSave}
+                icon={<CheckOutlined />}
+              >
+                Save {changedEntries.length > 0 ? `(${changedEntries.length})` : ''}
+              </Button>
+            </Space>
           </div>
-          <Space>
-            <Button onClick={onClose}>Cancel</Button>
-            <Button
-              type="primary"
-              loading={saving}
-              disabled={changedEntries.length === 0}
-              onClick={handleSave}
-              icon={<CheckOutlined />}
-            >
-              Save {changedEntries.length > 0 ? `(${changedEntries.length})` : ''}
-            </Button>
-          </Space>
-        </div>
+        )
       }
     >
       {academicYears.length === 0 ? (
@@ -536,7 +547,7 @@ export default function FinancialAssistanceIndex() {
             <Text style={{ color: '#6b7280', fontSize: 14 }}>CHED Memorandum Order</Text>
           </div>
           <Space size={12}>
-            {isMasterAdmin && (
+            {isMasterAdmin ? (
               <Badge count={noSlotsPrograms.length} size="small" offset={[-4, 0]}>
                 <Button
                   icon={<SettingOutlined />}
@@ -545,6 +556,13 @@ export default function FinancialAssistanceIndex() {
                   Manage Slots
                 </Button>
               </Badge>
+            ) : (
+              <Button
+                icon={<EyeOutlined />}
+                onClick={() => setSlotsModalOpen(true)}
+              >
+                View Slots
+              </Button>
             )}
             <FilterOutlined style={{ color: '#6b7280' }} />
             <Select
@@ -647,16 +665,15 @@ export default function FinancialAssistanceIndex() {
         )}
       </div>
 
-      {/* Manage Slots Modal */}
-      {isMasterAdmin && (
-        <ManageSlotsModal
-          open={slotsModalOpen}
-          onClose={() => setSlotsModalOpen(false)}
-          academicYears={academicYears}
-          allAssistances={financialAssistances}
-          onSaved={fetchPrograms}
-        />
-      )}
+      {/* Manage / View Slots Modal */}
+      <ManageSlotsModal
+        open={slotsModalOpen}
+        onClose={() => setSlotsModalOpen(false)}
+        academicYears={academicYears}
+        allAssistances={financialAssistances}
+        onSaved={fetchPrograms}
+        readOnly={!isMasterAdmin}
+      />
     </div>
   )
 }

@@ -1,15 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, Tag, Typography, Space, Select, Row, Col } from 'antd'
-// Row/Col kept for StatsCards grid and table layouts
+import { Card, Tag, Typography, Space, Select, Row, Col, Progress } from 'antd'
 import { API_BASE } from '../lib/config'
 import {
-  ContactsOutlined,
-  RightOutlined,
   SnippetsOutlined,
-  TeamOutlined,
   FilterOutlined,
-  UserOutlined,
   ProjectOutlined,
   FundOutlined,
   FundProjectionScreenOutlined,
@@ -27,11 +22,9 @@ import {
   UserSwitchOutlined,
   SolutionOutlined,
   FileTextOutlined,
-  InfoCircleOutlined
 } from '@ant-design/icons'
 const { Text, Title } = Typography
 const { Option } = Select
-import { Progress } from 'antd'
 
 export function meta() {
   return [
@@ -40,116 +33,84 @@ export function meta() {
   ]
 }
 
+const SUB_PROGRAMS = [
+  { code: 'FULLSSP',       label: 'Full-SSP',        color: '#1890ff' },
+  { code: 'HALFSSP',       label: 'Half-SSP',        color: '#52c41a' },
+  { code: 'FULLSSPGAD',    label: 'Full-SSP GAD',    color: '#722ed1' },
+  { code: 'HALFSSPGAD',    label: 'Half-SSP GAD',    color: '#eb2f96' },
+  { code: 'FULLPESFA',     label: 'Full-PESFA',      color: '#fa8c16' },
+  { code: 'HALFPESFA',     label: 'Half-PESFA',      color: '#13c2c2' },
+  { code: 'FULLPESFAGAD',  label: 'Full-PESFA GAD',  color: '#2f54eb' },
+  { code: 'HALFPESFAGAD',  label: 'Half-PESFA GAD',  color: '#f5222d' },
+]
 
-function StatsCards({ financialAssistances = [], semester }) {
-  const semShort = { First: '1st Sem', Second: '2nd Sem' }[semester] || semester
+const pct = (filled, slots) => (slots > 0 ? ((filled / slots) * 100).toFixed(1) : '0.0')
 
-  const totals = {
-    totalSlots: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_slot) || 0), 0),
-    totalFilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.total_students) || 0), 0),
-    totalUnfilled: financialAssistances.reduce((sum, p) => sum + (Number(p?.unfilled_slot) || 0), 0),
-  }
-
-  const exceeded = totals.totalFilled > totals.totalSlots && totals.totalSlots > 0
-
-  const statsConfig = [
-    {
-      title: 'Cumulative Slots',
-      value: totals.totalSlots,
-      icon: <ContactsOutlined />,
-      color: '#1890ff',
-      bgColor: '#e6f7ff',
-    },
-    {
-      title: `Disbursed (${semShort})`,
-      value: totals.totalFilled,
-      icon: exceeded ? <WarningOutlined /> : <TeamOutlined />,
-      color: exceeded ? '#ff4d4f' : '#52c41a',
-      bgColor: exceeded ? '#fff2f0' : '#f6ffed',
-      percentage: ((totals.totalFilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-    {
-      title: `Not Yet Disbursed (${semShort})`,
-      value: totals.totalUnfilled,
-      icon: <UserOutlined />,
-      color: '#faad14',
-      bgColor: '#fffbe6',
-      percentage: ((totals.totalUnfilled / (totals.totalSlots || 1)) * 100).toFixed(1),
-    },
-  ]
+function SubProgramCard({ program, data }) {
+  const slots = Number(data?.total_slot) || 0
+  const filled = Number(data?.total_students) || 0
+  const unfilled = Math.max(0, slots - filled)
+  const exceeded = filled > slots && slots > 0
+  const noSlots = slots === 0
+  const fillPct = parseFloat(pct(filled, slots))
 
   return (
-    <>
-      {exceeded && (
-        <div style={{
-          background: '#fff2f0', border: '1px solid #ffccc7', borderRadius: 8,
-          padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8,
-          marginBottom: 12,
-        }}>
-          <WarningOutlined style={{ color: '#ff4d4f', fontSize: 14 }} />
-          <Text style={{ color: '#cf1322', fontSize: 13 }}>
-            <strong>Slots Exceeded</strong> — Disbursed students exceed available slots
-          </Text>
+    <Card
+      style={{
+        borderRadius: 12,
+        borderLeft: `3px solid ${exceeded ? '#ff4d4f' : noSlots ? '#d9d9d9' : program.color}`,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        height: '100%',
+        opacity: noSlots ? 0.7 : 1,
+      }}
+      bodyStyle={{ padding: '16px 20px' }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div>
+          <Text strong style={{ fontSize: 15 }}>{program.label}</Text>
+          {exceeded && <Tag color="error" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: '0 0 0 8px' }}>Exceeded</Tag>}
+          {noSlots && <Tag color="default" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px', margin: '0 0 0 8px' }}>No Slots</Tag>}
         </div>
-      )}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        {statsConfig.map((stat, index) => (
-          <Card
-            key={index}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              borderRadius: 12,
-              border: 'none',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-            }}
-            bodyStyle={{
-              padding: 16,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div style={{ overflow: 'hidden', flex: 1 }}>
-              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
-                {stat.title}
-              </Text>
-              <Text strong style={{ fontSize: 20, color: stat.color, lineHeight: 1.1, display: 'block' }}>
-                {stat.value.toLocaleString()}
-              </Text>
-              {stat.percentage && (
-                <>
-                  <Progress percent={parseFloat(stat.percentage)}
-                    showInfo={false}
-                    strokeColor={stat.color}
-                    style={{ marginBottom: 8 }}
-                  />
-                  <Text style={{ fontSize: 12, color: stat.color }}>
-                    {stat.percentage}% of total
-                  </Text>
-                </>
-              )}
-            </div>
-            <div
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                backgroundColor: stat.bgColor,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 20,
-                color: stat.color,
-                flexShrink: 0,
-              }}
-            >
-              {stat.icon}
-            </div>
-          </Card>
-        ))}
       </div>
-    </>
+
+      {!noSlots && (
+        <Progress
+          percent={Math.min(fillPct, 100)}
+          size="small"
+          strokeColor={exceeded ? '#ff4d4f' : program.color}
+          trailColor="#f0f0f0"
+          showInfo={false}
+          style={{ marginBottom: 12 }}
+        />
+      )}
+
+      <div style={{ display: 'flex', justifyContent: noSlots ? 'center' : 'space-between', textAlign: 'center' }}>
+        {noSlots ? (
+          <Text type="secondary" style={{ fontSize: 12 }}>
+            {filled > 0 ? `${filled.toLocaleString()} students disbursed` : 'No data yet'}
+          </Text>
+        ) : (
+          <>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>{slots.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Slots</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#52c41a' }}>{filled.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Disbursed</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#faad14' }}>{unfilled.toLocaleString()}</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Unfilled</Text>
+            </div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: exceeded ? '#ff4d4f' : '#1890ff' }}>{fillPct}%</div>
+              <Text type="secondary" style={{ fontSize: 11 }}>Fill Rate</Text>
+            </div>
+          </>
+        )}
+      </div>
+    </Card>
   )
 }
 
@@ -315,7 +276,20 @@ export default function FinancialAssistanceCmsp() {
       </div>
 
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
-        <StatsCards financialAssistances={filteredCms} semester={semesterFilter} />
+        {/* Per-program cards */}
+        <Text strong style={{ fontSize: 14, color: '#6b7280', display: 'block', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Sub-Programs
+        </Text>
+        <Row gutter={[16, 16]}>
+          {SUB_PROGRAMS.map(prog => {
+            const record = filteredCms.find(r => r.scholarship_program_name?.toUpperCase().trim() === prog.code)
+            return (
+              <Col xs={24} sm={12} lg={8} xl={6} key={prog.code}>
+                <SubProgramCard program={prog} data={record || {}} />
+              </Col>
+            )
+          })}
+        </Row>
       </div>
 
       <div style={{ padding: '12px 24px 0' }}>

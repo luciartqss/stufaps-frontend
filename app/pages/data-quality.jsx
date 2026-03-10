@@ -1,4 +1,4 @@
-import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message, Tooltip } from 'antd'
+import { Card, Typography, Table, Tag, Spin, Empty, Pagination, Button, Modal, Select, Input, message, Tooltip, Space } from 'antd'
 import {
   WarningOutlined,
   ExclamationCircleOutlined,
@@ -6,6 +6,8 @@ import {
   LoadingOutlined,
   SwapOutlined,
   EditOutlined,
+  ArrowRightOutlined,
+  SearchOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -71,11 +73,12 @@ const ISSUE_TYPES = [
   { key: 'no_lrn', label: 'Missing LRN', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'duplicate_lrn', label: 'Duplicate LRN', color: '#ff4d4f', icon: <ExclamationCircleOutlined /> },
   { key: 'no_status', label: 'Missing Status', color: '#fa8c16', icon: <WarningOutlined /> },
+  { key: 'no_uii', label: 'Missing UII', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
-const VALID_TABS = ['no_award', 'duplicate_award', 'no_lrn', 'duplicate_lrn', 'no_status', 'incomplete', 'incomplete_stufaps_disb']
+const VALID_TABS = ['no_award', 'duplicate_award', 'no_lrn', 'duplicate_lrn', 'no_status', 'no_uii', 'incomplete', 'incomplete_stufaps_disb']
 
 export default function DataQuality({ readOnly = false, canEdit = false }) {
   const navigate = useNavigate()
@@ -85,11 +88,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   // Bulk Edit state
   const [bulkEditVisible, setBulkEditVisible] = useState(false)
-  const [bulkField, setBulkField] = useState('degree_program')
-  const [bulkOldValue, setBulkOldValue] = useState('')
+  const [bulkField, setBulkField] = useState(null)
+  const [bulkOldValue, setBulkOldValue] = useState(null)
   const [bulkNewValue, setBulkNewValue] = useState('')
-  const [bulkFieldValues, setBulkFieldValues] = useState([])
+  const [bulkFieldValues, setBulkFieldValues] = useState([]) // [{value, count}]
   const [loadingFieldValues, setLoadingFieldValues] = useState(false)
+  const [bulkSubmitting, setBulkSubmitting] = useState(false)
 
   const bulkFieldOptions = [
     { label: 'Course Name', value: 'degree_program' },
@@ -117,16 +121,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   const fetchBulkFieldValues = async (fieldName) => {
     setLoadingFieldValues(true)
+    setBulkFieldValues([])
     try {
-      const response = await fetch(`${API_URL}/students/export?pageSize=9999`)
-      if (response.ok) {
-        const allStudents = await response.json()
-        const values = [...new Set(
-          allStudents
-            .map((s) => (s && s[fieldName] !== undefined && s[fieldName] !== null ? String(s[fieldName]) : null))
-            .filter(Boolean)
-        )]
-        setBulkFieldValues(values)
+      const res = await fetch(`${API_URL}/students/distinct-values?field=${encodeURIComponent(fieldName)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setBulkFieldValues(Array.isArray(data) ? data : [])
       }
     } catch (error) {
       console.error('Error fetching field values:', error)
@@ -135,31 +135,43 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }
 
-  useEffect(() => {
-    if (bulkEditVisible && bulkField) {
-      fetchBulkFieldValues(bulkField)
-    }
-  }, [bulkEditVisible, bulkField])
+  const handleBulkFieldChange = (field) => {
+    setBulkField(field)
+    setBulkOldValue(null)
+    setBulkNewValue('')
+    if (field) fetchBulkFieldValues(field)
+  }
+
+  const handleBulkOpen = () => {
+    setBulkField(null)
+    setBulkOldValue(null)
+    setBulkNewValue('')
+    setBulkFieldValues([])
+    setBulkEditVisible(true)
+  }
+
+  const selectedCount = useMemo(() => {
+    if (!bulkOldValue) return 0
+    const match = bulkFieldValues.find(v => v.value === bulkOldValue)
+    return match?.count || 0
+  }, [bulkOldValue, bulkFieldValues])
+
+  const canSubmitBulk = bulkField && bulkOldValue && bulkNewValue.trim() && bulkNewValue.trim() !== bulkOldValue
 
   const handleBulkSubmit = async () => {
-    if (!bulkField || !bulkOldValue || !bulkNewValue) {
-      message.error('Please select a field and enter both old and new values.')
-      return
-    }
-
+    if (!canSubmitBulk) return
+    setBulkSubmitting(true)
     try {
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const res = await fetch(`${API_URL}/students/bulk-update-field`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
-        body: JSON.stringify({ field: bulkField, old_value: bulkOldValue, new_value: bulkNewValue }),
+        body: JSON.stringify({ field: bulkField, old_value: bulkOldValue, new_value: bulkNewValue.trim() }),
       })
       const data = await res.json()
       if (res.ok) {
-        message.success(data.message)
+        message.success(`${data.updated_count} record${data.updated_count !== 1 ? 's' : ''} updated`)
         setBulkEditVisible(false)
-        setBulkOldValue('')
-        setBulkNewValue('')
         fetchCounts()
       } else {
         message.error(data.error || 'Failed to update')
@@ -167,11 +179,14 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     } catch (error) {
       console.error('Bulk edit error:', error)
       message.error('Failed to update records')
+    } finally {
+      setBulkSubmitting(false)
     }
   }
   const [counts, setCounts] = useState({
     no_lrn: 0,
     no_status: 0,
+    no_uii: 0,
     duplicate_lrn: 0,
     no_award_number: 0,
     duplicate_award_numbers: 0,
@@ -190,6 +205,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const [noLrn, setNoLrn] = useState({ students: [], total: 0, page: 1, loading: false })
   const [noAward, setNoAward] = useState({ students: [], total: 0, page: 1, loading: false })
   const [noStatus, setNoStatus] = useState({ students: [], total: 0, page: 1, loading: false })
+  const [noUii, setNoUii] = useState({ institutions: [], total: 0, page: 1, loading: false })
   const [incomplete, setIncomplete] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incompleteStufapsDisb, setIncompleteStufapsDisb] = useState({ students: [], total: 0, page: 1, loading: false })
 
@@ -204,6 +220,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       setCounts({
         no_lrn: w.no_lrn?.count || 0,
         no_status: w.no_status?.count || 0,
+        no_uii: w.no_uii?.count || 0,
         duplicate_lrn: w.duplicate_lrn?.count || 0,
         no_award_number: w.no_award_number?.count || 0,
         duplicate_award_numbers: w.duplicate_award_numbers?.count || 0,
@@ -235,6 +252,23 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }, [])
 
+  const fetchNoUii = useCallback(async (page = 1) => {
+    setNoUii(prev => ({ ...prev, loading: true }))
+    try {
+      const res = await fetch(`${API_URL}/dashboard/warnings/no-uii?page=${page}&per_page=${PAGE_SIZE}`)
+      const data = await res.json()
+      setNoUii({
+        institutions: data.institutions || [],
+        total: data.total_institutions || 0,
+        page: data.page || page,
+        loading: false,
+      })
+    } catch (err) {
+      console.error('Failed to fetch no-uii:', err)
+      setNoUii(prev => ({ ...prev, loading: false }))
+    }
+  }, [])
+
   const fetchIncompleteStufapsDisb = useCallback(async (page = 1) => {
     setIncompleteStufapsDisb(prev => ({ ...prev, loading: true }))
     try {
@@ -260,11 +294,13 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       no_lrn: { count: counts.no_lrn, data: noLrn, endpoint: 'no-lrn', setter: setNoLrn },
       no_award: { count: counts.no_award_number, data: noAward, endpoint: 'no-award-number', setter: setNoAward },
       no_status: { count: counts.no_status, data: noStatus, endpoint: 'no-status', setter: setNoStatus },
+      no_uii: { count: counts.no_uii, data: noUii, customFetch: fetchNoUii },
       incomplete: { count: counts.incomplete_info, data: incomplete, endpoint: 'incomplete-info', setter: setIncomplete },
       incomplete_stufaps_disb: { count: counts.incomplete_stufaps, data: incompleteStufapsDisb, customFetch: fetchIncompleteStufapsDisb },
     }
     const cfg = tabConfig[activeTab]
-    if (cfg && cfg.count > 0 && cfg.data.students.length === 0) {
+    const hasData = (cfg?.data?.students?.length > 0) || (cfg?.data?.institutions?.length > 0)
+    if (cfg && cfg.count > 0 && !hasData) {
       if (cfg.customFetch) {
         cfg.customFetch(1)
       } else {
@@ -281,6 +317,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       duplicate_lrn: counts.duplicate_lrn,
       no_lrn: counts.no_lrn,
       no_status: counts.no_status,
+      no_uii: counts.no_uii,
       no_award: counts.no_award_number,
       incomplete: counts.incomplete_info,
       incomplete_stufaps_disb: counts.incomplete_stufaps,
@@ -376,6 +413,20 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
       institutionCol,
       viewCol,
+    ],
+    no_uii: [
+      { title: 'Institution', dataIndex: 'institution', key: 'institution', ellipsis: true,
+        render: (v) => <Text strong>{v || 'N/A'}</Text> },
+      {
+        title: 'Students Affected',
+        dataIndex: 'student_count',
+        key: 'student_count',
+        width: 150,
+        align: 'center',
+        render: (count) => (
+          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
+        ),
+      },
     ],
     incomplete: [
       nameCol,
@@ -479,12 +530,13 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       duplicate_lrn: { data: dupLrn, paginated: false },
       no_lrn: { data: noLrn, paginated: true, endpoint: 'no-lrn', setter: setNoLrn },
       no_status: { data: noStatus, paginated: true, endpoint: 'no-status', setter: setNoStatus },
+      no_uii: { data: noUii, paginated: true, customFetch: fetchNoUii },
       no_award: { data: noAward, paginated: true, endpoint: 'no-award-number', setter: setNoAward },
       incomplete: { data: incomplete, paginated: true, endpoint: 'incomplete-info', setter: setIncomplete },
       incomplete_stufaps_disb: { data: incompleteStufapsDisb, paginated: true, customFetch: fetchIncompleteStufapsDisb },
     }
     return map[tabKey] || { data: { students: [], total: 0, page: 1, loading: false }, paginated: false }
-  }, [dupAward, dupLrn, noLrn, noStatus, noAward, incomplete, incompleteStufapsDisb, fetchIncompleteStufapsDisb])
+  }, [dupAward, dupLrn, noLrn, noStatus, noUii, noAward, incomplete, incompleteStufapsDisb, fetchNoUii, fetchIncompleteStufapsDisb])
 
   const activeIssue = ISSUE_TYPES.find(t => t.key === activeTab)
 
@@ -498,9 +550,11 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   }
 
   const { data: tabData, paginated, endpoint, setter, customFetch } = getTabData(activeTab)
-  const displayData = paginated
-    ? tabData.students
-    : tabData.students.slice((tabData.page - 1) * PAGE_SIZE, tabData.page * PAGE_SIZE)
+  const displayData = activeTab === 'no_uii'
+    ? tabData.institutions || []
+    : paginated
+      ? tabData.students
+      : tabData.students?.slice((tabData.page - 1) * PAGE_SIZE, tabData.page * PAGE_SIZE) || []
 
   return (
     <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
@@ -516,9 +570,9 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
               <Button
                 type="primary"
                 icon={<EditOutlined />}
-                onClick={() => setBulkEditVisible(true)}
+                onClick={handleBulkOpen}
               >
-                Bulk Edit
+                Find & Replace
               </Button>
             )}
             <div style={{ textAlign: 'center' }}>
@@ -684,7 +738,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                   columns={columnSets[activeTab] || []}
                   size="middle"
                   pagination={false}
-                  rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : 'seq'}
+                  rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : activeTab === 'no_uii' ? 'institution' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
                 />
                 {tabData.total > PAGE_SIZE && (
@@ -716,96 +770,125 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
         </Card>
       </div>
 
-      {/* Bulk Edit Modal */}
+      {/* Find & Replace Modal */}
       <Modal
         open={bulkEditVisible}
         onCancel={() => setBulkEditVisible(false)}
-        onOk={handleBulkSubmit}
-        title="Bulk Edit Records"
-        width={500}
-        okText="Apply Changes"
-        cancelText="Cancel"
-        okType="primary"
+        title={null}
+        width={560}
+        footer={null}
+        destroyOnClose
       >
-        <div style={{ marginBottom: 20 }}>
-          <div style={{
-            backgroundColor: '#fff7ed',
-            border: '1px solid #fb923c',
-            borderRadius: 6,
-            padding: 16,
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: 8
-          }}>
-            <span style={{ color: '#ea580c', fontSize: 16, marginTop: 1 }}>⚠️</span>
-            <div>
-              <div style={{ fontWeight: 600, color: '#ea580c', marginBottom: 4 }}>
-                Important Notice
-              </div>
-              <div style={{ fontSize: 14, color: '#9a3412', lineHeight: 1.4 }}>
-                This operation will modify multiple student records simultaneously.
-                Please review your selections carefully as this action cannot be undone.
-              </div>
-            </div>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#f0f5ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <SearchOutlined style={{ fontSize: 18, color: '#2f54eb' }} />
+          </div>
+          <div>
+            <Text strong style={{ fontSize: 16, display: 'block', lineHeight: 1.3 }}>Find & Replace</Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>Update a value across all student records</Text>
           </div>
         </div>
 
+        {/* Step 1: Field */}
         <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            Select Field to Update
-          </label>
+          <Text style={{ fontSize: 12, color: '#8c8c8c', display: 'block', marginBottom: 6 }}>FIELD</Text>
           <Select
             value={bulkField}
-            onChange={setBulkField}
+            onChange={handleBulkFieldChange}
             style={{ width: '100%' }}
-            placeholder="Choose the field you want to update"
-          >
-            {bulkFieldOptions.map(opt => <Option key={opt.value} value={opt.value}>{opt.label}</Option>)}
-          </Select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            Current Value to Replace
-          </label>
-          <Select
-            value={bulkOldValue}
-            onChange={setBulkOldValue}
-            style={{ width: '100%' }}
-            placeholder="Select the existing value to replace"
+            placeholder="Select a field..."
             showSearch
-            loading={loadingFieldValues}
-            notFoundContent={loadingFieldValues ? 'Loading...' : 'No values found'}
-          >
-            {bulkFieldValues.map(val => <Option key={val} value={val}>{val}</Option>)}
-          </Select>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', marginBottom: 6, fontWeight: 500, color: '#262626' }}>
-            New Value
-          </label>
-          <Input
-            value={bulkNewValue}
-            onChange={e => setBulkNewValue(e.target.value)}
-            placeholder="Enter the new value to replace with"
+            optionFilterProp="label"
+            options={bulkFieldOptions}
+            size="large"
           />
         </div>
 
-        {bulkField && bulkOldValue && bulkNewValue && (
+        {/* Step 2: Find → Replace */}
+        {bulkField && (
           <div style={{
-            backgroundColor: '#f0f9ff',
-            border: '1px solid #0ea5e9',
-            borderRadius: 6,
-            padding: 12,
-            marginTop: 16
+            background: '#fafafa', borderRadius: 10, padding: 16, marginBottom: 16,
+            border: '1px solid #f0f0f0',
           }}>
-            <div style={{ fontSize: 13, color: '#0369a1' }}>
-              <strong>Preview:</strong> All records with "{bulkOldValue}" in the {bulkFieldOptions.find(opt => opt.value === bulkField)?.label} field will be updated to "{bulkNewValue}".
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              {/* Find */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: 12, color: '#ff4d4f', fontWeight: 600, display: 'block', marginBottom: 6 }}>FIND</Text>
+                <Select
+                  value={bulkOldValue}
+                  onChange={setBulkOldValue}
+                  style={{ width: '100%' }}
+                  placeholder="Select current value"
+                  showSearch
+                  optionFilterProp="label"
+                  loading={loadingFieldValues}
+                  notFoundContent={loadingFieldValues ? <Spin size="small" /> : 'No values found'}
+                >
+                  {bulkFieldValues.map(item => (
+                    <Option key={item.value} value={item.value} label={item.value}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.value}</span>
+                        <Tag style={{ marginLeft: 8, fontSize: 11, lineHeight: '18px', padding: '0 6px', flexShrink: 0 }}>{item.count}</Tag>
+                      </div>
+                    </Option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* Arrow */}
+              <div style={{ paddingTop: 28, flexShrink: 0 }}>
+                <ArrowRightOutlined style={{ fontSize: 16, color: '#bfbfbf' }} />
+              </div>
+
+              {/* Replace */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: 12, color: '#52c41a', fontWeight: 600, display: 'block', marginBottom: 6 }}>REPLACE WITH</Text>
+                <Input
+                  value={bulkNewValue}
+                  onChange={e => setBulkNewValue(e.target.value)}
+                  placeholder="Enter new value"
+                />
+              </div>
             </div>
           </div>
         )}
+
+        {/* Preview / affected count */}
+        {bulkOldValue && (
+          <div style={{
+            background: selectedCount > 0 ? '#f6ffed' : '#fafafa',
+            border: `1px solid ${selectedCount > 0 ? '#b7eb8f' : '#f0f0f0'}`,
+            borderRadius: 8, padding: '10px 14px', marginBottom: 16,
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <InfoCircleOutlined style={{ color: selectedCount > 0 ? '#52c41a' : '#8c8c8c', fontSize: 14 }} />
+            <Text style={{ fontSize: 13, color: selectedCount > 0 ? '#389e0d' : '#8c8c8c' }}>
+              <strong>{selectedCount}</strong> record{selectedCount !== 1 ? 's' : ''} will be affected
+            </Text>
+          </div>
+        )}
+
+        {/* Same-value warning */}
+        {bulkOldValue && bulkNewValue.trim() && bulkNewValue.trim() === bulkOldValue && (
+          <div style={{ background: '#fffbe6', border: '1px solid #ffe58f', borderRadius: 8, padding: '8px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <WarningOutlined style={{ color: '#faad14', fontSize: 13 }} />
+            <Text style={{ fontSize: 12, color: '#ad6800' }}>New value is the same as the current value</Text>
+          </div>
+        )}
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
+          <Button onClick={() => setBulkEditVisible(false)}>Cancel</Button>
+          <Button
+            type="primary"
+            disabled={!canSubmitBulk}
+            loading={bulkSubmitting}
+            onClick={handleBulkSubmit}
+          >
+            Replace {selectedCount > 0 ? `(${selectedCount})` : ''}
+          </Button>
+        </div>
       </Modal>
     </div>
   )
