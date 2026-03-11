@@ -15,8 +15,9 @@ export function meta() {
 }
 
 export default function SUB_ARO_NTA() {
-  const { getAccess } = useAuth()
+  const { getAccess, permissions } = useAuth()
   const canEdit = getAccess('sub-aro-nta') === 'full'
+  const isMasterAdmin = permissions?.role === 'master_admin'
   const [fiscalYears, setFiscalYears] = useState([])
   const [uploadedFiles, setUploadedFiles] = useState([])
   const [selectedFY, setSelectedFY] = useState(null)
@@ -227,7 +228,7 @@ export default function SUB_ARO_NTA() {
               </Select.Option>
             ))}
           </Select>
-          {activeTab === 'SUB-ARO' && (
+          {canEdit && activeTab === 'SUB-ARO' && (
             <Button size="small" icon={<PlusOutlined />} onClick={handleAddFiscalYear}>Add FY</Button>
           )}
         </div>
