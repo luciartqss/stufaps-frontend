@@ -29,6 +29,16 @@ export default function StudentsPdf() {
   const [approvedName, setApprovedName] = useState('')
   const [approvedPosition, setApprovedPosition] = useState('Director IV')
 
+  // Refs for signatory values so generatePreview doesn't re-create on every keystroke
+  const preparedByRef = useRef(preparedBy)
+  const reviewedByRef = useRef(reviewedBy)
+  const approvedNameRef = useRef(approvedName)
+  const approvedPositionRef = useRef(approvedPosition)
+  useEffect(() => { preparedByRef.current = preparedBy }, [preparedBy])
+  useEffect(() => { reviewedByRef.current = reviewedBy }, [reviewedBy])
+  useEffect(() => { approvedNameRef.current = approvedName }, [approvedName])
+  useEffect(() => { approvedPositionRef.current = approvedPosition }, [approvedPosition])
+
   // LocalStorage keys
   const STORAGE_KEY = 'stufaps_masterlist_form'
 
@@ -149,15 +159,15 @@ export default function StudentsPdf() {
         program,
         semester,
         academic_year: academicYear,
-        approved_name: approvedName,
-        approved_position: approvedPosition,
+        approved_name: approvedNameRef.current,
+        approved_position: approvedPositionRef.current,
       })
       // Add prepared by entries as arrays
-      preparedBy.forEach((p, i) => {
+      preparedByRef.current.forEach((p, i) => {
         params.append(`prepared_name[${i}]`, p.name)
         params.append(`prepared_position[${i}]`, p.position)
       })
-      reviewedBy.forEach((p, i) => {
+      reviewedByRef.current.forEach((p, i) => {
         params.append(`reviewed_name[${i}]`, p.name)
         params.append(`reviewed_position[${i}]`, p.position)
       })
@@ -201,7 +211,7 @@ export default function StudentsPdf() {
     } finally {
       setLoadingPreview(false)
     }
-  }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition])
+  }, [program, semester, academicYear])
 
   // Auto-generate preview when filters change (with debounce)
   useEffect(() => {
