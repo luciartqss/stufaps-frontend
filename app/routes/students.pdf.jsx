@@ -166,8 +166,20 @@ export default function StudentsPdf() {
       })
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.message || 'No students found for the selected filters')
+        // Try JSON first, then extract from HTML, then show status
+        let errorMsg
+        const contentType = res.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => null)
+          errorMsg = errData?.message
+        } else {
+          // Server likely returned an HTML error page (e.g. PHP crash)
+          const text = await res.text().catch(() => '')
+          // Try to extract a meaningful message from HTML
+          const match = text.match(/<title>(.*?)<\/title>/i)
+          errorMsg = match?.[1] || (text.length > 200 ? `Server error (${res.status})` : text)
+        }
+        throw new Error(errorMsg || `Server returned ${res.status} — check the backend logs`)
       }
 
       const blob = await res.blob()
