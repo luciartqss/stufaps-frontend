@@ -163,6 +163,50 @@ export default function StudentDetails() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [disbursementLoading, setDisbursementLoading] = useState(false)
 
+  // Year level helpers
+  const YEAR_LEVELS = ['I', 'II', 'III', 'IV', 'V', 'VI']
+
+  const inferYearLevel = (targetAy, disbursements) => {
+    if (!targetAy || !disbursements?.length) return null
+    const m = targetAy.match(/^(\d{4})-(\d{4})$/)
+    if (!m || Number(m[2]) !== Number(m[1]) + 1) return null
+    const targetStart = Number(m[1])
+
+    // Same AY already has a year level → use it
+    const sameAy = disbursements.find(d => d.academic_year === targetAy && d.curriculum_year_level)
+    if (sameAy) return sameAy.curriculum_year_level
+
+    // Find closest AY with a year level and offset
+    let best = null
+    let bestDiff = Infinity
+    for (const d of disbursements) {
+      if (!d.academic_year || !d.curriculum_year_level) continue
+      const dm = d.academic_year.match(/^(\d{4})-(\d{4})$/)
+      if (!dm) continue
+      const diff = targetStart - Number(dm[1])
+      if (Math.abs(diff) < bestDiff) {
+        bestDiff = Math.abs(diff)
+        best = { level: d.curriculum_year_level, diff }
+      }
+    }
+    if (!best) return null
+    const idx = YEAR_LEVELS.indexOf(best.level)
+    if (idx === -1) return null
+    const newIdx = idx + best.diff
+    return newIdx >= 0 && newIdx < YEAR_LEVELS.length ? YEAR_LEVELS[newIdx] : null
+  }
+
+  const handleDisbFormChange = (changed) => {
+    if (changed.academic_year !== undefined) {
+      const inferred = inferYearLevel(changed.academic_year, student?.disbursements)
+      if (inferred) {
+        disbursementForm.setFieldValue('curriculum_year_level', inferred)
+        // Re-validate to clear any stale error
+        disbursementForm.validateFields(['curriculum_year_level']).catch(() => {})
+      }
+    }
+  }
+
   // Lookup function to auto-fill UII and authority fields
   const lookupAndFillFields = async (currentData) => {
     try {
@@ -1134,7 +1178,7 @@ export default function StudentDetails() {
         confirmLoading={disbursementLoading}
         destroyOnHidden={true}
       >
-        <Form form={disbursementForm} layout="vertical">
+        <Form form={disbursementForm} layout="vertical" onValuesChange={handleDisbFormChange}>
           {/* StuFAPs Fields */}
           <div style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
@@ -1147,7 +1191,18 @@ export default function StudentDetails() {
                 <Form.Item 
                   name="academic_year" 
                   label="Academic Year"
-                  rules={[{ required: true, message: 'Please enter academic year' }]}
+                  rules={[
+                    { required: true, message: 'Please enter academic year' },
+                    {
+                      validator: (_, value) => {
+                        if (!value) return Promise.resolve()
+                        const m = String(value).match(/^(\d{4})-(\d{4})$/)
+                        if (!m) return Promise.reject('Format must be YYYY-YYYY (e.g. 2024-2025)')
+                        if (Number(m[2]) !== Number(m[1]) + 1) return Promise.reject('Years must be consecutive (e.g. 2024-2025)')
+                        return Promise.resolve()
+                      },
+                    },
+                  ]}
                 >
                   <Input placeholder="e.g., 2024-2025" />
                 </Form.Item>
@@ -1164,7 +1219,21 @@ export default function StudentDetails() {
                 <Form.Item 
                   name="curriculum_year_level" 
                   label="Year Level"
-                  rules={[{ required: true, message: 'Please select year level' }]}
+                  dependencies={['academic_year']}
+                  rules={[
+                    { required: true, message: 'Please select year level' },
+                    ({ getFieldValue }) => ({
+                      validator: (_, value) => {
+                        if (!value) return Promise.resolve()
+                        const ay = getFieldValue('academic_year')
+                        const expected = inferYearLevel(ay, student?.disbursements)
+                        if (expected && value !== expected) {
+                          return Promise.reject(`Expected ${expected} based on existing records`)
+                        }
+                        return Promise.resolve()
+                      },
+                    }),
+                  ]}
                 >
                   <Select placeholder="Select year level">
                     <Select.Option value="I">I</Select.Option>
