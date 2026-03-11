@@ -156,6 +156,9 @@ export function AuthProvider({ children }) {
       if (section === 'students-edit') {
         return (permissions.assigned_programs?.length > 0) ? 'full' : 'none'
       }
+      if (section === 'disbursements-add') {
+        return permissions.can_add_disbursements ? 'full' : 'none'
+      }
 
       // All other sections (dashboard, students, financial assistance, data-quality-stufaps, about_us)
       return permissions.full_access ? 'full' : 'read-only'

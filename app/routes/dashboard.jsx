@@ -70,6 +70,7 @@ const WARNING_CONFIG = [
   { key: 'no_lrn', label: 'Missing LRN', severity: 'medium', color: '#d48806', path: '/data-quality?tab=no_lrn' },
   { key: 'duplicate_lrn', label: 'Duplicate LRN', severity: 'critical', color: '#cf1322', path: '/data-quality?tab=duplicate_lrn' },
   { key: 'no_status', label: 'Missing Status', severity: 'medium', color: '#d48806', path: '/data-quality?tab=no_status' },
+  { key: 'no_uii', label: 'Missing UII', severity: 'medium', color: '#d48806', path: '/data-quality?tab=no_uii' },
   { key: 'incomplete_info', label: 'Incomplete Info', severity: 'high', color: '#d4380d', path: '/data-quality?tab=incomplete' },
   { key: 'incomplete_stufaps', label: 'Incomplete StuFAPs Disb.', severity: 'high', color: '#d4380d', path: '/data-quality?tab=incomplete_stufaps_disb' },
   { key: 'incomplete_accounting', label: 'Incomplete Accounting', severity: 'high', color: '#d4380d', path: '/data-quality/accounting' },
