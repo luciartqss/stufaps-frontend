@@ -166,12 +166,14 @@ export default function StudentsPdf() {
       })
 
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || 'No students found for the selected filters')
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.message || 'No students found for the selected filters')
       }
 
       const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
+      // Ensure blob has correct PDF type for all browsers
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' })
+      const url = URL.createObjectURL(pdfBlob)
 
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev)
