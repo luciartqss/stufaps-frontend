@@ -69,7 +69,13 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
     border: '1px solid #faad14',
     borderRadius: 6,
     padding: '8px 10px',
-  } : { marginBottom: '16px' }
+  } : {
+    background: '#fff',
+    border: '1px solid #d9d9d9',
+    borderRadius: 8,
+    padding: '10px 12px',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+  }
   return (
     <Col span={span}>
       <div style={{ marginBottom: '16px', ...highlightStyle }}>
@@ -388,10 +394,11 @@ export default function StudentDetails() {
       const originalValue = student[field]
       const currentValue = formData[field]
       
-      // Handle null/undefined/empty string comparisons
+      // Handle null/undefined/empty string comparisons, trim whitespace, normalize booleans
       const normalizeValue = (val) => {
         if (val === null || val === undefined || val === '') return ''
-        return String(val)
+        if (typeof val === 'boolean') return val ? '1' : '0'
+        return String(val).trim()
       }
       
       return normalizeValue(originalValue) !== normalizeValue(currentValue)
@@ -913,8 +920,52 @@ export default function StudentDetails() {
 
       {/* Content */}
       <div style={{ padding: '24px' }}>
-      {/* Cards - Row 1 */}
+      {/* Card 1: Scholarship Details */}
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+        <Col xs={24} lg={12}>
+          <Card title="Scholarship Details" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
+            <Row gutter={[12, 8]}>
+              <Field label="In-Charge" value={student.in_charge} field="in_charge" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Award Year" value={student.award_year} field="award_year" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Scholarship Program" value={student.scholarship_program} field="scholarship_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Award Number" value={student.award_number} field="award_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Learner Reference No. (LRN)" value={student.learner_reference_number} field="learner_reference_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field 
+                label="Scholarship Status" 
+                value={student.scholarship_status} 
+                field="scholarship_status" 
+                type="select" 
+                required
+                options={[
+                  { label: 'Active', value: 'Active' },
+                  { label: 'Graduated', value: 'Graduated' },
+                  { label: 'Terminated', value: 'Terminated' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field 
+                label="Special Group" 
+                value={student.special_group} 
+                field="special_group" 
+                type="select" 
+                options={[
+                  { label: 'N/A', value: '' },
+                  { label: 'IP', value: 'IP' },
+                  { label: 'PWD', value: 'PWD' },
+                  { label: 'Solo Parent', value: 'Solo Parent' }
+                ]}
+                editMode={editMode} 
+                formData={formData} 
+                handleChange={handleChange} 
+              />
+              <Field label="Certification No." value={student.certification_number} field="certification_number" editMode={editMode} formData={formData} handleChange={handleChange} />
+            </Row>
+          </Card>
+        </Col>
+
+        {/* Card 2: Personal Information */}
         <Col xs={24} lg={12}>
           <Card title="Personal Information" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
@@ -962,39 +1013,25 @@ export default function StudentDetails() {
                 formData={formData}
                 handleChange={handleChange}
               />
-              <Field 
-                label="Special Group" 
-                value={student.special_group} 
-                field="special_group" 
-                type="select" 
-                options={[
-                  { label: 'N/A', value: '' },
-                  { label: 'IP', value: 'IP' },
-                  { label: 'PWD', value: 'PWD' },
-                  { label: 'Solo Parent', value: 'Solo Parent' }
-                ]}
-                editMode={editMode} 
-                formData={formData} 
-                handleChange={handleChange} 
-              />
-              <Field label="Certification No." value={student.certification_number} field="certification_number" editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Learner Reference No. (LRN)" value={student.learner_reference_number} field="learner_reference_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Email Address" value={student.email_address} field="email_address" type="email" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
             </Row>
           </Card>
         </Col>
+      </Row>
 
-        <Col xs={24} lg={12}>
-          <Card title="Contact & Address" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
+      {/* Card 3: Address */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+        <Col xs={24}>
+          <Card title="Address" style={{ borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
-              <Field label="Contact Number" value={student.contact_number} field="contact_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Email Address" value={student.email_address} field="email_address" type="email" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Street" value={student.street} field="street" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Street" value={student.street} field="street" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Barangay" value={student.brgy} field="brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Municipality" value={student.municipality} field="municipality" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Province" value={student.province} field="province" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Congressional District" value={student.congressional_district} field="congressional_district" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
             </Row>
@@ -1002,20 +1039,14 @@ export default function StudentDetails() {
         </Col>
       </Row>
 
-      {/* Cards - Row 2 */}
+      {/* Card 4: Institution & Academic Program */}
       <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-        <Col xs={24} lg={12}>
-          <Card title="Institution & Academic Program" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
+        <Col xs={24}>
+          <Card title="Institution & Academic Program" style={{ borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Region of HEI" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Degree Level" 
                 value={student.program_degree_level} 
@@ -1033,17 +1064,12 @@ export default function StudentDetails() {
                 formData={formData} 
                 handleChange={handleChange} 
               />
-            </Row>
-          </Card>
-        </Col>
-
-        <Col xs={24} lg={12}>
-          <Card title="Scholarship & Authority" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
-            <Row gutter={[12, 8]}>
-              <Field label="In-Charge" value={student.in_charge} field="in_charge" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Award Year" value={student.award_year} field="award_year" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Scholarship Program" value={student.scholarship_program} field="scholarship_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Award Number" value={student.award_number} field="award_number" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Region of HEI" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
                 label="Authority Type" 
                 value={student.authority_type} 
@@ -1063,32 +1089,6 @@ export default function StudentDetails() {
               />
               <Field label="Authority Number" value={student.authority_number} field="authority_number" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Series" value={student.series} field="series" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Basis (CMO)" value={student.basis_cmo} field="basis_cmo" required editMode={editMode} formData={formData} handleChange={handleChange} />
-            </Row>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Cards - Row 3: Status & Remarks */}
-      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
-        <Col xs={24} lg={12}>
-          <Card title="Status & Priority" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
-            <Row gutter={[12, 8]}>
-              <Field 
-                label="Scholarship Status" 
-                value={student.scholarship_status} 
-                field="scholarship_status" 
-                type="select" 
-                required
-                options={[
-                  { label: 'Active', value: 'Active' },
-                  { label: 'Graduated', value: 'Graduated' },
-                  { label: 'Terminated', value: 'Terminated' }
-                ]}
-                editMode={editMode} 
-                formData={formData} 
-                handleChange={handleChange} 
-              />
               <Col span={12}>
                 <div style={{ marginBottom: '16px' }}>
                   <Text strong style={{ fontSize: '13px', color: '#6b7280', display: 'block', marginBottom: '4px' }}>Priority Program</Text>
@@ -1111,14 +1111,18 @@ export default function StudentDetails() {
                   )}
                 </div>
               </Col>
-              <Field label="Replacement Info" value={student.replacement_info} field="replacement_info" span={24} editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Basis (CMO)" value={student.basis_cmo} field="basis_cmo" required editMode={editMode} formData={formData} handleChange={handleChange} />
             </Row>
           </Card>
         </Col>
+      </Row>
 
-        <Col xs={24} lg={12}>
-          <Card title="Remarks" style={{ height: '100%', borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
+      {/* Card 5: Remarks */}
+      <Row gutter={[16, 16]} style={{ marginBottom: '16px' }}>
+        <Col xs={24}>
+          <Card title="Remarks" style={{ borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
+              <Field label="Replacement Info" value={student.replacement_info} field="replacement_info" span={24} editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field 
                 label="General Remarks / Notes" 
                 value={student.termination_reason} 
@@ -1157,7 +1161,7 @@ export default function StudentDetails() {
             expandRowByClick: true,
             rowExpandable: () => true,
           }}
-          scroll={{ y: 500 }}
+          scroll={{ x: 'max-content' }}
           size="middle"
           locale={{ emptyText: 'No disbursement records yet' }}
         />

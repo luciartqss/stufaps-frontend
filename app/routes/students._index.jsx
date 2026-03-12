@@ -513,12 +513,30 @@ export default function StudentsIndex() {
     const val = text || ''
     if (!val) return <span style={{ color: emptyColor, fontSize: 13 }}>{empty}</span>
     let fontSize = 14
-    if (val.length > 30) fontSize = 12
-    else if (val.length > 20) fontSize = 13
+    if (val.length > 30) fontSize = 11
+    else if (val.length > 20) fontSize = 12
+    else if (val.length > 15) fontSize = 13
     return (
-      <span style={{ whiteSpace: 'nowrap', fontSize, fontWeight: bold ? 500 : 'normal' }}>
+      <span style={{ whiteSpace: 'nowrap', fontSize, fontWeight: bold ? 500 : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
         {val}
       </span>
+    )
+  }
+
+  // Auto-fit cell — shrinks font and truncates with tooltip for long values
+  const AutoFitCell = ({ text, empty = '—', bold = false }) => {
+    const val = text || ''
+    if (!val) return <span style={{ color: '#bfbfbf', fontSize: 13 }}>{empty}</span>
+    let fontSize = 14
+    if (val.length > 20) fontSize = 11
+    else if (val.length > 16) fontSize = 12
+    else if (val.length > 12) fontSize = 13
+    return (
+      <Tooltip placement="topLeft" title={val}>
+        <span style={{ whiteSpace: 'nowrap', fontSize, fontWeight: bold ? 500 : 'normal', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>
+          {val}
+        </span>
+      </Tooltip>
     )
   }
 
@@ -532,20 +550,22 @@ export default function StudentsIndex() {
         const pageSize = (pagination?.pageSize || 10)
         return <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{(page - 1) * pageSize + index + 1}</span>
       },
-      width: 45,
+      width: '3%',
       align: 'center',
     },
     {
       title: 'Award No.',
       dataIndex: 'award_number',
       key: 'award_number',
-      width: 120,
-      render: (text) => <NowrapCell text={text} />,
+      width: '11%',
+      ellipsis: { showTitle: false },
+      render: (text) => <AutoFitCell text={text} bold />,
     },
     {
       title: 'Full Name',
       key: 'full_name',
-      width: 210,
+      width: '15%',
+      ellipsis: { showTitle: false },
       render: (_, student) => {
         const surname = student.surname || ''
         const firstName = student.first_name || ''
@@ -555,15 +575,17 @@ export default function StudentsIndex() {
         const name = surname && otherParts ? `${surname}, ${otherParts}` : (surname || otherParts)
         if (!name) return <span style={{ color: '#bfbfbf', fontSize: 13 }}>—</span>
         let fontSize = 14
-        if (name.length > 30) fontSize = 12
-        else if (name.length > 20) fontSize = 13
+        if (name.length > 35) fontSize = 12
+        else if (name.length > 25) fontSize = 13
         return (
-          <a
-            onClick={() => navigate(`/students/${student.seq}`)}
-            style={{ whiteSpace: 'nowrap', fontSize, fontWeight: 500, color: '#1677ff', cursor: 'pointer' }}
-          >
-            {name}
-          </a>
+          <Tooltip placement="topLeft" title={name}>
+            <a
+              onClick={() => navigate(`/students/${student.seq}`)}
+              style={{ fontSize, fontWeight: 500, color: '#1677ff', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}
+            >
+              {name}
+            </a>
+          </Tooltip>
         )
       },
     },
@@ -571,18 +593,19 @@ export default function StudentsIndex() {
       title: 'LRN',
       dataIndex: 'learner_reference_number',
       key: 'learner_reference_number',
-      width: 120,
-      render: (text) => <NowrapCell text={text} />,
+      width: '9%',
+      ellipsis: { showTitle: false },
+      render: (text) => <AutoFitCell text={text} />,
     },
     {
       title: 'Contact',
       dataIndex: 'contact_number',
       key: 'contact_number',
-      width: 130,
+      width: '10%',
       ellipsis: { showTitle: false },
       render: (text) => (
         <Tooltip placement="topLeft" title={text || '—'}>
-          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+          <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
         </Tooltip>
       ),
     },
@@ -590,11 +613,11 @@ export default function StudentsIndex() {
       title: 'Email',
       dataIndex: 'email_address',
       key: 'email_address',
-      width: 180,
+      width: '14%',
       ellipsis: { showTitle: false },
       render: (text) => (
         <Tooltip placement="topLeft" title={text || '—'}>
-          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+          <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
         </Tooltip>
       ),
     },
@@ -602,11 +625,11 @@ export default function StudentsIndex() {
       title: 'School',
       dataIndex: 'name_of_institution',
       key: 'name_of_institution',
-      width: 170,
+      width: '13%',
       ellipsis: { showTitle: false },
       render: (text) => (
         <Tooltip placement="topLeft" title={text || '—'}>
-          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+          <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
         </Tooltip>
       ),
     },
@@ -614,11 +637,11 @@ export default function StudentsIndex() {
       title: 'Degree Program',
       dataIndex: 'degree_program',
       key: 'degree_program',
-      width: 155,
+      width: '11%',
       ellipsis: { showTitle: false },
       render: (text) => (
         <Tooltip placement="topLeft" title={text || '—'}>
-          <span style={{ fontSize: 13 }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+          <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
         </Tooltip>
       ),
     },
@@ -626,14 +649,19 @@ export default function StudentsIndex() {
       title: 'Program',
       dataIndex: 'scholarship_program',
       key: 'scholarship_program',
-      width: 100,
+      width: '8%',
       align: 'center',
-      render: (text) => <NowrapCell text={text} />,
+      ellipsis: { showTitle: false },
+      render: (text) => (
+        <Tooltip placement="topLeft" title={text || '—'}>
+          <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{text || <span style={{ color: '#bfbfbf' }}>—</span>}</span>
+        </Tooltip>
+      ),
     },
     {
       title: 'Status',
       key: 'status',
-      width: 110,
+      width: '6%',
       align: 'center',
       render: (_, student) => (
         <Tag
@@ -647,7 +675,7 @@ export default function StudentsIndex() {
     {
       title: '',
       key: 'actions',
-      width: 100,
+      width: '6%',
       align: 'center',
       render: (_, student) => (
         <Space size={4} split={<span style={{ color: '#d9d9d9' }}>|</span>}>
@@ -1285,6 +1313,13 @@ export default function StudentsIndex() {
         .students-table .ant-table {
           font-size: 14px;
         }
+        .students-table .ant-table-container {
+          width: 100%;
+        }
+        .students-table .ant-table-content > table {
+          table-layout: fixed !important;
+          width: 100% !important;
+        }
         .students-table .ant-table-thead > tr > th {
           font-size: 12px;
           font-weight: 600;
@@ -1294,11 +1329,14 @@ export default function StudentsIndex() {
           text-transform: uppercase;
           letter-spacing: 0.3px;
           white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .students-table .ant-table-tbody > tr > td {
-          padding: 8px 10px;
+          padding: 12px 10px;
           vertical-align: middle;
-          height: 48px;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .students-table .ant-table-tbody > tr {
           transition: none;
@@ -1348,7 +1386,7 @@ export default function StudentsIndex() {
         columns={columns}
         rowKey="seq"
         size="small"
-        scroll={{ x: 1500 }}
+        scroll={{ x: false }}
         rowClassName={(record) => {
           const status = (record.scholarship_status || '').toLowerCase()
           if (status === 'terminated') return 'student-row-terminated'
