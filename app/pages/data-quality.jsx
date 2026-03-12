@@ -77,7 +77,7 @@ const ISSUE_TYPES = [
   { key: 'no_status', label: 'Missing Status', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'no_uii', label: 'Missing UII', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
+  { key: 'incomplete_stufaps_disb', label: 'Incomplete Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
 const VALID_TABS = ['no_award', 'duplicate_award', 'no_lrn', 'duplicate_lrn', 'no_status', 'no_uii', 'incomplete', 'incomplete_stufaps_disb']
@@ -773,16 +773,16 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
       { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 100, render: (v) => v || <Text type="secondary">—</Text> },
       {
         title: 'Missing Fields',
-        dataIndex: 'missing_fields',
         key: 'missing_fields',
         width: 100,
-        render: (fields) => {
-          const count = (fields || []).length
-          if (!count) return <Text type="secondary">—</Text>
+        render: (_, r) => {
+          const fields = r.missing_fields || []
+          const totalCount = r.missing_field_count || fields.length
+          if (!totalCount) return <Text type="secondary">—</Text>
           const list = fields.map(f => fieldLabels[f] || f).join(', ')
           return (
-            <Tooltip title={list} placement="topLeft">
-              <Tag color="orange" style={{ cursor: 'pointer' }}>{count} field{count !== 1 ? 's' : ''}</Tag>
+            <Tooltip title={`${list} (across all disbursements)`} placement="topLeft">
+              <Tag color="orange" style={{ cursor: 'pointer' }}>{totalCount} field{totalCount !== 1 ? 's' : ''}</Tag>
             </Tooltip>
           )
         },

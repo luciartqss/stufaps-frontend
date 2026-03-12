@@ -736,7 +736,7 @@ export default function StudentDetails() {
         if (missing === 0) return <Tag color="success" style={{ fontSize: 11 }}>Complete</Tag>
         return (
           <Tag color="warning" style={{ fontWeight: 600, fontSize: 11 }}>
-            {missing}/{STUFAPS_REQUIRED_DISB_FIELDS.length} missing
+            {missing} missing
           </Tag>
         )
       },
@@ -1159,7 +1159,18 @@ export default function StudentDetails() {
 
       {/* Table */}
       <Card
-        title="Semester Transaction Records"
+        title={
+          <Space>
+            <span>Semester Transaction Records</span>
+            {(() => {
+              const totalMissing = (student.disbursements || []).reduce((sum, d) => sum + getDisbMissingCount(d), 0)
+              if (totalMissing > 0) {
+                return <Tag color="warning" style={{ fontSize: 11, fontWeight: 500 }}>{totalMissing} missing total</Tag>
+              }
+              return null
+            })()}
+          </Space>
+        }
         style={{ borderRadius: 12 }}
         styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}
         extra={

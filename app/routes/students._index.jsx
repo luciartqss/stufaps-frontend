@@ -548,9 +548,11 @@ export default function StudentsIndex() {
       render: (_, __, index) => {
         const page = (pagination?.current || 1)
         const pageSize = (pagination?.pageSize || 10)
-        return <span style={{ fontSize: 13, whiteSpace: 'nowrap' }}>{(page - 1) * pageSize + index + 1}</span>
+        const num = (page - 1) * pageSize + index + 1
+        const fontSize = num >= 1000 ? 10 : num >= 100 ? 11 : 12
+        return <span style={{ fontSize, whiteSpace: 'nowrap' }}>{num}</span>
       },
-      width: '3%',
+      width: 45,
       align: 'center',
     },
     {
