@@ -1,0 +1,2714 @@
+[
+  {
+    "City": "Manila",
+    "Barangay/District": "Binondo",
+    "ZIP Code": "1006",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Intramuros",
+    "ZIP Code": "1002",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Malate",
+    "ZIP Code": "1004",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Manila CPO – Ermita",
+    "ZIP Code": "1000",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Paco",
+    "ZIP Code": "1007",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Pandacan",
+    "ZIP Code": "1011",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Port Area (South)",
+    "ZIP Code": "1018",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Quiapo",
+    "ZIP Code": "1001",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sampaloc East",
+    "ZIP Code": "1008",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sampaloc West",
+    "ZIP Code": "1015",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "San Andres Bukid",
+    "ZIP Code": "1017",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "San Miguel",
+    "ZIP Code": "1005",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "San Nicolas",
+    "ZIP Code": "1010",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sta. Ana",
+    "ZIP Code": "1009",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sta Cruz North",
+    "ZIP Code": "1014",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sta Cruz South",
+    "ZIP Code": "1003",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Sta Mesa",
+    "ZIP Code": "1016",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Tondo North",
+    "ZIP Code": "1013",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Manila",
+    "Barangay/District": "Tondo South",
+    "ZIP Code": "1012",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Amparo Subdivision",
+    "ZIP Code": "1425",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Bagong Silang",
+    "ZIP Code": "1428",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Bagumbong/Pag-asa",
+    "ZIP Code": "1421",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Bankers Village",
+    "ZIP Code": "1426",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Capitol Parkland Subdivision",
+    "ZIP Code": "1424",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Kaybiga/Deparo",
+    "ZIP Code": "1420",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Lilles Ville Subdivision",
+    "ZIP Code": "1423",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Novaliches North",
+    "ZIP Code": "1422",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Tala Leprosarium",
+    "ZIP Code": "1427",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (North)",
+    "Barangay/District": "Victory Heights",
+    "ZIP Code": "1427",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "1st Avenue to 7th Avenue – West",
+    "ZIP Code": "1405",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Baesa",
+    "ZIP Code": "1401",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Fish Market",
+    "ZIP Code": "1411",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Grace Park East",
+    "ZIP Code": "1403",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Grace Park West",
+    "ZIP Code": "1406",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Isla de Cocomo",
+    "ZIP Code": "1412",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Caloocan City CPO",
+    "ZIP Code": "1400",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Kapitbahayan East",
+    "ZIP Code": "1413",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Kaunlaran Village",
+    "ZIP Code": "1409",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Maypajo",
+    "ZIP Code": "1410",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "San Jose",
+    "ZIP Code": "1404",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Sangandaan",
+    "ZIP Code": "1408",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "Sta. Quiteria",
+    "ZIP Code": "1402",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Caloocan City (South)",
+    "Barangay/District": "University Hills",
+    "ZIP Code": "1407",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Almanza",
+    "ZIP Code": "1750",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Angela Village",
+    "ZIP Code": "1749",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Cut-cut",
+    "ZIP Code": "1743",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Gatchalian Subdivision",
+    "ZIP Code": "1745",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Las Piñas CPO",
+    "ZIP Code": "1740",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Manila Doctors Village",
+    "ZIP Code": "1748",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Manuyo",
+    "ZIP Code": "1744",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Pulang Lupa",
+    "ZIP Code": "1742",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Remarville Subdivision",
+    "ZIP Code": "1741",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Soldiers Hills Subdivision",
+    "ZIP Code": "1752",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "T. S. Cruz Subdivision",
+    "ZIP Code": "1751",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Talon, Moonwalk",
+    "ZIP Code": "1747",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Verdant Acres Subdivision",
+    "ZIP Code": "1746",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Las Piñas City",
+    "Barangay/District": "Zapote",
+    "ZIP Code": "1742",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Ayala-Paseo De Roxas",
+    "ZIP Code": "1226",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Bangkal",
+    "ZIP Code": "1233",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Bel-air",
+    "ZIP Code": "1209",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Cembo",
+    "ZIP Code": "1214",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Comembo",
+    "ZIP Code": "1217",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Dasmarinas Village North",
+    "ZIP Code": "1221",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Dasmarinas Village South",
+    "ZIP Code": "1222",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Forbes Park North",
+    "ZIP Code": "1219",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Forbes Park South",
+    "ZIP Code": "1220",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Fort Bonifacio Naval Station",
+    "ZIP Code": "1202",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Greenbelt",
+    "ZIP Code": "1228",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Guadalupe Nuevo (inc. Visayan)",
+    "ZIP Code": "1212",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Guadalupe Viejo (inc. Palm Village)",
+    "ZIP Code": "1211",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Kasilawan",
+    "ZIP Code": "1206",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "La Paz-Singkamas-Tejeros",
+    "ZIP Code": "1204",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Legaspi Village",
+    "ZIP Code": "1229",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Magallanes Village",
+    "ZIP Code": "1232",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Commercial Center",
+    "ZIP Code": "1224",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Makati CPO (Inc. Buendia Avenue)",
+    "ZIP Code": "1200",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Olympia and Carmona",
+    "ZIP Code": "1207",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Palanan",
+    "ZIP Code": "1235",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Pasong Tamo 2000 Up, Ecology Village",
+    "ZIP Code": "1231",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Pembo",
+    "ZIP Code": "1218",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Pinagkaisahan-pitogo",
+    "ZIP Code": "1213",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Pio Del Pilar",
+    "ZIP Code": "1230",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Poblacion",
+    "ZIP Code": "1210",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Rembo (East) and Malapad Na Bato",
+    "ZIP Code": "1216",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Rembo (West)",
+    "ZIP Code": "1215",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Salcedo Village",
+    "ZIP Code": "1227",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "San Antonio Village (inc. Malu)",
+    "ZIP Code": "1203",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "San Isidro",
+    "ZIP Code": "1234",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "San Lorenzo Village",
+    "ZIP Code": "1223",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Sta. Cruz",
+    "ZIP Code": "1205",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Urdaneta Village",
+    "ZIP Code": "1225",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Makati City",
+    "Barangay/District": "Valenzuela (inc. Santiago, San Miguel and Rizal Village)",
+    "ZIP Code": "1208",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Acacia",
+    "ZIP Code": "1474",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Araneta Subdivision",
+    "ZIP Code": "1476",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Dampalit",
+    "ZIP Code": "1480",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Flores",
+    "ZIP Code": "1471",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Kaunlaran Village",
+    "ZIP Code": "1409",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Longos",
+    "ZIP Code": "1472",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Malabon",
+    "ZIP Code": "1470",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Maysilo",
+    "ZIP Code": "1477",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Muzon",
+    "ZIP Code": "1479",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Potrero",
+    "ZIP Code": "1475",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Santolan",
+    "ZIP Code": "1478",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Malabon City",
+    "Barangay/District": "Tonsuya",
+    "ZIP Code": "1473",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "East Edsa",
+    "ZIP Code": "1554",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Greenhills South",
+    "ZIP Code": "1556",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Mandaluyong CPO",
+    "ZIP Code": "1550",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Philippine National Mental Hospital",
+    "ZIP Code": "1553",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Shaw Boulevard",
+    "ZIP Code": "1552",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Vergara",
+    "ZIP Code": "1551",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Mandaluyong City",
+    "Barangay/District": "Wack Wack Golf",
+    "ZIP Code": "1555",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Barangka",
+    "ZIP Code": "1803",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Concepcion 1",
+    "ZIP Code": "1807",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Concepcion 2",
+    "ZIP Code": "1811",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Fortune",
+    "ZIP Code": "1812",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Industrial Valley",
+    "ZIP Code": "1802",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "J. De La Peña",
+    "ZIP Code": "1804",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Malanday",
+    "ZIP Code": "1805",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Marikina CPO – Sta. Elena – Sto. Niño",
+    "ZIP Code": "1800",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Marikina Heights",
+    "ZIP Code": "1810",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Nangka",
+    "ZIP Code": "1808",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Tumana",
+    "ZIP Code": "1806",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Parang",
+    "ZIP Code": "1809",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "San Roque – Calumpang",
+    "ZIP Code": "1801",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Marikina City",
+    "Barangay/District": "Tañong",
+    "ZIP Code": "1803",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Ayala Alabang P.O. Boxes",
+    "ZIP Code": "1799",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Ayala Alabang Subdivision",
+    "ZIP Code": "1780",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Bayanan/Putatan",
+    "ZIP Code": "1772",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Bule/Cupang",
+    "ZIP Code": "1771",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Filinvest Corp. City",
+    "ZIP Code": "1781",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Muntinlupa CPO",
+    "ZIP Code": "1770",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Pearl Heights",
+    "ZIP Code": "1775",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Pleasant Village",
+    "ZIP Code": "1777",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Poblacion",
+    "ZIP Code": "1776",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Susana Heights",
+    "ZIP Code": "1774",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Muntinlupa City",
+    "Barangay/District": "Tunasan",
+    "ZIP Code": "1773",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Fish Market",
+    "ZIP Code": "1411",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Isla De Cocomo",
+    "ZIP Code": "1412",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Kapitbahayan East",
+    "ZIP Code": "1413",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Kaunlaran Village",
+    "ZIP Code": "1409",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Navotas",
+    "ZIP Code": "1485",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Tangos",
+    "ZIP Code": "1489",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Navotas City",
+    "Barangay/District": "Tanza",
+    "ZIP Code": "1490",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Aeropark Subdivision",
+    "ZIP Code": "1714",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Baclaran",
+    "ZIP Code": "1702",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Better Living Subdivision",
+    "ZIP Code": "1711",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Bf Homes 1",
+    "ZIP Code": "1720",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Bf Homes 2",
+    "ZIP Code": "1718",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Executive Heights Subdivision",
+    "ZIP Code": "1710",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Ireneville II",
+    "ZIP Code": "1714",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Ireneville Subdivision I & II",
+    "ZIP Code": "1719",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Manila Memorial Park",
+    "ZIP Code": "1717",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Marina Subdivision (Reclamation)",
+    "ZIP Code": "1703",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Maywood I",
+    "ZIP Code": "1719",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Maywood Village II",
+    "ZIP Code": "1716",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Merville Park",
+    "ZIP Code": "1709",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Miramar Subdivision",
+    "ZIP Code": "1712",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Moonwalk",
+    "ZIP Code": "1709",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Multinational Village",
+    "ZIP Code": "1708",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Ninoy Aquino International Airport (NAIA)",
+    "ZIP Code": "1705",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Parañaque CPO",
+    "ZIP Code": "1700",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Pulo",
+    "ZIP Code": "1706",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "San Antonio Valley 11 & 12",
+    "ZIP Code": "1707",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "San Antonio Valley I",
+    "ZIP Code": "1715",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "South Admiral Village",
+    "ZIP Code": "1709",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Sto. Niño",
+    "ZIP Code": "1704",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "Tambo",
+    "ZIP Code": "1701",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Parañaque City",
+    "Barangay/District": "United Subdivision",
+    "ZIP Code": "1713",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "Domestic Airport PO",
+    "ZIP Code": "1301",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "Manila Bay (Reclamation)",
+    "ZIP Code": "1308",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "Pasay City CPO Malibay",
+    "ZIP Code": "1300",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "PICC (Reclamation Area)",
+    "ZIP Code": "1307",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "San Isidro",
+    "ZIP Code": "1306",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "San Jose",
+    "ZIP Code": "1305",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "San Rafael",
+    "ZIP Code": "1302",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "San Roque",
+    "ZIP Code": "1303",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "Santa Clara",
+    "ZIP Code": "1304",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasay City",
+    "Barangay/District": "Villamor Airbase",
+    "ZIP Code": "1309",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Caniogan",
+    "ZIP Code": "1606",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Green Park",
+    "ZIP Code": "1612",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Kapitolyo",
+    "ZIP Code": "1603",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Manggahan",
+    "ZIP Code": "1611",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Maybunga",
+    "ZIP Code": "1607",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Ortigas PO",
+    "ZIP Code": "1605",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Pasig CPO",
+    "ZIP Code": "1600",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Pinagbuhatan",
+    "ZIP Code": "1602",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Rosario",
+    "ZIP Code": "1609",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "San Joaquin",
+    "ZIP Code": "1601",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Santolan",
+    "ZIP Code": "1610",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Sta. Lucia",
+    "ZIP Code": "1608",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pasig City",
+    "Barangay/District": "Ugong",
+    "ZIP Code": "1604",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pateros",
+    "Barangay/District": "Aguho",
+    "ZIP Code": "1620",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Pateros",
+    "Barangay/District": "Sta. Ana",
+    "ZIP Code": "1621",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Alicia",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Amihan",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Apolonio Samson",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Baesa",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagbag",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagong Bayan",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagong Buhay",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagong Lipunan",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagong Pag-asa",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bagong Silangan",
+    "ZIP Code": "1119",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bahay Toro",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Balingasa",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Balumbato",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Batasan Hills",
+    "ZIP Code": "1126",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bayanihan",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "BF Homes",
+    "ZIP Code": "1120",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Blue Ridge",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Botocan",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Bungad",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Camp Aguinaldo",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Capitol Hills/Park",
+    "ZIP Code": "1126",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Capri",
+    "ZIP Code": "1117",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Central",
+    "ZIP Code": "1100",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Claro",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Commonwealth",
+    "ZIP Code": "1121",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Crame",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Cubao",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Culiat",
+    "ZIP Code": "1128",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Damar",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Damayan",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Damayan Lagi",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Damong Maliit",
+    "ZIP Code": "1123",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Del Monte",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Diliman",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Dioquino Zobel",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Doña Imelda",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Don Manuel",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Doña Aurora",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Doña Faustina Subd",
+    "ZIP Code": "1125",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Doña Josefa",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Duyan-duyan",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "E. Rodriguez",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Escopa",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Fairview",
+    "ZIP Code": "1118",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Fairview North",
+    "ZIP Code": "1121",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Fairview South",
+    "ZIP Code": "1122",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Gantol",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Gintong Silahis",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Gulod",
+    "ZIP Code": "1117",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Holy Spirit",
+    "ZIP Code": "1127",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Horseshoe",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Immaculate Concepcion",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kaligayahan",
+    "ZIP Code": "1124",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kalusugan",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kamias",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kamuning",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Katipunan",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kaunlaran",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Kristong Hari",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Krus Na Ligas",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "La Loma",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Langing Handa",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Libis",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Lourdes",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Loyola Heights",
+    "ZIP Code": "1108",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Maharlika",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Malaya",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Mangga",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Manresa",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Mariana",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Mariblo",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Marilag",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Masagana",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Masambong",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Matalahib",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Matandang Balara",
+    "ZIP Code": "1119",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Milagrosa",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Nagkaisang Nayon",
+    "ZIP Code": "1125",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Nayon Kaunlaran",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "New Era",
+    "ZIP Code": "1107",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Novaliches Proper",
+    "ZIP Code": "1121",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Obrero",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Old Capitol Site",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Paang Bundok",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Pag-ibig Sa Nayon",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Paligsahan",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Paltok",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Pansol",
+    "ZIP Code": "1108",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Paraiso",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Pasong Putik",
+    "ZIP Code": "1118",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Pasong Tamo",
+    "ZIP Code": "1107",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Payatas",
+    "ZIP Code": "1119",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Phil-am",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Pinagkaisahan",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Piñahan",
+    "ZIP Code": "1100",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Project 4",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Project 6",
+    "ZIP Code": "1100",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Project 7",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Project 8",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Quezon City CPO",
+    "ZIP Code": "1100",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Quirino District (Project 2 & 3)",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "R. Magsaysay",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Roxas District",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sacred Heart",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Salumbato",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Salvacion",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Agustin",
+    "ZIP Code": "1117",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Antonio",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Bartolome",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Isidro",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Isidro Labrador",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Jose",
+    "ZIP Code": "1115",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Roque",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "San Vicente",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sangandaan",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Santa Cruz",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Santa Lucia",
+    "ZIP Code": "1117",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Santa Monica",
+    "ZIP Code": "1117",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Santa Teresita",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sauyo",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sienna",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sikatuna Village",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Silangan",
+    "ZIP Code": "1102",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Socorro",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "South Triangle",
+    "ZIP Code": "1103",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "St. Ignatius",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "St. Martin De Porres",
+    "ZIP Code": "1111",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "St. Peter",
+    "ZIP Code": "1114",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sto. Cristo",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Sto. Nino",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Tagumpay",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Talampas",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Talayan",
+    "ZIP Code": "1104",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Talipapa",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Tandang Sora",
+    "ZIP Code": "1116",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Tatalon",
+    "ZIP Code": "1113",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Teachers Village",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Ugong Norte",
+    "ZIP Code": "1110",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Unang Sigaw",
+    "ZIP Code": "1106",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "University of the Philippines PO",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "UP Village",
+    "ZIP Code": "1101",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Valencia",
+    "ZIP Code": "1112",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Vasra",
+    "ZIP Code": "1128",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Veterans Village",
+    "ZIP Code": "1105",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Quezon City",
+    "Barangay/District": "Villa Maria Clara",
+    "ZIP Code": "1109",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "San Juan City",
+    "Barangay/District": "Eisenhower-Crame",
+    "ZIP Code": "1504",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "San Juan City",
+    "Barangay/District": "Greenhills North",
+    "ZIP Code": "1503",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "San Juan City",
+    "Barangay/District": "Greenhills PO",
+    "ZIP Code": "1502",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "San Juan City",
+    "Barangay/District": "San Juan CPO",
+    "ZIP Code": "1500",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bay Breeze Executive Village",
+    "ZIP Code": "1636",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bicutan",
+    "ZIP Code": "1631",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bicutan Lower",
+    "ZIP Code": "1632",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bicutan Upper",
+    "ZIP Code": "1633",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bicutan Western",
+    "ZIP Code": "1630",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Bonifacio Global City",
+    "ZIP Code": "1635",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Ligid",
+    "ZIP Code": "1638",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Nichols – Mckinley",
+    "ZIP Code": "1634",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Tuktukan",
+    "ZIP Code": "1637",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Taguig City",
+    "Barangay/District": "Ususan",
+    "ZIP Code": "1639",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Arkong Bato-Rincon-Pasolo-Malanday-Mabolo-Polo",
+    "ZIP Code": "1444",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Balangkas-Caloong",
+    "ZIP Code": "1445",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Dalandan – West Canumay",
+    "ZIP Code": "1443",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "East Canumay – Lawang Bato Pun",
+    "ZIP Code": "1447",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Fortune Village – Paso De Blas – Gen. T. De Leon",
+    "ZIP Code": "1442",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Karuhatan",
+    "ZIP Code": "1441",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Lingunan",
+    "ZIP Code": "1446",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Mapulang Lupa",
+    "ZIP Code": "1448",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Valenzuela CPO – Malinta",
+    "ZIP Code": "1440",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Valenzuela City",
+    "Barangay/District": "Valenzuela P.O. Boxes",
+    "ZIP Code": "1469",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "ACCRA Law Offices",
+    "ZIP Code": "770",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Adventist University of the Philippines",
+    "ZIP Code": "901",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "American Express",
+    "ZIP Code": "710",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Araneta Center",
+    "ZIP Code": "810",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Asian Development Bank – Manila",
+    "ZIP Code": "980",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Asian Development Bank – San Juan City",
+    "ZIP Code": "401",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Ateneo de Manila University",
+    "ZIP Code": "917",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Atlantic, Gulf and Pacific",
+    "ZIP Code": "790",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "A-Z Direct Marketing",
+    "ZIP Code": "709",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Bank of the Philippine Islands",
+    "ZIP Code": "720",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "BCD Direct Marketing",
+    "ZIP Code": "731",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Bible School on the Air",
+    "ZIP Code": "420",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "BPI Family Savings Bank",
+    "ZIP Code": "713",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Bureau of Internal Revenue",
+    "ZIP Code": "820",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Bureau of Plant Industry",
+    "ZIP Code": "912",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Caltex Philippines",
+    "ZIP Code": "926",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Camp Aguinaldo",
+    "ZIP Code": "802",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Camp Crame",
+    "ZIP Code": "801",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Canadian Embassy",
+    "ZIP Code": "707",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Chinabank",
+    "ZIP Code": "925",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Citibank",
+    "ZIP Code": "702",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Colgate Palmolive Philippines",
+    "ZIP Code": "701",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Commission on Audit",
+    "ZIP Code": "880",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "De La Salle University",
+    "ZIP Code": "922",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Department of Justice",
+    "ZIP Code": "970",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Department of Labor and Employment",
+    "ZIP Code": "910",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Diners Club",
+    "ZIP Code": "717",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Directories Philippines Corporation",
+    "ZIP Code": "788",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Don Stewart Evangelistic Association",
+    "ZIP Code": "923",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Equitable PCI Bank",
+    "ZIP Code": "726",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Export and Industry Bank",
+    "ZIP Code": "732",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Faith Embassy",
+    "ZIP Code": "706",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Far East Broadcasting Company – Manila",
+    "ZIP Code": "902",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Far East Broadcasting Corporation – Valenzuela City",
+    "ZIP Code": "560",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Febias College of Bible",
+    "ZIP Code": "550",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Fil-Japan Shipping Company",
+    "ZIP Code": "918",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Insular Life Assurance Company",
+    "ZIP Code": "725",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "International Center for Aquatic Resources",
+    "ZIP Code": "718",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "International Correspondence Institute",
+    "ZIP Code": "915",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "International Correspondence School",
+    "ZIP Code": "400",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "International Rice Research Institute",
+    "ZIP Code": "960",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Japanese Embassy",
+    "ZIP Code": "723",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Land Bank of the Philippines",
+    "ZIP Code": "711",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Manila Bulletin",
+    "ZIP Code": "900",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Manila Hotel",
+    "ZIP Code": "913",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Manila Medical Center",
+    "ZIP Code": "906",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Manila Pavilion Hotel",
+    "ZIP Code": "903",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Manila Police District",
+    "ZIP Code": "919",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Marcopper Mining Corporation",
+    "ZIP Code": "715",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Mead Johnson Philippines",
+    "ZIP Code": "780",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Midland Plaza Manila Hotel",
+    "ZIP Code": "904",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "National Irrigation Administration",
+    "ZIP Code": "830",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Pan-Filipino Shipping",
+    "ZIP Code": "908",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Airlines",
+    "ZIP Code": "750",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine American Life and General Insurance Company",
+    "ZIP Code": "990",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Campus Crusade for Christ",
+    "ZIP Code": "928",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Heart Center",
+    "ZIP Code": "850",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Long Distance Telephone Company",
+    "ZIP Code": "721",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Manila Mission",
+    "ZIP Code": "714",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine National Bank",
+    "ZIP Code": "940",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine National Oil Company",
+    "ZIP Code": "708",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Refining Company and Unilever Philippines",
+    "ZIP Code": "914",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Statistics Authority",
+    "ZIP Code": "911",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Philippine Veterans Affairs Office",
+    "ZIP Code": "927",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Pilipinas Shell",
+    "ZIP Code": "760",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Plain Truth Ministries",
+    "ZIP Code": "700",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Producers Bank",
+    "ZIP Code": "704",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Prudential Bank",
+    "ZIP Code": "712",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Quezon City Hall",
+    "ZIP Code": "860",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Radio Bible Class",
+    "ZIP Code": "410",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Radio Veritas",
+    "ZIP Code": "916",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Rizal Commercial Banking Corporation",
+    "ZIP Code": "727",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "San Miguel Corporation",
+    "ZIP Code": "907",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Sarmiento Enterprises",
+    "ZIP Code": "703",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Security Bank",
+    "ZIP Code": "719",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Social Security System",
+    "ZIP Code": "800",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Sofitel Philippine Plaza",
+    "ZIP Code": "921",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Summer Institute of Linguistics",
+    "ZIP Code": "909",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Sun Life Financial",
+    "ZIP Code": "724",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Sunbursts Publications",
+    "ZIP Code": "920",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Sycip, Gorres, Velayo and Co.",
+    "ZIP Code": "740",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "The Philippine Star",
+    "ZIP Code": "905",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Union Ajinomoto",
+    "ZIP Code": "705",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "United Coconut Planters Bank",
+    "ZIP Code": "728",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "United States Embassy",
+    "ZIP Code": "930",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "V. Luna Hospital",
+    "ZIP Code": "840",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Veterans Hospital",
+    "ZIP Code": "870",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "World Executive Digest",
+    "ZIP Code": "722",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "World Map",
+    "ZIP Code": "924",
+    "Area Code ": "2 "
+  },
+  {
+    "City": "Companies/Institutions",
+    "Barangay/District": "Zuellig Pharma",
+    "ZIP Code": "730",
+    "Area Code ": "2"
+  }
+]

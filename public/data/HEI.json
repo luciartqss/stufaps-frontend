@@ -1,0 +1,2786 @@
+[
+  {
+    "UII": "04245",
+    "Name of Institution": "ABE International Business College-Cainta",
+    "Name of Institution\n (Registered in SEC)": "ABE International Business College-Cainta Rizal, Inc.",
+    "Former Name/s": "ABE International College of Business and Accountancy, ABE International College of Business and Economics-Cainta, Rizal Inc."
+  },
+  {
+    "UII": "04410",
+    "Name of Institution": "ABE International Business College-Quezon",
+    "Name of Institution\n (Registered in SEC)": "ABE International Business College-Quezon Province, Inc.",
+    "Former Name/s": "ABE International College of Business and Accountancy, ABE International College of Business and Economics-Lucena"
+  },
+  {
+    "UII": "04OLD1",
+    "Name of Institution": "ABE International College of Business and Economics-Calamba",
+    "Name of Institution\n (Registered in SEC)": "ABE International College of Business and Economics-Calamba, Laguna, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD2",
+    "Name of Institution": "ABE International College of Business and Economics-Cavite",
+    "Name of Institution\n (Registered in SEC)": "ABE International College of Business and Economics-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD3",
+    "Name of Institution": "ABE International College of Business and Economics-Lipa",
+    "Name of Institution\n (Registered in SEC)": "ABE International College of Business and Economics-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD4",
+    "Name of Institution": "ABE International College of Business and Economics-San Pedro",
+    "Name of Institution\n (Registered in SEC)": "ABE International College of Business and Economics-San Pedro, Laguna, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04450",
+    "Name of Institution": "ACLC College of San Pablo",
+    "Name of Institution\n (Registered in SEC)": "ACLC College of San Pablo, Inc.",
+    "Former Name/s": "AMA Computer Learning Center of San Pablo City, Inc (2001)"
+  },
+  {
+    "UII": "04431",
+    "Name of Institution": "ACLC College of Taytay",
+    "Name of Institution\n (Registered in SEC)": "ACLC College of Taytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04411",
+    "Name of Institution": "ACTS Computer College-Infanta",
+    "Name of Institution\n (Registered in SEC)": "ACTS Computer College-Infanta",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04002",
+    "Name of Institution": "ACTS Computer College-Sta. Cruz",
+    "Name of Institution\n (Registered in SEC)": "ACTS Computer College-Sta. Cruz",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04451",
+    "Name of Institution": "Advance Treasure College System",
+    "Name of Institution\n (Registered in SEC)": "Advance Treasure College System",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04190",
+    "Name of Institution": "Adventist International Institute of Advanced Studies",
+    "Name of Institution\n (Registered in SEC)": "Adventist International Institute of Advanced Studies",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04079",
+    "Name of Institution": "Adventist University of the Philippines",
+    "Name of Institution\n (Registered in SEC)": "Adventist University of the Philippines",
+    "Former Name/s": "Philippine Seventh-Day Adventist Academy [1917], Philippine Junior College [1926], Philippine Union College [1933]"
+  },
+  {
+    "UII": "04361",
+    "Name of Institution": "Agoncillo College",
+    "Name of Institution\n (Registered in SEC)": "Agoncillo College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04483",
+    "Name of Institution": "AISAT College-Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "AISAT College-Dasmariñas Inc.",
+    "Former Name/s": "Asian Institute of Science and Technology-Central, Inc. [2008], Asian Institute of Science and Technology-Dasmariñas, Inc. [2011], Asian Institute of Science and Technology-Dasmariñas, Inc. (doing business under the name of AISAT College) [2008]"
+  },
+  {
+    "UII": "04OLD28",
+    "Name of Institution": "Albatross Foundation Academy",
+    "Name of Institution\n (Registered in SEC)": "Albatross Foundation Academy, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04200",
+    "Name of Institution": "Alitagtag College",
+    "Name of Institution\n (Registered in SEC)": "Alitagtag College Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04340",
+    "Name of Institution": "All Nations College",
+    "Name of Institution\n (Registered in SEC)": "All Nations College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04401",
+    "Name of Institution": "Alpha Centauri Educational System",
+    "Name of Institution\n (Registered in SEC)": "Alpha Centauri Educational System",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04195",
+    "Name of Institution": "AMA College-Cavite",
+    "Name of Institution\n (Registered in SEC)": "AMA College-Cavite, Inc.",
+    "Former Name/s": "AMA Computer College-Dasmariñas, Cavite, Inc."
+  },
+  {
+    "UII": "04196",
+    "Name of Institution": "AMA Computer College-Batangas City",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Batangas City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04154",
+    "Name of Institution": "AMA Computer College-Biñan",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Biñan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04232",
+    "Name of Institution": "AMA Computer College-Calamba",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Calamba Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04177",
+    "Name of Institution": "AMA Computer College-East Rizal",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-East Rizal",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04201",
+    "Name of Institution": "AMA Computer College-Lipa City",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Lipa City, Inc",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04233",
+    "Name of Institution": "AMA Computer College-Lucena",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Lucena",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04172",
+    "Name of Institution": "AMA Computer College-Sta.Cruz",
+    "Name of Institution\n (Registered in SEC)": "AMA Computer College-Sta.Cruz",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04292",
+    "Name of Institution": "AMA School of Medicine-East Rizal",
+    "Name of Institution\n (Registered in SEC)": "AMA School of Medicine-East Rizal",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04523",
+    "Name of Institution": "Angono Catholic College",
+    "Name of Institution\n (Registered in SEC)": "Angono Catholic College, Inc.",
+    "Former Name/s": "St. Clement Parochial School, Inc. [1984], Colegio De San Clemente [1997]"
+  },
+  {
+    "UII": "04OLD26",
+    "Name of Institution": "Antipolo College Foundation",
+    "Name of Institution\n (Registered in SEC)": "Antipolo College Foundation, Inc.",
+    "Former Name/s": "Antipolo School of Nursing and Midwifery"
+  },
+  {
+    "UII": "04470",
+    "Name of Institution": "Antipolo Institute of Technology (AiTECH)",
+    "Name of Institution\n (Registered in SEC)": "Antipolo Institute of Technology (AiTECH)",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04412",
+    "Name of Institution": "Asia Pacific Christian College and Seminary",
+    "Name of Institution\n (Registered in SEC)": "Asia Pacific Christian College and Seminary INC.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04413",
+    "Name of Institution": "Asia Technological School of Science and Arts (ASIATECH)",
+    "Name of Institution\n (Registered in SEC)": "Asia Technological School of Science and Arts (ASIATECH), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04258",
+    "Name of Institution": "Asian College of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Asian College of Science and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04452",
+    "Name of Institution": "Asian Institute of Business and Technology",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Business and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04528",
+    "Name of Institution": "Asian Institute of Computer Studies-Bacoor",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Computer Studies-Bacoor",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04529",
+    "Name of Institution": "Asian Institute of Computer Studies-Batangas City",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Computer Studies-Batangas City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04530",
+    "Name of Institution": "Asian Institute of Computer Studies-Montalban",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Computer Studies-Montalban",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04383",
+    "Name of Institution": "Asian Institute of Technology and Education-Tiaong Campus",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Technology and Education-Tiaong Campus, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04524",
+    "Name of Institution": "Asian Institute of Technology, Sciences and Arts (AITSA)",
+    "Name of Institution\n (Registered in SEC)": "Asian Institute of Technology, Sciences and Arts (AITSA) Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04402",
+    "Name of Institution": "Asian School of Hospitality Arts (ASHA)",
+    "Name of Institution\n (Registered in SEC)": "Asian School of Hospitality Arts (ASHA), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13019",
+    "Name of Institution": "Asian Seminary of Christian Ministries",
+    "Name of Institution\n (Registered in SEC)": "Asian Seminary of Christian Ministries, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04005",
+    "Name of Institution": "Asia-Pacific Nazarene Theological Seminary",
+    "Name of Institution\n (Registered in SEC)": "Asia-Pacific Nazarene Theological Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04241",
+    "Name of Institution": "Balayan Colleges",
+    "Name of Institution\n (Registered in SEC)": "Balayan Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04007",
+    "Name of Institution": "Balian Community College",
+    "Name of Institution\n (Registered in SEC)": "Balian Community College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04525",
+    "Name of Institution": "Banahaw Technological College",
+    "Name of Institution\n (Registered in SEC)": "Banahaw Technological College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04267",
+    "Name of Institution": "Baptist Bible Seminary and Institute",
+    "Name of Institution\n (Registered in SEC)": "Baptist Bible Seminary and Institute, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04269",
+    "Name of Institution": "Baptist Voice Bible College",
+    "Name of Institution\n (Registered in SEC)": "Baptist Voice Bible College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04369",
+    "Name of Institution": "Batangas College of Arts and Sciences",
+    "Name of Institution\n (Registered in SEC)": "Batangas College of Arts and Sciences, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04308",
+    "Name of Institution": "Batangas Eastern Colleges",
+    "Name of Institution\n (Registered in SEC)": "Batangas Eastern Colleges",
+    "Former Name/s": "Batangas Eastern Academy (2008)"
+  },
+  {
+    "UII": "04071",
+    "Name of Institution": "Batangas State University",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University",
+    "Former Name/s": "Manual Training School for Young Men [1903], Batangas Trade School [1905], Pablo Borbon Memorial Trade School [1953], National Trade School [1952], Pablo Borbon Regional School of Arts and Trades [1957], Pablo Borbon Memorial Institute of Technology [1968], Batangas State University-Pablo Borbon Memorial Institute of Technology, Batangas State University [2001]"
+  },
+  {
+    "UII": "04363",
+    "Name of Institution": "Batangas State University-Alangilan",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Alangilan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04071a",
+    "Name of Institution": "Batangas State University-Balayan",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Balayan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04309",
+    "Name of Institution": "Batangas State University-Lemery",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Lemery",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04071c",
+    "Name of Institution": "Batangas State University-Lipa City",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Lipa City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04071d",
+    "Name of Institution": "Batangas State University-Lobo",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Lobo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04517",
+    "Name of Institution": "Batangas State University-Mabini",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Mabini",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04151",
+    "Name of Institution": "Batangas State University-Malvar",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Malvar",
+    "Former Name/s": "Batangas State University-Jose P. Laurel Polytechnic College-Malvar"
+  },
+  {
+    "UII": "04004",
+    "Name of Institution": "Batangas State University-Nasugbu",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Nasugbu",
+    "Former Name/s": "Batangas State University-Apolinario R. Apacible School of Fisheries-Nasugbu"
+  },
+  {
+    "UII": "04071f",
+    "Name of Institution": "Batangas State University-Rosario",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Rosario",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04071g",
+    "Name of Institution": "Batangas State University-San Juan",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-San Juan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04071??",
+    "Name of Institution": "Batangas State University-Taysan",
+    "Name of Institution\n (Registered in SEC)": "Batangas State University-Taysan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04192",
+    "Name of Institution": "Binangonan Catholic College",
+    "Name of Institution\n (Registered in SEC)": "Binangonan Catholic College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD5",
+    "Name of Institution": "Blessed Child Christ Montesorri Foundation",
+    "Name of Institution\n (Registered in SEC)": "Blessed Child  Christ Montesorri Foundation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04377",
+    "Name of Institution": "Brookfield College in Cavite",
+    "Name of Institution\n (Registered in SEC)": "Brookfield College in Cavite, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04436",
+    "Name of Institution": "BWEST College",
+    "Name of Institution\n (Registered in SEC)": "BWEST College (Boater's Wheel Educational System and Technology) Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04160",
+    "Name of Institution": "Cainta Catholic College",
+    "Name of Institution\n (Registered in SEC)": "Cainta Catholic College, Inc.",
+    "Former Name/s": "Cainta Catholic School, Inc."
+  },
+  {
+    "UII": "04531",
+    "Name of Institution": "Calaca City Global College",
+    "Name of Institution\n (Registered in SEC)": "Calaca City Global College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04272",
+    "Name of Institution": "Calamba Doctors' College",
+    "Name of Institution\n (Registered in SEC)": "Calamba Doctors' College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04008",
+    "Name of Institution": "Calauag Central College",
+    "Name of Institution\n (Registered in SEC)": "Calauag Central College Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04059",
+    "Name of Institution": "Calayan Educational Foundation",
+    "Name of Institution\n (Registered in SEC)": "Calayan Educational Foundation, Inc.",
+    "Former Name/s": "Medical Center Lucena Educational Institution"
+  },
+  {
+    "UII": "04009",
+    "Name of Institution": "Canossa College - San Pablo City",
+    "Name of Institution\n (Registered in SEC)": "Canossa College - San Pablo City, Inc.",
+    "Former Name/s": "Canossa College"
+  },
+  {
+    "UII": "04467",
+    "Name of Institution": "CARD-MRI Development Institute",
+    "Name of Institution\n (Registered in SEC)": "CARD-MRI Development Institute, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04282",
+    "Name of Institution": "Casa Del Niño College",
+    "Name of Institution\n (Registered in SEC)": "Casa Del Niño College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04522",
+    "Name of Institution": "Cavite Integrated College",
+    "Name of Institution\n (Registered in SEC)": "Cavite Integrated College Inc.",
+    "Former Name/s": "Salinas Westpoint College, Inc."
+  },
+  {
+    "UII": "04OLD6",
+    "Name of Institution": "Cavite School of St. Mark",
+    "Name of Institution\n (Registered in SEC)": "Cavite School of St. Mark Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD7",
+    "Name of Institution": "Cavite Solas Training Center",
+    "Name of Institution\n (Registered in SEC)": "Cavite Solas Training Center",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04027",
+    "Name of Institution": "Cavite State University",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University",
+    "Former Name/s": "Indang Farm School [1918], Indang Rural High School [1927], Don Severino National Agricultural School [1958], Don Severino Agricultural College [1964], Cavite State University [1998]"
+  },
+  {
+    "UII": "04NEW41",
+    "Name of Institution": "Cavite State University Learning Center-Dasmariñas City",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University Learning Center-Dasmariñas City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04385",
+    "Name of Institution": "Cavite State University-Bacoor",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Bacoor",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04318",
+    "Name of Institution": "Cavite State University-Carmona",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Carmona",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04260",
+    "Name of Institution": "Cavite State University-Cavite City",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Cavite City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04386",
+    "Name of Institution": "Cavite State University-General Trias",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-General Trias",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04319",
+    "Name of Institution": "Cavite State University-Imus",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Imus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04011",
+    "Name of Institution": "Cavite State University-Naic",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Naic",
+    "Former Name/s": "Cavite College of Fisheries"
+  },
+  {
+    "UII": "04010",
+    "Name of Institution": "Cavite State University-Rosario",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Rosario",
+    "Former Name/s": "Cavite College of Arts and Trade"
+  },
+  {
+    "UII": "04362",
+    "Name of Institution": "Cavite State University-Silang",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Silang Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04384",
+    "Name of Institution": "Cavite State University-Tanza",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Tanza Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04350",
+    "Name of Institution": "Cavite State University-Trece Martires City",
+    "Name of Institution\n (Registered in SEC)": "Cavite State University-Trece Martires City",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04234",
+    "Name of Institution": "Cavite West Point College",
+    "Name of Institution\n (Registered in SEC)": "Cavite West Point College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04301",
+    "Name of Institution": "Centennial College of the Philippines",
+    "Name of Institution\n (Registered in SEC)": "Centennial College of the Philippines",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04437",
+    "Name of Institution": "Center for Biblical Studies Institute & Seminary",
+    "Name of Institution\n (Registered in SEC)": "Center for Biblical Studies Institute & Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04300",
+    "Name of Institution": "Christian College of Tanauan",
+    "Name of Institution\n (Registered in SEC)": "Christian College of Tanauan, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04453",
+    "Name of Institution": "CITI Global College-Biñan",
+    "Name of Institution\n (Registered in SEC)": "CITI Global College Inc. - Biñan",
+    "Former Name/s": "Don Bosco Institute of Arts & Sciences-Biñan, Don Bosco Institute of Arts and Sciences - Biñan"
+  },
+  {
+    "UII": "04463",
+    "Name of Institution": "CITI Global College-Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "CITI Global College Inc. - Cabuyao",
+    "Former Name/s": "Don Bosco Institute of Arts & Sciences-Cabuyao, Don Bosco Institute of Arts and Sciences - Cabuyao"
+  },
+  {
+    "UII": "04514",
+    "Name of Institution": "CITI Global College-Calamba",
+    "Name of Institution\n (Registered in SEC)": "CITI Global College Inc. - Caalamba",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04356",
+    "Name of Institution": "City College of Calamba",
+    "Name of Institution\n (Registered in SEC)": "City College of Calamba",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04375",
+    "Name of Institution": "City College of Tagaytay",
+    "Name of Institution\n (Registered in SEC)": "City College of Tagaytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04365",
+    "Name of Institution": "Colegio de Amore",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Amore",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04532",
+    "Name of Institution": "Colegio de General Luna",
+    "Name of Institution\n (Registered in SEC)": "Colegio de General Luna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04535",
+    "Name of Institution": "Colegio De Laurel",
+    "Name of Institution\n (Registered in SEC)": "Colegio De Laurel",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04507",
+    "Name of Institution": "Colegio De La Ciudad De Tayabas",
+    "Name of Institution\n (Registered in SEC)": "Colegio De La Ciudad De Tayabas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04014",
+    "Name of Institution": "Colegio de Los Baños",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Los Baños",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04345",
+    "Name of Institution": "Colegio de Montalban",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Montalban",
+    "Former Name/s": "Pamantasan ng Montalban [2014]"
+  },
+  {
+    "UII": "04395",
+    "Name of Institution": "Colegio de Porta Vaga",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Porta Vaga",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD8",
+    "Name of Institution": "Colegio De Salitran",
+    "Name of Institution\n (Registered in SEC)": "Colegio De Salitran Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD9",
+    "Name of Institution": "Colegio De San Antonio",
+    "Name of Institution\n (Registered in SEC)": "Colegio De San Antonio",
+    "Former Name/s": "Colegio San Antonio"
+  },
+  {
+    "UII": "04015",
+    "Name of Institution": "Colegio De San Juan De Letran Calamba",
+    "Name of Institution\n (Registered in SEC)": "Colegio De San Juan De Letran Calamba, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04155",
+    "Name of Institution": "Colegio De San Pedro",
+    "Name of Institution\n (Registered in SEC)": "Colegio De San Pedro, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04398",
+    "Name of Institution": "Colegio de Santo Cristo de Burgos",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Santo Cristo de Burgos Corporation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD10",
+    "Name of Institution": "Colegio De Sta. Eugenia",
+    "Name of Institution\n (Registered in SEC)": "Colegio De Sta. Eugenia",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04468",
+    "Name of Institution": "Colegio de Sto. Domingo de Silos",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Sto. Domingo de Silos Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04017",
+    "Name of Institution": "Colegio de Sto. Niño de Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "Colegio de Sto. Niño de Cabuyao",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04359",
+    "Name of Institution": "Colegio ng Lungsod ng Batangas",
+    "Name of Institution\n (Registered in SEC)": "Colegio ng Lungsod ng Batangas",
+    "Former Name/s": "Kolehiyo ng Lungsod ng Batangas"
+  },
+  {
+    "UII": "04176",
+    "Name of Institution": "Colegio San Agustin-Biñan",
+    "Name of Institution\n (Registered in SEC)": "Colegio San Agustin, Biñan, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04432",
+    "Name of Institution": "College of Arts & Sciences of Asia and the Pacific",
+    "Name of Institution\n (Registered in SEC)": "College of Arts & Sciences of Asia and the Pacific",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04446",
+    "Name of Institution": "College of Saint John Paul II Arts And Sciences",
+    "Name of Institution\n (Registered in SEC)": "College of Saint John Paul (II) Arts And Sciences, Inc.",
+    "Former Name/s": "S.J.B. Saint John Bosco I.A.S Inc. (2013)"
+  },
+  {
+    "UII": "04392",
+    "Name of Institution": "College of San Benildo-Rizal",
+    "Name of Institution\n (Registered in SEC)": "College of San Benildo-Rizal",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD11",
+    "Name of Institution": "College of St. Anne Laguna",
+    "Name of Institution\n (Registered in SEC)": "College of St. Anne Laguna Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04281",
+    "Name of Institution": "Columbus College",
+    "Name of Institution\n (Registered in SEC)": "Columbus College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04496",
+    "Name of Institution": "CSTC College of Sciences, Technology and Communications-Atimonan",
+    "Name of Institution\n (Registered in SEC)": "CSTC College of Sciences, Technology and Communications, Inc.-Atimonan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04414",
+    "Name of Institution": "CSTC College of Sciences, Technology and Communications-Sariaya",
+    "Name of Institution\n (Registered in SEC)": "CSTC College of Sciences, Technology and Communications, Inc.-Sariaya",
+    "Former Name/s": "CSTC Computer Systems Technology College"
+  },
+  {
+    "UII": "04355",
+    "Name of Institution": "CVE Colleges",
+    "Name of Institution\n (Registered in SEC)": "CVE Colleges, Inc.",
+    "Former Name/s": "CVE Technical and Vocational School [2002]"
+  },
+  {
+    "UII": "04462",
+    "Name of Institution": "Daehan College of Business and Technology",
+    "Name of Institution\n (Registered in SEC)": "Daehan College of Business and Technology, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04280",
+    "Name of Institution": "Dalubhasaan ng Lungsod ng Lucena",
+    "Name of Institution\n (Registered in SEC)": "Dalubhasaan ng Lungsod ng Lucena",
+    "Former Name/s": "City College of Lucena (2001)"
+  },
+  {
+    "UII": "04185",
+    "Name of Institution": "Dalubhasaan ng Lunsod ng San Pablo",
+    "Name of Institution\n (Registered in SEC)": "Dalubhasaan ng Lunsod ng San Pablo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04536",
+    "Name of Institution": "Datacom Institute of Computer Technology",
+    "Name of Institution\n (Registered in SEC)": "Datacom Institute of Computer Technology Corporation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04019",
+    "Name of Institution": "De La Salle Lipa",
+    "Name of Institution\n (Registered in SEC)": "De La Salle Lipa, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04025",
+    "Name of Institution": "De La Salle Medical and Health Sciences Institute",
+    "Name of Institution\n (Registered in SEC)": "Hermano (San) Miguel Febres Cordero Medical Education Foundation (De La Salle Medical and Health Sciences Institute), Inc.",
+    "Former Name/s": "Emilio Aguinaldo College of Medicine [1979], De La Salle University Emilio Aguinaldo College of Medicine [1987], De La Salle University College of Medicine [1993], De La Salle University Health Sciences Campus [1996], De La Salle Health Sciences Campus [2005], De La Salle Health Sciences Institute [2008], De La Salle Medical and Health Sciences Institute [2018]"
+  },
+  {
+    "UII": "04024",
+    "Name of Institution": "De La Salle University-Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "De La Salle University-Dasmariñas",
+    "Former Name/s": "General Emilio Aguinaldo College (1977), De La Salle University-Emilio Aguinaldo College (1987), De La Salle University-Aguinaldo (1992)"
+  },
+  {
+    "UII": "04298",
+    "Name of Institution": "De La Salle-Canlubang",
+    "Name of Institution\n (Registered in SEC)": "De La Salle-Canlubang (Leandro V. Locsin Campus)",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04497",
+    "Name of Institution": "De La Salle-College of Saint Benilde-Antipolo",
+    "Name of Institution\n (Registered in SEC)": "De La Salle - College of Saint Benilde, Inc.-Antipolo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04020",
+    "Name of Institution": "Deaf Evangelistic Alliance Foundation",
+    "Name of Institution\n (Registered in SEC)": "Deaf Evangelistic Alliance Foundation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04438",
+    "Name of Institution": "D'Illumina College",
+    "Name of Institution\n (Registered in SEC)": "D'Illumina College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04023",
+    "Name of Institution": "Divine Word Seminary",
+    "Name of Institution\n (Registered in SEC)": "Divine Word Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04293",
+    "Name of Institution": "Mercado College",
+    "Name of Institution\n (Registered in SEC)": "DMMC Institute of Health Sciences Inc.\n(doing business under the name and style of Mercado College)",
+    "Former Name/s": "DMMC Institute of Health Sciences"
+  },
+  {
+    "UII": "04139",
+    "Name of Institution": "Dominican College Sta. Rosa",
+    "Name of Institution\n (Registered in SEC)": "Dominican College Sta. Rosa",
+    "Former Name/s": "Dominican College of Sta. Rosa, Laguna, Inc. (1994)"
+  },
+  {
+    "UII": "04026",
+    "Name of Institution": "Don Bosco College",
+    "Name of Institution\n (Registered in SEC)": "Don Bosco College, Inc.",
+    "Former Name/s": "Don Bosco College-Seminary Inc."
+  },
+  {
+    "UII": "04043",
+    "Name of Institution": "Dr. Francisco L. Calingasan Memorial Colleges Foundation",
+    "Name of Institution\n (Registered in SEC)": "Dr. Francisco L. Calingasan Memorial Colleges Foundation Inc.",
+    "Former Name/s": "I.B. Calingasan Memorial Institution [2007]"
+  },
+  {
+    "UII": "04400",
+    "Name of Institution": "East Systems Colleges of Rizal",
+    "Name of Institution\n (Registered in SEC)": "East Systems Colleges of Rizal",
+    "Former Name/s": "East Systems College"
+  },
+  {
+    "UII": "04031",
+    "Name of Institution": "Eastern Quezon College",
+    "Name of Institution\n (Registered in SEC)": "Eastern Quezon College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04516",
+    "Name of Institution": "Eastern Star Academy",
+    "Name of Institution\n (Registered in SEC)": "Eastern Star Academy, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04032",
+    "Name of Institution": "Eastern Tayabas College",
+    "Name of Institution\n (Registered in SEC)": "Eastern Tayabas College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04323",
+    "Name of Institution": "Ebenezer International Colleges",
+    "Name of Institution\n (Registered in SEC)": "Ebenezer International Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04199",
+    "Name of Institution": "Emilio Aguinaldo College",
+    "Name of Institution\n (Registered in SEC)": "Emilio Aguinaldo Educational Corporation-Emilio Aguinaldo College",
+    "Former Name/s": "Yaman ng Lahi Foundation, Yaman Lahi Foundation - Emilio Aguinaldo College"
+  },
+  {
+    "UII": "13056a",
+    "Name of Institution": "Eulogio \"\"Amang\"\" Rodriguez Institute of Science and Technology-Cavite",
+    "Name of Institution\n (Registered in SEC)": "Eulogio \"\"Amang\"\" Rodriguez Institute of Science and Technology-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04415",
+    "Name of Institution": "Evangelical Theological College of the Philippines-Luzon",
+    "Name of Institution\n (Registered in SEC)": "Evangelical Theological College of the Philippines-Luzon",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04454",
+    "Name of Institution": "Far East Asia Pacific Institute of Tourism Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Far East Asia Pacific Institute of Tourism Science and Technology Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04366",
+    "Name of Institution": "Far Eastern Polytechnic College",
+    "Name of Institution\n (Registered in SEC)": "Far Eastern Polytechnic College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04502",
+    "Name of Institution": "FCD Central Institute",
+    "Name of Institution\n (Registered in SEC)": "FCD Central Institute, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04404",
+    "Name of Institution": "FEU Cavite (Formerly: Far Eastern College-Silang, Inc.)",
+    "Name of Institution\n (Registered in SEC)": "Far Eastern College-Silang, Inc.\ndoing business under the name and style of\nFEU Cavite (Formerly: Far Eastern College-Silang, Inc.)",
+    "Former Name/s": "Far Eastern College-Silang"
+  },
+  {
+    "UII": "04095",
+    "Name of Institution": "FEU Roosevelt",
+    "Name of Institution\n (Registered in SEC)": "Roosevelt College, Inc.\ndoing business under the name and style of\nFEU Roosevelt",
+    "Former Name/s": "Roosevelt College, Inc.-Cainta"
+  },
+  {
+    "UII": "04250",
+    "Name of Institution": "First Asia Institute of Technology and Humanities",
+    "Name of Institution\n (Registered in SEC)": "First Asia Institute of Technology and Humanities",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04508",
+    "Name of Institution": "First Industrial Science and Technology College",
+    "Name of Institution\n (Registered in SEC)": "First Industrial Science and Technology College, Inc.",
+    "Former Name/s": "First Industrial Science and Technology School, Inc."
+  },
+  {
+    "UII": "04332",
+    "Name of Institution": "Gardner College Cainta",
+    "Name of Institution\n (Registered in SEC)": "Gardner College Cainta, Inc.",
+    "Former Name/s": "Informatics International College-Rizal, Informatics International College-Cainta, Inc."
+  },
+  {
+    "UII": "04428",
+    "Name of Institution": "General Trias College of Cavite",
+    "Name of Institution\n (Registered in SEC)": "General Trias College of Cavite, Inc.",
+    "Former Name/s": "Young Ji College Inc."
+  },
+  {
+    "UII": "04173",
+    "Name of Institution": "Global Computer Info-teq School",
+    "Name of Institution\n (Registered in SEC)": "Global Computer Info-teq School, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04033",
+    "Name of Institution": "Golden Gate Colleges",
+    "Name of Institution\n (Registered in SEC)": "Golden Gate Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04476",
+    "Name of Institution": "Grabsum School",
+    "Name of Institution\n (Registered in SEC)": "Grabsum School Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04439",
+    "Name of Institution": "Grain of Wheat College",
+    "Name of Institution\n (Registered in SEC)": "Grain of Wheat College Inc.",
+    "Former Name/s": "Elijah International World Mission Institute"
+  },
+  {
+    "UII": "04407",
+    "Name of Institution": "Granby Colleges of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Granby Colleges of Science and Technology Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13435",
+    "Name of Institution": "Guang Ming College",
+    "Name of Institution\n (Registered in SEC)": "Guang Ming College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04455",
+    "Name of Institution": "Guardians Bona Fide for Hope Foundation",
+    "Name of Institution\n (Registered in SEC)": "Guardians Bona Fide for Hope Foundation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04416",
+    "Name of Institution": "Guinayangan College Foundation",
+    "Name of Institution\n (Registered in SEC)": "Guinayangan College Foundation Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD12",
+    "Name of Institution": "Guzman Institute of Electronic and Technology",
+    "Name of Institution\n (Registered in SEC)": "Guzman Institute of Electronic and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04035",
+    "Name of Institution": "Harris Memorial College",
+    "Name of Institution\n (Registered in SEC)": "Harris Memorial College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04251",
+    "Name of Institution": "Holy Child Jesus College",
+    "Name of Institution\n (Registered in SEC)": "Holy Child Jesus College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD14",
+    "Name of Institution": "Holy Rosary College of Santa Rosa",
+    "Name of Institution\n (Registered in SEC)": "Holy Rosary College of Santa Rosa, Laguna Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04417",
+    "Name of Institution": "ICCT Colleges-Antipolo",
+    "Name of Institution\n (Registered in SEC)": "ICCT Colleges Foundation, Inc.-Antipolo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04441",
+    "Name of Institution": "ICCT Colleges-Binangonan",
+    "Name of Institution\n (Registered in SEC)": "ICCT Colleges Foundation, Inc.-Binangonan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04042",
+    "Name of Institution": "ICCT Colleges-Cainta",
+    "Name of Institution\n (Registered in SEC)": "ICCT Colleges Foundation, Inc.-Cainta",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04418",
+    "Name of Institution": "ICCT Colleges-San Mateo",
+    "Name of Institution\n (Registered in SEC)": "ICCT Colleges Foundation, Inc.-San Mateo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04442",
+    "Name of Institution": "ICCT Colleges-Taytay",
+    "Name of Institution\n (Registered in SEC)": "ICCT Colleges Foundation, Inc.-Taytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04440",
+    "Name of Institution": "ICT-ED Institute of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "ICT-ED Institute of Science and Technology Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04188",
+    "Name of Institution": "IETI College of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "IETI College of Science and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04449",
+    "Name of Institution": "IKON College-Calamba",
+    "Name of Institution\n (Registered in SEC)": "IKON College-Calamba",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04038",
+    "Name of Institution": "Immaculada Concepcion (Soldier's Hills) Colleges",
+    "Name of Institution\n (Registered in SEC)": "Immaculada Concepcion (Soldier's Hills) Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04419",
+    "Name of Institution": "Immaculate Conception Catholic College",
+    "Name of Institution\n (Registered in SEC)": "Immaculate Conception Catholic College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04039",
+    "Name of Institution": "Immaculate Conception College of Balayan",
+    "Name of Institution\n (Registered in SEC)": "Immaculate Conception College of Balayan, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04367",
+    "Name of Institution": "Immanuel Theological Seminary",
+    "Name of Institution\n (Registered in SEC)": "Immanuel Theological Seminary",
+    "Former Name/s": "Immanuel College of Theology"
+  },
+  {
+    "UII": "04041OLD",
+    "Name of Institution": "Imus Institute",
+    "Name of Institution\n (Registered in SEC)": "Imus Institute",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04041",
+    "Name of Institution": "Imus Institute of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Imus Institute of Science and Technology",
+    "Former Name/s": "Imus Institute"
+  },
+  {
+    "UII": "04488",
+    "Name of Institution": "Informatics College Cavite",
+    "Name of Institution\n (Registered in SEC)": "Informatics College Cavite, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04456",
+    "Name of Institution": "Information Institute Cavite Center",
+    "Name of Institution\n (Registered in SEC)": "Information Institute Cavite Center",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04181",
+    "Name of Institution": "Inter-Global College Foundation",
+    "Name of Institution\n (Registered in SEC)": "Inter-Global College Foundation, Inc.",
+    "Former Name/s": "Inter-Global Maritime College, Inc. (1996)"
+  },
+  {
+    "UII": "04341",
+    "Name of Institution": "International Christian College of Manila",
+    "Name of Institution\n (Registered in SEC)": "International Christian College of Manila",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04489",
+    "Name of Institution": "International Electronics and Technical Institute (Calamba)",
+    "Name of Institution\n (Registered in SEC)": "International Electronics and Technical Institute (Calamba), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04460",
+    "Name of Institution": "International Evangelical College",
+    "Name of Institution\n (Registered in SEC)": "International Evangelical College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04334",
+    "Name of Institution": "International Peace Leadership College",
+    "Name of Institution\n (Registered in SEC)": "International Peace Leadership College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04325",
+    "Name of Institution": "ISHRM School System-Bacoor",
+    "Name of Institution\n (Registered in SEC)": "ISHRM School System-Bacoor, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04399",
+    "Name of Institution": "ISHRM School-Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "ISHRM School-Dasmariñas, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD15",
+    "Name of Institution": "Jaelna's College",
+    "Name of Institution\n (Registered in SEC)": "Jaelna's College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04420",
+    "Name of Institution": "Jesus Reigns Christian College-Amadeo Foundation",
+    "Name of Institution\n (Registered in SEC)": "Jesus Reigns Christian College-Amadeo Foundation, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD16",
+    "Name of Institution": "Jimel Academy",
+    "Name of Institution\n (Registered in SEC)": "Jimel Academy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04506",
+    "Name of Institution": "Kolehiyo ng Lungsod ng Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "Kolehiyo ng Lungsod ng Dasmariñas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04141",
+    "Name of Institution": "Kolehiyo ng Lungsod ng Lipa",
+    "Name of Institution\n (Registered in SEC)": "Kolehiyo ng Lungsod ng Lipa",
+    "Former Name/s": "Lipa Public College (1994), Lipa City Public College (1998)"
+  },
+  {
+    "UII": "04408",
+    "Name of Institution": "Kurios Christian Colleges Foundation",
+    "Name of Institution\n (Registered in SEC)": "Kurios Christian Colleges Foundation, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04156",
+    "Name of Institution": "La Consolacion College Biñan",
+    "Name of Institution\n (Registered in SEC)": "La Consolacion College Biñan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04291",
+    "Name of Institution": "La Consolacion College Tanauan",
+    "Name of Institution\n (Registered in SEC)": "La Consolacion College Tanauan",
+    "Former Name/s": "College of Our Lady of Fatima [2022], Our Lady of Fatima Academy [1948]"
+  },
+  {
+    "UII": "04184",
+    "Name of Institution": "La Salle College Antipolo Foundation",
+    "Name of Institution\n (Registered in SEC)": "La Salle College Antipolo Foundation, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04044",
+    "Name of Institution": "Laguna College",
+    "Name of Institution\n (Registered in SEC)": "Laguna College",
+    "Former Name/s": "Laguna Academy (1923)"
+  },
+  {
+    "UII": "04046",
+    "Name of Institution": "Laguna College of Business and Arts",
+    "Name of Institution\n (Registered in SEC)": "Laguna College of Business and Arts, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04421",
+    "Name of Institution": "Laguna Maritime Arts and Business Colleges",
+    "Name of Institution\n (Registered in SEC)": "Laguna Maritime Arts and Business Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04047",
+    "Name of Institution": "Laguna Northwestern College",
+    "Name of Institution\n (Registered in SEC)": "Laguna Northwestern College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04403",
+    "Name of Institution": "Laguna Northwestern College - SLRMC",
+    "Name of Institution\n (Registered in SEC)": "Laguna Northwestern College - SLRMC",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04175",
+    "Name of Institution": "Laguna Santiago Educational Foundation",
+    "Name of Institution\n (Registered in SEC)": "Laguna Santiago Educational Foundation",
+    "Former Name/s": "Laguna Sino-Filipino Educational Foundation"
+  },
+  {
+    "UII": "04157",
+    "Name of Institution": "Laguna Science and Technology College",
+    "Name of Institution\n (Registered in SEC)": "Laguna Science and Technology College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04045",
+    "Name of Institution": "Laguna State Polytechnic University",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University",
+    "Former Name/s": "Laguna College of Arts and Trades"
+  },
+  {
+    "UII": "04537",
+    "Name of Institution": "Laguna State Polytechnic University-Lopez",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-Lopez",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04051",
+    "Name of Institution": "Laguna State Polytechnic University-Los Baños",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-Los Baños",
+    "Former Name/s": "Los Baños College of Fisheries"
+  },
+  {
+    "UII": "04048???",
+    "Name of Institution": "Laguna State Polytechnic University-Magdalena",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-Magdalena",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04NEW47",
+    "Name of Institution": "Laguna State Polytechnic University-Nagcarlan",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-Nagcarlan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04113",
+    "Name of Institution": "Laguna State Polytechnic University-San Pablo City",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-San Pablo City",
+    "Former Name/s": "San Pablo City National School of Arts and Trades"
+  },
+  {
+    "UII": "04048",
+    "Name of Institution": "Laguna State Polytechnic University-Siniloan",
+    "Name of Institution\n (Registered in SEC)": "Laguna State Polytechnic University-Siniloan",
+    "Former Name/s": "Baybay Provincial High School [1952], Baybay National Agricultural and Vocational School [1957], Baybay National College of Agriculture and Technology[1971], Laguna State Polytechnic College [1983]"
+  },
+  {
+    "UII": "04358",
+    "Name of Institution": "Laguna University",
+    "Name of Institution\n (Registered in SEC)": "Laguna University",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04538",
+    "Name of Institution": "Lake Shore Educational Institution",
+    "Name of Institution\n (Registered in SEC)": "Lake Shore Educational Institution, Inc",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04171",
+    "Name of Institution": "Lemery Colleges",
+    "Name of Institution\n (Registered in SEC)": "Lemery Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04049",
+    "Name of Institution": "Leon Guinto Memorial College",
+    "Name of Institution\n (Registered in SEC)": "Leon Guinto Memorial College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04050",
+    "Name of Institution": "Lipa City Colleges",
+    "Name of Institution\n (Registered in SEC)": "Lipa City Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04274",
+    "Name of Institution": "LNC Corinthian Center",
+    "Name of Institution\n (Registered in SEC)": "LNC Corinthian Center",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04262",
+    "Name of Institution": "LPU-St. Cabrini School of Health Sciences",
+    "Name of Institution\n (Registered in SEC)": "LPU-St. Cabrini School of Health Sciences, Inc.",
+    "Former Name/s": "LPU-St. Cabrini College of Allied Medicine Inc."
+  },
+  {
+    "UII": "04484",
+    "Name of Institution": "Lyceum de San Pablo",
+    "Name of Institution\n (Registered in SEC)": "Lyceum de San Pablo Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04509",
+    "Name of Institution": "Lyceum of Southern Luzon",
+    "Name of Institution\n (Registered in SEC)": "Lyceum of Southern Luzon",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04054",
+    "Name of Institution": "Lyceum of the Philippines University-Batangas",
+    "Name of Institution\n (Registered in SEC)": "Lyceum of the Philippines University-Batangas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04382",
+    "Name of Institution": "Lyceum of the Philippines-Cavite",
+    "Name of Institution\n (Registered in SEC)": "Lyceum of the Philippines-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04252",
+    "Name of Institution": "Lyceum of the Philippines-Laguna",
+    "Name of Institution\n (Registered in SEC)": "Lyceum of the Philippines-Laguna, Inc.",
+    "Former Name/s": "Lyceum Institute of Technology (2008)"
+  },
+  {
+    "UII": "04539",
+    "Name of Institution": "Lyceum of Tingloy de San Roque",
+    "Name of Institution\n (Registered in SEC)": "Lyceum of Tingloy de San Roque Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04526",
+    "Name of Institution": "Lyceum Technological College",
+    "Name of Institution\n (Registered in SEC)": "",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04284",
+    "Name of Institution": "Mabini College of Batangas",
+    "Name of Institution\n (Registered in SEC)": "Mabini College of Batangas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04055",
+    "Name of Institution": "Mabini Junior College",
+    "Name of Institution\n (Registered in SEC)": "Mabini Junior College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04503",
+    "Name of Institution": "Magna Anima Teachers College",
+    "Name of Institution\n (Registered in SEC)": "Magna Anima Teachers College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04373",
+    "Name of Institution": "Manila Montessori College-Biñan",
+    "Name of Institution\n (Registered in SEC)": "Manila Montessori College-Biñan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04253",
+    "Name of Institution": "Mansfield Technological College",
+    "Name of Institution\n (Registered in SEC)": "Mansfield Technological College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04339",
+    "Name of Institution": "Manuel S. Enverga Institute Foundation-San Antonio",
+    "Name of Institution\n (Registered in SEC)": "Manuel S. Enverga Institute Foundation-San Antonio",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04515",
+    "Name of Institution": "Manuel S. Enverga University Foundation-Calauag",
+    "Name of Institution\n (Registered in SEC)": "Manuel S. Enverga University Foundation - Calauag Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04064",
+    "Name of Institution": "Manuel S. Enverga University Foundation-Candelaria",
+    "Name of Institution\n (Registered in SEC)": "Manuel S. Enverga University Foundation-Candelaria, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04065",
+    "Name of Institution": "Manuel S. Enverga University Foundation-Catanauan",
+    "Name of Institution\n (Registered in SEC)": "Manuel S. Enverga University Foundation, Catanauan, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04056",
+    "Name of Institution": "Manuel S. Enverga University Foundation-Lucena",
+    "Name of Institution\n (Registered in SEC)": "Manuel S. Enverga University Foundation, Inc.",
+    "Former Name/s": "Luzonian Colleges (1947), Luzonian University (1968), Luzonian University Foundation (1970)"
+  },
+  {
+    "UII": "04372",
+    "Name of Institution": "Mapua Malayan Colleges Laguna",
+    "Name of Institution\n (Registered in SEC)": "Mapua Malayan Colleges Laguna, Inc.",
+    "Former Name/s": "Malayan Colleges Laguna, Inc., A Mapua School"
+  },
+  {
+    "UII": "04471",
+    "Name of Institution": "Marasigan Institute Of Science And Technology (M.I.S.T.)",
+    "Name of Institution\n (Registered in SEC)": "Marasigan Institute Of Science And Technology (M.I.S.T.), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04057",
+    "Name of Institution": "Marcelino Fule Memorial College",
+    "Name of Institution\n (Registered in SEC)": "Marcelino Fule Memorial College",
+    "Former Name/s": "Marcelino Fule Memorial Academy (1956)"
+  },
+  {
+    "UII": "04OLD17",
+    "Name of Institution": "Marina College Foundation",
+    "Name of Institution\n (Registered in SEC)": "Marina College Foundation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04422",
+    "Name of Institution": "Mary Help of Christian College, Salesian Sisters",
+    "Name of Institution\n (Registered in SEC)": "Mary Help of Christian College, Salesian Sisters",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04162",
+    "Name of Institution": "Maryhill College",
+    "Name of Institution\n (Registered in SEC)": "Maryhill College",
+    "Former Name/s": "Lucena Catholic School (1938)"
+  },
+  {
+    "UII": "04443",
+    "Name of Institution": "Mater Redemptoris Collegium",
+    "Name of Institution\n (Registered in SEC)": "Mater Redemptoris Collegium",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD18",
+    "Name of Institution": "MC Grace College of Arts and Sciences",
+    "Name of Institution\n (Registered in SEC)": "MC Grace College of Arts and Sciences",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD19",
+    "Name of Institution": "Metro Tagaytay College of Business and Arts",
+    "Name of Institution\n (Registered in SEC)": "Metro Tagaytay College of Business and Arts",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04472",
+    "Name of Institution": "MFI Foundation-Jala-Jala",
+    "Name of Institution\n (Registered in SEC)": "MFI Foundation-Jala-Jala",
+    "Former Name/s": "MFI Foundation Inc."
+  },
+  {
+    "UII": "04444",
+    "Name of Institution": "Mind and Integrity College",
+    "Name of Institution\n (Registered in SEC)": "Mind and Integrity College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD29",
+    "Name of Institution": "Modern Maritime Technical School",
+    "Name of Institution\n (Registered in SEC)": "Modern Maritime Technical School",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04485",
+    "Name of Institution": "MOL Magsaysay Maritime Academy",
+    "Name of Institution\n (Registered in SEC)": "MOL Magsaysay Maritime Academy, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04197",
+    "Name of Institution": "Montessori Professional Colleges of Asia (MPCA Colleges)-Antipolo",
+    "Name of Institution\n (Registered in SEC)": "Montessori Professional Colleges of Asia (MPCA Colleges) Inc.-Antipolo",
+    "Former Name/s": "Professional Montessori College"
+  },
+  {
+    "UII": "04343",
+    "Name of Institution": "Montessori Professional Colleges of Asia (MPCA Colleges)-Imus",
+    "Name of Institution\n (Registered in SEC)": "Montessori Professional Colleges of Asia (MPCA Colleges) Inc.-Imus",
+    "Former Name/s": "Manila Montessori College International (2002)"
+  },
+  {
+    "UII": "04159",
+    "Name of Institution": "Mt. St. Aloysius College Seminary",
+    "Name of Institution\n (Registered in SEC)": "Mt. St. Aloysius College Seminary, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD30",
+    "Name of Institution": "N.L. Villa Memorial Medical Center School of Midwifery",
+    "Name of Institution\n (Registered in SEC)": "N.L. Villa Hospital and School of Midwifery",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04067",
+    "Name of Institution": "National College of Business and Arts-Taytay",
+    "Name of Institution\n (Registered in SEC)": "National College of Business and Arts-Taytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04205",
+    "Name of Institution": "National College of Science and Technology (NCST) Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "National College of Science and Technology (NCST) Dasmariñas, Cavite, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04465",
+    "Name of Institution": "Nazareth Institute of Alfonso",
+    "Name of Institution\n (Registered in SEC)": "Nazareth Institute of Alfonso",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04NEW54",
+    "Name of Institution": "National College of Science and Technology (NCST) Imus",
+    "Name of Institution\n (Registered in SEC)": "National College of Science and Technology (NCST) Imus Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04490",
+    "Name of Institution": "New Era University-Baras",
+    "Name of Institution\n (Registered in SEC)": "New Era University-Baras Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04464",
+    "Name of Institution": "New Era University-Lipa",
+    "Name of Institution\n (Registered in SEC)": "New Era University-Lipa Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04433",
+    "Name of Institution": "New Sinai School and Colleges Sta. Rosa",
+    "Name of Institution\n (Registered in SEC)": "New Sinai School and Colleges Sta. Rosa, Inc.",
+    "Former Name/s": "New Sinai Educational System of Sta. Rosa Laguna, Inc (2009)"
+  },
+  {
+    "UII": "04068",
+    "Name of Institution": "Northern Quezon College",
+    "Name of Institution\n (Registered in SEC)": "Northern Quezon College, Inc.",
+    "Former Name/s": "Infanta Community College (1968)"
+  },
+  {
+    "UII": "04459",
+    "Name of Institution": "Nova Schola Tanauan",
+    "Name of Institution\n (Registered in SEC)": "Nova Schola Tanauan, Inc.",
+    "Former Name/s": "The National Teachers College (2013), NTC Education Batangas, Inc."
+  },
+  {
+    "UII": "04510",
+    "Name of Institution": "NU Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "NU Dasmariñas Incorporated",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04519",
+    "Name of Institution": "NU Lipa",
+    "Name of Institution\n (Registered in SEC)": "NU Lipa",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04491",
+    "Name of Institution": "NU Sports Academy",
+    "Name of Institution\n (Registered in SEC)": "NU Sports Academy, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04376",
+    "Name of Institution": "NYK-TDG Maritime Academy",
+    "Name of Institution\n (Registered in SEC)": "NYK-TDG Maritime Academy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04180",
+    "Name of Institution": "Oblates of Saint Joseph College of Philosophy",
+    "Name of Institution\n (Registered in SEC)": "Oblates of Saint Joseph College of Philosophy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04492",
+    "Name of Institution": "Olinsterg College",
+    "Name of Institution\n (Registered in SEC)": "Olinsterg College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04295",
+    "Name of Institution": "Olivarez College-Tagaytay",
+    "Name of Institution\n (Registered in SEC)": "Olivarez College-Tagaytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04487",
+    "Name of Institution": "One Cainta College",
+    "Name of Institution\n (Registered in SEC)": "One Cainta College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04235",
+    "Name of Institution": "Our Lady of Assumption College of Laguna",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Assumption College of Laguna Inc.",
+    "Former Name/s": "Our Lady of Assumption College System-San Pedro, Our Lady of Assumption College System"
+  },
+  {
+    "UII": "04434",
+    "Name of Institution": "Our Lady of Assumption College-Batangas",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Assumption College-Batangas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04351",
+    "Name of Institution": "Our Lady of Assumption College-Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Assumption College-Cabuyao",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04380",
+    "Name of Institution": "Our Lady of Fatima University-Antipolo",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Fatima University Antipolo Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04493",
+    "Name of Institution": "Our Lady of Fatima University-Laguna",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Fatima University Laguna Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04469",
+    "Name of Institution": "Our Lady of La Salette College Seminary",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of La Salette College Seminary Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04070",
+    "Name of Institution": "Our Lady of Lourdes Seminary",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of Lourdes Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04307",
+    "Name of Institution": "Our Lady of the Most Holy Rosary Seminary",
+    "Name of Institution\n (Registered in SEC)": "Our Lady of the Most Holy Rosary Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04354",
+    "Name of Institution": "Oxfordian Colleges",
+    "Name of Institution\n (Registered in SEC)": "Oxfordian Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04540",
+    "Name of Institution": "Padre Garcia Polytechnic College",
+    "Name of Institution\n (Registered in SEC)": "Padre Garcia Polytechnic College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04028",
+    "Name of Institution": "Paete Science and Business College",
+    "Name of Institution\n (Registered in SEC)": "Paete Science and Business College, Inc.",
+    "Former Name/s": "Eastern Laguna Institute (1941), Eastern Laguna Colleges, Inc. (1947)"
+  },
+  {
+    "UII": "04305",
+    "Name of Institution": "Pamantasan ng Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "Pamantasan ng Cabuyao",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04348",
+    "Name of Institution": "Pambayang Kolehiyo ng Mauban",
+    "Name of Institution\n (Registered in SEC)": "Pambayang Kolehiyo ng Mauban",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04448",
+    "Name of Institution": "Paul College of Leadership",
+    "Name of Institution\n (Registered in SEC)": "Paul College of Leadership",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD20",
+    "Name of Institution": "Phil. Hanguk Theoligical College",
+    "Name of Institution\n (Registered in SEC)": "Phil. Hanguk Theoligical College Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04388",
+    "Name of Institution": "Philippine Best Training Systems Colleges",
+    "Name of Institution\n (Registered in SEC)": "Philippine Best Training Systems Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04271",
+    "Name of Institution": "Philippine Cambridge School of Law, Arts, Sciences, Business Economics and Technology",
+    "Name of Institution\n (Registered in SEC)": "Philippine Cambridge School of Law, Arts, Sciences, Business Economics and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04527",
+    "Name of Institution": "Philippine Christian University-Cavite",
+    "Name of Institution\n (Registered in SEC)": "Philippine Christian University Corporation-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04342",
+    "Name of Institution": "Philippine International College",
+    "Name of Institution\n (Registered in SEC)": "Philippine International College",
+    "Former Name/s": "International Evangelical Holiness College, International Evangelical College (04460)"
+  },
+  {
+    "UII": "04170",
+    "Name of Institution": "Philippine Missionary Institute",
+    "Name of Institution\n (Registered in SEC)": "Philippine Missionary Institute",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD27",
+    "Name of Institution": "Philippine Muslim-Christian College of Medicine Foundation",
+    "Name of Institution\n (Registered in SEC)": "Philippine Muslim-Christian College of Medicine Foundation",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04189",
+    "Name of Institution": "Philippine National Police Academy",
+    "Name of Institution\n (Registered in SEC)": "Philippine National Police Academy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04080",
+    "Name of Institution": "Philippine Normal University South Luzon",
+    "Name of Institution\n (Registered in SEC)": "Philippine Normal University-Lopez",
+    "Former Name/s": "Philippine Normal University-Lopez"
+  },
+  {
+    "UII": "04082",
+    "Name of Institution": "National Aviation Academy of the Philippines-Fernando Air Base",
+    "Name of Institution\n (Registered in SEC)": "National Aviation Academy of the Philippines-Fernando Air Base",
+    "Former Name/s": "Philippine State College of Aeronautics-Fernando Air Base (2025), Basa Air Base Community College (1967), Philippine Air Force College of Aeronautics (1977)"
+  },
+  {
+    "UII": "04511",
+    "Name of Institution": "Philippine Technological Institute of Science Arts and Trade-Central",
+    "Name of Institution\n (Registered in SEC)": "Philippine Technological Institute of Science Arts and Trade-Central Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04338",
+    "Name of Institution": "Philippine Women's University Career Development and Continuing Education Center-Sta. Cruz",
+    "Name of Institution\n (Registered in SEC)": "Philippine Women's University Career Development and Continuing Education Center Sta. Cruz Laguna, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD21",
+    "Name of Institution": "Philsin College Foundation",
+    "Name of Institution\n (Registered in SEC)": "Philsin College Foundation Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04183",
+    "Name of Institution": "PHILSSEC Institute of Technology",
+    "Name of Institution\n (Registered in SEC)": "PHILSSEC Institute of Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04457",
+    "Name of Institution": "PIMSAT College-Rosario",
+    "Name of Institution\n (Registered in SEC)": "PIMSAT College - Rosario",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04423",
+    "Name of Institution": "PIMSAT Colleges-Bacoor",
+    "Name of Institution\n (Registered in SEC)": "PIMSAT Colleges Inc.-Bacoor",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04333",
+    "Name of Institution": "PNTC Colleges",
+    "Name of Institution\n (Registered in SEC)": "PNTC Colleges Inc.",
+    "Former Name/s": "Philippine Nautical and Technological College, Inc."
+  },
+  {
+    "UII": "13155q",
+    "Name of Institution": "Polytechnic University of the Philippines-Alfonso",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Alfonso",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155k",
+    "Name of Institution": "Polytechnic University of the Philippines-Biñan",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Biñan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155j",
+    "Name of Institution": "Polytechnic University of the Philippines-Calauan",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Calauan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155l",
+    "Name of Institution": "Polytechnic University of the Philippines-General Luna",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-General Luna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04084",
+    "Name of Institution": "Polytechnic University of the Philippines-Lopez",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Lopez",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04085",
+    "Name of Institution": "Polytechnic University of the Philippines-Maragondon",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Maragondon",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04165",
+    "Name of Institution": "Polytechnic University of the Philippines-Mulanay",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Mulanay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155??",
+    "Name of Institution": "Polytechnic University of the Philippines-Rizal, Laguna",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Rizal, Laguna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155b",
+    "Name of Institution": "Polytechnic University of the Philippines-San Pedro",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-San Pedro",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "13155f",
+    "Name of Institution": "Polytechnic University of the Philippines-Sta. Rosa",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Sta. Rosa",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04164",
+    "Name of Institution": "Polytechnic University of the Philippines-Sto. Tomas",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Sto. Tomas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04086",
+    "Name of Institution": "Polytechnic University of the Philippines-Unisan",
+    "Name of Institution\n (Registered in SEC)": "Polytechnic University of the Philippines-Unisan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04297",
+    "Name of Institution": "Power School of Technology",
+    "Name of Institution\n (Registered in SEC)": "Power School of Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04081",
+    "Name of Institution": "PTS College and Advanced Studies",
+    "Name of Institution\n (Registered in SEC)": "PTS College and Advanced Studies",
+    "Former Name/s": "Presbyterian Theological Seminary"
+  },
+  {
+    "UII": "04299",
+    "Name of Institution": "PWU CDCEC Calamba",
+    "Name of Institution\n (Registered in SEC)": "PWU CDCEC Calamba, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04329",
+    "Name of Institution": "QCRS College",
+    "Name of Institution\n (Registered in SEC)": "QCRS College, Inc.",
+    "Former Name/s": "Quezon Center for Research and Studies, Inc."
+  },
+  {
+    "UII": "04087",
+    "Name of Institution": "Quezonian Educational College",
+    "Name of Institution\n (Registered in SEC)": "Quezonian Educational College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04494",
+    "Name of Institution": "Red Link Institute of Science & Technology",
+    "Name of Institution\n (Registered in SEC)": "Red Link Institute of Science & Technology Corp.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04473",
+    "Name of Institution": "Renaissance School of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Renaissance School of Science and Technology Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04090",
+    "Name of Institution": "Rizal College of Laguna",
+    "Name of Institution\n (Registered in SEC)": "Rizal College of Laguna",
+    "Former Name/s": "Rizal Technical Institute (1974)"
+  },
+  {
+    "UII": "04088",
+    "Name of Institution": "Rizal College of Taal",
+    "Name of Institution\n (Registered in SEC)": "Rizal College of Taal, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04270",
+    "Name of Institution": "Rizal Marine and Technocomputer College",
+    "Name of Institution\n (Registered in SEC)": "Rizal Marine and Techno-Computer College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04223",
+    "Name of Institution": "Rogationist College",
+    "Name of Institution\n (Registered in SEC)": "Rogationist College Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04445",
+    "Name of Institution": "Rosario College of Business, Arts and Tourism",
+    "Name of Institution\n (Registered in SEC)": "Rosario College of Business, Arts and Tourism",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04477",
+    "Name of Institution": "Royal British College",
+    "Name of Institution\n (Registered in SEC)": "Royal British College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04097",
+    "Name of Institution": "Sacred Heart College of Lucena City",
+    "Name of Institution\n (Registered in SEC)": "Sacred Heart College of Lucena City, Inc.",
+    "Former Name/s": "Sacred Hear Academy (1940), Jesus Sacred Heart College (1961), Sacred Heart College"
+  },
+  {
+    "UII": "04498",
+    "Name of Institution": "Saint Benilde International School (Calamba)",
+    "Name of Institution\n (Registered in SEC)": "Saint Benilde International School (Calamba), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04257",
+    "Name of Institution": "Saint Francis Institute of Computer Studies",
+    "Name of Institution\n (Registered in SEC)": "Saint Francis Institute of Computer Studies",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04294",
+    "Name of Institution": "Saint Francis of Assisi College-Cavite",
+    "Name of Institution\n (Registered in SEC)": "Saint Francis of Assisi College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04466",
+    "Name of Institution": "Saint Joseph College of Rosario Batangas",
+    "Name of Institution\n (Registered in SEC)": "Saint Joseph College of Rosario Batangas Inc.",
+    "Former Name/s": "Saint Joseph Institute (1956)"
+  },
+  {
+    "UII": "04106",
+    "Name of Institution": "Saint Michael's College of Laguna",
+    "Name of Institution\n (Registered in SEC)": "Saint Michael's College of Laguna",
+    "Former Name/s": "Biñan College (1983)"
+  },
+  {
+    "UII": "04107",
+    "Name of Institution": "Saint Paul Seminary",
+    "Name of Institution\n (Registered in SEC)": "Saint Paul Seminary, Inc",
+    "Former Name/s": "Saint Paul Seminary Foundation, Inc"
+  },
+  {
+    "UII": "04495",
+    "Name of Institution": "Saint Peter's School (Calauag)",
+    "Name of Institution\n (Registered in SEC)": "Saint Peter's School (Calauag) Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04143",
+    "Name of Institution": "Saints John and Paul Educational Foundation",
+    "Name of Institution\n (Registered in SEC)": "Saints John and Paul Educational Foundation, Inc.",
+    "Former Name/s": "Saints John and Paul Colleges"
+  },
+  {
+    "UII": "04512",
+    "Name of Institution": "Samuel Christian College of General Trias",
+    "Name of Institution\n (Registered in SEC)": "Samuel Christian College of General Trias Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04109",
+    "Name of Institution": "San Antonio De Padua College",
+    "Name of Institution\n (Registered in SEC)": "San Antonio De Padua College",
+    "Former Name/s": "San Antonio de Padua College Foundation of Pila, Laguna Inc (2002), San Antonio de Padua Institute (1979)"
+  },
+  {
+    "UII": "04533",
+    "Name of Institution": "San Francisco Municipal College",
+    "Name of Institution\n (Registered in SEC)": "San Francisco Municipal College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04111",
+    "Name of Institution": "San Ildefonso College",
+    "Name of Institution\n (Registered in SEC)": "San Ildefonso College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04387",
+    "Name of Institution": "San Mateo Municipal College",
+    "Name of Institution\n (Registered in SEC)": "San Mateo Municipal College",
+    "Former Name/s": "Pamantasang Bayan ng San Mateo"
+  },
+  {
+    "UII": "04114",
+    "Name of Institution": "San Pablo Colleges",
+    "Name of Institution\n (Registered in SEC)": "San Pablo Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04115",
+    "Name of Institution": "San Pedro College of Business Administration",
+    "Name of Institution\n (Registered in SEC)": "San Pedro College of Business Administration",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04357",
+    "Name of Institution": "San Sebastian College-Recoletos - Canlubang",
+    "Name of Institution\n (Registered in SEC)": "San Sebastian College-Recoletos - Canlubang",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04116",
+    "Name of Institution": "San Sebastian College-Recoletos de Cavite",
+    "Name of Institution\n (Registered in SEC)": "San Sebastian College-Recoletos de Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04478",
+    "Name of Institution": "Sapphire International Aviation Academy",
+    "Name of Institution\n (Registered in SEC)": "Sapphire Aviation Academy Support System, Inc.\ndoing business under the name and style of\nSapphire International Aviation Academy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04119",
+    "Name of Institution": "Siena College of Taytay",
+    "Name of Institution\n (Registered in SEC)": "Siena College of Taytay, Inc.",
+    "Former Name/s": "St. Catherine Academy [1957]"
+  },
+  {
+    "UII": "04352",
+    "Name of Institution": "Skill Power Institute",
+    "Name of Institution\n (Registered in SEC)": "Skill Power Institute, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD22",
+    "Name of Institution": "South East Asian Institute of Science, Arts and Technology",
+    "Name of Institution\n (Registered in SEC)": "South East Asian Institute of Science, Arts and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04424",
+    "Name of Institution": "South Forbes City College",
+    "Name of Institution\n (Registered in SEC)": "South Forbes City College Corp.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04479",
+    "Name of Institution": "Southbay Montessori School and Colleges",
+    "Name of Institution\n (Registered in SEC)": "Southbay Montessori School and Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04324",
+    "Name of Institution": "Southdale International School of Science, Arts and Technology",
+    "Name of Institution\n (Registered in SEC)": "Southdale International School of Science, Arts and Technology",
+    "Former Name/s": "Imus Business and Technological College (2007)"
+  },
+  {
+    "UII": "04120",
+    "Name of Institution": "Southeast Asia Interdisciplinary Development Institute",
+    "Name of Institution\n (Registered in SEC)": "Southeast Asia Interdisciplinary Development Institute",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04145",
+    "Name of Institution": "Southern Luzon College (of Business Maritime, Science and Technology)",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon College (of Business Maritime, Science and Technology), Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04486",
+    "Name of Institution": "Southern Luzon College of Business Maritime, Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon College of Business Maritime, Science and Technology, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04121",
+    "Name of Institution": "Southern Luzon State University",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University",
+    "Former Name/s": "Lucban Municipal Junior High School [1964], Southern Luzon Polytechnic College"
+  },
+  {
+    "UII": "04228",
+    "Name of Institution": "Southern Luzon State University-Alabat",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Alabat",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04430",
+    "Name of Institution": "Southern Luzon State University-Catanauan",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Catanauan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04391",
+    "Name of Institution": "Southern Luzon State University-Gumaca",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Gumaca Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04224",
+    "Name of Institution": "Southern Luzon State University-Infanta",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Infanta",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04229",
+    "Name of Institution": "Southern Luzon State University-Lucena",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Lucena",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04230",
+    "Name of Institution": "Southern Luzon State University-Polillo",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Polillo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04231",
+    "Name of Institution": "Southern Luzon State University-Sampaloc",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Sampaloc",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04198",
+    "Name of Institution": "Southern Luzon State University-Tagkawayan",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Tagkawayan",
+    "Former Name/s": "Tagkawayan School of Fisheries [1965], Judge Guillermo Eleazar Memorial School of Fisheries [1977], Judge Guillermo Eleazar Polytechnic College [2007]"
+  },
+  {
+    "UII": "04518",
+    "Name of Institution": "Southern Luzon State University-Tayabas",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Tayabas",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04371",
+    "Name of Institution": "Southern Luzon State University-Tiaong",
+    "Name of Institution\n (Registered in SEC)": "Southern Luzon State University-Tiaong Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04237",
+    "Name of Institution": "Southern Philippines Institute of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "Southern Philippines Institute of Science and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04186",
+    "Name of Institution": "St. Alphonsus School of Theology",
+    "Name of Institution\n (Registered in SEC)": "St. Alphonsus School of Theology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04099",
+    "Name of Institution": "St. Anne College Lucena",
+    "Name of Institution\n (Registered in SEC)": "St. Anne College Lucena, Inc.",
+    "Former Name/s": "St. Anne School of Medical Sciences, Inc. (1986)"
+  },
+  {
+    "UII": "04447",
+    "Name of Institution": "St. Augustine School of Nursing-Lipa",
+    "Name of Institution\n (Registered in SEC)": "St. Augustine School of Nursing-Lipa",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04458",
+    "Name of Institution": "St. Augustine School of Nursing-Lucena",
+    "Name of Institution\n (Registered in SEC)": "St. Augustine School of Nursing-Lucena City, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04461",
+    "Name of Institution": "St. Benilde College of Science & Technology",
+    "Name of Institution\n (Registered in SEC)": "St. Benilde College of Science & Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04406",
+    "Name of Institution": "St. Benilde Montessori College",
+    "Name of Institution\n (Registered in SEC)": "St. Benilde Montessori College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04101",
+    "Name of Institution": "St. Bridget College",
+    "Name of Institution\n (Registered in SEC)": "St. Bridget College",
+    "Former Name/s": "St. Bridget's College (1913)"
+  },
+  {
+    "UII": "04347",
+    "Name of Institution": "St. Constantine Institute of Science and Technology",
+    "Name of Institution\n (Registered in SEC)": "St. Constantine Institute of Science and Technology",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04296",
+    "Name of Institution": "St. Dominic College of Asia",
+    "Name of Institution\n (Registered in SEC)": "St. Dominic College of Asia, Inc.",
+    "Former Name/s": "Saint Dominic College of Arts and Sciences of Cavite, Inc."
+  },
+  {
+    "UII": "04NEW40",
+    "Name of Institution": "St. Dominic Savio College",
+    "Name of Institution\n (Registered in SEC)": "St. Dominic Savio College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04102",
+    "Name of Institution": "St. Francis De Sales Major Seminary",
+    "Name of Institution\n (Registered in SEC)": "St. Francis De Sales Major Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04331",
+    "Name of Institution": "St. Francis de Sales Theological Seminary",
+    "Name of Institution\n (Registered in SEC)": "St. Francis de Sales Theological Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04520",
+    "Name of Institution": "St. Ignatius Technical Institute of Business and Arts-Biñan",
+    "Name of Institution\n (Registered in SEC)": "St. Ignatius Technical Institute of Business and Arts Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04499",
+    "Name of Institution": "St. Ignatius Technical Institute of Business and Arts-Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "St. Ignatius Technical Institute of Business and Arts Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04480",
+    "Name of Institution": "St. Ignatius Technical Institute of Business and Arts-Sta. Rosa",
+    "Name of Institution\n (Registered in SEC)": "St. Ignatius Technical Institute of Business and Arts Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04103",
+    "Name of Institution": "St. James College of Calamba",
+    "Name of Institution\n (Registered in SEC)": "St. James College of Calamba",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04504",
+    "Name of Institution": "St. John Bosco College of Tayabas",
+    "Name of Institution\n (Registered in SEC)": "St. John Bosco College of Tayabas, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04225",
+    "Name of Institution": "St. John Colleges",
+    "Name of Institution\n (Registered in SEC)": "St. John Colleges",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD23",
+    "Name of Institution": "St. John's Montessori School of Antipolo",
+    "Name of Institution\n (Registered in SEC)": "St. John's Montessori School of Antipolo Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04349",
+    "Name of Institution": "St. Joseph College Amaya",
+    "Name of Institution\n (Registered in SEC)": "St. Joseph College Amaya",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04541",
+    "Name of Institution": "St. John Paul II College Seminary of Antipolo",
+    "Name of Institution\n (Registered in SEC)": "St. John Paul II College Seminary of Antipolo. Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04104",
+    "Name of Institution": "St. Joseph College of Cavite",
+    "Name of Institution\n (Registered in SEC)": "St. Joseph College of Cavite Incorporated",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04389",
+    "Name of Institution": "St. Joseph's College of Rodriguez",
+    "Name of Institution\n (Registered in SEC)": "St. Joseph's College of Rodriguez, Inc.",
+    "Former Name/s": "St. Joseph's College of Quezon City (Rodriguez Satellite Campus) (2009)"
+  },
+  {
+    "UII": "04254",
+    "Name of Institution": "St. Jude College Dasmariñas Cavite",
+    "Name of Institution\n (Registered in SEC)": "St. Jude College Dasmariñas Cavite Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04105",
+    "Name of Institution": "St. Louis Anne Colleges of San Pedro",
+    "Name of Institution\n (Registered in SEC)": "St. Louis Anne Colleges of San Pedro, Laguna Inc.",
+    "Former Name/s": "St. Louis Anne Academy (1986)"
+  },
+  {
+    "UII": "04435",
+    "Name of Institution": "St. Mary Magdalene Colleges of Laguna",
+    "Name of Institution\n (Registered in SEC)": "St. Mary Magdalene Colleges of Laguna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04239",
+    "Name of Institution": "St. Matthew College",
+    "Name of Institution\n (Registered in SEC)": "St. Matthew College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04513",
+    "Name of Institution": "St. Peregrine Institute",
+    "Name of Institution\n (Registered in SEC)": "St. Peregrine Institute Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04108",
+    "Name of Institution": "St. Peter's College Seminary",
+    "Name of Institution\n (Registered in SEC)": "St. Peter's College Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04500",
+    "Name of Institution": "St. Therese College of Arts and Sciences",
+    "Name of Institution\n (Registered in SEC)": "St. Therese College of Arts and Sciences, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04379",
+    "Name of Institution": "St. Vincent College of Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "St. Vincent College of Cabuyao",
+    "Former Name/s": "Saint Vincent College of Cabuyao, Saint Vincent Academy (1999)"
+  },
+  {
+    "UII": "04226",
+    "Name of Institution": "Sta. Rosa College of Business and Computer",
+    "Name of Institution\n (Registered in SEC)": "Sta. Rosa College of Business and Computer",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04144",
+    "Name of Institution": "Sta. Teresa College",
+    "Name of Institution\n (Registered in SEC)": "Sta. Teresa College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04276",
+    "Name of Institution": "STI College Antipolo",
+    "Name of Institution\n (Registered in SEC)": "STI College Antipolo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04146",
+    "Name of Institution": "STI College Bacoor",
+    "Name of Institution\n (Registered in SEC)": "STI College Bacoor Inc.",
+    "Former Name/s": "STI Bacoor (1991)"
+  },
+  {
+    "UII": "04285",
+    "Name of Institution": "STI College Balayan",
+    "Name of Institution\n (Registered in SEC)": "STI College Balayan, Inc.",
+    "Former Name/s": "STI Balayan ( Balayan Computer Services, Inc. ) (1998)"
+  },
+  {
+    "UII": "04147",
+    "Name of Institution": "STI College Batangas",
+    "Name of Institution\n (Registered in SEC)": "STI College Batangas, Inc.",
+    "Former Name/s": "Sto. Niño Batangeño, Inc."
+  },
+  {
+    "UII": "04138",
+    "Name of Institution": "STI College Calamba",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Calamba",
+    "Former Name/s": "STI Colleges of Luzon (2005)"
+  },
+  {
+    "UII": "04153",
+    "Name of Institution": "STI College Carmona",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Carmona",
+    "Former Name/s": "STI eCollege Southwoods"
+  },
+  {
+    "UII": "04326",
+    "Name of Institution": "STI College Dasmariñas",
+    "Name of Institution\n (Registered in SEC)": "STI College Dasmariñas, Inc.",
+    "Former Name/s": "STI-Dasmariñas (2003), STI College Dasmariñas (2004)"
+  },
+  {
+    "UII": "04149",
+    "Name of Institution": "STI College Lipa",
+    "Name of Institution\n (Registered in SEC)": "STI Lipa, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04135",
+    "Name of Institution": "STI College Lucena",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Lucena",
+    "Former Name/s": "STI College Lucena"
+  },
+  {
+    "UII": "04161",
+    "Name of Institution": "STI College Ortigas-Cainta",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Ortigas-Cainta",
+    "Former Name/s": "STI College Ortigas-Cainta (1998), STI College of Taytay (1990)"
+  },
+  {
+    "UII": "04278",
+    "Name of Institution": "STI College Rosario",
+    "Name of Institution\n (Registered in SEC)": "STI College Rosario, Cavite, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04137",
+    "Name of Institution": "STI College San Pablo",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-San Pablo",
+    "Former Name/s": "STI Training Center - San Pablo (1987), STI Colleges of Luzon, Inc (1996), STI College San Pablo (2000)"
+  },
+  {
+    "UII": "04286",
+    "Name of Institution": "STI College Santa Rosa",
+    "Name of Institution\n (Registered in SEC)": "STI College Santa Rosa, Inc.",
+    "Former Name/s": "STI Prime Education (1998), STI Education Center (1999)"
+  },
+  {
+    "UII": "04148",
+    "Name of Institution": "STI College Sta. Cruz",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Sta. Cruz",
+    "Former Name/s": "STI Sta. Cruz Training Center (1993), STI College Sta. Cruz (1995), STI Colleges of Luzon - Sta. Cruz (2004), STI College Sta. Cruz, Inc. (2008), STI Education Services Group, Inc. (2011)"
+  },
+  {
+    "UII": "04397",
+    "Name of Institution": "STI College Tagaytay",
+    "Name of Institution\n (Registered in SEC)": "STI College Tagaytay, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04336",
+    "Name of Institution": "STI College Tanauan",
+    "Name of Institution\n (Registered in SEC)": "STI College Tanauan, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04381",
+    "Name of Institution": "STI College Tanay",
+    "Name of Institution\n (Registered in SEC)": "STI Education Services Group, Inc.-Tanay",
+    "Former Name/s": "STI Education Center"
+  },
+  {
+    "UII": "04378",
+    "Name of Institution": "Sumulong College of Arts & Sciences (SCAS)",
+    "Name of Institution\n (Registered in SEC)": "Sumulong College of Arts & Sciences (SCAS) Incorporated",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04409",
+    "Name of Institution": "Sunhill International College of Business & Management",
+    "Name of Institution\n (Registered in SEC)": "Sunhill International College of Business & Management",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04475",
+    "Name of Institution": "Tanauan City College",
+    "Name of Institution\n (Registered in SEC)": "Tanauan City College (TCC)",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04123",
+    "Name of Institution": "Tanauan Institute",
+    "Name of Institution\n (Registered in SEC)": "Tanauan Institute, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04124",
+    "Name of Institution": "Tayabas Western Academy",
+    "Name of Institution\n (Registered in SEC)": "Tayabas Western Academy",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04126",
+    "Name of Institution": "Technological University of the Philippines-Cavite",
+    "Name of Institution\n (Registered in SEC)": "Technological University of the Philippines-Cavite",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04344",
+    "Name of Institution": "Teodoro M. Luansing College of Rosario",
+    "Name of Institution\n (Registered in SEC)": "Teodoro M. Luansing College of Rosario",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04425",
+    "Name of Institution": "The Bearer of Light and Wisdom Colleges",
+    "Name of Institution\n (Registered in SEC)": "The Bearer of Light and Wisdom Colleges Inc.",
+    "Former Name/s": "The Bearer of Light and Wisdom Academy (2004)"
+  },
+  {
+    "UII": "04268",
+    "Name of Institution": "The Great Commission International College and Seminary",
+    "Name of Institution\n (Registered in SEC)": "The Great Commission International College and Seminary",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04125",
+    "Name of Institution": "Tomas Claudio Colleges",
+    "Name of Institution\n (Registered in SEC)": "Tomas Claudio Colleges",
+    "Former Name/s": "Tomas Claudio Memorial College"
+  },
+  {
+    "UII": "04150",
+    "Name of Institution": "Trace College",
+    "Name of Institution\n (Registered in SEC)": "Trace College Inc.",
+    "Former Name/s": "Trace Computer and Business College, Inc."
+  },
+  {
+    "UII": "04390",
+    "Name of Institution": "Trece Martires City College",
+    "Name of Institution\n (Registered in SEC)": "Trece Martires City College",
+    "Former Name/s": "Trece Martirez College"
+  },
+  {
+    "UII": "04521",
+    "Name of Institution": "Trent Information First Technical Career Insitute",
+    "Name of Institution\n (Registered in SEC)": "Trent Information First Technical Career Insitute",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04405",
+    "Name of Institution": "Trimex Colleges",
+    "Name of Institution\n (Registered in SEC)": "Trimex Colleges",
+    "Former Name/s": "Trimex Institute of Science and Technology (2009), Trimex Computer Center, Inc. (1994)"
+  },
+  {
+    "UII": "04127",
+    "Name of Institution": "Unciano Colleges",
+    "Name of Institution\n (Registered in SEC)": "Unciano Colleges, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04279",
+    "Name of Institution": "Unida Christian Colleges",
+    "Name of Institution\n (Registered in SEC)": "Unida Christian Colleges, Inc.",
+    "Former Name/s": "Unida Evangelical Colleges (2002)"
+  },
+  {
+    "UII": "04128",
+    "Name of Institution": "Union College of Laguna",
+    "Name of Institution\n (Registered in SEC)": "Union College of Laguna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04131",
+    "Name of Institution": "University of Batangas",
+    "Name of Institution\n (Registered in SEC)": "University of Batangas, Inc.",
+    "Former Name/s": "Western Philippine Colleges (1946)"
+  },
+  {
+    "UII": "04426",
+    "Name of Institution": "University of Batangas-Lipa",
+    "Name of Institution\n (Registered in SEC)": "University of Batangas-Lipa Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04182",
+    "Name of Institution": "University of Perpetual Help System Dalta-Calamba",
+    "Name of Institution\n (Registered in SEC)": "University of Perpetual Help Rizal, Inc.-Calamba",
+    "Former Name/s": "University of Perpetual Help Rizal, Inc. (1997)"
+  },
+  {
+    "UII": "04136",
+    "Name of Institution": "University of Perpetual Help System Dalta-Molino",
+    "Name of Institution\n (Registered in SEC)": "University of Perpetual Help System Dalta-Molino Campus",
+    "Former Name/s": "Perpetual Help College of Rizal - Molino Campus (1995), University of Perpetual Help Rizal - Molino Campus (1998)"
+  },
+  {
+    "UII": "04077",
+    "Name of Institution": "University of Perpetual Help System-Dr. Jose G. Tamayo Medical University",
+    "Name of Institution\n (Registered in SEC)": "University of Perpetual Help System-Dr. Jose G. Tamayo Medical University, Inc.",
+    "Former Name/s": "Perpetual Help College of Medicine [1988], Perpetual Help School of Laguna Foundation for Medicine and Health Sciences, Inc. [1976], University of Perpetual Help System Foundation for Medicine and Health Sciences, Inc. [1997]"
+  },
+  {
+    "UII": "04169",
+    "Name of Institution": "University of Perpetual Help System-GMA",
+    "Name of Institution\n (Registered in SEC)": "University of Perpetual Help System-GMA Campus",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04076",
+    "Name of Institution": "University of Perpetual Help System-Laguna",
+    "Name of Institution\n (Registered in SEC)": "University of Perpetual Help System-Laguna",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04089",
+    "Name of Institution": "University of Rizal System",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04220",
+    "Name of Institution": "University of Rizal System-Angono",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Angono",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04289",
+    "Name of Institution": "University of Rizal System-Antipolo",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Antipolo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04244",
+    "Name of Institution": "University of Rizal System-Binangonan",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Binangonan",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04287",
+    "Name of Institution": "University of Rizal System-Cainta",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Cainta",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04288",
+    "Name of Institution": "University of Rizal System-Cardona",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Cardona",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04091",
+    "Name of Institution": "University of Rizal System-Morong",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Morong",
+    "Former Name/s": "Rizal Technological and Polytechnic Institute"
+  },
+  {
+    "UII": "04221",
+    "Name of Institution": "University of Rizal System-Pililla",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Pililla",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04222",
+    "Name of Institution": "University of Rizal System-Rodriguez",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Rodriguez",
+    "Former Name/s": "Rizal State College-Montalban"
+  },
+  {
+    "UII": "04370",
+    "Name of Institution": "University of Rizal System-Taytay",
+    "Name of Institution\n (Registered in SEC)": "University of Rizal System-Taytay",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04129",
+    "Name of Institution": "University of the Philippines-Los Baños",
+    "Name of Institution\n (Registered in SEC)": "University of the Philippines-Los Baños",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04134",
+    "Name of Institution": "University of the Philippines-Open University",
+    "Name of Institution\n (Registered in SEC)": "University of the Philippines-Open University",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04501",
+    "Name of Institution": "Victory Elijah Christian College",
+    "Name of Institution\n (Registered in SEC)": "Victory Elijah Christian College, Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD24",
+    "Name of Institution": "West Greenville Colleges",
+    "Name of Institution\n (Registered in SEC)": "West Greenville Colleges Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04481",
+    "Name of Institution": "West Point College de Cavite City",
+    "Name of Institution\n (Registered in SEC)": "West Point College de Cavite City Inc",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04427",
+    "Name of Institution": "West Point College-Magallanes",
+    "Name of Institution\n (Registered in SEC)": "West Point College-Magallanes",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04482",
+    "Name of Institution": "Westbridge Institute of Technology-Cabuyao",
+    "Name of Institution\n (Registered in SEC)": "Westbridge Institute of Technology, Inc.-Cabuyao",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04534",
+    "Name of Institution": "Westbridge Institute of Technology-San Mateo",
+    "Name of Institution\n (Registered in SEC)": "Westbridge Institute of Technology, Inc.-San Mateo",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04130",
+    "Name of Institution": "Western Colleges",
+    "Name of Institution\n (Registered in SEC)": "Western Colleges Inc.",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04360",
+    "Name of Institution": "Westmead International School",
+    "Name of Institution\n (Registered in SEC)": "Westmead International School",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04OLD25",
+    "Name of Institution": "Woodridge College",
+    "Name of Institution\n (Registered in SEC)": "Woodridge College",
+    "Former Name/s": ""
+  },
+  {
+    "UII": "04240",
+    "Name of Institution": "World Citi Colleges-Antipolo City",
+    "Name of Institution\n (Registered in SEC)": "World Citi Colleges-Antipolo City",
+    "Former Name/s": "Westminster Colleges of the Philippines (2003)"
+  }
+]

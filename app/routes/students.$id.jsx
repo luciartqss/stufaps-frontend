@@ -1,11 +1,12 @@
 import { useParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { Typography, Spin, Table, Card, Button, Row, Col, Tag, Space, Popconfirm, message, Input, Select, DatePicker, Modal, Form } from 'antd'
 import { PlusOutlined, ArrowLeftOutlined, EditOutlined, DeleteOutlined, EyeOutlined, WarningOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
 import { formatDisplayDateOnly, parseDate, formatForApi } from '../lib/dateUtils'
+import { useReferenceData } from '../lib/useReferenceData'
 
 const { Title, Text } = Typography
 
@@ -106,6 +107,21 @@ const Field = ({ label, value, field, span = 12, type = 'text', editMode, formDa
               value={formData?.[field] ?? ''}
               onChange={(e) => handleChange(field, e.target.value)}
             />
+          ) : type === 'searchSelect' ? (
+            <Select
+              showSearch
+              virtual
+              value={formData?.[field] || undefined}
+              onChange={(v) => handleChange(field, v)}
+              placeholder={`Search ${label.toLowerCase()}...`}
+              style={{ width: '100%' }}
+              status={editFieldEmpty ? 'warning' : undefined}
+              allowClear
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              options={options}
+            />
           ) : type === 'select' ? (
             <Select
               value={formData?.[field] || undefined}
@@ -169,6 +185,9 @@ export default function StudentDetails() {
   const [refreshTrigger, setRefreshTrigger] = useState(0)
   const [disbursementLoading, setDisbursementLoading] = useState(false)
 
+  // Reference data from JSON files (loaded on first edit)
+  const refData = useReferenceData(editMode)
+
   // Year level helpers
   const YEAR_LEVELS = ['I', 'II', 'III', 'IV', 'V', 'VI']
 
@@ -213,72 +232,48 @@ export default function StudentDetails() {
     }
   }
 
-  // Lookup function to auto-fill UII and authority fields
-  const lookupAndFillFields = async (currentData) => {
-    try {
-      const response = await api.post('/students/lookup-program-info', {
-        uii: currentData.uii || null,
-        name_of_institution: currentData.name_of_institution || null,
-        degree_program: currentData.degree_program || null,
-        program_major: currentData.program_major || null,
-      })
-      
-      // Update form with looked up values (only if they exist in response)
-      setFormData(prev => ({
-        ...prev,
-        ...(response.uii && { uii: response.uii }),
-        ...(response.name_of_institution && !prev.name_of_institution && { name_of_institution: response.name_of_institution }),
-        ...(response.institutional_type && { institutional_type: response.institutional_type }),
-        ...(response.authority_type && { authority_type: response.authority_type }),
-        ...(response.authority_number && { authority_number: response.authority_number }),
-        ...(response.series && { series: response.series }),
-        ...(response.program_discipline && { program_discipline: response.program_discipline }),
-        ...(response.program_degree_level && { program_degree_level: response.program_degree_level }),
-      }))
-    } catch (err) {
-      console.error('Lookup error:', err)
-      // Silently fail - user can still manually enter values
-    }
-  }
+  // ── Derived dropdown options from reference data ──
 
-  // Lookup function to auto-fill PSGC codes and ZIP code from location names
-  const lookupAndFillLocationCodes = async (currentData) => {
-    try {
-      const response = await api.post('/students/lookup-location-codes', {
-        province: currentData.province || null,
-        municipality: currentData.municipality || null,
-        brgy: currentData.brgy || null,
-      })
+  // Institution options for searchable Select (alphabetical)
+  const institutionOptions = useMemo(() =>
+    refData.institutions.map(h => ({ label: h.name, value: h.name, uii: h.uii })),
+    [refData.institutions]
+  )
 
-      setFormData(prev => ({
-        ...prev,
-        ...(response.province_psgc_code !== undefined && { province_psgc_code: response.province_psgc_code }),
-        ...(response.municipality_psgc_code !== undefined && { municipality_psgc_code: response.municipality_psgc_code }),
-        ...(response.brgy_psgc_code !== undefined && { brgy_psgc_code: response.brgy_psgc_code }),
-        ...(response.zip_code !== undefined && { zip_code: response.zip_code }),
-      }))
-    } catch (err) {
-      console.error('Location lookup error:', err)
-    }
-  }
+  // Programs available for the currently-selected institution
+  const programOptions = useMemo(() => {
+    const uii = formData?.uii
+    if (!uii) return []
+    return refData.getProgramsForUii(uii).map(p => ({ label: p.program, value: p.program }))
+  }, [formData?.uii, refData])
 
-  // Lookup function to auto-fill priority program code, discipline code, and program discipline from degree program
-  const lookupAndFillPriorityCode = async (currentData) => {
-    try {
-      const response = await api.post('/students/lookup-priority-code', {
-        degree_program: currentData.degree_program || null,
-      })
+  // Majors available for selected institution + program
+  const majorOptions = useMemo(() => {
+    const uii = formData?.uii
+    const program = formData?.degree_program
+    if (!uii || !program) return []
+    return refData.getMajorsForProgram(uii, program).map(m => ({ label: m, value: m }))
+  }, [formData?.uii, formData?.degree_program, refData])
 
-      setFormData(prev => ({
-        ...prev,
-        ...(response.prio_program_code !== undefined && response.prio_program_code !== null && { prio_program_code: response.prio_program_code }),
-        ...(response.discipline_code !== undefined && response.discipline_code !== null && { discipline_code: response.discipline_code }),
-        ...(response.program_discipline !== undefined && response.program_discipline !== null && { program_discipline: response.program_discipline }),
-      }))
-    } catch (err) {
-      console.error('Priority code lookup error:', err)
-    }
-  }
+  // Province options (alphabetical)
+  const provinceOptions = useMemo(() =>
+    refData.getProvinces().map(p => ({ label: p.name, value: p.name, psgc: p.psgc })),
+    [refData]
+  )
+
+  // Municipality options based on selected province
+  const municipalityOptions = useMemo(() => {
+    const provPsgc = formData?.province_psgc_code
+    if (!provPsgc) return []
+    return refData.getMunicipalities(provPsgc).map(m => ({ label: m.name, value: m.name, psgc: m.psgc }))
+  }, [formData?.province_psgc_code, refData])
+
+  // Barangay options based on selected municipality
+  const barangayOptions = useMemo(() => {
+    const munPsgc = formData?.municipality_psgc_code
+    if (!munPsgc) return []
+    return refData.getBarangays(munPsgc).map(b => ({ label: b.name, value: b.name, psgc: b.psgc }))
+  }, [formData?.municipality_psgc_code, refData])
 
   useEffect(() => {
     if (!id) {
@@ -302,74 +297,101 @@ export default function StudentDetails() {
 
   const handleChange = (field, value) => {
     const newFormData = { ...formData, [field]: value }
-    setFormData(newFormData)
-    
-    // Trigger lookup when institution, program, or major changes
-    if (['name_of_institution', 'degree_program', 'program_major'].includes(field)) {
-      // Clear dependent fields when institution changes
-      if (field === 'name_of_institution') {
+
+    // ── Institution changed: auto-fill UII, type, clear program fields ──
+    if (field === 'name_of_institution') {
+      const inst = refData.institutions.find(h => h.name === value)
+      if (inst) {
+        newFormData.uii = inst.uii
+        // Get institutional type from program offerings
+        const programs = refData.getProgramsForUii(inst.uii)
+        if (programs.length > 0) {
+          const entry = refData.getProgramEntry(inst.uii, programs[0].program, null)
+          newFormData.institutional_type = entry?.institutionalType || null
+        }
+      } else {
         newFormData.uii = null
         newFormData.institutional_type = null
+      }
+      // Clear dependent program fields
+      newFormData.degree_program = null
+      newFormData.program_major = null
+      newFormData.authority_type = null
+      newFormData.authority_number = null
+      newFormData.series = null
+      newFormData.prio_program_code = null
+      newFormData.discipline_code = null
+      newFormData.program_discipline = null
+    }
+
+    // ── Degree program changed: auto-fill authority + priority fields ──
+    if (field === 'degree_program') {
+      newFormData.program_major = null
+      const uii = newFormData.uii
+      const entry = refData.getProgramEntry(uii, value, null)
+      if (entry) {
+        newFormData.authority_type = entry.authorityType || null
+        newFormData.authority_number = entry.authorityNumber || null
+        newFormData.series = entry.series || null
+      } else {
         newFormData.authority_type = null
         newFormData.authority_number = null
         newFormData.series = null
-        setFormData(newFormData)
       }
-      
-      // Clear priority code fields when degree program changes
-      if (field === 'degree_program') {
+      // Priority code lookup
+      const priority = refData.getPriorityInfo(value)
+      if (priority) {
+        newFormData.prio_program_code = priority.code || null
+        newFormData.discipline_code = priority.psced || null
+        newFormData.program_discipline = priority.discipline || null
+      } else {
         newFormData.prio_program_code = null
         newFormData.discipline_code = null
         newFormData.program_discipline = null
-        setFormData({ ...newFormData })
       }
-      
-      // Debounce the lookup to avoid too many API calls
-      if (window.lookupTimeout) {
-        clearTimeout(window.lookupTimeout)
-      }
-      window.lookupTimeout = setTimeout(() => {
-        lookupAndFillFields(newFormData)
-      }, 500)
     }
 
-    // Trigger priority code lookup when degree program changes
-    if (field === 'degree_program') {
-      if (window.priorityCodeTimeout) {
-        clearTimeout(window.priorityCodeTimeout)
+    // ── Program major changed: update authority from exact entry ──
+    if (field === 'program_major') {
+      const uii = newFormData.uii
+      const program = newFormData.degree_program
+      const entry = refData.getProgramEntry(uii, program, value)
+      if (entry) {
+        newFormData.authority_type = entry.authorityType || null
+        newFormData.authority_number = entry.authorityNumber || null
+        newFormData.series = entry.series || null
       }
-      window.priorityCodeTimeout = setTimeout(() => {
-        lookupAndFillPriorityCode(newFormData)
-      }, 500)
     }
 
-    // Trigger location code lookup when province, municipality, or barangay changes
-    if (['province', 'municipality', 'brgy'].includes(field)) {
-      // Clear dependent PSGC codes based on what changed
-      if (field === 'province') {
-        newFormData.province_psgc_code = null
-        newFormData.municipality_psgc_code = null
-        newFormData.brgy_psgc_code = null
-        newFormData.zip_code = null
-        setFormData({ ...newFormData })
-      } else if (field === 'municipality') {
-        newFormData.municipality_psgc_code = null
-        newFormData.brgy_psgc_code = null
-        newFormData.zip_code = null
-        setFormData({ ...newFormData })
-      } else if (field === 'brgy') {
-        newFormData.brgy_psgc_code = null
-        setFormData({ ...newFormData })
-      }
-
-      // Debounce the location lookup
-      if (window.locationLookupTimeout) {
-        clearTimeout(window.locationLookupTimeout)
-      }
-      window.locationLookupTimeout = setTimeout(() => {
-        lookupAndFillLocationCodes(newFormData)
-      }, 500)
+    // ── Province changed: auto-fill PSGC + clear dependents ──
+    if (field === 'province') {
+      const prov = provinceOptions.find(p => p.value === value)
+      newFormData.province_psgc_code = prov?.psgc || null
+      newFormData.municipality = null
+      newFormData.municipality_psgc_code = null
+      newFormData.brgy = null
+      newFormData.brgy_psgc_code = null
+      newFormData.zip_code = null
     }
+
+    // ── Municipality changed: auto-fill PSGC + ZIP + clear brgy ──
+    if (field === 'municipality') {
+      const mun = municipalityOptions.find(m => m.value === value)
+      newFormData.municipality_psgc_code = mun?.psgc || null
+      newFormData.brgy = null
+      newFormData.brgy_psgc_code = null
+      // ZIP lookup
+      const zip = refData.getZipCode(newFormData.province, value)
+      newFormData.zip_code = zip || null
+    }
+
+    // ── Barangay changed: auto-fill PSGC ──
+    if (field === 'brgy') {
+      const brgy = barangayOptions.find(b => b.value === value)
+      newFormData.brgy_psgc_code = brgy?.psgc || null
+    }
+
+    setFormData(newFormData)
   }
 
   // Check if form data has changed
@@ -904,9 +926,6 @@ export default function StudentDetails() {
                   icon={<EditOutlined />} 
                   onClick={() => {
                     setEditMode(true)
-                    if (formData.name_of_institution && !formData.uii) {
-                      lookupAndFillFields(formData)
-                    }
                   }}
                 >
                   Edit Record
@@ -1026,12 +1045,12 @@ export default function StudentDetails() {
           <Card title="Address" style={{ borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
               <Field label="Street" value={student.street} field="street" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Barangay" value={student.brgy} field="brgy" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Municipality" value={student.municipality} field="municipality" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
-              <Field label="Province" value={student.province} field="province" required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Province" value={student.province} field="province" type="searchSelect" options={provinceOptions} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Province PSGC Code" value={student.province_psgc_code} field="province_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Municipality" value={student.municipality} field="municipality" type="searchSelect" options={municipalityOptions} required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Municipality PSGC Code" value={student.municipality_psgc_code} field="municipality_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
+              <Field label="Barangay" value={student.brgy} field="brgy" type="searchSelect" options={barangayOptions} required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Barangay PSGC Code" value={student.brgy_psgc_code} field="brgy_psgc_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Congressional District" value={student.congressional_district} field="congressional_district" required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="ZIP Code" value={student.zip_code} field="zip_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
             </Row>
@@ -1044,7 +1063,7 @@ export default function StudentDetails() {
         <Col xs={24}>
           <Card title="Institution & Academic Program" style={{ borderRadius: 12 }} styles={{ header: { borderBottom: '1px solid #f0f0f0' } }}>
             <Row gutter={[12, 8]}>
-              <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Name of Institution" value={student.name_of_institution} field="name_of_institution" type="searchSelect" options={institutionOptions} span={24} required editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="UII" value={student.uii} field="uii" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Institutional Type" value={student.institutional_type} field="institutional_type" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field 
@@ -1065,8 +1084,8 @@ export default function StudentDetails() {
                 handleChange={handleChange} 
               />
               <Field label="Region of HEI" value={student.region} field="region" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Degree Program" value={student.degree_program} field="degree_program" required editMode={editMode} formData={formData} handleChange={handleChange} />
-              <Field label="Program Major" value={student.program_major} field="program_major" editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Degree Program" value={student.degree_program} field="degree_program" type="searchSelect" options={programOptions} required editMode={editMode} formData={formData} handleChange={handleChange} />
+              <Field label="Program Major" value={student.program_major} field="program_major" type="searchSelect" options={majorOptions} editMode={editMode} formData={formData} handleChange={handleChange} />
               <Field label="Priority Program Code" value={student.prio_program_code} field="prio_program_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Discipline Code" value={student.discipline_code} field="discipline_code" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
               <Field label="Program Discipline" value={student.program_discipline} field="program_discipline" required editMode={editMode} formData={formData} handleChange={handleChange} disabled />
