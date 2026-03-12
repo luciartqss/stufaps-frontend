@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Form, Space, Badge, Tooltip } from 'antd'
-import { DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, FilterOutlined, PrinterOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, FilterOutlined, PrinterOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
@@ -13,6 +14,7 @@ export function meta() {
 }
 
 export default function StudentsPdf() {
+  const navigate = useNavigate()
   const [program, setProgram] = useState()
   const [semester, setSemester] = useState()
   const [academicYear, setAcademicYear] = useState()
@@ -334,9 +336,12 @@ export default function StudentsPdf() {
       <Card style={{ marginBottom: 0, borderRadius: 0 }}>
         <div style={{ marginBottom: '24px' }}>
           <div style={{ marginBottom: '16px' }}>
-            <Title level={3} style={{ margin: '0 0 8px 0', color: '#262626', textAlign: 'left' }}>
-              Generate PDF Masterlist
-            </Title>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/students')} />
+              <Title level={3} style={{ margin: 0, color: '#262626' }}>
+                Generate PDF Masterlist
+              </Title>
+            </div>
             <Text type="secondary" style={{ fontSize: '14px', textAlign: 'left' }}>
               Select program, semester, and academic year to generate the masterlist document
             </Text>

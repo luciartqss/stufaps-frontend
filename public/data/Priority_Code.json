@@ -1,0 +1,584 @@
+[
+  {
+    "CODE": "101",
+    "PSCED": "423201",
+    "PROGRAM NAME": "Bachelor of Science in Applied Physics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "101",
+    "PSCED": "423203",
+    "PROGRAM NAME": "Bachelor of Science in Physics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "102",
+    "PSCED": "463901",
+    "PROGRAM NAME": "Bachelor of Science in Applied Mathematics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "102",
+    "PSCED": "460100",
+    "PROGRAM NAME": "Bachelor of Science in Mathematics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "103",
+    "PSCED": "461103",
+    "PROGRAM NAME": "Bachelor of Science in Statistics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "103",
+    "PSCED": "461101",
+    "PROGRAM NAME": "Bachelor of Science in Applied Statistics",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "104",
+    "PSCED": "420203",
+    "PROGRAM NAME": "Bachelor of Science in Biochemistry",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "105",
+    "PSCED": "420202",
+    "PROGRAM NAME": "Bachelor of Science in Biology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "106",
+    "PSCED": "420204",
+    "PROGRAM NAME": "Bachelor of Science in Botany",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "107",
+    "PSCED": "421203",
+    "PROGRAM NAME": "Bachelor of Science in Chemistry",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "108",
+    "PSCED": "895204",
+    "PROGRAM NAME": "Bachelor of Science in Environmental Science",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "109",
+    "PSCED": "422201",
+    "PROGRAM NAME": "Bachelor of Science in Geology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "110",
+    "PSCED": "420206",
+    "PROGRAM NAME": "Bachelor of Science in Human Biology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "111",
+    "PSCED": "420207",
+    "PROGRAM NAME": "Bachelor of Science in Marine Biology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "112",
+    "PSCED": "426201",
+    "PROGRAM NAME": "Bachelor of Science in Marine Science",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "113",
+    "PSCED": "425200",
+    "PROGRAM NAME": "Bachelor of Science in Meteorology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "114",
+    "PSCED": "420215",
+    "PROGRAM NAME": "Bachelor of Science in Molecular Biology and Biotechnology",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "115",
+    "PSCED": "422202",
+    "PROGRAM NAME": "Bachelor of Science in Volcano and Seismology Related Fields",
+    "PROGRAM DISCIPLINE ": "Science and Mathematics Education "
+  },
+  {
+    "CODE": "201",
+    "PSCED": "464101",
+    "PROGRAM NAME": "Bachelor of Science in Computer Science",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "202",
+    "PSCED": "479999",
+    "PROGRAM NAME": "Bachelor of Science in Cyber Security",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "203",
+    "PSCED": "479999",
+    "PROGRAM NAME": "Bachelor of Science in Entertainment and Multimedia Computing",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "203",
+    "PSCED": "479999",
+    "PROGRAM NAME": "Bachelor of Science in Game Development and Animation",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "204",
+    "PSCED": "464108",
+    "PROGRAM NAME": "Bachelor of Science in Information Technology",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "205",
+    "PSCED": "842201",
+    "PROGRAM NAME": "Bachelor of Science in Library and Information Science",
+    "PROGRAM DISCIPLINE ": "Information Technology "
+  },
+  {
+    "CODE": "301",
+    "PSCED": "545300",
+    "PROGRAM NAME": "Bachelor of Science in Agricultural and Biosystems Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "302",
+    "PSCED": "541201",
+    "PROGRAM NAME": "Bachelor of Science in Ceramic Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "303",
+    "PSCED": "541202",
+    "PROGRAM NAME": "Bachelor of Science in Chemical Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "304",
+    "PSCED": "541601",
+    "PROGRAM NAME": "Bachelor of Science in Civil Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "305",
+    "PSCED": "542202",
+    "PROGRAM NAME": "Bachelor of Science in Computer Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "306",
+    "PSCED": "542203",
+    "PROGRAM NAME": "Bachelor of Science in Electrical Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "307",
+    "PSCED": "542206",
+    "PROGRAM NAME": "Bachelor of Science in Electronics Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "307",
+    "PSCED": "542207",
+    "PROGRAM NAME": "Bachelor of Science in Electronics and Communications Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "308",
+    "PSCED": "549907",
+    "PROGRAM NAME": "Bachelor of Science in Food Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "309",
+    "PSCED": "541801",
+    "PROGRAM NAME": "Bachelor of Science in Geodetic Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "310",
+    "PSCED": "542604",
+    "PROGRAM NAME": "Bachelor of Science in Industrial Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "311",
+    "PSCED": "542607",
+    "PROGRAM NAME": "Bachelor of Science in Manufacturing Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "311",
+    "PSCED": "542607",
+    "PROGRAM NAME": "Bachelor of Science in Production Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "312",
+    "PSCED": "549909",
+    "PROGRAM NAME": "Bachelor of Science in Materials Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "313",
+    "PSCED": "544205",
+    "PROGRAM NAME": "Bachelor of Science in Mechanical Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "314",
+    "PSCED": "549999",
+    "PROGRAM NAME": "Bachelor of Science in Mechatronics Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "315",
+    "PSCED": "543200",
+    "PROGRAM NAME": "Bachelor of Science in Metallurgical Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "316",
+    "PSCED": "543601",
+    "PROGRAM NAME": "Bachelor of Science in Mining Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "317",
+    "PSCED": "549921",
+    "PROGRAM NAME": "Bachelor of Science in Petroleum Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "318",
+    "PSCED": "549999",
+    "PROGRAM NAME": "Bachelor of Science in Robotics Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "319",
+    "PSCED": "545002",
+    "PROGRAM NAME": "Bachelor of Science in Sanitary Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "320",
+    "PSCED": "541604",
+    "PROGRAM NAME": "Bachelor of Science in Structural Engineering",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "321",
+    "PSCED": "540406",
+    "PROGRAM NAME": "Bachelor of Science in Aircraft Maintenance Technology",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "322",
+    "PSCED": "540403",
+    "PROGRAM NAME": "Bachelor of Science in Aviation Related Programs",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "323",
+    "PSCED": "549901",
+    "PROGRAM NAME": "Bachelor of Science in Engineering Technology",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "324",
+    "PSCED": "542605",
+    "PROGRAM NAME": "Bachelor of Science in Industrial Technology",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "325",
+    "PSCED": "549999",
+    "PROGRAM NAME": "Bachelor of Science in Mechatronics Engineering Technology",
+    "PROGRAM DISCIPLINE ": "Engineering and Technology "
+  },
+  {
+    "CODE": "401",
+    "PSCED": "580101",
+    "PROGRAM NAME": "Bachelor of Science in Architecture",
+    "PROGRAM DISCIPLINE ": "Architecture and Related Programs "
+  },
+  {
+    "CODE": "402",
+    "PSCED": "180101",
+    "PROGRAM NAME": "Bachelor of Science in Fine Arts",
+    "PROGRAM DISCIPLINE ": "Architecture and Related Programs "
+  },
+  {
+    "CODE": "403",
+    "PSCED": "185200",
+    "PROGRAM NAME": "Bachelor of Science in Interior Design",
+    "PROGRAM DISCIPLINE ": "Architecture and Related Programs "
+  },
+  {
+    "CODE": "404",
+    "PSCED": "581201",
+    "PROGRAM NAME": "Bachelor of Science in Landscape Architecture",
+    "PROGRAM DISCIPLINE ": "Architecture and Related Programs "
+  },
+  {
+    "CODE": "405",
+    "PSCED": "895203",
+    "PROGRAM NAME": "Bachelor of Science in Environmental Planning",
+    "PROGRAM DISCIPLINE ": "Architecture and Related Programs "
+  },
+  {
+    "CODE": "501",
+    "PSCED": "343201",
+    "PROGRAM NAME": "Bachelor of Science in Accountancy",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "502",
+    "PSCED": "349999",
+    "PROGRAM NAME": "Bachelor of Science in Business Analytics",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "503",
+    "PSCED": "346201",
+    "PROGRAM NAME": "Bachelor of Science in Hotel and Restaurant Management",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "503",
+    "PSCED": "346201",
+    "PROGRAM NAME": "Bachelor of Science in Hospitality Management",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "504",
+    "PSCED": "787201",
+    "PROGRAM NAME": "Bachelor of Science in Tourism",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "504",
+    "PSCED": "787204",
+    "PROGRAM NAME": "Bachelor of Science in Tourism Management",
+    "PROGRAM DISCIPLINE ": "Business and Management "
+  },
+  {
+    "CODE": "601",
+    "PSCED": "504201",
+    "PROGRAM NAME": "Doctor of Dental Medicine",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "602",
+    "PSCED": "506200",
+    "PROGRAM NAME": "Doctor of Optometry",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "603",
+    "PSCED": "503001",
+    "PROGRAM NAME": "Bachelor of Science in Medical Technology",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "603",
+    "PSCED": "503001",
+    "PROGRAM NAME": "Bachelor of Science in Medical Laboratory Science",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "604",
+    "PSCED": "501500",
+    "PROGRAM NAME": "Bachelor of Science in Midwifery",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "605",
+    "PSCED": "505203",
+    "PROGRAM NAME": "Bachelor of Science in Pharmacy",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "606",
+    "PSCED": "500802",
+    "PROGRAM NAME": "Bachelor of Science in Physical Therapy",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "607",
+    "PSCED": "500203",
+    "PROGRAM NAME": "Bachelor of Science in Public Health",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "608",
+    "PSCED": "500801",
+    "PROGRAM NAME": "Bachelor of Science in Occupational Therapy",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "609",
+    "PSCED": "501200",
+    "PROGRAM NAME": "Bachelor of Science in Nursing",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "610",
+    "PSCED": "507200",
+    "PROGRAM NAME": "Bachelor of Science in Nutrition and Dietetics",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "611",
+    "PSCED": "500804",
+    "PROGRAM NAME": "Bachelor of Science in Respiratory Therapy",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "612",
+    "PSCED": "501701",
+    "PROGRAM NAME": "Bachelor of Science in Radiologic Technology",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "613",
+    "PSCED": "500803",
+    "PROGRAM NAME": "Bachelor of Science in Speech Language Pathology",
+    "PROGRAM DISCIPLINE ": "Health Profession Education "
+  },
+  {
+    "CODE": "701",
+    "PSCED": "549923",
+    "PROGRAM NAME": "Bachelor of Science in Naval Architecture and Marine Engineering",
+    "PROGRAM DISCIPLINE ": "Maritime Education "
+  },
+  {
+    "CODE": "801",
+    "PSCED": "893301",
+    "PROGRAM NAME": "Bachelor of Science in Community Development",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "802",
+    "PSCED": "300103",
+    "PROGRAM NAME": "Bachelor of Science in Human Services",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "803",
+    "PSCED": "309900",
+    "PROGRAM NAME": "Bachelor of Science in Indigenous Peoples Studies",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "804",
+    "PSCED": "309999",
+    "PROGRAM NAME": "Bachelor of Science in Peace Studies",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "805",
+    "PSCED": "305201",
+    "PROGRAM NAME": "Bachelor of Science in Psychology",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "806",
+    "PSCED": "893202",
+    "PROGRAM NAME": "Bachelor of Science in Social Work",
+    "PROGRAM DISCIPLINE ": "Social Sciences "
+  },
+  {
+    "CODE": "901",
+    "PSCED": "140102",
+    "PROGRAM NAME": "Bachelor of Secondary Education Majors in Mathematics",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "901",
+    "PSCED": "140102",
+    "PROGRAM NAME": "Bachelor of Secondary Education Majors in Science",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "902",
+    "PSCED": "140420",
+    "PROGRAM NAME": "Bachelor of Science in Culture and Arts",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "903",
+    "PSCED": "141202",
+    "PROGRAM NAME": "Bachelor of Early Childhood Education",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "904",
+    "PSCED": "142201",
+    "PROGRAM NAME": "Bachelor of Science in Special Needs Education",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "905",
+    "PSCED": "140431",
+    "PROGRAM NAME": "Bachelor of Science in Sports and Exercise Science",
+    "PROGRAM DISCIPLINE ": "Teacher Education "
+  },
+  {
+    "CODE": "1001",
+    "PSCED": "343902",
+    "PROGRAM NAME": "Bachelor of Science in Agribusiness",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1002",
+    "PSCED": "626202",
+    "PROGRAM NAME": "Bachelor of Science in Agro-Forestry",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1003",
+    "PSCED": "899999",
+    "PROGRAM NAME": "Bachelor of Science in Data Science and Analytics",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1004",
+    "PSCED": "899999",
+    "PROGRAM NAME": "Bachelor of Science in Disaster Risk Management",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1005",
+    "PSCED": "899999",
+    "PROGRAM NAME": "Bachelor of Science in Climate Change",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1006",
+    "PSCED": "899999",
+    "PROGRAM NAME": "Bachelor of Science in Sustainable Energy",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1006",
+    "PSCED": "899999",
+    "PROGRAM NAME": "Bachelor of Science in Renewable",
+    "PROGRAM DISCIPLINE ": "Multi and Interdisciplinary Cluster "
+  },
+  {
+    "CODE": "1100",
+    "PSCED": null,
+    "PROGRAM NAME": "Regional Priority Program",
+    "PROGRAM DISCIPLINE ": "Regional Priority Program"
+  }
+]

@@ -5,8 +5,8 @@ import {
   InfoCircleOutlined,
   BarChartOutlined,
   FileTextOutlined,
-  WarningOutlined,
   UserOutlined,
+  DatabaseOutlined
 } from '@ant-design/icons'
 import { useState, useMemo, useCallback } from 'react'
 import { Layout, Menu, Typography } from 'antd'
@@ -185,21 +185,21 @@ export default function Sidebar() {
 
   // Memoize menu items — only rebuilds when permissions change
   const menuItems = useMemo(() => {
-    const dataQualityChildren = []
+    const databaseManagementChildren = []
     if (getAccess('data-quality-stufaps') !== 'none') {
-      dataQualityChildren.push({
+      databaseManagementChildren.push({
         key: '/data-quality/stufaps',
         label: <NavLink to="/data-quality">StuFAPs</NavLink>,
       })
     }
     if (getAccess('data-quality-accounting') !== 'none') {
-      dataQualityChildren.push({
+      databaseManagementChildren.push({
         key: '/data-quality/accounting',
         label: <NavLink to="/data-quality/accounting">Accounting</NavLink>,
       })
     }
     if (getAccess('data-quality-cashier') !== 'none') {
-      dataQualityChildren.push({
+      databaseManagementChildren.push({
         key: '/data-quality/cashier',
         label: <NavLink to="/data-quality/cashier">Cashier</NavLink>,
       })
@@ -216,11 +216,11 @@ export default function Sidebar() {
         icon: <TeamOutlined />,
         label: <NavLink to="/students">Students</NavLink>,
       }] : []),
-      ...(dataQualityChildren.length > 0 ? [{
-        key: 'sub-data-quality',
-        icon: <WarningOutlined />,
-        label: 'Data Quality',
-        children: dataQualityChildren,
+      ...(databaseManagementChildren.length > 0 ? [{
+        key: 'sub-database-management',
+        icon: <DatabaseOutlined />, // Changed icon to DatabaseOutlined for a more distinct representation
+        label: 'Database Management',
+        children: databaseManagementChildren,
       }] : []),
       ...(getAccess('financial_assistance') !== 'none' ? [{
         key: '/financial_assistance',

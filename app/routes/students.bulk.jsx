@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react'
 import { Typography, message, Button, Space, Input, Select, DatePicker, Tag, Pagination, Popover, Progress, Modal, Divider } from 'antd'
-import { UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, UploadOutlined, SendOutlined, CloseOutlined, InboxOutlined, PlusOutlined, WarningOutlined, ExclamationCircleOutlined, CheckCircleOutlined, LoadingOutlined, DeleteOutlined, StopOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
@@ -1442,15 +1442,18 @@ export default function ImportBulk() {
       }}>
         {/* Row 1: Title + data controls */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-            <UploadOutlined style={{ color: '#1890ff' }} />
-            Bulk Import
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/students')} />
+            <Title level={4} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+              <UploadOutlined style={{ color: '#1890ff' }} />
+              Bulk Import
             {data.length > 0 && (
               <Text type="secondary" style={{ fontSize: 14, fontWeight: 400, marginLeft: 4 }}>
                 — {data.length} record{data.length !== 1 ? 's' : ''}
               </Text>
             )}
           </Title>
+          </div>
           {data.length > 0 && (
             <Space size="small">
               <Button

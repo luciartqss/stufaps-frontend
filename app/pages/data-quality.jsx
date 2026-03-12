@@ -8,10 +8,12 @@ import {
   EditOutlined,
   ArrowRightOutlined,
   SearchOutlined,
+  SaveOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
+import { useReferenceData } from '../lib/useReferenceData'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -75,16 +77,50 @@ const ISSUE_TYPES = [
   { key: 'no_status', label: 'Missing Status', color: '#fa8c16', icon: <WarningOutlined /> },
   { key: 'no_uii', label: 'Missing UII', color: '#8c8c8c', icon: <InfoCircleOutlined /> },
   { key: 'incomplete', label: 'Incomplete Info', color: '#fa8c16', icon: <WarningOutlined /> },
-  { key: 'incomplete_stufaps_disb', label: 'Incomplete StuFAPs Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
+  { key: 'incomplete_stufaps_disb', label: 'Incomplete Disb.', color: '#d4380d', icon: <ExclamationCircleOutlined /> },
 ]
 
 const VALID_TABS = ['no_award', 'duplicate_award', 'no_lrn', 'duplicate_lrn', 'no_status', 'no_uii', 'incomplete', 'incomplete_stufaps_disb']
+
+// CSS for clean table styling
+const tableStyles = `
+  .data-quality-table .ant-table {
+    font-size: 13px;
+  }
+  .data-quality-table .ant-table-thead > tr > th {
+    background: #fafafa !important;
+    font-weight: 600;
+    padding: 8px 12px !important;
+    border-bottom: 2px solid #e0e0e0;
+    text-align: left !important;
+    white-space: nowrap;
+  }
+  .data-quality-table .ant-table-tbody > tr > td {
+    padding: 6px 12px !important;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+  .data-quality-table .ant-table-tbody > tr:nth-child(even) > td {
+    background: #fafbfc;
+  }
+  .data-quality-table .ant-table-tbody > tr:hover > td {
+    background: #e6f4ff !important;
+  }
+  .data-quality-table .ant-table-cell {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+`
 
 export default function DataQuality({ readOnly = false, canEdit = false }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'no_award'
   const [loading, setLoading] = useState(true)
+
+  // Reference data for institution dropdown
+  const refData = useReferenceData(true)
 
   // Bulk Edit state
   const [bulkEditVisible, setBulkEditVisible] = useState(false)
@@ -329,6 +365,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const nameCol = useMemo(() => ({
     title: 'Name',
     key: 'name',
+    width: 180,
     render: (_, r) => {
       const name = `${r.surname || ''}, ${r.first_name || ''}`.trim()
       return <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
@@ -339,7 +376,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     title: 'Status',
     dataIndex: 'scholarship_status',
     key: 'status',
-    width: 120,
+    width: 100,
     render: (status) => {
       const colorMap = { 'On-going': 'green', Active: 'green', Graduated: 'blue', Terminated: 'red' }
       return <Tag color={colorMap[status] || 'default'}>{status || 'N/A'}</Tag>
@@ -350,22 +387,23 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     title: 'Institution',
     dataIndex: 'name_of_institution',
     key: 'institution',
+    width: 200,
     ellipsis: true,
   }), [])
 
   const viewCol = useMemo(() => ({
     title: '',
     key: 'action',
-    width: 60,
+    width: 45,
     render: (_, r) => (
-      <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontSize: 13 }}>View</a>
+      <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>
     ),
   }), [navigate])
 
   const missingTag = useCallback((label) => ({
     title: 'Issue',
     key: 'missing',
-    width: 150,
+    width: 130,
     render: () => (
       <Tag color="orange" style={{ fontSize: 12 }}>
         <WarningOutlined style={{ marginRight: 4 }} />{label}
@@ -373,124 +411,392 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     ),
   }), [])
 
+  // Bulk Award Number editing state
+  const [pendingAwards, setPendingAwards] = useState({}) // { seq: awardValue }
+  const [savingBulkAward, setSavingBulkAward] = useState(false)
+
+  // Bulk LRN editing state (must be before columnSets)
+  const [pendingLrns, setPendingLrns] = useState({}) // { seq: lrnValue }
+  const [savingBulkLrn, setSavingBulkLrn] = useState(false)
+
+  // Bulk Status editing state
+  const [pendingStatuses, setPendingStatuses] = useState({}) // { seq: statusValue }
+  const [savingBulkStatus, setSavingBulkStatus] = useState(false)
+
+  const pendingAwardCount = useMemo(() => {
+    return Object.values(pendingAwards).filter(v => v.trim()).length
+  }, [pendingAwards])
+
+  const pendingLrnCount = useMemo(() => {
+    return Object.values(pendingLrns).filter(v => v.trim()).length
+  }, [pendingLrns])
+
+  const pendingStatusCount = useMemo(() => {
+    return Object.values(pendingStatuses).filter(v => v).length
+  }, [pendingStatuses])
+
+  const handleAwardChange = useCallback((seq, value) => {
+    setPendingAwards(prev => ({ ...prev, [seq]: value }))
+  }, [])
+
+  const handleBulkAwardSave = useCallback(async () => {
+    const updates = Object.entries(pendingAwards)
+      .filter(([, value]) => value.trim())
+      .map(([seq, award_number]) => ({ seq: parseInt(seq), award_number: award_number.trim() }))
+    
+    if (updates.length === 0) {
+      message.warning('No Award Numbers to save')
+      return
+    }
+    
+    setSavingBulkAward(true)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const res = await fetch(`${API_URL}/students/bulk-update-award-number`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
+        body: JSON.stringify({ updates }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        message.success(`Award No. updated for ${data.updated_count} student${data.updated_count !== 1 ? 's' : ''}`)
+        setPendingAwards({})
+        fetchPaginated('no-award-number', setNoAward, noAward.page)
+        fetchCounts()
+      } else {
+        message.error(data.error || 'Failed to update Award Numbers')
+      }
+    } catch (err) {
+      console.error('Bulk Award save error:', err)
+      message.error('Failed to update Award Numbers')
+    } finally {
+      setSavingBulkAward(false)
+    }
+  }, [pendingAwards, fetchPaginated, fetchCounts, noAward.page])
+
+  const handleLrnChange = useCallback((seq, value) => {
+    setPendingLrns(prev => ({ ...prev, [seq]: value }))
+  }, [])
+
+  const handleBulkLrnSave = useCallback(async () => {
+    const updates = Object.entries(pendingLrns)
+      .filter(([, value]) => value.trim())
+      .map(([seq, lrn]) => ({ seq: parseInt(seq), learner_reference_number: lrn.trim() }))
+    
+    if (updates.length === 0) {
+      message.warning('No LRNs to save')
+      return
+    }
+    
+    setSavingBulkLrn(true)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const res = await fetch(`${API_URL}/students/bulk-update-lrn`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
+        body: JSON.stringify({ updates }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        message.success(`LRN updated for ${data.updated_count} student${data.updated_count !== 1 ? 's' : ''}`)
+        setPendingLrns({})
+        fetchPaginated('no-lrn', setNoLrn, noLrn.page)
+        fetchCounts()
+      } else {
+        message.error(data.error || 'Failed to update LRNs')
+      }
+    } catch (err) {
+      console.error('Bulk LRN save error:', err)
+      message.error('Failed to update LRNs')
+    } finally {
+      setSavingBulkLrn(false)
+    }
+  }, [pendingLrns, fetchPaginated, fetchCounts, noLrn.page])
+
+  const handleStatusChange = useCallback((seq, value) => {
+    setPendingStatuses(prev => ({ ...prev, [seq]: value }))
+  }, [])
+
+  const handleBulkStatusSave = useCallback(async () => {
+    const updates = Object.entries(pendingStatuses)
+      .filter(([, value]) => value)
+      .map(([seq, status]) => ({ seq: parseInt(seq), scholarship_status: status }))
+    
+    if (updates.length === 0) {
+      message.warning('No statuses to save')
+      return
+    }
+    
+    setSavingBulkStatus(true)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const res = await fetch(`${API_URL}/students/bulk-update-status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
+        body: JSON.stringify({ updates }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        message.success(`Status updated for ${data.updated_count} student${data.updated_count !== 1 ? 's' : ''}`)
+        setPendingStatuses({})
+        fetchPaginated('no-status', setNoStatus, noStatus.page)
+        fetchCounts()
+      } else {
+        message.error(data.error || 'Failed to update statuses')
+      }
+    } catch (err) {
+      console.error('Bulk status save error:', err)
+      message.error('Failed to update statuses')
+    } finally {
+      setSavingBulkStatus(false)
+    }
+  }, [pendingStatuses, fetchPaginated, fetchCounts, noStatus.page])
+
+  // Bulk Institution rename state
+  const [pendingInstitutionRenames, setPendingInstitutionRenames] = useState({}) // { oldInstitutionName: newInstitutionName }
+  const [savingBulkInstitution, setSavingBulkInstitution] = useState(false)
+
+  const pendingInstitutionCount = useMemo(() => {
+    return Object.values(pendingInstitutionRenames).filter(v => v).length
+  }, [pendingInstitutionRenames])
+
+  // Institution options from HEI reference data
+  const institutionOptions = useMemo(() => {
+    if (!refData.institutions) return []
+    return refData.institutions.map(h => ({ label: h.name, value: h.name, uii: h.uii }))
+  }, [refData.institutions])
+
+  const handleInstitutionRenameChange = useCallback((oldName, newName) => {
+    setPendingInstitutionRenames(prev => {
+      if (newName) {
+        return { ...prev, [oldName]: newName }
+      } else {
+        const updated = { ...prev }
+        delete updated[oldName]
+        return updated
+      }
+    })
+  }, [])
+
+  const handleBulkInstitutionSave = useCallback(async () => {
+    const updates = Object.entries(pendingInstitutionRenames)
+      .filter(([, newName]) => newName)
+      .map(([oldName, newName]) => {
+        const inst = refData.institutions?.find(h => h.name === newName)
+        return {
+          old_name: oldName,
+          new_name: newName,
+          uii: inst?.uii || null,
+        }
+      })
+    
+    if (updates.length === 0) {
+      message.warning('No institutions to rename')
+      return
+    }
+    
+    setSavingBulkInstitution(true)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const res = await fetch(`${API_URL}/students/bulk-update-institution`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}) },
+        body: JSON.stringify({ updates }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        message.success(`Institution renamed for ${data.updated_count} student${data.updated_count !== 1 ? 's' : ''}`)
+        setPendingInstitutionRenames({})
+        fetchNoUii(noUii.page)
+        fetchCounts()
+      } else {
+        message.error(data.error || 'Failed to rename institutions')
+      }
+    } catch (err) {
+      console.error('Bulk institution rename error:', err)
+      message.error('Failed to rename institutions')
+    } finally {
+      setSavingBulkInstitution(false)
+    }
+  }, [pendingInstitutionRenames, refData.institutions, fetchNoUii, fetchCounts, noUii.page])
+
   const columnSets = useMemo(() => ({
     duplicate_award: [
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150,
-        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
-      statusCol,
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
       viewCol,
     ],
     no_award: [
       nameCol,
-      missingTag('Award No.'),
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
-      institutionCol,
-      statusCol,
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 120, render: (v) => v || <Text type="secondary">—</Text> },
+      {
+        title: 'Award No.',
+        key: 'award_number',
+        width: 180,
+        render: (_, r) => (
+          <Input
+            size="small"
+            value={pendingAwards[r.seq] ?? ''}
+            onChange={e => handleAwardChange(r.seq, e.target.value)}
+            placeholder="Enter Award No."
+            style={{ fontSize: 12 }}
+            disabled={savingBulkAward}
+          />
+        ),
+      },
       viewCol,
     ],
     duplicate_lrn: [
-      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 180,
-        render: (v) => <Text strong style={{ color: '#ff4d4f' }}>{v}</Text> },
       nameCol,
-      institutionCol,
-      statusCol,
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
       viewCol,
     ],
     no_lrn: [
       nameCol,
-      missingTag('LRN'),
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
-      institutionCol,
-      statusCol,
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150 },
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+      {
+        title: 'LRN',
+        key: 'lrn',
+        width: 180,
+        render: (_, r) => (
+          <Input
+            size="small"
+            value={pendingLrns[r.seq] ?? ''}
+            onChange={e => handleLrnChange(r.seq, e.target.value)}
+            placeholder="Enter LRN"
+            style={{ fontSize: 12 }}
+            disabled={savingBulkLrn}
+          />
+        ),
+      },
       viewCol,
     ],
     no_status: [
       nameCol,
-      missingTag('Status'),
-      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', ellipsis: true },
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
-      institutionCol,
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150 },
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 120, render: (v) => v || <Text type="secondary">—</Text> },
+      {
+        title: 'Status',
+        key: 'status',
+        width: 140,
+        render: (_, r) => (
+          <Select
+            size="small"
+            value={pendingStatuses[r.seq] || undefined}
+            onChange={v => handleStatusChange(r.seq, v)}
+            placeholder="Select status"
+            style={{ width: '100%', fontSize: 12 }}
+            disabled={savingBulkStatus}
+            allowClear
+          >
+            <Option value="Active">Active</Option>
+            <Option value="Terminated">Terminated</Option>
+            <Option value="Graduated">Graduated</Option>
+            <Option value="Replacement">Replacement</Option>
+          </Select>
+        ),
+      },
       viewCol,
     ],
     no_uii: [
+      {
+        title: 'Affected',
+        dataIndex: 'student_count',
+        key: 'student_count',
+        width: 80,
+        render: (count) => (
+          <Tag color="orange" style={{ fontWeight: 600 }}>{count}</Tag>
+        ),
+      },
       { title: 'Institution', dataIndex: 'institution', key: 'institution', ellipsis: true,
         render: (v) => <Text strong>{v || 'N/A'}</Text> },
       {
-        title: 'Students Affected',
-        dataIndex: 'student_count',
-        key: 'student_count',
-        width: 150,
-        align: 'center',
-        render: (count) => (
-          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
+        title: 'Rename To',
+        key: 'rename',
+        width: 280,
+        render: (_, r) => (
+          <Select
+            size="small"
+            value={pendingInstitutionRenames[r.institution] || undefined}
+            onChange={v => handleInstitutionRenameChange(r.institution, v)}
+            placeholder="Select HEI"
+            style={{ width: '100%', fontSize: 12 }}
+            disabled={savingBulkInstitution}
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            options={institutionOptions}
+          />
         ),
       },
     ],
     incomplete: [
       nameCol,
-      {
-        title: 'Count',
-        dataIndex: 'missing_count',
-        key: 'missing_count',
-        width: 80,
-        align: 'center',
-        render: (count) => (
-          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
-        ),
-      },
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 100, render: (v) => v || <Text type="secondary">—</Text> },
       {
         title: 'Missing Fields',
         dataIndex: 'missing_fields',
         key: 'missing_fields',
+        width: 100,
         render: (fields) => {
           const count = (fields || []).length
-          if (!count) return <Text type="secondary" style={{ fontSize: 12 }}>—</Text>
+          if (!count) return <Text type="secondary">—</Text>
           const list = fields.map(f => fieldLabels[f] || f).join(', ')
           return (
-            <Tooltip title={list}>
-              <Tag color="orange" style={{ fontSize: 12, cursor: 'default' }}>
-                {count} missing field{count !== 1 ? 's' : ''}
-              </Tag>
+            <Tooltip title={list} placement="topLeft">
+              <Tag color="orange" style={{ cursor: 'pointer' }}>{count} field{count !== 1 ? 's' : ''}</Tag>
             </Tooltip>
           )
         },
       },
-      statusCol,
       viewCol,
     ],
     incomplete_stufaps_disb: [
       {
         title: 'Name',
         key: 'name',
+        width: 180,
         render: (_, r) => {
           const name = `${r.surname || ''}, ${r.first_name || ''}`.trim()
           return <a onClick={() => navigate(`/students/${r.student_seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
         },
       },
-      { title: 'Program', dataIndex: 'scholarship_program', key: 'program' },
+      { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
+      { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+      { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 100, render: (v) => v || <Text type="secondary">—</Text> },
       {
         title: 'Missing Fields',
-        dataIndex: 'missing_field_count',
-        key: 'missing_field_count',
-        width: 140,
-        align: 'center',
-        render: (count) => (
-          <Tag color="orange" style={{ fontWeight: 600, minWidth: 36, textAlign: 'center' }}>{count}</Tag>
-        ),
+        key: 'missing_fields',
+        width: 100,
+        render: (_, r) => {
+          const fields = r.missing_fields || []
+          const totalCount = r.missing_field_count || fields.length
+          if (!totalCount) return <Text type="secondary">—</Text>
+          const list = fields.map(f => fieldLabels[f] || f).join(', ')
+          return (
+            <Tooltip title={`${list} (across all disbursements)`} placement="topLeft">
+              <Tag color="orange" style={{ cursor: 'pointer' }}>{totalCount} field{totalCount !== 1 ? 's' : ''}</Tag>
+            </Tooltip>
+          )
+        },
       },
-      statusCol,
       {
         title: '',
         key: 'action',
-        width: 60,
+        width: 50,
         render: (_, r) => (
           <a onClick={() => navigate(`/students/${r.student_seq}`)} style={{ color: '#0032a0', fontSize: 13 }}>View</a>
         ),
       },
     ],
-  }), [nameCol, statusCol, institutionCol, viewCol, missingTag, navigate])
+  }), [nameCol, statusCol, institutionCol, viewCol, missingTag, navigate, pendingAwards, savingBulkAward, handleAwardChange, pendingLrns, savingBulkLrn, handleLrnChange, pendingStatuses, savingBulkStatus, handleStatusChange, pendingInstitutionRenames, savingBulkInstitution, handleInstitutionRenameChange, institutionOptions])
 
   // Group duplicate students by shared value for visual clarity
   const groupedDupAward = useMemo(() => {
@@ -558,6 +864,7 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   return (
     <div style={{ background: '#fafbfc', minHeight: '100vh', margin: -24 }}>
+      <style>{tableStyles}</style>
       {/* Header — matches dashboard */}
       <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed', background: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -633,23 +940,69 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
           }}
           styles={{ body: { padding: 0 } }}
           title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>
-              <span style={{ fontSize: 16, fontWeight: 600 }}>{activeIssue?.label}</span>
-              <Tag
-                style={{
-                  backgroundColor: activeIssue?.color,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: '0 10px',
-                  lineHeight: '22px',
-                }}
-              >
-                {getCountForTab(activeTab)}
-              </Tag>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: activeIssue?.color, fontSize: 16 }}>{activeIssue?.icon}</span>
+                <span style={{ fontSize: 16, fontWeight: 600 }}>{activeIssue?.label}</span>
+                <Tag
+                  style={{
+                    backgroundColor: activeIssue?.color,
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: 10,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    padding: '0 10px',
+                    lineHeight: '22px',
+                  }}
+                >
+                  {getCountForTab(activeTab)}
+                </Tag>
+              </div>
+              {activeTab === 'no_award' && pendingAwardCount > 0 && (
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={handleBulkAwardSave}
+                  loading={savingBulkAward}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  Save All ({pendingAwardCount})
+                </Button>
+              )}
+              {activeTab === 'no_lrn' && pendingLrnCount > 0 && (
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={handleBulkLrnSave}
+                  loading={savingBulkLrn}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  Save All ({pendingLrnCount})
+                </Button>
+              )}
+              {activeTab === 'no_status' && pendingStatusCount > 0 && (
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={handleBulkStatusSave}
+                  loading={savingBulkStatus}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  Save All ({pendingStatusCount})
+                </Button>
+              )}
+              {activeTab === 'no_uii' && pendingInstitutionCount > 0 && (
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  onClick={handleBulkInstitutionSave}
+                  loading={savingBulkInstitution}
+                  style={{ background: '#52c41a', borderColor: '#52c41a' }}
+                >
+                  Save All ({pendingInstitutionCount})
+                </Button>
+              )}
             </div>
           }
         >
@@ -697,16 +1050,22 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                             </div>
                             <Table
                               dataSource={group.students}
-                              columns={[
+                              columns={activeTab === 'duplicate_award' ? [
                                 nameCol,
-                                { title: 'Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
-                                statusCol,
+                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
+                                { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
+                                viewCol,
+                              ] : [
+                                nameCol,
+                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
+                                { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
                                 viewCol,
                               ]}
                               size="small"
                               pagination={false}
                               rowKey="seq"
                               showHeader={idx === 0}
+                              className="data-quality-table"
                               style={{ borderRadius: 0 }}
                             />
                           </div>
@@ -736,10 +1095,11 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                 <Table
                   dataSource={displayData}
                   columns={columnSets[activeTab] || []}
-                  size="middle"
+                  size="small"
                   pagination={false}
                   rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : activeTab === 'no_uii' ? 'institution' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
+                  className="data-quality-table"
                 />
                 {tabData.total > PAGE_SIZE && (
                   <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
