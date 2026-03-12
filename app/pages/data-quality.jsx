@@ -1052,23 +1052,21 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                               dataSource={group.students}
                               columns={activeTab === 'duplicate_award' ? [
                                 nameCol,
-                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
                                 { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
                                 viewCol,
                               ] : [
                                 nameCol,
-                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', ellipsis: true },
+                                { title: 'Scholarship Program', dataIndex: 'scholarship_program', key: 'program', width: 200, ellipsis: true },
                                 { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
                                 viewCol,
                               ]}
                               size="small"
-                              tableLayout="fixed"
                               pagination={false}
                               rowKey="seq"
                               showHeader={idx === 0}
                               className="data-quality-table"
                               style={{ borderRadius: 0 }}
-                              scroll={{ x: 'max-content' }}
                             />
                           </div>
                         )
@@ -1098,12 +1096,10 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                   dataSource={displayData}
                   columns={columnSets[activeTab] || []}
                   size="small"
-                  tableLayout="fixed"
                   pagination={false}
                   rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : activeTab === 'no_uii' ? 'institution' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
                   className="data-quality-table"
-                  scroll={{ x: 'max-content' }}
                 />
                 {tabData.total > PAGE_SIZE && (
                   <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
