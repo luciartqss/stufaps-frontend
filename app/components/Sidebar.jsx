@@ -222,6 +222,11 @@ export default function Sidebar() {
         label: 'Database Management',
         children: databaseManagementChildren,
       }] : []),
+      ...(getAccess('voucher') !== 'none' ? [{
+        key: '/voucher',
+        icon: <FileTextOutlined />,
+        label: <NavLink to="/voucher">Voucher</NavLink>,
+      }] : []),
       ...(getAccess('financial_assistance') !== 'none' ? [{
         key: '/financial_assistance',
         icon: <BarChartOutlined />,

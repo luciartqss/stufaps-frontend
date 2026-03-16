@@ -132,6 +132,9 @@ export function AuthProvider({ children }) {
       // Logs and account management are master_admin only
       if (section === 'account-management' || section === 'logs') return 'none'
 
+      // Voucher: full access for stufaps
+      if (section === 'voucher') return 'full'
+
       // About Us: read-only for stufaps
       if (section === 'about_us') return 'read-only'
 
