@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown, Modal, Form, Alert, AutoComplete } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined, ThunderboltOutlined } from '@ant-design/icons'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown } from 'antd'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
@@ -314,12 +314,6 @@ export default function StudentsIndex() {
   const [filterOptions, setFilterOptions] = useState({})
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
 
-  // Bulk disbursement modal state
-  const [bulkDisbOpen, setBulkDisbOpen] = useState(false)
-  const [bulkDisbForm] = Form.useForm()
-  const [bulkDisbLoading, setBulkDisbLoading] = useState(false)
-  const [bulkDisbPreview, setBulkDisbPreview] = useState(null) // { eligible, skipped }
-  const [bulkDisbPreviewLoading, setBulkDisbPreviewLoading] = useState(false)
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -1092,84 +1086,6 @@ export default function StudentsIndex() {
     return filters
   }, [searchValue, statusFilter, programFilter, academicYearFilter, semesterFilter, awardYearFilter, courseFilter, regionFilter, provinceFilter, cityFilter, schoolFilter, priorityFilter, specialGroupFilter, authorityTypeFilter])
 
-  // ── Bulk Disbursement helpers ──
-
-  const buildBulkDisbFilters = useCallback(() => {
-    const params = {}
-    if (programFilter) params.scholarship_program = programFilter
-    if (schoolFilter) params.name_of_institution = schoolFilter
-    if (regionFilter) params.region = regionFilter
-    if (provinceFilter) params.province = provinceFilter
-    if (cityFilter) params.municipality = cityFilter
-    if (courseFilter) params.degree_program = courseFilter
-    if (awardYearFilter) params.award_year = awardYearFilter
-    return params
-  }, [programFilter, schoolFilter, regionFilter, provinceFilter, cityFilter, courseFilter, awardYearFilter])
-
-  const handleBulkDisbOpen = () => {
-    bulkDisbForm.resetFields()
-    setBulkDisbPreview(null)
-    setBulkDisbOpen(true)
-  }
-
-  const handleBulkDisbPreview = useCallback(async () => {
-    try {
-      const values = await bulkDisbForm.validateFields(['academic_year', 'semester'])
-      setBulkDisbPreviewLoading(true)
-      const body = { ...values, ...buildBulkDisbFilters() }
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-      const res = await fetch(`${API_BASE}/disbursements/bulk-disbursement/preview`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
-        },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.message || 'Preview failed')
-      }
-      const data = await res.json()
-      setBulkDisbPreview(data)
-    } catch (err) {
-      if (err.errorFields) return // validation error
-      message.error(err.message)
-    } finally {
-      setBulkDisbPreviewLoading(false)
-    }
-  }, [bulkDisbForm, buildBulkDisbFilters])
-
-  const handleBulkDisbSubmit = useCallback(async () => {
-    try {
-      const values = await bulkDisbForm.validateFields()
-      setBulkDisbLoading(true)
-      const body = { ...values, ...buildBulkDisbFilters() }
-      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
-      const res = await fetch(`${API_BASE}/disbursements/bulk-disbursement/store`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
-        },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to create disbursements')
-      }
-      message.success(data.message)
-      setBulkDisbOpen(false)
-      bulkDisbForm.resetFields()
-      setBulkDisbPreview(null)
-    } catch (err) {
-      if (err.errorFields) return
-      message.error(err.message)
-    } finally {
-      setBulkDisbLoading(false)
-    }
-  }, [bulkDisbForm, buildBulkDisbFilters])
-
   return (
     <div style={{ padding: 0, margin: 0 }}>
       <Title level={2} style={{ margin: '0 0 6px 0' }}>Students</Title>
@@ -1243,16 +1159,6 @@ export default function StudentsIndex() {
           >
             Extract Excel
           </Button>
-          {(canAddDisbursements || isMasterAdmin) && (
-            <Button
-              size="middle"
-              icon={<ThunderboltOutlined />}
-              style={{ color: '#7c3aed', borderColor: '#7c3aed', fontWeight: 500 }}
-              onClick={handleBulkDisbOpen}
-            >
-              Bulk Disbursement
-            </Button>
-          )}
           {canAdd && (
             <Button type="primary" size="middle" onClick={handleAddStudent}>
               Add Student
@@ -1639,146 +1545,6 @@ export default function StudentsIndex() {
           </div>
         </Space>
       </Drawer>
-
-      {/* Bulk Disbursement Modal */}
-      <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ThunderboltOutlined style={{ color: '#7c3aed' }} />
-            <span>Bulk Disbursement</span>
-          </div>
-        }
-        open={bulkDisbOpen}
-        onCancel={() => { setBulkDisbOpen(false); setBulkDisbPreview(null) }}
-        width={520}
-        footer={[
-          <Button key="cancel" onClick={() => { setBulkDisbOpen(false); setBulkDisbPreview(null) }}>
-            Cancel
-          </Button>,
-          !bulkDisbPreview ? (
-            <Button key="preview" type="primary" ghost loading={bulkDisbPreviewLoading} onClick={handleBulkDisbPreview}>
-              Check Eligible Students
-            </Button>
-          ) : (
-            <Button
-              key="submit"
-              type="primary"
-              loading={bulkDisbLoading}
-              disabled={!bulkDisbPreview?.eligible}
-              onClick={handleBulkDisbSubmit}
-              style={{ background: '#7c3aed', borderColor: '#7c3aed' }}
-            >
-              Create {bulkDisbPreview.eligible} Disbursement{bulkDisbPreview.eligible !== 1 ? 's' : ''}
-            </Button>
-          ),
-        ]}
-      >
-        <div style={{ marginBottom: 8 }}>
-          <Alert
-            type="info"
-            showIcon
-            message="Creates disbursement records for active students only."
-            description="Students must have a record in the immediately previous semester (e.g. 1st Sem 2022-2023 requires 2nd Sem 2021-2022). Already existing records are skipped."
-            style={{ marginBottom: 16 }}
-          />
-        </div>
-
-        <Form form={bulkDisbForm} layout="vertical" onValuesChange={() => setBulkDisbPreview(null)}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-            <Form.Item
-              name="academic_year"
-              label="Academic Year"
-              rules={[
-                { required: true, message: 'Required' },
-                {
-                  validator: (_, value) => {
-                    if (!value) return Promise.resolve()
-                    const m = String(value).match(/^(\d{4})-(\d{4})$/)
-                    if (!m) return Promise.reject('Format must be YYYY-YYYY (e.g. 2024-2025)')
-                    if (Number(m[2]) !== Number(m[1]) + 1) return Promise.reject('Years must be consecutive (e.g. 2024-2025)')
-                    return Promise.resolve()
-                  },
-                },
-              ]}
-            >
-              <AutoComplete
-                placeholder="e.g. 2025-2026"
-                allowClear
-                options={academicYears.map((ay) => ({ value: ay, label: ay }))}
-                filterOption={(input, option) => (option?.value || '').toLowerCase().includes(input.toLowerCase())}
-              />
-            </Form.Item>
-            <Form.Item
-              name="semester"
-              label="Semester"
-              rules={[{ required: true, message: 'Required' }]}
-            >
-              <Select placeholder="Select Semester" allowClear>
-                {semesters.map((sem) => (
-                  <Option key={sem} value={sem}>{sem}</Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-            <Form.Item name="nta" label="NTA">
-              <Input placeholder="e.g. Sub-ARO 2025-001" allowClear />
-            </Form.Item>
-            <Form.Item name="fund_source" label="Fund Source">
-              <Input placeholder="e.g. GAA 2025" allowClear />
-            </Form.Item>
-          </div>
-        </Form>
-
-        {/* Active page filters note */}
-        {(programFilter || schoolFilter || regionFilter || provinceFilter || cityFilter || courseFilter || awardYearFilter) && (
-          <div style={{ padding: '8px 12px', background: '#f0f5ff', border: '1px solid #adc6ff', borderRadius: 6, marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#1d39c4', marginBottom: 4 }}>Page filters applied:</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {programFilter && <Tag color="blue" style={{ fontSize: 11 }}>Program: {programFilter}</Tag>}
-              {schoolFilter && <Tag color="blue" style={{ fontSize: 11 }}>School: {schoolFilter}</Tag>}
-              {regionFilter && <Tag color="blue" style={{ fontSize: 11 }}>Region: {regionFilter}</Tag>}
-              {provinceFilter && <Tag color="blue" style={{ fontSize: 11 }}>Province: {provinceFilter}</Tag>}
-              {cityFilter && <Tag color="blue" style={{ fontSize: 11 }}>City: {cityFilter}</Tag>}
-              {courseFilter && <Tag color="blue" style={{ fontSize: 11 }}>Course: {courseFilter}</Tag>}
-              {awardYearFilter && <Tag color="blue" style={{ fontSize: 11 }}>Award Year: {awardYearFilter}</Tag>}
-            </div>
-          </div>
-        )}
-
-        {/* Preview results */}
-        {bulkDisbPreview && (
-          <div style={{ padding: '12px 16px', borderRadius: 8, border: '1px solid #d9d9d9', background: '#fafafa' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Preview</span>
-            </div>
-            <div style={{ display: 'flex', gap: 24 }}>
-              <div>
-                <div style={{ fontSize: 24, fontWeight: 700, color: bulkDisbPreview.eligible > 0 ? '#52c41a' : '#ff4d4f' }}>
-                  {bulkDisbPreview.eligible}
-                </div>
-                <div style={{ fontSize: 11, color: '#8c8c8c' }}>Will be created</div>
-              </div>
-              {bulkDisbPreview.skipped > 0 && (
-                <div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: '#fa8c16' }}>
-                    {bulkDisbPreview.skipped}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>Skipped (already exist)</div>
-                </div>
-              )}
-              {bulkDisbPreview.no_previous_sem > 0 && (
-                <div>
-                  <div style={{ fontSize: 24, fontWeight: 700, color: '#cf1322' }}>
-                    {bulkDisbPreview.no_previous_sem}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#8c8c8c' }}>No prior semester record</div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   )
 }

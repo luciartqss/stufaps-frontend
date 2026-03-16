@@ -225,7 +225,14 @@ export default function DataQualityCashier({ readOnly = false }) {
 
     setSaving(true)
     try {
-      const updates = ids.map(id => ({ id: Number(id), ...editedRef.current[id] }))
+      const updates = ids.map(id => {
+        const isVirtual = String(id).startsWith('v_')
+        return {
+          id: isVirtual ? id : Number(id),
+          ...editedRef.current[id],
+          ...(isVirtual ? { academic_year: academicYear, semester: semester } : {})
+        }
+      })
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
       const res = await fetch(`${API_BASE}/disbursements/cashier/bulk-update`, {
         method: 'POST',
@@ -243,7 +250,7 @@ export default function DataQualityCashier({ readOnly = false }) {
     } finally {
       setSaving(false)
     }
-  }, [fetchData, pagination.current])
+  }, [fetchData, pagination.current, academicYear, semester])
 
   const handleClearFilters = useCallback(() => {
     searchRef.current = ''
