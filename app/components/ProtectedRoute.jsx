@@ -14,6 +14,7 @@ function getSectionForPath(pathname) {
   if (pathname.startsWith('/logs')) return 'logs'
   if (pathname.startsWith('/financial_assistance')) return 'financial_assistance'
   if (pathname.startsWith('/about_us')) return 'about_us'
+  if (pathname.startsWith('/voucher')) return 'voucher'
   if (pathname.startsWith('/sub_aro_nta')) return 'sub-aro-nta'
   if (pathname.startsWith('/account-management')) return 'account-management'
   return null
