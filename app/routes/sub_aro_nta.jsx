@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag, Tooltip, Collapse, Checkbox } from 'antd'
+import { Typography, Button, Modal, Form, Input, Select, Upload, message, Card, Space, Popconfirm, Segmented, Spin, Empty, Tag, Tooltip, Collapse, Checkbox, Progress, DatePicker } from 'antd'
 import { InboxOutlined, DeleteOutlined, FilePdfOutlined, SearchOutlined, UploadOutlined, PlusOutlined, CalendarOutlined, EditOutlined } from '@ant-design/icons'
+import dayjs from 'dayjs'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
 
@@ -160,15 +162,19 @@ export default function SUB_ARO_NTA() {
       fd.append('filename', values.filename)
       fd.append('yearsuffix', values.yearsuffix)
       fd.append('number_count', values.number_count)
+      if (values.upload_date) {
+        fd.append('upload_date', values.upload_date.format('YYYY-MM-DD HH:mm:ss'))
+      }
       
       if (activeTab === 'SUB-ARO') {
         fd.append('budget', values.budget || '')
-            fd.append('Operational_Cost', values.Operational_Cost || '')
+        fd.append('Operational_Cost', values.Operational_Cost || '')
         fd.append('scholarship_program', values.scholarship_program || '')
         fd.append('number_of_grantees', values.number_of_grantees || '')
       } else {
         // For NTA: send sub_aro_breakdown as JSON string within FormData
         fd.append('sub_aro_breakdown', JSON.stringify(subAroBreakdown))
+        fd.append('total_budget', values.total_budget || '')
       }
       
       const endpoint = activeTab === 'SUB-ARO' ? 'files/sub-aro' : 'files/nta'
@@ -217,6 +223,7 @@ export default function SUB_ARO_NTA() {
       filename: file.filename,
       yearsuffix: file.yearsuffix,
       number_count: file.number_count,
+      upload_date: file.upload_date ? dayjs(file.upload_date) : dayjs(file.created_at),
     })
     
     if (file.filetype === 'SUB-ARO') {
@@ -227,8 +234,11 @@ export default function SUB_ARO_NTA() {
         number_of_grantees: file.number_of_grantees,
       })
     } else {
-      // NTA: set the breakdown
+      // NTA: set the breakdown and total_budget
       setSubAroBreakdown(file.sub_aro_breakdown || [])
+      form.setFieldsValue({
+        total_budget: file.total_budget,
+      })
     }
     
     setFileList([])
@@ -384,7 +394,7 @@ export default function SUB_ARO_NTA() {
                       </Text>
                     </Tooltip>
                     <Text type="secondary" style={{ fontSize: 11 }}>
-                      {new Date(f.created_at).toLocaleDateString()}
+                      {f.upload_date ? dayjs(f.upload_date).format('DD/MM/YYYY') : dayjs(f.created_at).format('DD/MM/YYYY')}
                     </Text>
                   </div>
 
@@ -408,80 +418,160 @@ export default function SUB_ARO_NTA() {
                         label: <span style={{ fontSize: 12, color: '#8c8c8c' }}>Details</span>,
                         children: (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {/* For SUB-ARO: Budget, Operational Cost, Disbursed, Scholarship, Grantees */}
+                            {/* For SUB-ARO: 3-column layout with scholarship program header */}
                             {f.filetype === 'SUB-ARO' ? (
                               <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20, flex: 1 }}>
-                                    {f.budget && (
-                                      <div>
-                                        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Fund Transfer</Text>
-                                        <Text strong style={{ fontSize: 13, color: '#52c41a' }}>
-                                          ₱{parseFloat(f.budget + (f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </Text>
-                                      </div>
-                                    )}
-                                    {f.Operational_Cost && (
-                                      <div>
-                                        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Operational Cost</Text>
-                                        <Text strong style={{ fontSize: 13, color: '#fa541c' }}>
-                                          ₱{parseFloat(f.Operational_Cost).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </Text>
-                                      </div>
-                                    )}
-
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Total Amount</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#faad14' }}>
-                                        ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </Text>
-                                    </div>
-
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Actual Obligation</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#faad14' }}>
-                                        ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </Text>
-                                    </div>
-
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Actual disbursement</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#faad14' }}>
-                                        ₱{parseFloat(f.disbursed || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                      </Text>
-                                    </div>
+                                {/* Scholarship Program Header */}
+                                {f.scholarship_program && (
+                                  <div style={{ padding: '8px 12px', background: '#f6ffed', borderRadius: 6, border: '1px solid #b7eb8f', marginBottom: 4 }}>
+                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 2 }}>Scholarship Program</Text>
+                                    <Text strong style={{ fontSize: 14 }}>{f.scholarship_program}</Text>
                                   </div>
-                                </div>
-                                
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20 }}>
-                                  {f.scholarship_program && (
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Scholarship Program</Text>
-                                      <Text strong style={{ fontSize: 13 }}>{f.scholarship_program}</Text>
-                                    </div>
-                                  )}
-                                  {f.number_of_grantees && (
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>No. of Grantees</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#1890ff' }}>{f.number_of_grantees}</Text>
-                                    </div>
-                                  )}
+                                )}
 
+                                {/* 3-Column Layout: Card | Chart | Chart */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 1fr', gap: 16 }}>
+                                  {/* Card for Column 1 & 2 */}
                                   <div>
-                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Disbursement %</Text>
-                                    <Text strong style={{ fontSize: 13, color: f.budget && parseFloat(f.budget) > 0 ? '#1890ff' : '#8c8c8c' }}>
-                                      {f.budget && parseFloat(f.budget) > 0 
-                                        ? ((parseFloat(f.disbursed || 0) / parseFloat(f.budget)) * 100).toFixed(2) 
-                                        : '0.00'}%
-                                    </Text>
+                                    <Card size="small" style={{ borderRadius: 8, height: '100%', background: '#fafafa' }} styles={{ body: { padding: '12px' } }}>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                        {/* Column 1: Financial */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Fund Transfer</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#0891B2' }}>
+                                              ₱{parseFloat(f.budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Operational Cost</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#F97316' }}>
+                                              ₱{parseFloat(f.Operational_Cost || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Amount</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#2563EB' }}>
+                                              ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Obligation</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
+                                              ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                        </div>
+
+                                        {/* Column 2: Grantees & Disbursement */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>No. of Grantees</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.number_of_grantees || 0}</Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Granted</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#10B981' }}>{f.granted_count || 0}</Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursement %</Text>
+                                            <Text strong style={{ fontSize: 12, color: (parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)) > 0 ? '#8B5CF6' : '#9CA3AF' }}>
+                                              {(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)) > 0
+                                                ? ((parseFloat(f.disbursed || 0) / (parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0))) * 100).toFixed(2)
+                                                : '0.00'}%
+                                            </Text>
+                                          </div>
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Disbursement</Text>
+                                            <Text strong style={{ fontSize: 12, color: '#F59E0B' }}>
+                                              ₱{parseFloat(f.disbursed || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Card>
+                                  </div>
+
+                                  {/* Column 3: Pie Chart 1 */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    {(() => {
+                                      const totalObligation = parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)
+                                      const disbursed = parseFloat(f.disbursed || 0)
+                                      const remaining = Math.max(totalObligation - disbursed, 0)
+                                      const obligationData = [
+                                        { name: 'Disbursed', value: disbursed },
+                                        { name: 'Remaining', value: remaining },
+                                      ]
+                                      const OB_COLORS = ['#10B981', '#FCD34D']
+                                      return (
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Obligation vs Disbursement</Text>
+                                          <ResponsiveContainer width="100%" height={200}>
+                                            <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
+                                              <Pie
+                                                data={obligationData}
+                                                cx="50%" cy="45%"
+                                                innerRadius={30} outerRadius={48}
+                                                paddingAngle={3}
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                style={{ fontSize: 9 }}
+                                              >
+                                                {obligationData.map((_, i) => <Cell key={i} fill={OB_COLORS[i]} />)}
+                                              </Pie>
+                                              <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                                              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
+                                            </PieChart>
+                                          </ResponsiveContainer>
+                                        </div>
+                                      )
+                                    })()}
+                                  </div>
+
+                                  {/* Column 4: Pie Chart 2 */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                    {(() => {
+                                      const total = parseInt(f.number_of_grantees || 0)
+                                      const granted = parseInt(f.granted_count || 0)
+                                      const notGranted = Math.max(total - granted, 0)
+                                      const granteeData = [
+                                        { name: 'Granted', value: granted },
+                                        { name: 'Not Yet', value: notGranted },
+                                      ]
+                                      const GR_COLORS = ['#EF4444', '#6B7280']
+                                      return (
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Granted vs Not Yet Granted</Text>
+                                          <ResponsiveContainer width="100%" height={200}>
+                                            <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
+                                              <Pie
+                                                data={granteeData}
+                                                cx="50%" cy="45%"
+                                                innerRadius={30} outerRadius={48}
+                                                paddingAngle={3}
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                style={{ fontSize: 9 }}
+                                              >
+                                                {granteeData.map((_, i) => <Cell key={i} fill={GR_COLORS[i]} />)}
+                                              </Pie>
+                                              <RechartsTooltip formatter={(val, name) => [val + ' scholars', name]} />
+                                              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
+                                            </PieChart>
+                                          </ResponsiveContainer>
+                                        </div>
+                                      )
+                                    })()}
                                   </div>
                                 </div>
                               </>
                             ) : (
-                              /* For NTA: SUB-ARO Breakdown + Total Budget + Disbursed */
+                              /* For NTA: SUB-ARO Breakdown + Summary Card + Pie Chart */
                               <>
                                 {f.sub_aro_breakdown && f.sub_aro_breakdown.length > 0 && (
-                                  <div>
+                                  <div style={{ marginBottom: 20 }}>
                                     <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>SUB-ARO Breakdown</Text>
                                     <div style={{ border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
                                       {f.sub_aro_breakdown.map((item, idx) => {
@@ -495,38 +585,36 @@ export default function SUB_ARO_NTA() {
 
                                               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                                                 <div style={{ textAlign: 'right' }}>
-                                                  <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Amount</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#52c41a' }}>
-                                                    ₱{(parseFloat(item.budget || 0) + parseFloat(item.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Fund Transfer</Text>
+                                                  <Text strong style={{ fontSize: 12, color: '#0891B2' }}>
+                                                    ₱{(parseFloat(item.budget || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   </Text>
                                                 </div>
 
-                                                <div style={{ textAlign: 'right' }}>
-                                                  <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Amount</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#52c41a' }}>
-                                                    ₱{(parseFloat(item.budget || 0) + parseFloat(item.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                <div style={{ textAlign: 'right', paddingLeft: 16, borderLeft: '1px solid #E5E7EB' }}>
+                                                  <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Operational Cost</Text>
+                                                  <Text strong style={{ fontSize: 12, color: '#0891B2' }}>
+                                                    ₱{(parseFloat(subAro?.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   </Text>
                                                 </div>
 
-                                                
-
-                                                <div style={{ textAlign: 'right' }}>
+                                                <div style={{ textAlign: 'right', paddingLeft: 16, borderLeft: '1px solid #E5E7EB' }}>
                                                   <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Actual Obligation</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#52c41a' }}>
-                                                    ₱{parseFloat(item.budget - (subAro?.disbursed || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
+                                                    ₱{parseFloat(item.budget + parseFloat(subAro?.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   </Text>
                                                 </div>
 
-                                                <div style={{ textAlign: 'right' }}>
+                                                <div style={{ textAlign: 'right', paddingLeft: 16, borderLeft: '1px solid #E5E7EB' }}>
                                                   <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>Disbursed</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#faad14' }}>
+                                                  <Text strong style={{ fontSize: 12, color: '#F59E0B' }}>
                                                     ₱{parseFloat(subAro?.disbursed || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   </Text>
                                                 </div>
 
-                                                <div style={{ textAlign: 'right', minWidth: 80 }}>
+                                                <div style={{ textAlign: 'right', minWidth: 80, paddingLeft: 16, borderLeft: '1px solid #E5E7EB' }}>
                                                   <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Disbursement %</Text>
-                                                  <Text strong style={{ fontSize: 13, color: item.budget && parseFloat(item.budget) > 0 ? '#1890ff' : '#8c8c8c' }}>
+                                                  <Text strong style={{ fontSize: 12, color: item.budget && parseFloat(item.budget) > 0 ? '#8B5CF6' : '#9CA3AF' }}>
                                                     {item.budget && parseFloat(item.budget) > 0 
                                                       ? ((parseFloat(subAro?.disbursed || 0) / parseFloat(item.budget)) * 100).toFixed(2) 
                                                       : '0.00'}%
@@ -534,8 +622,6 @@ export default function SUB_ARO_NTA() {
                                                 </div>
 
                                               </div>
-          
-
                                           </div>
                                         )
                                       })}
@@ -543,53 +629,351 @@ export default function SUB_ARO_NTA() {
                                   </div>
                                 )}
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 20 }}>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 20, flex: 1 }}>
-                                    {f.total_budget && (
-                                      <div>
-                                        <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Amount</Text>
-                                        <Text strong style={{ fontSize: 13, color: '#52c41a' }}>
-                                          ₱{parseFloat(f.total_budget).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </Text>
-                                      </div>
-                                    )}
-
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Actual Obligation</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#52c41a' }}>
-                                          ₱{parseFloat(f.total_budget - f.sub_aro_breakdown?.reduce((sum, item) => {
-                                            const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
-                                            return sum + (parseFloat(subAro?.disbursed || 0))
-                                          }, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </Text>
-                                    </div>
-
-                                    <div>
-                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Actual disbursement</Text>
-                                      <Text strong style={{ fontSize: 13, color: '#faad14' }}>
-                                        ₱{parseFloat(
-                                          f.sub_aro_breakdown?.reduce((sum, item) => {
-                                            const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
-                                            return sum + (parseFloat(subAro?.disbursed || 0))
-                                          }, 0) || 0
-                                        ).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                {/* Summary Card + Balance Report + Pie Chart */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                  {/* Summary Card Header */}
+                                  <Card size="small" style={{ borderRadius: 8, background: '#fafafa' }} styles={{ body: { padding: '12px' } }}>
+                                    {/* NTA Total Budget Header */}
+                                    <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #E5E7EB' }}>
+                                      <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>NTA Total Budget</Text>
+                                      <Text strong style={{ fontSize: 18, color: '#1890FF' }}>
+                                        ₱{parseFloat(f.total_budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                       </Text>
                                     </div>
-                                  </div>
-                                  <div style={{ textAlign: 'right', minWidth: 80 }}>
-                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>Disbursement %</Text>
-                                    <Text strong style={{ fontSize: 13, color: f.total_budget && parseFloat(f.total_budget) > 0 ? '#1890ff' : '#8c8c8c' }}>
-                                      {f.total_budget && parseFloat(f.total_budget) > 0 
-                                        ? ((parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
-                                            const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
-                                            return sum + (parseFloat(subAro?.disbursed || 0))
-                                          }, 0) || 0) / parseFloat(f.total_budget)) * 100).toFixed(2) 
-                                        : '0.00'}%
-                                    </Text>
+
+                                    {/* Three Charts - Horizontally Aligned */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                                      {/* Pie Chart - Disbursement */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                      {(() => {
+                                        const totalAmount = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                          const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                        }, 0) || 0)
+                                        const totalDisbursed = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                          const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          return sum + (parseFloat(subAro?.disbursed || 0))
+                                        }, 0) || 0)
+                                        const totalRemaining = Math.max(totalAmount - totalDisbursed, 0)
+                                        const chartData = [
+                                          { name: 'Disbursed', value: totalDisbursed },
+                                          { name: 'Remaining', value: totalRemaining },
+                                        ]
+                                        const CHART_COLORS = ['#10B981', '#FCD34D']
+                                        return (
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>NTA Disbursement Summary</Text>
+                                            <ResponsiveContainer width="100%" height={150}>
+                                              <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 0 }}>
+                                                <Pie
+                                                  data={chartData}
+                                                  cx="50%" cy="45%"
+                                                  innerRadius={25} outerRadius={40}
+                                                  paddingAngle={3}
+                                                  dataKey="value"
+                                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                  labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                  style={{ fontSize: 8 }}
+                                                >
+                                                  {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
+                                                </Pie>
+                                                <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                                                <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
+                                              </PieChart>
+                                            </ResponsiveContainer>
+                                          </div>
+                                        )
+                                      })()}
+                                      </div>
+
+                                      {/* Pie Chart - Grantees */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                      {(() => {
+                                        const totalGrantees = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                          const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          return sum + parseInt(subAro?.number_of_grantees || 0)
+                                        }, 0) || 0
+                                        const totalGranted = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                          const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          return sum + parseInt(subAro?.granted_count || 0)
+                                        }, 0) || 0
+                                        const notGranted = Math.max(totalGrantees - totalGranted, 0)
+                                        const granteeChartData = [
+                                          { name: 'Granted', value: totalGranted },
+                                          { name: 'Not Granted', value: notGranted },
+                                        ]
+                                        const GRANTEE_COLORS = ['#10B981', '#EF4444']
+                                        return (
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Total Grantees</Text>
+                                            <ResponsiveContainer width="100%" height={150}>
+                                              <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 0 }}>
+                                                <Pie
+                                                  data={granteeChartData}
+                                                  cx="50%" cy="45%"
+                                                  innerRadius={25} outerRadius={40}
+                                                  paddingAngle={3}
+                                                  dataKey="value"
+                                                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                  labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                  style={{ fontSize: 8 }}
+                                                >
+                                                  {granteeChartData.map((_, i) => <Cell key={i} fill={GRANTEE_COLORS[i]} />)}
+                                                </Pie>
+                                                <RechartsTooltip formatter={(val) => `${val} scholars`} />
+                                                <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
+                                              </PieChart>
+                                            </ResponsiveContainer>
+                                          </div>
+                                        )
+                                      })()}
+                                      </div>
+
+                                      {/* Bar Chart - Budget Data */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                      {(() => {
+                                        const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                          const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          return sum + (parseFloat(subAro?.disbursed || 0))
+                                        }, 0) || 0
+                                        const remainingCash = Math.max(parseFloat(f.total_budget || 0) - totalDisbursed, 0)
+                                        const budgetChartData = [
+                                          { name: 'Budget', total_budget: parseFloat(f.total_budget || 0) },
+                                          { name: 'Disbursed', disbursed: totalDisbursed },
+                                          { name: 'Remaining', remaining_cash: remainingCash },
+                                        ]
+                                        return (
+                                          <div>
+                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Budget Balance Report</Text>
+                                            <ResponsiveContainer width="100%" height={150}>
+                                              <BarChart data={budgetChartData} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                <XAxis dataKey="name" style={{ fontSize: 8 }} />
+                                                <YAxis style={{ fontSize: 8 }} />
+                                                <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                                                <Bar dataKey="total_budget" fill="#1890ff" name="NTA Total Budget" />
+                                                <Bar dataKey="disbursed" fill="#10B981" name="Disbursed" />
+                                                <Bar dataKey="remaining_cash" fill="#FCD34D" name="Remaining Cash" />
+                                                <Legend wrapperStyle={{ fontSize: 8 }} />
+                                              </BarChart>
+                                            </ResponsiveContainer>
+                                          </div>
+                                        )
+                                      })()}
+                                      </div>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                                      {/* Column 1: Amount & Obligation */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Amount</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#2563EB' }}>
+                                            ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                            }, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                          </Text>
+                                        </div>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Obligation</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
+                                            ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                            }, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                          </Text>
+                                        </div>
+                                      </div>
+
+                                      {/* Column 2: Sub-ARO count & Disbursement */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>No. of Selected Sub-ARO</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.sub_aro_breakdown?.length || 0}</Text>
+                                        </div>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursement %</Text>
+                                          <Text strong style={{ fontSize: 12, color: (() => {
+                                            const totalAmount = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                            }, 0) || 0
+                                            return totalAmount > 0 ? '#8B5CF6' : '#9CA3AF'
+                                          })() }}>
+                                            {(() => {
+                                              const totalAmount = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                              }, 0) || 0
+                                              const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                return sum + (parseFloat(subAro?.disbursed || 0))
+                                              }, 0) || 0
+                                              return totalAmount > 0 ? ((parseFloat(totalDisbursed) / parseFloat(totalAmount)) * 100).toFixed(2) : '0.00'
+                                            })()}%
+                                          </Text>
+                                        </div>
+                                      </div>
+
+                                      {/* Column 3: Grantees & Granted */}
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Grantees</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>
+                                            {f.sub_aro_breakdown?.reduce((sum, item) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              return sum + parseInt(subAro?.number_of_grantees || 0)
+                                            }, 0) || 0}
+                                          </Text>
+                                        </div>
+                                        <div>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Granted</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#10B981' }}>
+                                            {f.sub_aro_breakdown?.reduce((sum, item) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              return sum + parseInt(subAro?.granted_count || 0)
+                                            }, 0) || 0}
+                                          </Text>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </Card>
+
+                                  {/* Balance Report + Pie Chart Below - Stacked Vertically */}
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
+                                    {/* Left: Balance Report with SubARO Breakdown */}
+                                    <Card size="small" style={{ borderRadius: 8, background: '#fafafa' }} styles={{ body: { padding: '16px' } }}>
+                                      <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 12 }}>Balance Report</Text>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, borderRadius: 0 }}>
+                                        {/* SubARO Column */}
+                                        <div style={{ paddingRight: 16, borderRight: '1px solid #E5E7EB' }}>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600 }}>SubARO</Text>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                                            {f.sub_aro_breakdown?.map((item, idx) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              const actualObligation = (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                              const disbursed = parseFloat(subAro?.disbursed || 0)
+                                              const remaining = actualObligation - disbursed
+                                              return (
+                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.sub_aro_breakdown?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
+                                                  <Text style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
+                                                    CHEDRO IV-{subAro?.yearsuffix}-{subAro?.number_count}
+                                                  </Text>
+                                                  <div style={{ fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                      <Text type="secondary" style={{ fontSize: 10 }}>Actual Obligation:</Text>
+                                                      <Text strong style={{ fontSize: 10, color: '#DC2626' }}>
+                                                        ₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                      </Text>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                      <Text type="secondary" style={{ fontSize: 10 }}>Remaining Balance:</Text>
+                                                      <Text strong style={{ fontSize: 10, color: '#F59E0B' }}>
+                                                        ₱{remaining.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                      </Text>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            }) || []}
+                                          </div>
+                                        </div>
+
+                                        {/* Disbursement Column */}
+                                        <div style={{ paddingLeft: 16 }}>
+                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600 }}>Disbursement</Text>
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
+                                            {f.sub_aro_breakdown?.map((item, idx) => {
+                                              const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              const actualObligation = (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                              const disbursed = parseFloat(subAro?.disbursed || 0)
+                                              const disbursementPercent = actualObligation > 0 ? ((disbursed / actualObligation) * 100).toFixed(2) : '0.00'
+                                              return (
+                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.sub_aro_breakdown?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
+                                                  <Text style={{ fontSize: 11, display: 'block', marginBottom: 4, opacity: 0 }}>
+                                                    •
+                                                  </Text>
+                                                  <div style={{ fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                      <Text type="secondary" style={{ fontSize: 10 }}>Disbursed:</Text>
+                                                      <Text strong style={{ fontSize: 10, color: '#10B981' }}>
+                                                        ₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                      </Text>
+                                                    </div>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                      <Text type="secondary" style={{ fontSize: 10 }}>Percentage:</Text>
+                                                      <Text strong style={{ fontSize: 10, color: '#8B5CF6' }}>
+                                                        {disbursementPercent}%
+                                                      </Text>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            }) || []}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Total Row */}
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, marginTop: 12, paddingTop: 12, borderTop: '2px solid #E5E7EB' }}>
+                                        <div style={{ paddingRight: 16, borderRight: '1px solid #E5E7EB' }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                            <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Obligation:</Text>
+                                            <Text strong style={{ fontSize: 11, color: '#DC2626' }}>
+                                              ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                              }, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Remaining:</Text>
+                                            <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>
+                                              ₱{(() => {
+                                                const totalObligation = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                  const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                  return sum + (parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0))
+                                                }, 0) || 0
+                                                const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                  const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                  return sum + (parseFloat(subAro?.disbursed || 0))
+                                                }, 0) || 0
+                                                return (totalObligation - totalDisbursed).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                              })()}
+                                            </Text>
+                                          </div>
+                                        </div>
+
+                                        <div style={{ paddingLeft: 16 }}>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                            <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Disbursed:</Text>
+                                            <Text strong style={{ fontSize: 11, color: '#10B981' }}>
+                                              ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                return sum + (parseFloat(subAro?.disbursed || 0))
+                                              }, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </Text>
+                                          </div>
+                                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Remaining Cash:</Text>
+                                            <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>
+                                              ₱{(() => {
+                                                const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => {
+                                                  const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                                  return sum + (parseFloat(subAro?.disbursed || 0))
+                                                }, 0) || 0
+                                                const remainingCash = Math.max(parseFloat(f.total_budget || 0) - totalDisbursed, 0)
+                                                return remainingCash.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                              })()}
+                                            </Text>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </Card>
                                   </div>
                                 </div>
-                              </>
-                            )}
+                              </>                            )}
                           </div>
                         ),
                       }
@@ -633,7 +1017,7 @@ export default function SUB_ARO_NTA() {
             </Upload.Dragger>
           </Form.Item>
 
-          <Form.Item name="filename" label="File Name" rules={[{ required: true, message: 'Required' }]}>
+          <Form.Item name="filename" label="Sub-Allotment Release Order" rules={[{ required: true, message: 'Required' }]}>
             <Input placeholder="e.g., Budget Report - January" />
           </Form.Item>
 
@@ -657,6 +1041,10 @@ export default function SUB_ARO_NTA() {
               <Input placeholder="e.g., 001" />
             </Form.Item>
           </Space>
+
+          <Form.Item name="upload_date" label="Date Uploaded">
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
 
           {activeTab === 'SUB-ARO' ? (
             <>
@@ -683,7 +1071,12 @@ export default function SUB_ARO_NTA() {
               </Form.Item>
             </>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 16 }}>
+            <>
+              <Form.Item name="total_budget" label="Total Budget">
+                <Input placeholder="0.00" type="number" step="0.01" />
+              </Form.Item>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 16 }}>
               {/* LEFT: SUB-ARO Checklist */}
               <div>
                 <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
@@ -801,6 +1194,7 @@ export default function SUB_ARO_NTA() {
                 )}
               </div>
             </div>
+            </>
           )}
 
           <div style={{ padding: '8px 12px', background: '#fafafa', borderRadius: 6, fontSize: 13, color: '#8c8c8c' }}>
