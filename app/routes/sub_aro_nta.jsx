@@ -36,6 +36,7 @@ export default function SUB_ARO_NTA() {
   const [subAroBreakdown, setSubAroBreakdown] = useState([])
   const [filteredSubAroForModal, setFilteredSubAroForModal] = useState([])
   const [loadingSubAroFilter, setLoadingSubAroFilter] = useState(false)
+  const [previousBreakdown, setPreviousBreakdown] = useState([]) // Track original data when editing
 
   /* ── Fetch ── */
   const fetchAll = useCallback(async () => {
@@ -236,6 +237,7 @@ export default function SUB_ARO_NTA() {
     } else {
       // NTA: set the breakdown and total_budget
       setSubAroBreakdown(file.sub_aro_breakdown || [])
+      setPreviousBreakdown(JSON.parse(JSON.stringify(file.sub_aro_breakdown || []))) // Store original for diff detection
       form.setFieldsValue({
         total_budget: file.total_budget,
       })
@@ -333,6 +335,91 @@ export default function SUB_ARO_NTA() {
     const undisbursedCount = parseInt(subAro.number_of_grantees || 0) - parseInt(subAro.granted_count || 0)
     return { carryoverBalance, undisbursedCount, totalAllocated, actualObligation }
   }, [subAroFiles, getSubAroTotalNtaObligated])
+
+  // Helper: get SubAro allocation tracking - compare with immediately previous NTA only
+  const getSubAroDifferences = useCallback((currentItem, subAroId, currentNtaId) => {
+    const subAro = subAroFiles.find(s => s.id === subAroId)
+    if (!subAro) return { allocation: null }
+    
+    const actualObligation = parseFloat(subAro.budget || 0) + parseFloat(subAro.Operational_Cost || 0)
+    
+    // Get all NTA files sorted by upload date
+    const ntaFiles = uploadedFiles
+      .filter(f => f.filetype === 'NTA' && f.sub_aro_breakdown?.length > 0)
+      .sort((a, b) => {
+        const dateA = new Date(a.upload_date || a.created_at)
+        const dateB = new Date(b.upload_date || b.created_at)
+        return dateA - dateB
+      })
+    
+    // Find current NTA position
+    const currentNtaIndex = ntaFiles.findIndex(nta => nta.id === currentNtaId)
+    
+    // Get immediately previous NTA (if it exists)
+    let allocation = null
+    if (currentNtaIndex > 0) {
+      const previousNta = ntaFiles[currentNtaIndex - 1]
+      const subAroAlloc = previousNta.sub_aro_breakdown.find(item => item.sub_aro_id === subAroId)
+      
+      if (subAroAlloc) {
+        const fy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
+        allocation = {
+          ntaName: `NTA-${fy?.fiscal_year || '????'}-${previousNta.number_count}`,
+          allocated: parseFloat(subAroAlloc.budget || 0),
+          uploadDate: previousNta.upload_date || previousNta.created_at,
+        }
+      }
+    }
+    
+    // Calculate total allocated by the previous NTA
+    const totalAllocatedByPrev = allocation ? allocation.allocated : 0
+    const remaining = Math.max(actualObligation - totalAllocatedByPrev, 0)
+    
+    return { 
+      allocation,
+      actualObligation,
+      totalAllocatedByPrev,
+      remaining,
+      hasAllocation: allocation !== null,
+      isFirstNta: currentNtaIndex === 0,
+    }
+  }, [uploadedFiles, subAroFiles, fiscalYears])
+
+  // Helper: get differences between current and previous breakdown when editing
+  const getEditDifferences = useCallback((breakdownIndex) => {
+    if (previousBreakdown.length === 0) return {}
+    
+    const currentItem = subAroBreakdown[breakdownIndex]
+    const previousItem = previousBreakdown[breakdownIndex]
+    
+    if (!currentItem || !previousItem) return {}
+    
+    const differences = {}
+    const compareFields = [
+      { field: 'budget', label: 'Budget', type: 'float' },
+      { field: 'actual_obligation', label: 'Actual Obligation', type: 'float' },
+      { field: 'disbursed', label: 'Disbursed', type: 'float' },
+      { field: 'number_of_grantees', label: 'Grantees', type: 'int' },
+      { field: 'granted_count', label: 'Granted', type: 'int' },
+    ]
+
+    compareFields.forEach(({ field, label, type }) => {
+      const curr = type === 'float' ? parseFloat(currentItem[field] || 0) : parseInt(currentItem[field] || 0)
+      const prev = type === 'float' ? parseFloat(previousItem[field] || 0) : parseInt(previousItem[field] || 0)
+      
+      if (curr !== prev) {
+        differences[field] = {
+          label,
+          current: curr,
+          previous: prev,
+          change: curr - prev,
+          percentChange: prev !== 0 ? ((curr - prev) / prev * 100).toFixed(2) : null,
+        }
+      }
+    })
+
+    return differences
+  }, [subAroBreakdown, previousBreakdown])
 
   const selectedFYObj = fiscalYears.find(fy => fy.year_suffix === selectedFY)
 
@@ -729,6 +816,40 @@ export default function SUB_ARO_NTA() {
                                                 </div>
                                               </div>
                                             )}
+
+                                            {/* Differences Section - Compare with previous NTA only */}
+                                            {(() => {
+                                              const diffs = getSubAroDifferences(item, item.sub_aro_id, f.id)
+                                              if (!diffs.hasAllocation) return null
+                                              
+                                              const { allocation, actualObligation, totalAllocatedByPrev, remaining } = diffs
+                                              
+                                              return (
+                                                <div style={{ padding: '8px 12px', background: '#EEF2FF', borderTop: '1px solid #C7D2FE', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                  <Text type="secondary" style={{ fontSize: 10, fontWeight: 600, color: '#4F46E5' }}>📊 Previous NTA Allocation</Text>
+                                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                    <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '4px 0' }}>
+                                                      <span style={{ fontWeight: 600, color: '#4F46E5', minWidth: 120 }}>Total Obligation:</span>
+                                                      <strong style={{ color: '#DC2626' }}>₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                                    </div>
+                                                    
+                                                    {allocation && (
+                                                      <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '6px 8px', background: '#FFFFFF', borderRadius: 4, border: '1px solid #E5E7EB' }}>
+                                                        <span style={{ fontWeight: 600, color: '#6B7280', minWidth: 120 }}>{allocation.ntaName}:</span>
+                                                        <strong style={{ color: '#EC4899' }}>₱{allocation.allocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                                        <span style={{ color: '#9CA3AF', fontSize: 9 }}>allocated</span>
+                                                      </div>
+                                                    )}
+                                                    
+                                                    <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '6px 8px', background: '#F0FDF4', borderRadius: 4, border: '1px solid #BBEF63' }}>
+                                                      <span style={{ fontWeight: 600, color: '#4F46E5', minWidth: 120 }}>Remaining:</span>
+                                                      <strong style={{ color: '#16A34A', fontSize: 11 }}>₱{remaining.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                                                      <span style={{ color: '#15803D', fontSize: 9 }}>for this NTA</span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              )
+                                            })()}
                                           </div>
                                         )
                                       })}
@@ -787,6 +908,65 @@ export default function SUB_ARO_NTA() {
                                         })()}
                                       </div>
                                     </div>
+
+                                    {/* Previous NTA Allocation Section */}
+                                    {(() => {
+                                      // Find if this NTA has any SubAro allocations from a previous NTA
+                                      const ntaFiles = uploadedFiles
+                                        .filter(file => file.filetype === 'NTA' && file.sub_aro_breakdown?.length > 0)
+                                        .sort((a, b) => {
+                                          const dateA = new Date(a.upload_date || a.created_at)
+                                          const dateB = new Date(b.upload_date || b.created_at)
+                                          return dateA - dateB
+                                        })
+                                      
+                                      const currentNtaIndex = ntaFiles.findIndex(nta => nta.id === f.id)
+                                      if (currentNtaIndex <= 0) return null
+                                      
+                                      const previousNta = ntaFiles[currentNtaIndex - 1]
+                                      const prevFy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
+                                      const prevNtaName = `NTA-${prevFy?.fiscal_year || '????'}-${previousNta.number_count}`
+                                      const prevTotalActualObligation = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0
+                                      const prevTotalDisbursed = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0
+                                      const prevRemainingBalance = Math.max(prevTotalActualObligation - prevTotalDisbursed, 0)
+                                      const prevTotalGrantees = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).grantees, 0) || 0
+                                      const prevTotalGranted = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).granted, 0) || 0
+                                      const prevUndisbursedCount = Math.max(prevTotalGrantees - prevTotalGranted, 0)
+                                      
+                                      return (
+                                        <div style={{ padding: '12px', background: '#EEF2FF', borderRadius: 4, border: '1px solid #C7D2FE', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                          <Text type="secondary" style={{ fontSize: 10, fontWeight: 600, color: '#4F46E5' }}>📊 Previous NTA Allocation</Text>
+                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Previous NTA</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#4F46E5' }}>{prevNtaName}</Text>
+                                            </div>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Total Obligation</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#DC2626' }}>₱{prevTotalActualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                                            </div>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Disbursed</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#10B981' }}>₱{parseFloat(prevTotalDisbursed).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                                            </div>
+                                          </div>
+                                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, paddingTop: 8, borderTop: '1px solid #C7D2FE' }}>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Remaining Balance</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>₱{prevRemainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+                                            </div>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Grantees / Granted</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#7C3AED' }}>{prevTotalGranted} / {prevTotalGrantees}</Text>
+                                            </div>
+                                            <div style={{ fontSize: 10 }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 2 }}>Undisbursed Count</Text>
+                                              <Text strong style={{ fontSize: 11, color: '#DC2626' }}>{prevUndisbursedCount}</Text>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )
+                                    })()}
 
                                     {/* Three Charts - Horizontally Aligned */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
@@ -1306,6 +1486,8 @@ export default function SUB_ARO_NTA() {
                       const allocationPercent = obligation > 0 ? ((parseFloat(item.budget) / obligation) * 100).toFixed(1) : '0.0'
                       const carryover = getCarryoverDetails(item.sub_aro_id, editingFileId)
                       const hasCarryover = carryover && carryover.carryoverBalance > 0
+                      const editDiffs = previousBreakdown.length > 0 ? getEditDifferences(idx) : {}
+                      const hasEditDiff = Object.keys(editDiffs).length > 0
                       return (
                         <div key={idx} style={{ padding: '12px', borderBottom: idx < subAroBreakdown.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -1323,6 +1505,18 @@ export default function SUB_ARO_NTA() {
                                   <Text type="warning" style={{ fontSize: 10, display: 'block' }}>
                                     📋 <strong>Undisbursed:</strong> {carryover.undisbursedCount} disbursements pending
                                   </Text>
+                                </div>
+                              )}
+                              {hasEditDiff && (
+                                <div style={{ marginTop: 6, padding: '6px', background: '#EEF2FF', borderRadius: 4, border: '1px solid #C7D2FE' }}>
+                                  <Text type="secondary" style={{ fontSize: 10, display: 'block', color: '#4F46E5', fontWeight: 600 }}>
+                                    ✏️ Changes from original:
+                                  </Text>
+                                  {Object.entries(editDiffs).map(([field, diff]) => (
+                                    <Text key={field} type="secondary" style={{ fontSize: 9, display: 'block', color: '#6B7280', marginTop: 2 }}>
+                                      <span style={{ fontWeight: 600 }}>{diff.label}:</span> {diff.previous} → <strong style={{ color: '#4F46E5' }}>{diff.current}</strong>
+                                    </Text>
+                                  ))}
                                 </div>
                               )}
                             </div>
