@@ -585,67 +585,35 @@ export default function Voucher() {
             )}
           </Card>
 
-          {/* ─── TEST: Native Excel Preview ─── */}
+          {/* ─── Preview All 27 Sheets ─── */}
           <Card
-            title="🧪 Test Native Excel Export"
+            title="Preview All 27 Sheet Formats"
             size="small"
-            style={{ border: '2px dashed #faad14', background: '#fffbe6' }}
-            extra={<Tag color="orange">Temporary</Tag>}
+            style={{ border: '2px dashed #1890ff', background: '#e6f7ff' }}
+            extra={<Tag color="blue">Blade PDF</Tag>}
           >
             <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Generate a native Excel voucher (Routing Slip + Tracking) using selected students and program settings.
-              Uses the same data flow as "Generate Documents" — computes amounts, tracking numbers, and saves to history.
+              Preview all 27 spreadsheet templates as a single PDF (one page per sheet).
+              Uses placeholder data to show the layout and format of each template.
             </Text>
             <Button
               type="primary"
-              style={{ background: '#faad14', borderColor: '#faad14' }}
               loading={generating}
               onClick={async () => {
-                if (selectedStudents.length === 0) {
-                  message.warning('Please add at least one student.')
-                  return
-                }
-                if (!schoolYear || !semester || !program) {
-                  message.error('Please complete all required fields.')
-                  return
-                }
-                if (!customAmount) {
-                  message.error('Please enter an amount.')
-                  return
-                }
-                if (trackingInfo && !trackingInfo.initialized) {
-                  message.error('Please set the voucher tracking starting number first.')
-                  return
-                }
                 setGenerating(true)
                 try {
-                  const uniqueStudents = selectedStudents.filter(
-                    (s, i, self) => i === self.findIndex(t => String(t.id) === String(s.id))
-                  )
-                  const res = await fetch(`${API_BASE}/excel/voucher`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      schoolYear,
-                      semester,
-                      scholarshipProgram: program,
-                      customAmount,
-                      students: uniqueStudents,
-                    }),
-                  })
-                  const data = await res.json()
-                  if (data.error) throw new Error(data.error)
-                  setVoucherData(data)
-                  message.success('Native Excel voucher generated — check preview above!')
-                  loadHistory()
-                  loadTrackingInfo()
+                  const res = await fetch(`${API_BASE}/voucher/preview-all-sheets`)
+                  if (!res.ok) throw new Error('PDF generation failed')
+                  const blob = await res.blob()
+                  const url = URL.createObjectURL(blob)
+                  window.open(url, '_blank')
                 } catch (err) {
                   message.error('Error: ' + (err.message || 'Unknown error'))
                 }
                 setGenerating(false)
               }}
             >
-              Generate Native Excel Voucher
+              Preview All Sheets PDF
             </Button>
           </Card>
 
