@@ -38,6 +38,16 @@ export default function SUB_ARO_NTA() {
   const [loadingSubAroFilter, setLoadingSubAroFilter] = useState(false)
   const [previousBreakdown, setPreviousBreakdown] = useState([]) // Track original data when editing
 
+  /* ── Helper: Calculate remaining balance for a SubAro ── */
+  const getSubAroRemainingBalance = useCallback((subAro) => {
+    // actualObligation = budget + operational_cost
+    const actualObligation = (parseFloat(subAro.budget) || 0) + (parseFloat(subAro.Operational_Cost) || 0)
+    // disbursed from the database
+    const disbursed = parseFloat(subAro.disbursed) || 0
+    // remaining = obligation - disbursed (what's left to allocate to NTAs)
+    return Math.max(actualObligation - disbursed, 0)
+  }, [])
+
   /* ── Fetch ── */
   const fetchAll = useCallback(async () => {
     try {
@@ -66,9 +76,11 @@ export default function SUB_ARO_NTA() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  /* ── Filter SUB-ARO files when fiscal year changes in modal ── */
+  /* ── Filter SUB-ARO files when fiscal year or scholarship program changes in modal ── */
   useEffect(() => {
     const selectedYearSuffix = form.getFieldValue('yearsuffix')
+    const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+    
     if (!selectedYearSuffix) {
       setFilteredSubAroForModal([])
       return
@@ -77,13 +89,24 @@ export default function SUB_ARO_NTA() {
     setLoadingSubAroFilter(true)
     // Use setTimeout to give visual feedback of loading state
     const timer = setTimeout(() => {
-      const filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
+      let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
+      
+      // If scholarship program is selected, filter by it too
+      if (selectedScholarshipProgram) {
+        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+      }
+      
+      // Only show SubAros that still have remaining balance (not fully disbursed)
+      // This enables many-to-many: one SubAro can be in multiple NTAs as long as it has undisbursed balance
+      // Multiple NTAs can allocate to the same SubAro without consuming the balance
+      filtered = filtered.filter(f => getSubAroRemainingBalance(f) > 0)
+      
       setFilteredSubAroForModal(filtered)
       setLoadingSubAroFilter(false)
     }, 100)
     
     return () => clearTimeout(timer)
-  }, [form, subAroFiles])
+  }, [subAroFiles, getSubAroRemainingBalance])
 
   /* ── Handle fiscal year change in modal ── */
   const handleFiscalYearChange = (yearsuffix) => {
@@ -94,10 +117,73 @@ export default function SUB_ARO_NTA() {
     
     setLoadingSubAroFilter(true)
     const timer = setTimeout(() => {
-      const filtered = subAroFiles.filter(f => f.yearsuffix === yearsuffix)
+      let filtered = subAroFiles.filter(f => f.yearsuffix === yearsuffix)
+      console.log('After year filter:', {
+        year: yearsuffix,
+        count: filtered.length,
+        programs: [...new Set(filtered.map(f => f.scholarship_program))]
+      })
+      
+      // Also filter by scholarship program if selected
+      const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+      if (selectedScholarshipProgram) {
+        console.log('Filtering by scholarship program:', selectedScholarshipProgram)
+        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+        console.log('After scholarship program filter:', filtered.length)
+      }
+      
+      // Only show SubAros with undisbursed balance (many-to-many relationship)
+      // Multiple NTAs can allocate to the same SubAro as long as it has remaining balance
+      filtered = filtered.filter(f => {
+        const remaining = getSubAroRemainingBalance(f)
+        return remaining > 0
+      })
+      console.log('After remaining balance filter:', filtered.length)
+      
       setFilteredSubAroForModal(filtered)
       setLoadingSubAroFilter(false)
     }, 100)
+  }
+
+  /* ── Handle scholarship program change in modal ── */
+  const handleScholarshipProgramChange = () => {
+    const selectedYearSuffix = form.getFieldValue('yearsuffix')
+    const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+    
+    console.log('Scholarship Program Changed:', { 
+      selectedYearSuffix, 
+      selectedScholarshipProgram, 
+      totalSubAros: subAroFiles.length 
+    })
+    
+    if (!selectedYearSuffix) {
+      setFilteredSubAroForModal([])
+      return
+    }
+    
+    setLoadingSubAroFilter(true)
+    const timer = setTimeout(() => {
+      let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
+      console.log('After year filter:', filtered.length, 'SubAros')
+      
+      if (selectedScholarshipProgram) {
+        console.log('Filtering by scholarship program:', selectedScholarshipProgram)
+        console.log('Available programs in filtered SubAros:', [...new Set(filtered.map(f => f.scholarship_program))])
+        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+        console.log('After scholarship program filter:', filtered.length, 'SubAros')
+      }
+      
+      // Only show SubAros with undisbursed balance (many-to-many relationship)
+      // Multiple NTAs can allocate to the same SubAro as long as it has remaining balance
+      filtered = filtered.filter(f => {
+        const remaining = getSubAroRemainingBalance(f)
+        return remaining > 0
+      })
+      console.log('After remaining balance filter:', filtered.length, 'SubAros')
+      
+      setFilteredSubAroForModal(filtered)
+      setLoadingSubAroFilter(false)
+    }, 50)
   }
 
   /* ── Filtered files ── */
@@ -175,7 +261,16 @@ export default function SUB_ARO_NTA() {
       } else {
         // For NTA: send sub_aro_breakdown as JSON string within FormData
         fd.append('sub_aro_breakdown', JSON.stringify(subAroBreakdown))
-        fd.append('total_budget', values.total_budget || '')
+        fd.append('scholarship_program', values.scholarship_program || '')
+        // Send total_budget - check if it exists in values (even if 0)
+        if (values.hasOwnProperty('total_budget') && values.total_budget !== null && values.total_budget !== undefined) {
+          const budget = parseFloat(values.total_budget)
+          console.log('NTA Budget being sent:', { input: values.total_budget, parsed: budget, sending: isNaN(budget) ? '' : budget })
+          fd.append('total_budget', isNaN(budget) ? '' : budget)
+        } else {
+          console.log('NTA Budget NOT in values:', { hasProperty: values.hasOwnProperty('total_budget'), value: values.total_budget })
+          fd.append('total_budget', '')
+        }
       }
       
       const endpoint = activeTab === 'SUB-ARO' ? 'files/sub-aro' : 'files/nta'
@@ -240,6 +335,7 @@ export default function SUB_ARO_NTA() {
       setPreviousBreakdown(JSON.parse(JSON.stringify(file.sub_aro_breakdown || []))) // Store original for diff detection
       form.setFieldsValue({
         total_budget: file.total_budget,
+        scholarship_program: file.scholarship_program,
       })
     }
     
@@ -1345,6 +1441,22 @@ export default function SUB_ARO_NTA() {
             </>
           ) : (
             <>
+              <Form.Item name="scholarship_program" label="Scholarship Program">
+                <Select 
+                  placeholder="Select or type a scholarship program" 
+                  allowClear 
+                  showSearch 
+                  optionFilterProp="label"
+                  onChange={handleScholarshipProgramChange}
+                >
+                  {scholarshipPrograms.map(prog => (
+                    <Select.Option key={prog} value={prog} label={prog}>
+                      {prog}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
               <Form.Item name="total_budget" label="Total Budget">
                 <Input placeholder="0.00" type="number" step="0.01" onChange={(e) => {
                   const newBudget = parseFloat(e.target.value) || 0
@@ -1444,9 +1556,15 @@ export default function SUB_ARO_NTA() {
                             <Text style={{ fontSize: 12, display: 'block' }}>
                               CHEDRO IV-{subAro.yearsuffix}-{subAro.number_count}
                             </Text>
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                               <Text type="secondary" style={{ fontSize: 11 }}>
                                 Obligation: ₱{obligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 11 }}>
+                                Disbursed: ₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                              </Text>
+                              <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, color: '#1890ff' }}>
+                                Remaining: ₱{(obligation - disbursed).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
                               </Text>
                               {fullyDisbursed && (
                                 <Tag color="red" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
@@ -1455,7 +1573,7 @@ export default function SUB_ARO_NTA() {
                               )}
                               {!fullyDisbursed && totalNtaObligated > 0 && (
                                 <Tag color={fullyObligated ? 'red' : 'blue'} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
-                                  {fullyObligated ? 'Fully Obligated' : `Available: ₱${remainingForNTAs.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (${obligatedPercent}% obligated)`}
+                                  {fullyObligated ? 'Fully Obligated' : `Available for NTA: ₱${remainingForNTAs.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (${obligatedPercent}% obligated)`}
                                 </Tag>
                               )}
                             </div>
