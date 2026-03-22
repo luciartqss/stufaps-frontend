@@ -47,6 +47,10 @@ export default function Voucher() {
   const [generating, setGenerating] = useState(false)
   const [voucherData, setVoucherData] = useState(null)
 
+  // ─── Sheets preview state ───
+  const [sheetsPreviewUrl, setSheetsPreviewUrl] = useState('')
+  const [sheetsPreviewLoading, setSheetsPreviewLoading] = useState(false)
+
   // ─── History state ───
   const [history, setHistory] = useState([])
   const [historySearch, setHistorySearch] = useState('')
@@ -596,25 +600,51 @@ export default function Voucher() {
               Preview all 27 spreadsheet templates as a single PDF (one page per sheet).
               Uses placeholder data to show the layout and format of each template.
             </Text>
-            <Button
-              type="primary"
-              loading={generating}
-              onClick={async () => {
-                setGenerating(true)
-                try {
-                  const res = await fetch(`${API_BASE}/voucher/preview-all-sheets`)
-                  if (!res.ok) throw new Error('PDF generation failed')
-                  const blob = await res.blob()
-                  const url = URL.createObjectURL(blob)
-                  window.open(url, '_blank')
-                } catch (err) {
-                  message.error('Error: ' + (err.message || 'Unknown error'))
-                }
-                setGenerating(false)
-              }}
-            >
-              Preview All Sheets PDF
-            </Button>
+            <div style={{ display: 'flex', gap: 8, marginBottom: sheetsPreviewUrl ? 12 : 0 }}>
+              <Button
+                type="primary"
+                loading={sheetsPreviewLoading}
+                onClick={async () => {
+                  setSheetsPreviewLoading(true)
+                  try {
+                    const res = await fetch(`${API_BASE}/voucher/preview-all-sheets`)
+                    if (!res.ok) throw new Error('PDF generation failed')
+                    const blob = await res.blob()
+                    const pdfBlob = new Blob([blob], { type: 'application/pdf' })
+                    const url = URL.createObjectURL(pdfBlob)
+                    setSheetsPreviewUrl(prev => {
+                      if (prev) URL.revokeObjectURL(prev)
+                      return url
+                    })
+                  } catch (err) {
+                    message.error('Error: ' + (err.message || 'Unknown error'))
+                  }
+                  setSheetsPreviewLoading(false)
+                }}
+              >
+                {sheetsPreviewUrl ? 'Refresh Preview' : 'Preview All Sheets PDF'}
+              </Button>
+              {sheetsPreviewUrl && (
+                <>
+                  <Button onClick={() => window.open(sheetsPreviewUrl, '_blank')}>
+                    Open in New Tab
+                  </Button>
+                  <Button onClick={() => {
+                    setSheetsPreviewUrl(prev => {
+                      if (prev) URL.revokeObjectURL(prev)
+                      return ''
+                    })
+                  }}>Close Preview</Button>
+                </>
+              )}
+            </div>
+            {sheetsPreviewUrl && (
+              <iframe
+                title="All Sheets Preview"
+                src={sheetsPreviewUrl}
+                style={{ width: '100%', height: '80vh', border: '1px solid #d9d9d9', borderRadius: 6 }}
+              />
+            )}
           </Card>
 
           {/* ─── History Logs ─── */}
