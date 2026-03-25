@@ -260,17 +260,12 @@ export default function SUB_ARO_NTA() {
         fd.append('number_of_grantees', values.number_of_grantees || '')
       } else {
         // For NTA: send sub_aro_breakdown as JSON string within FormData
-        fd.append('sub_aro_breakdown', JSON.stringify(subAroBreakdown))
+        const subAroAssignments = subAroBreakdown.map(item => ({
+          sub_aro_id: item.sub_aro_id,
+          nta_budget_allocated: item.budget
+        }))
+        fd.append('sub_aro_assignments', JSON.stringify(subAroAssignments))
         fd.append('scholarship_program', values.scholarship_program || '')
-        // Send total_budget - check if it exists in values (even if 0)
-        if (values.hasOwnProperty('total_budget') && values.total_budget !== null && values.total_budget !== undefined) {
-          const budget = parseFloat(values.total_budget)
-          console.log('NTA Budget being sent:', { input: values.total_budget, parsed: budget, sending: isNaN(budget) ? '' : budget })
-          fd.append('total_budget', isNaN(budget) ? '' : budget)
-        } else {
-          console.log('NTA Budget NOT in values:', { hasProperty: values.hasOwnProperty('total_budget'), value: values.total_budget })
-          fd.append('total_budget', '')
-        }
       }
       
       const endpoint = activeTab === 'SUB-ARO' ? 'files/sub-aro' : 'files/nta'
@@ -369,13 +364,13 @@ export default function SUB_ARO_NTA() {
   /* ── Sub-ARO NTA obligation tracking ── */
   // Calculate total amount obligated for a Sub-ARO across ALL NTAs
   const getSubAroTotalNtaObligated = useCallback((subAroId, excludeNtaId = null) => {
-    const ntaFiles = uploadedFiles.filter(f => f.filetype === 'NTA' && f.sub_aro_breakdown?.length > 0)
+    const ntaFiles = uploadedFiles.filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
     let total = 0
     ntaFiles.forEach(nta => {
       if (excludeNtaId && nta.id === excludeNtaId) return
-      nta.sub_aro_breakdown.forEach(item => {
+      nta.assignments.forEach(item => {
         if (item.sub_aro_id === subAroId) {
-          total += parseFloat(item.budget || 0)
+          total += parseFloat(item.nta_budget_allocated || 0)
         }
       })
     })
@@ -441,7 +436,7 @@ export default function SUB_ARO_NTA() {
     
     // Get all NTA files sorted by upload date
     const ntaFiles = uploadedFiles
-      .filter(f => f.filetype === 'NTA' && f.sub_aro_breakdown?.length > 0)
+      .filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
       .sort((a, b) => {
         const dateA = new Date(a.upload_date || a.created_at)
         const dateB = new Date(b.upload_date || b.created_at)
@@ -455,13 +450,13 @@ export default function SUB_ARO_NTA() {
     let allocation = null
     if (currentNtaIndex > 0) {
       const previousNta = ntaFiles[currentNtaIndex - 1]
-      const subAroAlloc = previousNta.sub_aro_breakdown.find(item => item.sub_aro_id === subAroId)
+      const subAroAlloc = previousNta.assignments.find(item => item.sub_aro_id === subAroId)
       
       if (subAroAlloc) {
         const fy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
         allocation = {
           ntaName: `NTA-${fy?.fiscal_year || '????'}-${previousNta.number_count}`,
-          allocated: parseFloat(subAroAlloc.budget || 0),
+          allocated: parseFloat(subAroAlloc.nta_budget_allocated || 0),
           uploadDate: previousNta.upload_date || previousNta.created_at,
         }
       }
@@ -659,7 +654,7 @@ export default function SUB_ARO_NTA() {
                 </div>
 
                 {/* Details Dropdown */}
-                {(f.budget || f.total_budget || f.Operational_Cost || f.disbursed || f.scholarship_program || f.number_of_grantees || (f.sub_aro_breakdown && f.sub_aro_breakdown.length > 0)) && (
+                {(f.budget || f.total_budget || f.Operational_Cost || f.disbursed || f.scholarship_program || f.number_of_grantees || (f.assignments && f.assignments.length > 0)) && (
                   <Collapse
                     items={[
                       {
@@ -819,21 +814,29 @@ export default function SUB_ARO_NTA() {
                             ) : (
                               /* For NTA: SUB-ARO Breakdown + Summary Card + Pie Chart */
                               <>
-                                {f.sub_aro_breakdown && f.sub_aro_breakdown.length > 0 && (
+                                {f.assignments && f.assignments.length > 0 && (
                                   <div style={{ marginBottom: 20 }}>
                                     <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>SUB-ARO Breakdown</Text>
                                     <div style={{ border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
-                                      {f.sub_aro_breakdown.map((item, idx) => {
-                                        const { subAro, actualObligation, disbursed, remainingBalance, grantees, granted, undisbursedCount, carryoverBalance, carryoverUndisbursedCount } = getBreakdownValues(item)
+                                      {f.assignments.map((item, idx) => {
+                                        const subAro = item.subAro
+                                        const actualObligation = item.actual_obligation ? parseFloat(item.actual_obligation) : 0
+                                        const disbursed = item.disbursed ? parseFloat(item.disbursed) : 0
+                                        const remainingBalance = item.remaining_balance ? parseFloat(item.remaining_balance) : Math.max(actualObligation - disbursed, 0)
+                                        const grantees = item.number_of_grantees ? parseInt(item.number_of_grantees) : 0
+                                        const granted = item.granted_count ? parseInt(item.granted_count) : 0
+                                        const undisbursedCount = item.undisbursed_count ? parseInt(item.undisbursed_count) : Math.max(grantees - granted, 0)
+                                        const carryoverBalance = item.carryover_balance ? parseFloat(item.carryover_balance) : 0
+                                        const carryoverUndisbursedCount = item.carryover_undisbursed_count ? parseInt(item.carryover_undisbursed_count) : undisbursedCount
                                         const disbursementPercent = actualObligation > 0 ? ((disbursed / actualObligation) * 100).toFixed(2) : '0.00'
                                         const grantedPercent = grantees > 0 ? ((granted / grantees) * 100).toFixed(2) : '0.00'
                                         const hasCarryover = carryoverBalance > 0 || carryoverUndisbursedCount > 0
                                         return (
-                                          <div key={idx} style={{ paddingBottom: idx < f.sub_aro_breakdown.length - 1 ? 12 : 8, borderBottom: idx < f.sub_aro_breakdown.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                                          <div key={idx} style={{ paddingBottom: idx < f.assignments.length - 1 ? 12 : 8, borderBottom: idx < f.assignments.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
                                             {/* Header with SUB-ARO name and scholarship program */}
                                             <div style={{ padding: '8px 12px', paddingBottom: 8, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center' }}>
                                               <Text strong style={{ fontSize: 12 }}>
-                                                {subAro ? `CHEDRO IV-${subAro.yearsuffix}-${subAro.number_count}` : `SUB-ARO #${item.sub_aro_id}`}
+                                                {item.sub_aro_reference ? `CHEDRO IV-${item.sub_aro_reference}` : 'Unknown SUB-ARO'}
                                                 {subAro?.scholarship_program && (
                                                   <span style={{ marginLeft: 8, marginRight: 8 }}>-</span>
                                                 )}
@@ -962,16 +965,23 @@ export default function SUB_ARO_NTA() {
                                     <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #E5E7EB', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                                       {/* Column 1: Overall Allotment */}
                                       <div>
-                                        <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Overall Allotment</Text>
-                                        <Text strong style={{ fontSize: 16, color: '#1890FF' }}>
-                                          ₱{parseFloat(f.total_budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                        </Text>
+                                        {(() => {
+                                          const totalAllocated = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.nta_budget_allocated || 0)), 0) || 0)
+                                          return (
+                                            <>
+                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Overall Allotment</Text>
+                                              <Text strong style={{ fontSize: 16, color: '#1890FF' }}>
+                                                ₱{totalAllocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              </Text>
+                                            </>
+                                          )
+                                        })()}
                                       </div>
 
                                       {/* Column 2: Disbursed */}
                                       <div>
                                         {(() => {
-                                          const totalDisbursed = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0)
+                                          const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
                                           return (
                                             <>
                                               <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Disbursed</Text>
@@ -986,10 +996,10 @@ export default function SUB_ARO_NTA() {
                                       {/* Column 3: Remaining Cash */}
                                       <div>
                                         {(() => {
-                                          const totalDisbursed = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0)
-                                          const totalBudget = parseFloat(f.total_budget || 0)
-                                          const remainingCash = Math.max(totalBudget - totalDisbursed, 0)
-                                          const disbursementPercent = totalBudget > 0 ? ((totalDisbursed / totalBudget) * 100).toFixed(2) : '0.00'
+                                          const totalAllocated = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.nta_budget_allocated || 0)), 0) || 0)
+                                          const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
+                                          const remainingCash = Math.max(totalAllocated - totalDisbursed, 0)
+                                          const disbursementPercent = totalAllocated > 0 ? ((totalDisbursed / totalAllocated) * 100).toFixed(2) : '0.00'
                                           return (
                                             <>
                                               <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Remaining Cash</Text>
@@ -1009,7 +1019,7 @@ export default function SUB_ARO_NTA() {
                                     {(() => {
                                       // Find if this NTA has any SubAro allocations from a previous NTA
                                       const ntaFiles = uploadedFiles
-                                        .filter(file => file.filetype === 'NTA' && file.sub_aro_breakdown?.length > 0)
+                                        .filter(file => file.filetype === 'NTA' && file.assignments?.length > 0)
                                         .sort((a, b) => {
                                           const dateA = new Date(a.upload_date || a.created_at)
                                           const dateB = new Date(b.upload_date || b.created_at)
@@ -1022,11 +1032,11 @@ export default function SUB_ARO_NTA() {
                                       const previousNta = ntaFiles[currentNtaIndex - 1]
                                       const prevFy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
                                       const prevNtaName = `NTA-${prevFy?.fiscal_year || '????'}-${previousNta.number_count}`
-                                      const prevTotalActualObligation = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0
-                                      const prevTotalDisbursed = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0
+                                      const prevTotalActualObligation = previousNta.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
+                                      const prevTotalDisbursed = previousNta.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0
                                       const prevRemainingBalance = Math.max(prevTotalActualObligation - prevTotalDisbursed, 0)
-                                      const prevTotalGrantees = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).grantees, 0) || 0
-                                      const prevTotalGranted = previousNta.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).granted, 0) || 0
+                                      const prevTotalGrantees = previousNta.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0
+                                      const prevTotalGranted = previousNta.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0
                                       const prevUndisbursedCount = Math.max(prevTotalGrantees - prevTotalGranted, 0)
                                       
                                       return (
@@ -1069,7 +1079,7 @@ export default function SUB_ARO_NTA() {
                                       {/* Pie Chart - Disbursement */}
                                       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                       {(() => {
-                                        const totalDisbursed = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0)
+                                        const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
                                         const totalBudget = parseFloat(f.total_budget || 0)
                                         const remaining = Math.max(totalBudget - totalDisbursed, 0)
                                         const chartData = [
@@ -1106,8 +1116,8 @@ export default function SUB_ARO_NTA() {
                                       {/* Pie Chart - Grantees */}
                                       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                       {(() => {
-                                        const totalGrantees = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).grantees, 0) || 0
-                                        const totalGranted = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).granted, 0) || 0
+                                        const totalGrantees = f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0
+                                        const totalGranted = f.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0
                                         const notGranted = Math.max(totalGrantees - totalGranted, 0)
                                         const granteeChartData = [
                                           { name: 'Granted', value: totalGranted },
@@ -1143,7 +1153,7 @@ export default function SUB_ARO_NTA() {
                                       {/* Bar Chart - Budget Data */}
                                       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                       {(() => {
-                                        const totalDisbursed = parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0)
+                                        const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
                                         const remainingCash = Math.max(parseFloat(f.total_budget || 0) - totalDisbursed, 0)
                                         const budgetChartData = [
                                           { name: 'Budget', total_budget: parseFloat(f.total_budget || 0) },
@@ -1177,13 +1187,13 @@ export default function SUB_ARO_NTA() {
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Disbursed</Text>
                                           <Text strong style={{ fontSize: 12, color: '#10B981' }}>
-                                            ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                           </Text>
                                         </div>
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Sub-ARO Obligation</Text>
                                           <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
-                                            ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                           </Text>
                                         </div>
                                       </div>
@@ -1192,17 +1202,17 @@ export default function SUB_ARO_NTA() {
                                       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>No. of Selected Sub-ARO</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.sub_aro_breakdown?.length || 0}</Text>
+                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.assignments?.length || 0}</Text>
                                         </div>
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursement %</Text>
                                           <Text strong style={{ fontSize: 12, color: (() => {
-                                            const totalObl = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0
+                                            const totalObl = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
                                             return totalObl > 0 ? '#8B5CF6' : '#9CA3AF'
                                           })() }}>
                                             {(() => {
-                                              const totalObl = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0
-                                              const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0
+                                              const totalObl = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
+                                              const totalDisbursed = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0
                                               return totalObl > 0 ? ((totalDisbursed / totalObl) * 100).toFixed(2) : '0.00'
                                             })()}%
                                           </Text>
@@ -1214,13 +1224,13 @@ export default function SUB_ARO_NTA() {
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Grantees</Text>
                                           <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>
-                                            {f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).grantees, 0) || 0}
+                                            {f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0}
                                           </Text>
                                         </div>
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Granted</Text>
                                           <Text strong style={{ fontSize: 12, color: '#10B981' }}>
-                                            {f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).granted, 0) || 0}
+                                            {f.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0}
                                           </Text>
                                         </div>
                                       </div>
@@ -1237,10 +1247,13 @@ export default function SUB_ARO_NTA() {
                                         <div style={{ paddingRight: 16, borderRight: '1px solid #E5E7EB' }}>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600 }}>SubARO</Text>
                                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
-                                            {f.sub_aro_breakdown?.map((item, idx) => {
-                                              const { subAro, actualObligation, disbursed, remainingBalance } = getBreakdownValues(item)
+                                            {f.assignments?.map((item, idx) => {
+                                              const subAro = item.subAro
+                                              const actualObligation = item.actual_obligation ? parseFloat(item.actual_obligation) : 0
+                                              const disbursed = item.disbursed ? parseFloat(item.disbursed) : 0
+                                              const remainingBalance = item.remaining_balance ? parseFloat(item.remaining_balance) : Math.max(actualObligation - disbursed, 0)
                                               return (
-                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.sub_aro_breakdown?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
+                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.assignments?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
                                                   <Text style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
                                                     CHEDRO IV-{subAro?.yearsuffix}-{subAro?.number_count}
                                                   </Text>
@@ -1274,11 +1287,12 @@ export default function SUB_ARO_NTA() {
                                         <div style={{ paddingLeft: 16 }}>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600 }}>Disbursement</Text>
                                           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 300, overflowY: 'auto' }}>
-                                            {f.sub_aro_breakdown?.map((item, idx) => {
-                                              const { subAro, actualObligation, disbursed } = getBreakdownValues(item)
+                                            {f.assignments?.map((item, idx) => {
+                                              const actualObligation = item.actual_obligation ? parseFloat(item.actual_obligation) : 0
+                                              const disbursed = item.disbursed ? parseFloat(item.disbursed) : 0
                                               const disbursementPercent = actualObligation > 0 ? ((disbursed / actualObligation) * 100).toFixed(2) : '0.00'
                                               return (
-                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.sub_aro_breakdown?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
+                                                <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.assignments?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
                                                   <Text style={{ fontSize: 11, display: 'block', marginBottom: 4, opacity: 0 }}>
                                                     •
                                                   </Text>
@@ -1309,15 +1323,15 @@ export default function SUB_ARO_NTA() {
                                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                                             <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Obligation:</Text>
                                             <Text strong style={{ fontSize: 11, color: '#DC2626' }}>
-                                              ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </Text>
                                           </div>
                                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Remaining:</Text>
                                             <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>
                                               ₱{(() => {
-                                                const totalObl = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).actualObligation, 0) || 0
-                                                const totalDisbursed = f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0
+                                                const totalObl = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
+                                                const totalDisbursed = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0
                                                 return Math.max(totalObl - totalDisbursed, 0)
                                               })().toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </Text>
@@ -1328,13 +1342,13 @@ export default function SUB_ARO_NTA() {
                                           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                                             <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Total Disbursed:</Text>
                                             <Text strong style={{ fontSize: 11, color: '#10B981' }}>
-                                              ₱{parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </Text>
                                           </div>
                                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Remaining Cash:</Text>
                                             <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>
-                                              ₱{Math.max(parseFloat(f.total_budget || 0) - parseFloat(f.sub_aro_breakdown?.reduce((sum, item) => sum + getBreakdownValues(item).disbursed, 0) || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              ₱{Math.max(parseFloat(f.nta_budget || 0) - parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </Text>
                                           </div>
                                         </div>
