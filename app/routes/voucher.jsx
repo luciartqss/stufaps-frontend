@@ -5,7 +5,7 @@ import {
 import {
   FileTextOutlined, DownloadOutlined, PrinterOutlined, DeleteOutlined,
   EditOutlined, CloseOutlined, SortAscendingOutlined,
-  SortDescendingOutlined, SearchOutlined, ReloadOutlined
+  SortDescendingOutlined, SearchOutlined, ReloadOutlined, CheckCircleOutlined
 } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { API_BASE } from '../lib/config'
@@ -46,10 +46,10 @@ export default function Voucher() {
   // ─── Voucher / generate state ───
   const [generating, setGenerating] = useState(false)
   const [voucherData, setVoucherData] = useState(null)
+  const [accepting, setAccepting] = useState(false)
 
   // ─── Sheets preview state ───
-  const [sheetsPreviewUrl, setSheetsPreviewUrl] = useState('')
-  const [sheetsPreviewLoading, setSheetsPreviewLoading] = useState(false)
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState('')
 
   // ─── History state ───
   const [history, setHistory] = useState([])
@@ -291,6 +291,21 @@ export default function Voucher() {
       message.success('Voucher generated successfully!')
       loadHistory()
       loadTrackingInfo()
+      // Show inline PDF preview
+      if (data.downloadFile) {
+        try {
+          const pdfRes = await fetch(`${API_BASE}/voucher/download?file=${encodeURIComponent(data.downloadFile)}`)
+          if (pdfRes.ok) {
+            const blob = await pdfRes.blob()
+            const pdfBlob = new Blob([blob], { type: 'application/pdf' })
+            const url = URL.createObjectURL(pdfBlob)
+            setPdfPreviewUrl(prev => {
+              if (prev) URL.revokeObjectURL(prev)
+              return url
+            })
+          }
+        } catch { /* ignore preview error */ }
+      }
     } catch (err) {
       message.error('Error: ' + (err.message || 'Unknown error'))
     }
@@ -306,6 +321,10 @@ export default function Voucher() {
         setSelectedStudents([])
         setVoucherData(null)
         setStudentSearch('')
+        setPdfPreviewUrl(prev => {
+          if (prev) URL.revokeObjectURL(prev)
+          return ''
+        })
       },
     })
   }
@@ -342,11 +361,38 @@ export default function Voucher() {
     }
   }
 
-  // ─── Download ───
-  const handleDownload = () => {
-    if (voucherData?.downloadFile) {
-      window.open(`${API_BASE}/voucher/download?file=${encodeURIComponent(voucherData.downloadFile)}`, '_blank')
+  // ─── Accept & Download ───
+  const handleAccept = async () => {
+    if (!voucherData) return
+    setAccepting(true)
+    try {
+      const studentIds = (voucherData.students || []).map(s => s.id)
+      const res = await fetch(`${API_BASE}/voucher/accept`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          trackingNumber: voucherData.trackingNumber,
+          schoolYear: voucherData.schoolYear,
+          semester: voucherData.semester,
+          studentIds,
+          downloadFile: voucherData.downloadFile,
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to finalize voucher')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = voucherData.trackingNumber + '.pdf'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      message.success('Voucher finalized and downloaded!')
+    } catch (err) {
+      message.error('Error: ' + (err.message || 'Failed to finalize'))
     }
+    setAccepting(false)
   }
 
   // ─── Filtered history ───
@@ -569,81 +615,53 @@ export default function Voucher() {
                 </Descriptions>
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                  <Button type="primary" size="large" icon={<DownloadOutlined />} onClick={handleDownload}>
-                    Download PDF
-                  </Button>
                   <Button
+                    type="primary"
                     size="large"
-                    icon={<PrinterOutlined />}
-                    onClick={() => {
-                      if (voucherData?.downloadFile) {
-                        window.open(`${API_BASE}/voucher/download?file=${encodeURIComponent(voucherData.downloadFile)}`, '_blank')
-                      }
-                    }}
-                    style={{ background: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
+                    icon={<CheckCircleOutlined />}
+                    onClick={handleAccept}
+                    loading={accepting}
+                    style={{ background: '#52c41a', borderColor: '#52c41a' }}
                   >
-                    Open PDF
+                    Finalize & Download
                   </Button>
                 </div>
               </div>
             )}
           </Card>
 
-          {/* ─── Preview All 27 Sheets ─── */}
+          {/* ─── PDF Preview ─── */}
           <Card
-            title="Preview All 27 Sheet Formats"
+            title="PDF Preview"
             size="small"
-            style={{ border: '2px dashed #1890ff', background: '#e6f7ff' }}
-            extra={<Tag color="blue">Blade PDF</Tag>}
-          >
-            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
-              Preview all 27 spreadsheet templates as a single PDF (one page per sheet).
-              Uses placeholder data to show the layout and format of each template.
-            </Text>
-            <div style={{ display: 'flex', gap: 8, marginBottom: sheetsPreviewUrl ? 12 : 0 }}>
-              <Button
-                type="primary"
-                loading={sheetsPreviewLoading}
-                onClick={async () => {
-                  setSheetsPreviewLoading(true)
-                  try {
-                    const res = await fetch(`${API_BASE}/voucher/preview-all-sheets`)
-                    if (!res.ok) throw new Error('PDF generation failed')
-                    const blob = await res.blob()
-                    const pdfBlob = new Blob([blob], { type: 'application/pdf' })
-                    const url = URL.createObjectURL(pdfBlob)
-                    setSheetsPreviewUrl(prev => {
-                      if (prev) URL.revokeObjectURL(prev)
-                      return url
-                    })
-                  } catch (err) {
-                    message.error('Error: ' + (err.message || 'Unknown error'))
-                  }
-                  setSheetsPreviewLoading(false)
-                }}
-              >
-                {sheetsPreviewUrl ? 'Refresh Preview' : 'Preview All Sheets PDF'}
-              </Button>
-              {sheetsPreviewUrl && (
-                <>
-                  <Button onClick={() => window.open(sheetsPreviewUrl, '_blank')}>
+            extra={
+              pdfPreviewUrl ? (
+                <Space>
+                  <Button size="small" icon={<PrinterOutlined />} onClick={() => window.open(pdfPreviewUrl, '_blank')}>
                     Open in New Tab
                   </Button>
-                  <Button onClick={() => {
-                    setSheetsPreviewUrl(prev => {
+                  <Button size="small" onClick={() => {
+                    setPdfPreviewUrl(prev => {
                       if (prev) URL.revokeObjectURL(prev)
                       return ''
                     })
                   }}>Close Preview</Button>
-                </>
-              )}
-            </div>
-            {sheetsPreviewUrl && (
+                </Space>
+              ) : null
+            }
+          >
+            {pdfPreviewUrl ? (
               <iframe
-                title="All Sheets Preview"
-                src={sheetsPreviewUrl}
+                title="Voucher PDF Preview"
+                src={pdfPreviewUrl}
                 style={{ width: '100%', height: '80vh', border: '1px solid #d9d9d9', borderRadius: 6 }}
               />
+            ) : (
+              <div style={{ textAlign: 'center', padding: '80px 24px', color: 'rgba(0,0,0,0.45)' }}>
+                <FileTextOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+                <p style={{ fontSize: 16, marginBottom: 8 }}>No PDF to preview</p>
+                <p style={{ fontSize: 14 }}>Generate a voucher to see the PDF here.</p>
+              </div>
             )}
           </Card>
 
