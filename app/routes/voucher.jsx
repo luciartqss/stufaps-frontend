@@ -570,7 +570,7 @@ export default function Voucher() {
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
                   <Button type="primary" size="large" icon={<DownloadOutlined />} onClick={handleDownload}>
-                    Download Spreadsheet
+                    Download PDF
                   </Button>
                   <Button
                     size="large"
@@ -582,7 +582,7 @@ export default function Voucher() {
                     }}
                     style={{ background: '#52c41a', borderColor: '#52c41a', color: '#fff' }}
                   >
-                    Open Spreadsheet
+                    Open PDF
                   </Button>
                 </div>
               </div>
@@ -684,7 +684,7 @@ export default function Voucher() {
                       {log.file_name && (
                         <a
                           href={`${API_BASE}/voucher/download?file=${encodeURIComponent(
-                            (log.file_name || '').replace(/[^A-Za-z0-9\-_ |]/g, '') + '.xlsx'
+                            (log.file_name || '').replace(/[^A-Za-z0-9\-_ |]/g, '') + '.pdf'
                           )}`}
                           style={{ fontSize: 13 }}
                           target="_blank"
