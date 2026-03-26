@@ -48,6 +48,11 @@ export default function SUB_ARO_NTA() {
     return Math.max(actualObligation - disbursed, 0)
   }, [])
 
+  /* ── Helper: Calculate total NTA budget allocated (sum of all assignments) ── */
+  const getNTATotalBudgetAllocated = useCallback((ntaFile) => {
+    return parseFloat(ntaFile.assignments?.reduce((sum, item) => sum + (parseFloat(item.nta_budget_allocated || 0)), 0) || 0)
+  }, [])
+
   /* ── Fetch ── */
   const fetchAll = useCallback(async () => {
     try {
@@ -232,7 +237,7 @@ export default function SUB_ARO_NTA() {
     setLoading(true)
     try {
       console.log('Form submit - values:', values, 'activeTab:', activeTab)
-      
+
       const fd = new FormData()
       if (fileList.length > 0) {
         fd.append('file', fileList[0].originFileObj)
@@ -256,12 +261,12 @@ export default function SUB_ARO_NTA() {
           nta_budget_allocated: item.budget
         }))
         fd.append('sub_aro_assignments', JSON.stringify(subAroAssignments))
-        
+
         // Ensure nta_budget is sent as a number
         const ntaBudgetValue = values.total_budget ? parseFloat(values.total_budget) : 0
         console.log('NTA Budget value being sent:', ntaBudgetValue, 'from form value:', values.total_budget)
         fd.append('nta_budget', ntaBudgetValue.toString())
-        
+
         fd.append('scholarship_program', values.scholarship_program || '')
       }
 
@@ -323,23 +328,32 @@ export default function SUB_ARO_NTA() {
       })
     } else {
       // NTA: convert assignments to breakdown format
-      const breakdown = file.assignments?.map(assignment => ({
-        sub_aro_id: assignment.sub_aro_id,
-        budget: parseFloat(assignment.nta_budget_allocated || 0),
-        title: `CHEDRO IV-${assignment.sub_aro_reference}`,
-        actual_obligation: parseFloat(assignment.actual_obligation || 0),
-        disbursed: parseFloat(assignment.disbursed || 0),
-        remaining_balance: Math.max(parseFloat(assignment.actual_obligation || 0) - parseFloat(assignment.disbursed || 0), 0),
-        number_of_grantees: parseInt(assignment.number_of_grantees || 0),
-        granted_count: parseInt(assignment.granted_count || 0),
-        undisbursed_count: Math.max(parseInt(assignment.number_of_grantees || 0) - parseInt(assignment.granted_count || 0), 0),
-        scholarship_program: assignment.scholarship_program,
-        carryover_balance: 0,
-        carryover_undisbursed_count: 0
-      })) || []
+      const breakdown = file.assignments?.map(assignment => {
+        // Fallback: if exceedingBalance data isn't available, calculate from assignment values
+        const remainingBalance = assignment.exceedingBalance?.remaining_obligation_balance != null
+          ? parseFloat(assignment.exceedingBalance.remaining_obligation_balance)
+          : Math.max(parseFloat(assignment.actual_obligation || 0) - parseFloat(assignment.disbursed || 0), 0)
+
+        return {
+          sub_aro_id: assignment.sub_aro_id,
+          budget: parseFloat(assignment.nta_budget_allocated || 0),
+          title: `CHEDRO IV-${assignment.sub_aro_reference}`,
+          actual_obligation: parseFloat(assignment.actual_obligation || 0),
+          disbursed: parseFloat(assignment.disbursed || 0),
+          remaining_balance: remainingBalance,
+          number_of_grantees: parseInt(assignment.number_of_grantees || 0),
+          granted_count: parseInt(assignment.granted_count || 0),
+          undisbursed_count: Math.max(parseInt(assignment.number_of_grantees || 0) - parseInt(assignment.granted_count || 0), 0),
+          scholarship_program: assignment.scholarship_program,
+          carryover_balance: 0,
+          carryover_undisbursed_count: 0
+        }
+      }) || []
 
       setSubAroBreakdown(breakdown)
       setPreviousBreakdown(JSON.parse(JSON.stringify(breakdown)))
+
+      // Set total_budget to the actual file.nta_budget (not the sum of allocations)
       form.setFieldsValue({
         total_budget: parseFloat(file.nta_budget || 0),
         scholarship_program: file.scholarship_program,
@@ -871,7 +885,7 @@ export default function SUB_ARO_NTA() {
                                     <div style={{ border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
                                       {f.assignments.map((item, idx) => {
                                         const subAro = item.subAro
-                                        const actualObligation = item.actual_obligation ? parseFloat(item.actual_obligation) : 0
+                                        const actualObligation = item.exceedingBalance?.actual_obligation ? parseFloat(item.exceedingBalance.actual_obligation) : (item.actual_obligation ? parseFloat(item.actual_obligation) : 0)
                                         const disbursed = item.disbursed ? parseFloat(item.disbursed) : 0
                                         const remainingBalance = item.remaining_balance ? parseFloat(item.remaining_balance) : Math.max(actualObligation - disbursed, 0)
                                         const grantees = item.number_of_grantees ? parseInt(item.number_of_grantees) : 0
@@ -960,8 +974,8 @@ export default function SUB_ARO_NTA() {
                                                 </div>
                                                 <div style={{ flex: 1, textAlign: 'left' }}>
                                                   <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>ℹ️ Status</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#D97706' }}>
-                                                    Available in NTA-2
+                                                  <Text strong style={{ fontSize: 12, color: parseFloat(disbursementPercent) === 100 ? '#10B981' : '#D97706' }}>
+                                                    {parseFloat(disbursementPercent) === 100 ? 'Disbursement is completed.' : 'Disbursement is Ongoing.'}
                                                   </Text>
                                                 </div>
                                               </div>
@@ -1015,14 +1029,14 @@ export default function SUB_ARO_NTA() {
                                     {/* NTA Total Budget Header */}
                                     <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #E5E7EB', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                                       {/* Column 1: Overall Allotment */}
-                                      <div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
                                         {(() => {
-                                          const totalAllocated = parseFloat(f.nta_budget || 0)
+                                          const ntaBudget = parseFloat(f.nta_budget || 0)
                                           return (
                                             <>
                                               <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Overall Allotment</Text>
                                               <Text strong style={{ fontSize: 16, color: '#1890FF' }}>
-                                                ₱{totalAllocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                ₱{ntaBudget.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                               </Text>
                                             </>
                                           )
@@ -1030,7 +1044,7 @@ export default function SUB_ARO_NTA() {
                                       </div>
 
                                       {/* Column 2: Disbursed */}
-                                      <div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
                                         {(() => {
                                           const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
                                           return (
@@ -1045,12 +1059,12 @@ export default function SUB_ARO_NTA() {
                                       </div>
 
                                       {/* Column 3: Remaining Cash */}
-                                      <div>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
                                         {(() => {
-                                          const totalAllocated = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.nta_budget_allocated || 0)), 0) || 0)
-                                          const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
-                                          const remainingCash = Math.max(totalAllocated - totalDisbursed, 0)
-                                          const disbursementPercent = totalAllocated > 0 ? ((totalDisbursed / totalAllocated) * 100).toFixed(2) : '0.00'
+                                          const ntaBudget = parseFloat(f.nta_budget || 0)
+                                          const totalDisbursed = parseFloat(f.disbursed || 0)
+                                          const remainingCash = parseFloat(f.remaining_cash || 0)
+                                          const disbursementPercent = ntaBudget > 0 ? ((totalDisbursed / ntaBudget) * 100).toFixed(2) : '0.00'
                                           return (
                                             <>
                                               <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Remaining Cash</Text>
@@ -1125,116 +1139,121 @@ export default function SUB_ARO_NTA() {
                                       )
                                     })()}
 
-                                    {/* Three Charts - Horizontally Aligned */}
+                                    {/* Three Charts - Horizontally Aligned in Cards */}
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
+                                      
+                                      {/* Bar Chart - Budget Data */}
+                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+                                          {(() => {
+                                            const ntaTotalBudget = parseFloat(f.nta_budget || 0)
+                                            const totalDisbursed = parseFloat(f.disbursed || 0)
+                                            const remainingCash = parseFloat(f.remaining_cash || 0)
+                                            const budgetChartData = [
+                                              { name: 'Budget', disbursed: totalDisbursed, remaining: remainingCash },
+                                            ]
+                                            return (
+                                              <div>
+                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Allotment Balance Report</Text>
+                                                <ResponsiveContainer width="100%" height={150}>
+                                                  <BarChart data={budgetChartData} layout="vertical" margin={{ top: 30, right: 30, left: 0, bottom: 10 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                                    <XAxis type="number" style={{ fontSize: 8 }} />
+                                                    <YAxis dataKey="name" type="category" style={{ fontSize: 8 }} />
+                                                    <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                                                    <Bar dataKey="disbursed" stackId="a" fill="#10B981" name="Disbursed" />
+                                                    <Bar dataKey="remaining" stackId="a" fill="#FCD34D" name="Remaining Cash" />
+                                                    <Legend wrapperStyle={{ fontSize: 8 }} />
+                                                  </BarChart>
+                                                </ResponsiveContainer>
+                                              </div>
+                                            )
+                                          })()}
+                                        </div>
+                                      </Card>
+                                      
                                       {/* Pie Chart - Disbursement */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        {(() => {
-                                          const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
-                                          const totalBudget = parseFloat(f.nta_budget || 0)
-                                          const remaining = Math.max(totalBudget - totalDisbursed, 0)
-                                          const chartData = [
-                                            { name: 'Disbursed', value: totalDisbursed },
-                                            { name: 'Remaining', value: remaining },
-                                          ]
-                                          const CHART_COLORS = ['#10B981', '#FCD34D']
-                                          return (
-                                            <div>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>NTA Disbursement Summary</Text>
-                                              <ResponsiveContainer width="100%" height={150}>
-                                                <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 0 }}>
-                                                  <Pie
-                                                    data={chartData}
-                                                    cx="50%" cy="45%"
-                                                    innerRadius={25} outerRadius={40}
-                                                    paddingAngle={3}
-                                                    dataKey="value"
-                                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                                                    style={{ fontSize: 8 }}
-                                                  >
-                                                    {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
-                                                  </Pie>
-                                                  <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                                                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
-                                                </PieChart>
-                                              </ResponsiveContainer>
-                                            </div>
-                                          )
-                                        })()}
-                                      </div>
+                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+                                          {(() => {
+                                            const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
+                                            const totalBudget = getNTATotalBudgetAllocated(f)
+                                            const remaining = Math.max(totalBudget - totalDisbursed, 0)
+                                            const chartData = [
+                                              { name: 'Disbursed', value: totalDisbursed },
+                                              { name: 'Remaining', value: remaining },
+                                            ]
+                                            const CHART_COLORS = ['#10B981', '#FCD34D']
+                                            return (
+                                              <div>
+                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>NTA Disbursement Summary</Text>
+                                                <ResponsiveContainer width="100%" height={150}>
+                                                  <PieChart margin={{ top: 20, right: 15, bottom: 10, left: 15 }}>
+                                                    <Pie
+                                                      data={chartData}
+                                                      cx="50%" cy="45%"
+                                                      innerRadius={25} outerRadius={40}
+                                                      paddingAngle={3}
+                                                      dataKey="value"
+                                                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                      labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                      style={{ fontSize: 8 }}
+                                                    >
+                                                      {chartData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i]} />)}
+                                                    </Pie>
+                                                    <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                                                    <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
+                                                  </PieChart>
+                                                </ResponsiveContainer>
+                                              </div>
+                                            )
+                                          })()}
+                                        </div>
+                                      </Card>
 
                                       {/* Pie Chart - Grantees */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        {(() => {
-                                          const totalGrantees = f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0
-                                          const totalGranted = f.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0
-                                          const notGranted = Math.max(totalGrantees - totalGranted, 0)
-                                          const granteeChartData = [
-                                            { name: 'Granted', value: totalGranted },
-                                            { name: 'Not Granted', value: notGranted },
-                                          ]
-                                          const GRANTEE_COLORS = ['#10B981', '#EF4444']
-                                          return (
-                                            <div>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Overall Grantees</Text>
-                                              <ResponsiveContainer width="100%" height={150}>
-                                                <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 0 }}>
-                                                  <Pie
-                                                    data={granteeChartData}
-                                                    cx="50%" cy="45%"
-                                                    innerRadius={25} outerRadius={40}
-                                                    paddingAngle={3}
-                                                    dataKey="value"
-                                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                                                    style={{ fontSize: 8 }}
-                                                  >
-                                                    {granteeChartData.map((_, i) => <Cell key={i} fill={GRANTEE_COLORS[i]} />)}
-                                                  </Pie>
-                                                  <RechartsTooltip formatter={(val) => `${val} scholars`} />
-                                                  <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
-                                                </PieChart>
-                                              </ResponsiveContainer>
-                                            </div>
-                                          )
-                                        })()}
-                                      </div>
-
-                                      {/* Bar Chart - Budget Data */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                        {(() => {
-                                          const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
-                                          const remainingCash = Math.max(parseFloat(f.nta_budget || 0) - totalDisbursed, 0)
-                                          const budgetChartData = [
-                                            { name: 'Budget', nta_budget: parseFloat(f.nta_budget || 0) },
-                                            { name: 'Disbursed', disbursed: totalDisbursed },
-                                            { name: 'Remaining', remaining_cash: remainingCash },
-                                          ]
-                                          return (
-                                            <div>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Allotment Balance Report</Text>
-                                              <ResponsiveContainer width="100%" height={150}>
-                                                <BarChart data={budgetChartData} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
-                                                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                                  <XAxis dataKey="name" style={{ fontSize: 8 }} />
-                                                  <YAxis style={{ fontSize: 8 }} />
-                                                  <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                                                  <Bar dataKey="total_budget" fill="#1890ff" name="NTA Total Budget" />
-                                                  <Bar dataKey="disbursed" fill="#10B981" name="Disbursed" />
-                                                  <Bar dataKey="remaining_cash" fill="#FCD34D" name="Remaining Cash" />
-                                                  <Legend wrapperStyle={{ fontSize: 8 }} />
-                                                </BarChart>
-                                              </ResponsiveContainer>
-                                            </div>
-                                          )
-                                        })()}
-                                      </div>
+                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
+                                          {(() => {
+                                            const totalGrantees = f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0
+                                            const totalGranted = f.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0
+                                            const notGranted = Math.max(totalGrantees - totalGranted, 0)
+                                            const granteeChartData = [
+                                              { name: 'Granted', value: totalGranted },
+                                              { name: 'Not Granted', value: notGranted },
+                                            ]
+                                            const GRANTEE_COLORS = ['#10B981', '#EF4444']
+                                            return (
+                                              <div>
+                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Overall Grantees</Text>
+                                                <ResponsiveContainer width="100%" height={150}>
+                                                  <PieChart margin={{ top: 20, right: 15, bottom: 10, left: 15 }}>
+                                                    <Pie
+                                                      data={granteeChartData}
+                                                      cx="50%" cy="45%"
+                                                      innerRadius={25} outerRadius={40}
+                                                      paddingAngle={3}
+                                                      dataKey="value"
+                                                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                      labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                                                      style={{ fontSize: 8 }}
+                                                    >
+                                                      {granteeChartData.map((_, i) => <Cell key={i} fill={GRANTEE_COLORS[i]} />)}
+                                                    </Pie>
+                                                    <RechartsTooltip formatter={(val) => `${val} scholars`} />
+                                                    <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 8 }} />
+                                                  </PieChart>
+                                                </ResponsiveContainer>
+                                              </div>
+                                            )
+                                          })()}
+                                        </div>
+                                      </Card>
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
                                       {/* Column 1: Disbursed & Total Obligation */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
                                         <div>
                                           <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Disbursed</Text>
                                           <Text strong style={{ fontSize: 12, color: '#10B981' }}>
@@ -1313,7 +1332,7 @@ export default function SUB_ARO_NTA() {
                                               return (
                                                 <div key={idx} style={{ paddingBottom: 8, borderBottom: idx < (f.assignments?.length - 1) ? '1px solid #E5E7EB' : 'none' }}>
                                                   <Text style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
-                                                    CHEDRO IV-{subAro?.yearsuffix}-{subAro?.number_count}
+                                                    {item.sub_aro_reference ? `CHEDRO IV-${item.sub_aro_reference}` : 'Unknown SUB-ARO'}
                                                   </Text>
                                                   <div style={{ fontSize: 10, display: 'flex', flexDirection: 'column', gap: 3 }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1406,7 +1425,7 @@ export default function SUB_ARO_NTA() {
                                           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                             <Text type="secondary" style={{ fontSize: 10, fontWeight: 600 }}>Remaining Cash:</Text>
                                             <Text strong style={{ fontSize: 11, color: '#F59E0B' }}>
-                                              ₱{Math.max(parseFloat(f.nta_budget || 0) - parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              ₱{parseFloat(f.remaining_cash || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                             </Text>
                                           </div>
                                         </div>
