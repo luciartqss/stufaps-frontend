@@ -10,7 +10,7 @@ import {
   UserOutlined, WarningOutlined,
   TeamOutlined, HistoryOutlined, EyeOutlined, SyncOutlined
 } from '@ant-design/icons'
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
@@ -43,11 +43,14 @@ export default function Voucher() {
   const [studentSearch, setStudentSearch] = useState('')
   const [sortAsc, setSortAsc] = useState(true)
   const [studentOptions, setStudentOptions] = useState([])
+  const [studentsLoading, setStudentsLoading] = useState(false)
 
   const [generating, setGenerating] = useState(false)
   const [accepting, setAccepting] = useState(false)
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState('')
+  const [previewFile, setPreviewFile] = useState('')
   const [previewError, setPreviewError] = useState('')
+  const [previewStale, setPreviewStale] = useState(false)
 
   const [history, setHistory] = useState([])
   const [historySearch, setHistorySearch] = useState('')
@@ -57,9 +60,9 @@ export default function Voucher() {
   const [trackingStartInput, setTrackingStartInput] = useState(1)
   const [settingTracking, setSettingTracking] = useState(false)
 
-  const searchTimerRef = useRef(null)
   const autocompleteRef = useRef(null)
   const abortRef = useRef(null)
+  const studentAbortRef = useRef(null)
 
   useEffect(() => {
     fetchPrograms()
@@ -98,16 +101,44 @@ export default function Voucher() {
     } catch { message.error('Failed to load years') }
   }
 
-  const loadStudents = async () => {
+  const clearPreview = useCallback(() => {
+    setPdfPreviewUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return ''
+    })
+    setPreviewFile('')
+    setPreviewError('')
+    setPreviewStale(false)
+  }, [])
+
+  const loadStudents = useCallback(async () => {
+    if (!program) {
+      setAvailableStudents([])
+      setStudentOptions([])
+      return
+    }
+
+    if (studentAbortRef.current) studentAbortRef.current.abort()
+    studentAbortRef.current = new AbortController()
+    setStudentsLoading(true)
+
     try {
       let url = `${API_BASE}/voucher/students?program=${encodeURIComponent(program)}`
       if (schoolYear) url += `&ay=${encodeURIComponent(schoolYear)}`
       if (semester) url += `&semester=${encodeURIComponent(semester)}`
-      const res = await fetch(url)
+      const res = await fetch(url, { signal: studentAbortRef.current.signal })
       const data = await res.json()
       setAvailableStudents(data || [])
-    } catch { setAvailableStudents([]) }
-  }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setAvailableStudents([])
+      }
+    } finally {
+      if (studentAbortRef.current && !studentAbortRef.current.signal.aborted) {
+        setStudentsLoading(false)
+      }
+    }
+  }, [program, schoolYear, semester])
 
   const loadHistory = async () => {
     setHistoryLoading(true)
@@ -129,19 +160,23 @@ export default function Voucher() {
 
   const handleStudentSearch = useCallback((value) => {
     setStudentSearch(value)
-    clearTimeout(searchTimerRef.current)
-    const query = value.toLowerCase().trim()
-    const selectedIds = new Set(selectedStudents.map(s => String(s.id)))
+  }, [])
 
-    if (availableStudents.length > 0) {
-      const filtered = query === ''
-        ? availableStudents
-        : availableStudents.filter(s =>
-            s.fullName.toLowerCase().includes(query) ||
-            (s.atmAccount && s.atmAccount.toLowerCase().includes(query))
-          )
-      setStudentOptions(
-        filtered.filter(s => !selectedIds.has(String(s.id))).slice(0, 50).map(s => ({
+  useEffect(() => {
+    const query = studentSearch.toLowerCase().trim()
+    const selectedIds = new Set(selectedStudents.map(s => String(s.id)))
+    const filtered = query === ''
+      ? availableStudents
+      : availableStudents.filter(s =>
+          s.fullName.toLowerCase().includes(query) ||
+          (s.atmAccount && s.atmAccount.toLowerCase().includes(query))
+        )
+
+    setStudentOptions(
+      filtered
+        .filter(s => !selectedIds.has(String(s.id)))
+        .slice(0, 50)
+        .map(s => ({
           value: String(s.id),
           label: (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -151,31 +186,8 @@ export default function Voucher() {
           ),
           student: s,
         }))
-      )
-    } else if (query) {
-      searchTimerRef.current = setTimeout(async () => {
-        let url = `${API_BASE}/voucher/students?program=${encodeURIComponent(program)}&q=${encodeURIComponent(query)}`
-        if (schoolYear) url += `&ay=${encodeURIComponent(schoolYear)}`
-        if (semester) url += `&semester=${encodeURIComponent(semester)}`
-        try {
-          const res = await fetch(url)
-          const list = await res.json()
-          setStudentOptions(
-            (list || []).filter(s => !selectedIds.has(String(s.id))).slice(0, 50).map(s => ({
-              value: String(s.id),
-              label: (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{s.fullName} <span style={{ color: '#999', fontSize: 12 }}>({s.atmAccount || 'No ATM'})</span></span>
-                  {s.voucherTrackingNo && <Tag color="orange" style={{ marginLeft: 8, fontSize: 11 }}>{s.voucherTrackingNo}</Tag>}
-                </div>
-              ),
-              student: s,
-            }))
-          )
-        } catch { /* ignore */ }
-      }, 300)
-    }
-  }, [availableStudents, selectedStudents, program, schoolYear, semester])
+    )
+  }, [availableStudents, selectedStudents, studentSearch])
 
   const handleSelectStudent = useCallback((value, option) => {
     const student = option.student
@@ -188,10 +200,12 @@ export default function Voucher() {
     }
     setStudentSearch('')
     setStudentOptions([])
+    setPreviewStale(true)
     setTimeout(() => autocompleteRef.current?.blur(), 0)
   }, [selectedStudents])
 
   const removeStudent = useCallback((id) => {
+    setPreviewStale(true)
     setSelectedStudents(prev => prev.filter(s => String(s.id) !== String(id)))
   }, [])
 
@@ -213,12 +227,18 @@ export default function Voucher() {
         onOk: () => {
           setter(value)
           setSelectedStudents([])
+          setStudentSearch('')
+          setStudentOptions([])
+          clearPreview()
         },
       })
     } else {
       setter(value)
+      setStudentSearch('')
+      setStudentOptions([])
+      clearPreview()
     }
-  }, [selectedStudents])
+  }, [clearPreview, selectedStudents])
 
   const handleSetTrackingStart = async () => {
     if (!trackingStartInput || trackingStartInput < 0) {
@@ -252,7 +272,8 @@ export default function Voucher() {
       onOk: () => {
         setSelectedStudents([])
         setStudentSearch('')
-        setPdfPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
+        setStudentOptions([])
+        clearPreview()
       },
     })
   }
@@ -283,6 +304,7 @@ export default function Voucher() {
       if (data.error) throw new Error(data.error)
 
       if (data.downloadFile) {
+        setPreviewFile(data.downloadFile)
         const pdfRes = await fetch(`${API_BASE}/voucher/download?file=${encodeURIComponent(data.downloadFile)}`, {
           signal: abortRef.current.signal
         })
@@ -291,6 +313,7 @@ export default function Voucher() {
           const pdfBlob = new Blob([blob], { type: 'application/pdf' })
           const url = URL.createObjectURL(pdfBlob)
           setPdfPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return url })
+          setPreviewStale(false)
         }
       }
     } catch (err) {
@@ -305,19 +328,25 @@ export default function Voucher() {
   }, [canGenerate, selectedStudents, schoolYear, semester, program, customAmount])
 
   useEffect(() => {
-    if (canGenerate) {
-      const timeoutId = setTimeout(generatePreview, 600)
-      return () => clearTimeout(timeoutId)
-    } else {
-      setPdfPreviewUrl(prev => { if (prev) URL.revokeObjectURL(prev); return '' })
+    if (!canGenerate) {
+      clearPreview()
       setGenerating(false)
+      return
     }
-  }, [generatePreview, canGenerate])
+
+    setPreviewStale(true)
+    setPdfPreviewUrl(prev => {
+      if (prev) URL.revokeObjectURL(prev)
+      return ''
+    })
+    setPreviewError('')
+  }, [canGenerate, clearPreview, customAmount, program, schoolYear, selectedStudents, semester])
 
   useEffect(() => {
     return () => {
       if (pdfPreviewUrl) URL.revokeObjectURL(pdfPreviewUrl)
       if (abortRef.current) abortRef.current.abort()
+      if (studentAbortRef.current) studentAbortRef.current.abort()
     }
   }, [])
 
@@ -329,7 +358,7 @@ export default function Voucher() {
       const res = await fetch(`${API_BASE}/voucher/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ schoolYear, semester, scholarshipProgram: program, customAmount, students: uniqueStudents }),
+        body: JSON.stringify({ schoolYear, semester, scholarshipProgram: program, customAmount, students: uniqueStudents, previewFile }),
       })
       
       if (!res.ok) throw new Error('Failed to finalize voucher')
@@ -374,7 +403,8 @@ export default function Voucher() {
       setCustomAmount(log.custom_amount || null)
       const students = (log.students || []).filter((s, i, self) => i === self.findIndex(t => String(t.id) === String(s.id)))
       setSelectedStudents(students)
-      message.success('Previous work restored. Preview will generate shortly.')
+      setPreviewStale(true)
+      message.success('Previous work restored. Click Refresh Preview when ready.')
     } catch { message.error('Failed to restore entry.') }
   }
 
@@ -506,6 +536,14 @@ export default function Voucher() {
             ) : null}
             <Button onClick={handleClearAll}>Reset</Button>
             <Button
+              icon={<SyncOutlined spin={generating} />}
+              onClick={generatePreview}
+              loading={generating}
+              disabled={!canGenerate || accepting}
+            >
+              {previewStale || !pdfPreviewUrl ? 'Refresh Preview' : 'Preview Ready'}
+            </Button>
+            <Button
               type="primary"
               size="large"
               icon={<CheckCircleOutlined />}
@@ -572,6 +610,7 @@ export default function Voucher() {
               onSearch={handleStudentSearch}
               onSelect={handleSelectStudent}
               onFocus={() => handleStudentSearch('')}
+              notFoundContent={studentsLoading ? 'Loading students...' : 'No students found'}
               placeholder="Search or scan ATM number..."
             />
           </div>
