@@ -6,15 +6,30 @@ import { API_BASE } from '../lib/config'
 
 const { Title, Text } = Typography
 
+const FORM_TYPES = [
+  { value: 'masterlist', label: 'Annex D — Masterlist' },
+  { value: 'annexF2', label: 'Annex F-2 — By Year Level' },
+  { value: 'annexF3', label: 'Annex F-3 — By Sex' },
+  { value: 'annexF4', label: 'Annex F-4 — By Type of HEI' },
+]
+
+const FORM_ENDPOINTS = {
+  masterlist: '/students/masterlist',
+  annexF2: '/students/annex-f2',
+  annexF3: '/students/annex-f3',
+  annexF4: '/students/annex-f4',
+}
+
 export function meta() {
   return [
-    { title: 'Print Masterlist | StuFAPs' },
-    { name: 'description', content: 'Generate and preview masterlist PDF by program, semester, and academic year.' },
+    { title: 'Generate PDF Reports | StuFAPs' },
+    { name: 'description', content: 'Generate and preview PDF reports — masterlist and Annex forms.' },
   ]
 }
 
 export default function StudentsPdf() {
   const navigate = useNavigate()
+  const [formType, setFormType] = useState('masterlist')
   const [program, setProgram] = useState()
   const [semester, setSemester] = useState()
   const [academicYear, setAcademicYear] = useState()
@@ -40,6 +55,8 @@ export default function StudentsPdf() {
   useEffect(() => { reviewedByRef.current = reviewedBy }, [reviewedBy])
   useEffect(() => { approvedNameRef.current = approvedName }, [approvedName])
   useEffect(() => { approvedPositionRef.current = approvedPosition }, [approvedPosition])
+
+  const needsProgram = formType === 'masterlist'
 
   // LocalStorage keys
   const STORAGE_KEY = 'stufaps_masterlist_form'
@@ -135,7 +152,7 @@ export default function StudentsPdf() {
     return arr.length ? arr : ['First', 'Second']
   }, [filterOptions])
 
-  const canGenerate = Boolean(program && semester && academicYear)
+  const canGenerate = needsProgram ? Boolean(program && semester && academicYear) : Boolean(semester && academicYear)
 
   // Check if signatories are complete
   const signatoryComplete = useMemo(() => {
@@ -147,7 +164,8 @@ export default function StudentsPdf() {
 
   // Generate preview when all filters are selected
   const generatePreview = useCallback(async () => {
-    if (!program || !semester || !academicYear) return
+    if (needsProgram && !program) return
+    if (!semester || !academicYear) return
 
     // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort()
@@ -158,22 +176,24 @@ export default function StudentsPdf() {
 
     try {
       const params = new URLSearchParams({
-        program,
         semester,
         academic_year: academicYear,
-        approved_name: approvedNameRef.current,
-        approved_position: approvedPositionRef.current,
       })
-      // Add prepared by entries as arrays
-      preparedByRef.current.forEach((p, i) => {
-        params.append(`prepared_name[${i}]`, p.name)
-        params.append(`prepared_position[${i}]`, p.position)
-      })
-      reviewedByRef.current.forEach((p, i) => {
-        params.append(`reviewed_name[${i}]`, p.name)
-        params.append(`reviewed_position[${i}]`, p.position)
-      })
-      const res = await fetch(`${API_BASE}/students/masterlist?${params}`, {
+      if (needsProgram) {
+        params.set('program', program)
+        params.set('approved_name', approvedNameRef.current)
+        params.set('approved_position', approvedPositionRef.current)
+        preparedByRef.current.forEach((p, i) => {
+          params.append(`prepared_name[${i}]`, p.name)
+          params.append(`prepared_position[${i}]`, p.position)
+        })
+        reviewedByRef.current.forEach((p, i) => {
+          params.append(`reviewed_name[${i}]`, p.name)
+          params.append(`reviewed_position[${i}]`, p.position)
+        })
+      }
+      const endpoint = FORM_ENDPOINTS[formType] || FORM_ENDPOINTS.masterlist
+      const res = await fetch(`${API_BASE}${endpoint}?${params}`, {
         signal: abortRef.current.signal,
       })
 
@@ -213,7 +233,7 @@ export default function StudentsPdf() {
     } finally {
       setLoadingPreview(false)
     }
-  }, [program, semester, academicYear])
+  }, [program, semester, academicYear, formType, needsProgram])
 
   // Auto-generate preview when filters change (with debounce)
   useEffect(() => {
@@ -241,6 +261,7 @@ export default function StudentsPdf() {
   }, [])
 
   const handleReset = () => {
+    setFormType('masterlist')
     setProgram(undefined)
     setSemester(undefined)
     setAcademicYear(undefined)
@@ -305,7 +326,8 @@ export default function StudentsPdf() {
     if (!previewUrl) return
     const link = document.createElement('a')
     link.href = previewUrl
-    link.download = `masterlist-${program}-${semester}-AY-${academicYear}.pdf`
+    const prefix = formType === 'masterlist' ? `masterlist-${program}` : formType
+    link.download = `${prefix}-${semester}-AY-${academicYear}.pdf`
     document.body.appendChild(link)
     link.click()
     link.remove()
@@ -339,16 +361,26 @@ export default function StudentsPdf() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/students')} />
               <Title level={3} style={{ margin: 0, color: '#262626' }}>
-                Generate PDF Masterlist
+                Generate PDF Reports
               </Title>
             </div>
             <Text type="secondary" style={{ fontSize: '14px', textAlign: 'left' }}>
-              Select program, semester, and academic year to generate the masterlist document
+              Select a form type, then choose the filters to generate and preview the document
             </Text>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
             <Form layout="inline" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
+              <Form.Item label="Form Type" style={{ minWidth: '280px', flex: 1 }}>
+                <Select
+                  value={formType}
+                  onChange={(val) => { setFormType(val); setPreviewUrl(''); setPreviewError(''); }}
+                  style={{ width: '100%' }}
+                  options={FORM_TYPES}
+                />
+              </Form.Item>
+
+              {needsProgram && (
               <Form.Item label="Program" style={{ minWidth: '300px', flex: 1 }}>
                 <Select
                   showSearch
@@ -366,6 +398,7 @@ export default function StudentsPdf() {
                   }))}
                 />
               </Form.Item>
+              )}
 
               <Form.Item label="Semester" style={{ minWidth: '200px', flex: 1 }}>
                 <Select
@@ -415,9 +448,11 @@ export default function StudentsPdf() {
             </div>
           </div>
 
+          {needsProgram && (
           <Text type="secondary" style={{ display: 'block', marginTop: '12px', fontStyle: 'italic' }}>
-            Note: COSCHO and MSRS scholarships have a different format and are not applicable to this layout.
+            Note: COSCHO and MSRS scholarships have a different format and are not applicable to the masterlist layout.
           </Text>
+          )}
         </div>
       </Card>
 
@@ -426,7 +461,7 @@ export default function StudentsPdf() {
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <FileTextOutlined />
-            <span>PDF Preview</span>
+            <span>PDF Preview — {FORM_TYPES.find(f => f.value === formType)?.label}</span>
             {loadingPreview && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
                 <SyncOutlined spin style={{ fontSize: '12px' }} />
@@ -517,16 +552,17 @@ export default function StudentsPdf() {
           }}>
             <FileTextOutlined style={{ fontSize: '64px', color: '#bfbfbf', marginBottom: '24px' }} />
             <Text style={{ fontSize: '18px', fontWeight: 500, color: '#8c8c8c', marginBottom: '8px' }}>
-              Select Program, Semester, and Academic Year
+              {needsProgram ? 'Select Program, Semester, and Academic Year' : 'Select Semester and Academic Year'}
             </Text>
             <Text type="secondary" style={{ fontSize: '14px' }}>
-              to preview the masterlist
+              to preview the document
             </Text>
           </div>
         )}
       </Card>
 
-      {/* Footer - Signatories */}
+      {/* Footer - Signatories (only for Masterlist) */}
+      {needsProgram && (
       <Card
         style={{ borderRadius: 0 }}
         title={
@@ -738,6 +774,7 @@ export default function StudentsPdf() {
           </Col>
         </Row>
       </Card>
+      )}
     </div>
   )
 }
