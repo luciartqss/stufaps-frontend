@@ -1148,7 +1148,7 @@ export default function StudentsIndex() {
             style={{ color: '#dc2626', borderColor: '#dc2626', fontWeight: 500 }}
             onClick={handlePrintMasterlist}
           >
-            Print masterlist
+            Print Form
           </Button>
           <Button
             type="default"
