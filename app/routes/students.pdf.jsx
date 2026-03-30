@@ -12,6 +12,7 @@ const FORM_TYPES = [
   { value: 'annexF3', label: 'Annex F-3 — By Sex' },
   { value: 'annexF4', label: 'Annex F-4 — By Type of HEI' },
   { value: 'annexF6', label: 'Annex F-6 — Graduates' },
+  { value: 'annexE1', label: 'Annex E-1 — Database of CMSP Beneficiaries' },
 ]
 
 const FORM_ENDPOINTS = {
@@ -20,6 +21,7 @@ const FORM_ENDPOINTS = {
   annexF3: '/students/annex-f3',
   annexF4: '/students/annex-f4',
   annexF6: '/students/annex-f6',
+  annexE1: '/students/annex-e1',
 }
 
 export function meta() {
