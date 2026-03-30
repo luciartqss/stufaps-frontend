@@ -79,7 +79,21 @@ export default function SUB_ARO_NTA() {
     }
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
+  useEffect(() => { 
+    fetchAll()
+    
+    // Set up polling to refresh NTA/SubAro data every 5 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetchAll()
+    }, 5000)
+    
+    return () => clearInterval(interval)
+  }, [fetchAll])
+
+  // Refresh data when switching between tabs to ensure fresh NTA/SubAro data
+  useEffect(() => {
+    fetchAll()
+  }, [activeTab, fetchAll])
 
   /* ── Filter SUB-ARO files when fiscal year or scholarship program changes in modal ── */
   useEffect(() => {
@@ -91,31 +105,26 @@ export default function SUB_ARO_NTA() {
       return
     }
 
-    setLoadingSubAroFilter(true)
-    // Use setTimeout to give visual feedback of loading state
-    const timer = setTimeout(() => {
-      let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
+    // Filter without setTimeout for instant real-time updates
+    let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
 
-      // If scholarship program is selected, filter by it too
-      if (selectedScholarshipProgram) {
-        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
-      }
+    // If scholarship program is selected, filter by it too
+    if (selectedScholarshipProgram) {
+      filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+    }
 
-      // Show SubAros that either:
-      // 1. Have remaining balance (available for selection), OR
-      // 2. Are already in the current breakdown (for editing)
-      filtered = filtered.filter(f => {
-        const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
-        const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
-        return hasRemainingBalance || isInBreakdown
-      })
+    // Show SubAros that either:
+    // 1. Have remaining balance (available for selection), OR
+    // 2. Are already in the current breakdown (for editing)
+    filtered = filtered.filter(f => {
+      const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
+      const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
+      return hasRemainingBalance || isInBreakdown
+    })
 
-      setFilteredSubAroForModal(filtered)
-      setLoadingSubAroFilter(false)
-    }, 100)
-
-    return () => clearTimeout(timer)
-  }, [subAroFiles, getSubAroRemainingBalance, activeTab, subAroBreakdown])
+    setFilteredSubAroForModal(filtered)
+    setLoadingSubAroFilter(false)
+  }, [subAroFiles, getSubAroRemainingBalance, activeTab, subAroBreakdown, form])
 
   /* ── Handle fiscal year change in modal ── */
   const handleFiscalYearChange = (yearsuffix) => {
@@ -124,28 +133,25 @@ export default function SUB_ARO_NTA() {
       return
     }
 
-    setLoadingSubAroFilter(true)
-    const timer = setTimeout(() => {
-      let filtered = subAroFiles.filter(f => f.yearsuffix === yearsuffix)
+    // Update instantly without setTimeout for real-time responsiveness
+    let filtered = subAroFiles.filter(f => f.yearsuffix === yearsuffix)
 
-      // Also filter by scholarship program if selected
-      const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
-      if (selectedScholarshipProgram) {
-        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
-      }
+    // Also filter by scholarship program if selected
+    const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+    if (selectedScholarshipProgram) {
+      filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+    }
 
-      // Show SubAros that either:
-      // 1. Have remaining balance (available for selection), OR
-      // 2. Are already in the current breakdown (for editing)
-      filtered = filtered.filter(f => {
-        const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
-        const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
-        return hasRemainingBalance || isInBreakdown
-      })
+    // Show SubAros that either:
+    // 1. Have remaining balance (available for selection), OR
+    // 2. Are already in the current breakdown (for editing)
+    filtered = filtered.filter(f => {
+      const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
+      const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
+      return hasRemainingBalance || isInBreakdown
+    })
 
-      setFilteredSubAroForModal(filtered)
-      setLoadingSubAroFilter(false)
-    }, 100)
+    setFilteredSubAroForModal(filtered)
   }
 
   /* ── Handle scholarship program change in modal ── */
@@ -158,26 +164,23 @@ export default function SUB_ARO_NTA() {
       return
     }
 
-    setLoadingSubAroFilter(true)
-    const timer = setTimeout(() => {
-      let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
+    // Update instantly without setTimeout for real-time responsiveness
+    let filtered = subAroFiles.filter(f => f.yearsuffix === selectedYearSuffix)
 
-      if (selectedScholarshipProgram) {
-        filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
-      }
+    if (selectedScholarshipProgram) {
+      filtered = filtered.filter(f => f.scholarship_program === selectedScholarshipProgram)
+    }
 
-      // Show SubAros that either:
-      // 1. Have remaining balance (available for selection), OR
-      // 2. Are already in the current breakdown (for editing)
-      filtered = filtered.filter(f => {
-        const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
-        const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
-        return hasRemainingBalance || isInBreakdown
-      })
+    // Show SubAros that either:
+    // 1. Have remaining balance (available for selection), OR
+    // 2. Are already in the current breakdown (for editing)
+    filtered = filtered.filter(f => {
+      const hasRemainingBalance = getSubAroRemainingBalance(f) > 0
+      const isInBreakdown = activeTab === 'NTA' && subAroBreakdown.some(item => item.sub_aro_id === f.id)
+      return hasRemainingBalance || isInBreakdown
+    })
 
-      setFilteredSubAroForModal(filtered)
-      setLoadingSubAroFilter(false)
-    }, 50)
+    setFilteredSubAroForModal(filtered)
   }
 
   /* ── Filtered files ── */
@@ -612,7 +615,7 @@ export default function SUB_ARO_NTA() {
         <Segmented
           block
           value={activeTab}
-          onChange={(v) => { setActiveTab(v); setSearchQuery('') }}
+          onChange={(v) => { setActiveTab(v); setSearchQuery(''); fetchAll() }}
           options={[
             { label: <span>Sub Allotment Release Order <Tag style={{ marginLeft: 6, fontSize: 11 }}>{fileCounts['SUB-ARO']}</Tag></span>, value: 'SUB-ARO' },
             { label: <span>Notice of Transfer Allocation <Tag style={{ marginLeft: 6, fontSize: 11 }}>{fileCounts.NTA}</Tag></span>, value: 'NTA' },
