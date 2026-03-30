@@ -1583,8 +1583,8 @@ export default function SUB_ARO_NTA() {
                 ) : null
               })()}
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 16 }}>
-                {/* LEFT: SUB-ARO Checklist */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+                {/* Available SUB-AROs - Full Width */}
                 <div>
                   <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
                     Available SUB-AROs
@@ -1606,9 +1606,12 @@ export default function SUB_ARO_NTA() {
                         const obligatedPercent = obligation > 0 ? ((totalNtaObligated / obligation) * 100).toFixed(1) : '0.0'
                         const disbursed = parseFloat(subAro.disbursed || 0)
                         const fullyDisbursed = obligation > 0 && disbursed >= obligation
+                        const assignedNtas = getSubAroAssignedNtas(subAro.id, editingFileId)
+                        const isAssignedToOtherNta = assignedNtas.length > 0
 
                         // Hide fully obligated or fully disbursed Sub-AROs unless already selected
-                        if ((fullyObligated || fullyDisbursed) && !isSelected) return null
+                        // Also hide Sub-AROs already assigned to other NTAs unless already selected
+                        if (((fullyObligated || fullyDisbursed) || isAssignedToOtherNta) && !isSelected) return null
 
                         const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
                         const currentAllocated = subAroBreakdown.reduce((sum, item) => sum + (parseFloat(item.budget) || 0), 0)
@@ -1691,7 +1694,7 @@ export default function SUB_ARO_NTA() {
                   </div>
                 </div>
 
-                {/* RIGHT: Selected SUB-ARO Breakdown */}
+                {/* Selected SUB-ARO Breakdown - Full Width */}
                 <div>
                   <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
                     Selected SUB-AROs ({subAroBreakdown.length})
@@ -1790,6 +1793,85 @@ export default function SUB_ARO_NTA() {
                       </Text>
                     </div>
                   )}
+                </div>
+
+                {/* SUB-AROS WITH Remaining Balance - Full Width */}
+                <div>
+                  <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
+                    SUB-AROS WITH Remaining Balance
+                  </Text>
+                  {(() => {
+                    // Get all SUB-AROs from other NTAs that have remaining balance (from exceeding_balance)
+                    // Use Map to deduplicate by nta_reference + sub_aro_reference (DISTINCT)
+                    const distinctMap = new Map()
+                    const ntaFiles = uploadedFiles.filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
+                    
+                    ntaFiles.forEach(nta => {
+                      nta.assignments?.forEach(assignment => {
+                        if (assignment.exceedingBalance?.remaining_obligation_balance != null && 
+                            parseFloat(assignment.exceedingBalance.remaining_obligation_balance) > 0) {
+                          const key = `${assignment.exceedingBalance.nta_reference}|${assignment.exceedingBalance.sub_aro_reference || assignment.sub_aro_reference}`
+                          // Only add if not already exists (keeps first occurrence)
+                          if (!distinctMap.has(key)) {
+                            distinctMap.set(key, {
+                              sub_aro_reference: assignment.exceedingBalance.sub_aro_reference || assignment.sub_aro_reference,
+                              nta_reference: assignment.exceedingBalance.nta_reference,
+                              remaining_balance: parseFloat(assignment.exceedingBalance.remaining_obligation_balance),
+                              actual_obligation: parseFloat(assignment.exceedingBalance.actual_obligation || 0),
+                              nta_budget_allocated: parseFloat(assignment.exceedingBalance.nta_budget_allocated || 0)
+                            })
+                          }
+                        }
+                      })
+                    })
+                    
+                    const subarosWithBalance = Array.from(distinctMap.values())
+
+                    return subarosWithBalance.length > 0 ? (
+                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
+                        {subarosWithBalance.map((item, idx) => (
+                          <div key={idx} style={{ padding: '12px', borderBottom: idx < subarosWithBalance.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                              <div style={{ flex: 1 }}>
+                                <Text strong style={{ fontSize: 12, display: 'block' }}>
+                                  {item.sub_aro_reference}
+                                </Text>
+                                <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
+                                  Previously assigned to: {item.nta_reference || 'N/A'}
+                                </Text>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <div style={{ flex: 1 }}>
+                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Remaining Balance</Text>
+                                <Text strong style={{ fontSize: 12, color: '#F59E0B' }}>
+                                  ₱{item.remaining_balance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Obligation</Text>
+                                <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
+                                  ₱{item.actual_obligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Allocated</Text>
+                                <Text strong style={{ fontSize: 12, color: '#10B981' }}>
+                                  ₱{item.nta_budget_allocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </Text>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 20, textAlign: 'center' }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          No SUB-AROs with remaining balance
+                        </Text>
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             </>
