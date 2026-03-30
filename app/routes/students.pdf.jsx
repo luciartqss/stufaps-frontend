@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Form, Space, Badge, Tooltip } from 'antd'
-import { ArrowLeftOutlined, DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, FilterOutlined, PrinterOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
+import { Button, Card, Col, Row, Select, Spin, Typography, message, Input, Form, Space, Badge } from 'antd'
+import { ArrowLeftOutlined, DownloadOutlined, EyeOutlined, FileTextOutlined, ReloadOutlined, UserOutlined, PlusOutlined, CloseCircleOutlined, CheckCircleOutlined, SyncOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE } from '../lib/config'
 
@@ -11,6 +11,7 @@ const FORM_TYPES = [
   { value: 'annexF2', label: 'Annex F-2 — By Year Level' },
   { value: 'annexF3', label: 'Annex F-3 — By Sex' },
   { value: 'annexF4', label: 'Annex F-4 — By Type of HEI' },
+  { value: 'annexF6', label: 'Annex F-6 — Graduates' },
 ]
 
 const FORM_ENDPOINTS = {
@@ -18,6 +19,7 @@ const FORM_ENDPOINTS = {
   annexF2: '/students/annex-f2',
   annexF3: '/students/annex-f3',
   annexF4: '/students/annex-f4',
+  annexF6: '/students/annex-f6',
 }
 
 export function meta() {
@@ -57,6 +59,7 @@ export default function StudentsPdf() {
   useEffect(() => { approvedPositionRef.current = approvedPosition }, [approvedPosition])
 
   const needsProgram = formType === 'masterlist'
+  const showsSignatories = true
 
   // LocalStorage keys
   const STORAGE_KEY = 'stufaps_masterlist_form'
@@ -181,17 +184,17 @@ export default function StudentsPdf() {
       })
       if (needsProgram) {
         params.set('program', program)
-        params.set('approved_name', approvedNameRef.current)
-        params.set('approved_position', approvedPositionRef.current)
-        preparedByRef.current.forEach((p, i) => {
-          params.append(`prepared_name[${i}]`, p.name)
-          params.append(`prepared_position[${i}]`, p.position)
-        })
-        reviewedByRef.current.forEach((p, i) => {
-          params.append(`reviewed_name[${i}]`, p.name)
-          params.append(`reviewed_position[${i}]`, p.position)
-        })
       }
+      params.set('approved_name', approvedNameRef.current)
+      params.set('approved_position', approvedPositionRef.current)
+      preparedByRef.current.forEach((p, i) => {
+        params.append(`prepared_name[${i}]`, p.name)
+        params.append(`prepared_position[${i}]`, p.position)
+      })
+      reviewedByRef.current.forEach((p, i) => {
+        params.append(`reviewed_name[${i}]`, p.name)
+        params.append(`reviewed_position[${i}]`, p.position)
+      })
       const endpoint = FORM_ENDPOINTS[formType] || FORM_ENDPOINTS.masterlist
       const res = await fetch(`${API_BASE}${endpoint}?${params}`, {
         signal: abortRef.current.signal,
@@ -374,7 +377,7 @@ export default function StudentsPdf() {
               <Form.Item label="Form Type" style={{ minWidth: '280px', flex: 1 }}>
                 <Select
                   value={formType}
-                  onChange={(val) => { setFormType(val); setPreviewUrl(''); setPreviewError(''); }}
+                  onChange={(val) => { setFormType(val); setPreviewUrl(''); setPreviewError('') }}
                   style={{ width: '100%' }}
                   options={FORM_TYPES}
                 />
@@ -435,6 +438,15 @@ export default function StudentsPdf() {
                 style={{ height: '40px' }}
               >
                 Reset
+              </Button>
+              <Button
+                icon={<SyncOutlined />}
+                onClick={generatePreview}
+                disabled={!canGenerate || loadingPreview}
+                loading={loadingPreview}
+                style={{ height: '40px' }}
+              >
+                Refresh
               </Button>
               <Button
                 type="primary"
@@ -562,7 +574,7 @@ export default function StudentsPdf() {
       </Card>
 
       {/* Footer - Signatories (only for Masterlist) */}
-      {needsProgram && (
+      {showsSignatories && (
       <Card
         style={{ borderRadius: 0 }}
         title={
