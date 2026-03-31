@@ -493,37 +493,47 @@ export default function SUB_ARO_NTA() {
 
     const actualObligation = parseFloat(subAro.budget || 0) + parseFloat(subAro.Operational_Cost || 0)
 
-    // Find the current gateway entry in exceeding_balances for this SubAro + NTA combination
-    const currentGateway = exceedingBalances.find(
-      gb => gb.sub_aro_id === subAroId && gb.nta_id === currentNtaId
-    )
+    // Get all NTA files sorted by upload date
+    const ntaFiles = uploadedFiles
+      .filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
+      .sort((a, b) => {
+        const dateA = new Date(a.upload_date || a.created_at)
+        const dateB = new Date(b.upload_date || b.created_at)
+        return dateA - dateB
+      })
 
-    // Calculate remaining balance from current gateway: nta_budget_allocated - disbursed
-    const nta_budget_allocated = parseFloat(currentGateway?.nta_budget_allocated || 0)
-    const disbursed = parseFloat(currentGateway?.disbursed || 0)
-    const remaining = Math.max(nta_budget_allocated - disbursed, 0)
+    // Find current NTA position
+    const currentNtaIndex = ntaFiles.findIndex(nta => nta.id === currentNtaId)
 
-    // Get current NTA for reference info
-    const currentNta = uploadedFiles.find(f => f.id === currentNtaId && f.filetype === 'NTA')
+    // Get immediately previous NTA (if it exists)
     let allocation = null
-    if (currentNta && currentGateway) {
-      const fy = fiscalYears.find(y => y.year_suffix === currentNta.yearsuffix)
-      allocation = {
-        ntaName: `NTA-${fy?.fiscal_year || '????'}-${currentNta.number_count}`,
-        allocated: nta_budget_allocated,
-        uploadDate: currentNta.upload_date || currentNta.created_at,
+    if (currentNtaIndex > 0) {
+      const previousNta = ntaFiles[currentNtaIndex - 1]
+      const subAroAlloc = previousNta.assignments.find(item => item.sub_aro_id === subAroId)
+
+      if (subAroAlloc) {
+        const fy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
+        allocation = {
+          ntaName: `NTA-${fy?.fiscal_year || '????'}-${previousNta.number_count}`,
+          allocated: parseFloat(subAroAlloc.nta_budget_allocated || 0),
+          uploadDate: previousNta.upload_date || previousNta.created_at,
+        }
       }
     }
+
+    // Calculate total allocated by the previous NTA
+    const totalAllocatedByPrev = allocation ? allocation.allocated : 0
+    const remaining = Math.max(actualObligation - totalAllocatedByPrev, 0)
 
     return {
       allocation,
       actualObligation,
-      totalAllocatedByPrev: nta_budget_allocated,
+      totalAllocatedByPrev,
       remaining,
-      hasAllocation: currentGateway !== undefined,
-      isFirstNta: false,
+      hasAllocation: allocation !== null,
+      isFirstNta: currentNtaIndex === 0,
     }
-  }, [uploadedFiles, subAroFiles, fiscalYears, exceedingBalances])
+  }, [uploadedFiles, subAroFiles, fiscalYears])
 
   // Helper: Get all NTAs this SubAro is assigned to (excluding current NTA if editing)
   const getSubAroAssignedNtas = useCallback((subAroId, excludeNtaId = null) => {
@@ -966,19 +976,19 @@ export default function SUB_ARO_NTA() {
                                             {hasCarryover && (
                                               <div style={{ padding: '8px 12px', background: '#FEF3C7', borderTop: '1px solid #FDE68A', display: 'flex', gap: 24, alignItems: 'flex-start', borderRadius: '0 0 4px 4px' }}>
                                                 <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>💼 Carryover Balance</Text>
+                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>Carryover Balance</Text>
                                                   <Text strong style={{ fontSize: 12, color: '#D97706' }}>
                                                     ₱{carryoverBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                                   </Text>
                                                 </div>
                                                 <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>📋 Undisbursed Count</Text>
+                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>Undisbursed Count</Text>
                                                   <Text strong style={{ fontSize: 12, color: '#D97706' }}>
                                                     {carryoverUndisbursedCount} disbursements pending
                                                   </Text>
                                                 </div>
                                                 <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>ℹ️ Status</Text>
+                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>ℹStatus</Text>
                                                   <Text strong style={{ fontSize: 12, color: parseFloat(disbursementPercent) === 100 ? '#10B981' : '#D97706' }}>
                                                     {parseFloat(disbursementPercent) === 100 ? 'Disbursement is completed.' : 'Disbursement is Ongoing.'}
                                                   </Text>
