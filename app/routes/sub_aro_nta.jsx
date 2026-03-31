@@ -493,47 +493,37 @@ export default function SUB_ARO_NTA() {
 
     const actualObligation = parseFloat(subAro.budget || 0) + parseFloat(subAro.Operational_Cost || 0)
 
-    // Get all NTA files sorted by upload date
-    const ntaFiles = uploadedFiles
-      .filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
-      .sort((a, b) => {
-        const dateA = new Date(a.upload_date || a.created_at)
-        const dateB = new Date(b.upload_date || b.created_at)
-        return dateA - dateB
-      })
+    // Find the current gateway entry in exceeding_balances for this SubAro + NTA combination
+    const currentGateway = exceedingBalances.find(
+      gb => gb.sub_aro_id === subAroId && gb.nta_id === currentNtaId
+    )
 
-    // Find current NTA position
-    const currentNtaIndex = ntaFiles.findIndex(nta => nta.id === currentNtaId)
+    // Calculate remaining balance from current gateway: nta_budget_allocated - disbursed
+    const nta_budget_allocated = parseFloat(currentGateway?.nta_budget_allocated || 0)
+    const disbursed = parseFloat(currentGateway?.disbursed || 0)
+    const remaining = Math.max(nta_budget_allocated - disbursed, 0)
 
-    // Get immediately previous NTA (if it exists)
+    // Get current NTA for reference info
+    const currentNta = uploadedFiles.find(f => f.id === currentNtaId && f.filetype === 'NTA')
     let allocation = null
-    if (currentNtaIndex > 0) {
-      const previousNta = ntaFiles[currentNtaIndex - 1]
-      const subAroAlloc = previousNta.assignments.find(item => item.sub_aro_id === subAroId)
-
-      if (subAroAlloc) {
-        const fy = fiscalYears.find(y => y.year_suffix === previousNta.yearsuffix)
-        allocation = {
-          ntaName: `NTA-${fy?.fiscal_year || '????'}-${previousNta.number_count}`,
-          allocated: parseFloat(subAroAlloc.nta_budget_allocated || 0),
-          uploadDate: previousNta.upload_date || previousNta.created_at,
-        }
+    if (currentNta && currentGateway) {
+      const fy = fiscalYears.find(y => y.year_suffix === currentNta.yearsuffix)
+      allocation = {
+        ntaName: `NTA-${fy?.fiscal_year || '????'}-${currentNta.number_count}`,
+        allocated: nta_budget_allocated,
+        uploadDate: currentNta.upload_date || currentNta.created_at,
       }
     }
-
-    // Calculate total allocated by the previous NTA
-    const totalAllocatedByPrev = allocation ? allocation.allocated : 0
-    const remaining = Math.max(actualObligation - totalAllocatedByPrev, 0)
 
     return {
       allocation,
       actualObligation,
-      totalAllocatedByPrev,
+      totalAllocatedByPrev: nta_budget_allocated,
       remaining,
-      hasAllocation: allocation !== null,
-      isFirstNta: currentNtaIndex === 0,
+      hasAllocation: currentGateway !== undefined,
+      isFirstNta: false,
     }
-  }, [uploadedFiles, subAroFiles, fiscalYears])
+  }, [uploadedFiles, subAroFiles, fiscalYears, exceedingBalances])
 
   // Helper: Get all NTAs this SubAro is assigned to (excluding current NTA if editing)
   const getSubAroAssignedNtas = useCallback((subAroId, excludeNtaId = null) => {
@@ -996,17 +986,25 @@ export default function SUB_ARO_NTA() {
                                               </div>
                                             )}
 
-                                            {/* Differences Section - Compare with previous NTA only */}
+                                            {/* SubAro/NTA Gateway History */}
                                             {(() => {
                                               const diffs = getSubAroDifferences(item, item.sub_aro_id, f.id)
                                               if (!diffs.hasAllocation) return null
 
                                               const { allocation, actualObligation, totalAllocatedByPrev, remaining } = diffs
+                                              const subAroFile = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                              const subAroName = subAroFile ? `CHEDRO IV-${subAroFile.yearsuffix}-${subAroFile.number_count}` : item.sub_aro_reference
 
                                               return (
                                                 <div style={{ padding: '8px 12px', background: '#EEF2FF', borderTop: '1px solid #C7D2FE', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                                  <Text type="secondary" style={{ fontSize: 10, fontWeight: 600, color: '#4F46E5' }}>📊 Previous NTA Allocation</Text>
+                                                  <Text type="secondary" style={{ fontSize: 10, fontWeight: 600, color: '#4F46E5' }}>📊 SubAro/NTA Gateway History</Text>
                                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                    {/* SubAro Reference - the gateway key */}
+                                                    <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '6px 8px', background: '#F3E8FF', borderRadius: 3 }}>
+                                                      <span style={{ fontWeight: 600, color: '#6B21A8', minWidth: 120 }}>SubAro:</span>
+                                                      <strong style={{ color: '#7C3AED', fontSize: 11 }}>{subAroName}</strong>
+                                                    </div>
+
                                                     <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '4px 0' }}>
                                                       <span style={{ fontWeight: 600, color: '#4F46E5', minWidth: 120 }}>Total Obligation:</span>
                                                       <strong style={{ color: '#DC2626' }}>₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
@@ -1014,16 +1012,16 @@ export default function SUB_ARO_NTA() {
 
                                                     {allocation && (
                                                       <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '6px 8px', background: '#FFFFFF', borderRadius: 4, border: '1px solid #E5E7EB' }}>
-                                                        <span style={{ fontWeight: 600, color: '#6B7280', minWidth: 120 }}>{allocation.ntaName}:</span>
+                                                        <span style={{ fontWeight: 600, color: '#6B7280', minWidth: 120 }}>Previous NTA ({allocation.ntaName}):</span>
                                                         <strong style={{ color: '#EC4899' }}>₱{allocation.allocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                                                        <span style={{ color: '#9CA3AF', fontSize: 9 }}>allocated</span>
+                                                        <span style={{ color: '#9CA3AF', fontSize: 9 }}>allocated to this SubAro</span>
                                                       </div>
                                                     )}
 
                                                     <div style={{ fontSize: 10, display: 'flex', gap: 12, alignItems: 'center', padding: '6px 8px', background: '#F0FDF4', borderRadius: 4, border: '1px solid #BBEF63' }}>
                                                       <span style={{ fontWeight: 600, color: '#4F46E5', minWidth: 120 }}>Remaining:</span>
                                                       <strong style={{ color: '#16A34A', fontSize: 11 }}>₱{remaining.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
-                                                      <span style={{ color: '#15803D', fontSize: 9 }}>for this NTA</span>
+                                                      <span style={{ color: '#15803D', fontSize: 9 }}>available for new NTA allocation</span>
                                                     </div>
                                                   </div>
                                                 </div>
@@ -1858,56 +1856,80 @@ export default function SUB_ARO_NTA() {
                     // 1. Remaining balance > 0
                     // 2. Fiscal year (yearsuffix) matches selected
                     // 3. Scholarship program matches selected (if selected)
+                    // 4. Not already in current breakdown
                     const subarosWithBalance = exceedingBalances
                       .filter(item => 
                         parseFloat(item.remaining_obligation_balance || 0) > 0 &&
                         item.yearsuffix === selectedYearSuffix &&
                         (!selectedScholarshipProgram || item.scholarship_program === selectedScholarshipProgram)
                       )
-                      .map(item => ({
-                        sub_aro_reference: item.sub_aro_reference,
-                        nta_reference: item.nta_reference,
-                        remaining_balance: parseFloat(item.remaining_obligation_balance),
-                        actual_obligation: parseFloat(item.actual_obligation || 0),
-                        nta_budget_allocated: parseFloat(item.nta_budget_allocated || 0)
-                      }))
 
                     return subarosWithBalance.length > 0 ? (
-                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
-                        {subarosWithBalance.map((item, idx) => (
-                          <div key={idx} style={{ padding: '12px', borderBottom: idx < subarosWithBalance.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 12, maxHeight: 300, overflowY: 'auto', position: 'relative' }}>
+                        {subarosWithBalance.map((item, idx) => {
+                          const isSelected = subAroBreakdown.some(b => b.sub_aro_id === item.sub_aro_id)
+                          const remainingBalance = parseFloat(item.remaining_obligation_balance || 0)
+                          const actualObligation = parseFloat(item.actual_obligation || 0)
+                          const ntaBudgetAllocated = parseFloat(item.nta_budget_allocated || 0)
+                          
+                          return (
+                            <div key={idx} style={{
+                              marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8,
+                              opacity: isSelected ? 0.5 : 1
+                            }}>
+                              <Checkbox
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    // Add with remaining_obligation_balance as the allocation
+                                    // For carryover: nta_budget_allocated = what we're actually allocating to THIS NEW NTA
+                                    const subAroFile = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                    const newBreakdown = [
+                                      ...subAroBreakdown,
+                                      {
+                                        sub_aro_id: item.sub_aro_id,
+                                        budget: remainingBalance,
+                                        title: subAroFile ? `CHEDRO IV-${subAroFile.yearsuffix}-${subAroFile.number_count}` : `CHEDRO IV-${item.sub_aro_reference}`,
+                                        actual_obligation: actualObligation,
+                                        nta_budget_allocated: remainingBalance,  // Carryover amount for the NEW NTA
+                                        scholarship_program: item.scholarship_program
+                                      }
+                                    ]
+                                    setSubAroBreakdown(newBreakdown)
+                                  } else {
+                                    // Remove from breakdown
+                                    const newBreakdown = subAroBreakdown.filter(b => b.sub_aro_id !== item.sub_aro_id)
+                                    setSubAroBreakdown(newBreakdown)
+                                  }
+                                }}
+                              />
                               <div style={{ flex: 1 }}>
-                                <Text strong style={{ fontSize: 12, display: 'block' }}>
-                                  SUB-ARO: CHEDRO IV-{item.sub_aro_reference}
+                                <Text style={{ fontSize: 12, display: 'block' }}>
+                                  CHEDRO IV-{item.sub_aro_reference}
                                 </Text>
-                                <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
-                                  Previously assigned to: NTA-{item.nta_reference || 'N/A'}
-                                </Text>
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                  <Text type="secondary" style={{ fontSize: 11 }}>
+                                    Remaining: ₱{remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </Text>
+                                  <Text type="secondary" style={{ fontSize: 11 }}>
+                                    Obligation: ₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </Text>
+                                  <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, color: '#1890ff' }}>
+                                    Prev. Allocated: ₱{ntaBudgetAllocated.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                                  </Text>
+                                  <Tag color="blue" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
+                                    From: NTA-{item.nta_reference}
+                                  </Tag>
+                                  {isSelected && (
+                                    <Tag color="green" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
+                                      Selected for this NTA
+                                    </Tag>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                              <div style={{ flex: 1 }}>
-                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Remaining Balance</Text>
-                                <Text strong style={{ fontSize: 12, color: '#F59E0B' }}>
-                                  ₱{item.remaining_balance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Obligation</Text>
-                                <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
-                                  ₱{item.actual_obligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                              </div>
-                              <div style={{ flex: 1 }}>
-                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Allocated</Text>
-                                <Text strong style={{ fontSize: 12, color: '#10B981' }}>
-                                  ₱{item.nta_budget_allocated.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </Text>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     ) : (
                       <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 20, textAlign: 'center' }}>
