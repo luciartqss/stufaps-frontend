@@ -120,6 +120,12 @@ const PROGRAM_COLORS = {
   'Others': '#94a3b8',
 }
 
+const formatCompactCurrency = (value) => {
+  if (value >= 1_000_000) return '\u20B1' + (value / 1_000_000).toFixed(1) + 'M'
+  if (value >= 1_000) return '\u20B1' + (value / 1_000).toFixed(0) + 'K'
+  return '\u20B1' + Number(value).toLocaleString()
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -131,6 +137,7 @@ export default function Dashboard() {
     sex: [],
     hei_type: [],
     graduates_count: 0,
+    disbursement_by_program: [],
     disbursement_trends: [],
   })
   const [data, setData] = useState({
@@ -564,9 +571,9 @@ export default function Dashboard() {
         </Col>
       </Row>
 
-      {/* ── Disbursement Trends ── */}
+      {/* ── Disbursement Trends + Disbursement by Program (side by side) ── */}
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-        <Col xs={24}>
+        <Col xs={24} lg={12}>
           <Card
             title={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -579,7 +586,7 @@ export default function Dashboard() {
             styles={{ body: { padding: '16px 20px' } }}
           >
             {analytics.disbursement_trends.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={320}>
                 <AreaChart data={analytics.disbursement_trends} margin={{ left: 20, right: 30, top: 10, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -620,8 +627,70 @@ export default function Dashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 320 }}>
                 <Empty description="No disbursement trend data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <DollarOutlined style={{ color: '#0f766e', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>Disbursement by Scholarship Program</Text>
+              </div>
+            }
+            extra={<Text type="secondary" style={{ fontSize: 12 }}>{analytics.disbursement_by_program.length} programs</Text>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.disbursement_by_program.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={analytics.disbursement_by_program} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: '#8c8c8c', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={formatCompactCurrency}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="program"
+                    tick={{ fill: '#434343', fontSize: 12 }}
+                    width={150}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <RechartsTooltip
+                    formatter={(value, name) => {
+                      if (name === 'total_amount') {
+                        return ['\u20B1' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'Amount']
+                      }
+
+                      return [Number(value).toLocaleString(), 'Disbursements']
+                    }}
+                    labelFormatter={(label) => PROGRAM_FULL_NAMES[label] || label}
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                  />
+                  <Bar
+                    dataKey="total_amount"
+                    shape={<RoundedBar />}
+                    maxBarSize={24}
+                    label={{ position: 'right', fill: '#8c8c8c', fontSize: 11, formatter: (v) => formatCompactCurrency(v) }}
+                  >
+                    {analytics.disbursement_by_program.map((entry, i) => (
+                      <Cell key={'disb-program-' + i} fill={PROGRAM_COLORS[entry.program] || '#94a3b8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 320 }}>
+                <Empty description="No program disbursement data available" />
               </div>
             )}
           </Card>
