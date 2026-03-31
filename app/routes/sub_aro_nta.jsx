@@ -9,6 +9,15 @@ import { useAuth } from '../lib/AuthContext'
 const { Text, Title } = Typography
 const STORAGE_BASE = API_BASE.replace('/api', '/storage')
 
+/* ── CMSP Sub-Programs ── */
+const CMSP_KEYWORDS = ['SSP', 'PESFA']
+
+const isCmspProgram = (prog) => {
+  if (!prog) return false
+  const upper = prog.toUpperCase().trim()
+  return CMSP_KEYWORDS.some(keyword => upper.includes(keyword))
+}
+
 export function meta() {
   return [
     { title: 'SUB-ARO / NTA | StuFAPs' },
@@ -1521,11 +1530,28 @@ export default function SUB_ARO_NTA() {
 
               <Form.Item name="scholarship_program" label="Scholarship Program">
                 <Select placeholder="Select or type a scholarship program" allowClear showSearch optionFilterProp="label">
-                  {scholarshipPrograms.map(prog => (
-                    <Select.Option key={prog} value={prog} label={prog}>
-                      {prog}
-                    </Select.Option>
-                  ))}
+                  {(() => {
+                    const cmspInList = scholarshipPrograms.filter(p => isCmspProgram(p))
+                    const otherProgs = scholarshipPrograms.filter(p => !isCmspProgram(p))
+                    return (
+                      <>
+                        {cmspInList.length > 0 && (
+                          <Select.Option key="CMSP" value="CMSP">
+                            CMSP
+                          </Select.Option>
+                        )}
+                        {otherProgs.length > 0 && (
+                          <Select.OptGroup label="Other Programs">
+                            {otherProgs.map(prog => (
+                              <Select.Option key={prog} value={prog}>
+                                {prog}
+                              </Select.Option>
+                            ))}
+                          </Select.OptGroup>
+                        )}
+                      </>
+                    )
+                  })()}
                 </Select>
               </Form.Item>
 
@@ -1543,11 +1569,28 @@ export default function SUB_ARO_NTA() {
                   optionFilterProp="label"
                   onChange={handleScholarshipProgramChange}
                 >
-                  {scholarshipPrograms.map(prog => (
-                    <Select.Option key={prog} value={prog} label={prog}>
-                      {prog}
-                    </Select.Option>
-                  ))}
+                  {(() => {
+                    const cmspInList = scholarshipPrograms.filter(p => isCmspProgram(p))
+                    const otherProgs = scholarshipPrograms.filter(p => !isCmspProgram(p))
+                    return (
+                      <>
+                        {cmspInList.length > 0 && (
+                          <Select.Option key="CMSP" value="CMSP">
+                            CMSP
+                          </Select.Option>
+                        )}
+                        {otherProgs.length > 0 && (
+                          <Select.OptGroup label="Other Programs">
+                            {otherProgs.map(prog => (
+                              <Select.Option key={prog} value={prog}>
+                                {prog}
+                              </Select.Option>
+                            ))}
+                          </Select.OptGroup>
+                        )}
+                      </>
+                    )
+                  })()}
                 </Select>
               </Form.Item>
 
