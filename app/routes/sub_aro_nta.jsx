@@ -46,6 +46,7 @@ export default function SUB_ARO_NTA() {
   const [filteredSubAroForModal, setFilteredSubAroForModal] = useState([])
   const [loadingSubAroFilter, setLoadingSubAroFilter] = useState(false)
   const [previousBreakdown, setPreviousBreakdown] = useState([]) // Track original data when editing
+  const [exceedingBalances, setExceedingBalances] = useState([])
 
   /* ── Helper: Calculate remaining balance for a SubAro ── */
   const getSubAroRemainingBalance = useCallback((subAro) => {
@@ -65,14 +66,16 @@ export default function SUB_ARO_NTA() {
   /* ── Fetch ── */
   const fetchAll = useCallback(async () => {
     try {
-      const [fyRes, subAroRes, ntaRes, filterRes] = await Promise.all([
+      const [fyRes, subAroRes, ntaRes, filterRes, exceedingRes] = await Promise.all([
         fetch(`${API_BASE}/fiscal-years`).then(r => r.json()),
         fetch(`${API_BASE}/files/sub-aro`).then(r => r.json()),
         fetch(`${API_BASE}/files/nta`).then(r => r.json()),
         fetch(`${API_BASE}/students/filter-options`).then(r => r.json()),
+        fetch(`${API_BASE}/files/nta/exceeding-balances/distinct`).then(r => r.json()),
       ])
       setFiscalYears(Array.isArray(fyRes) ? fyRes : [])
       setScholarshipPrograms(filterRes.scholarshipPrograms || [])
+      setExceedingBalances(Array.isArray(exceedingRes) ? exceedingRes : [])
 
       const subAroFilesArray = (Array.isArray(subAroRes) ? subAroRes : [])
       setSubAroFiles(subAroFilesArray)
@@ -1847,31 +1850,27 @@ export default function SUB_ARO_NTA() {
                     SUB-AROS WITH Remaining Balance
                   </Text>
                   {(() => {
-                    // Get all SUB-AROs from other NTAs that have remaining balance (from exceeding_balance)
-                    // Use Map to deduplicate by nta_reference + sub_aro_reference (DISTINCT)
-                    const distinctMap = new Map()
-                    const ntaFiles = uploadedFiles.filter(f => f.filetype === 'NTA' && f.assignments?.length > 0)
+                    // Get selected fiscal year and scholarship program from form
+                    const selectedYearSuffix = form.getFieldValue('yearsuffix')
+                    const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
                     
-                    ntaFiles.forEach(nta => {
-                      nta.assignments?.forEach(assignment => {
-                        if (assignment.exceedingBalance?.remaining_obligation_balance != null && 
-                            parseFloat(assignment.exceedingBalance.remaining_obligation_balance) > 0) {
-                          const key = `${assignment.exceedingBalance.nta_reference}|${assignment.exceedingBalance.sub_aro_reference || assignment.sub_aro_reference}`
-                          // Only add if not already exists (keeps first occurrence)
-                          if (!distinctMap.has(key)) {
-                            distinctMap.set(key, {
-                              sub_aro_reference: assignment.exceedingBalance.sub_aro_reference || assignment.sub_aro_reference,
-                              nta_reference: assignment.exceedingBalance.nta_reference,
-                              remaining_balance: parseFloat(assignment.exceedingBalance.remaining_obligation_balance),
-                              actual_obligation: parseFloat(assignment.exceedingBalance.actual_obligation || 0),
-                              nta_budget_allocated: parseFloat(assignment.exceedingBalance.nta_budget_allocated || 0)
-                            })
-                          }
-                        }
-                      })
-                    })
-                    
-                    const subarosWithBalance = Array.from(distinctMap.values())
+                    // Filter exceeding_balances by:
+                    // 1. Remaining balance > 0
+                    // 2. Fiscal year (yearsuffix) matches selected
+                    // 3. Scholarship program matches selected (if selected)
+                    const subarosWithBalance = exceedingBalances
+                      .filter(item => 
+                        parseFloat(item.remaining_obligation_balance || 0) > 0 &&
+                        item.yearsuffix === selectedYearSuffix &&
+                        (!selectedScholarshipProgram || item.scholarship_program === selectedScholarshipProgram)
+                      )
+                      .map(item => ({
+                        sub_aro_reference: item.sub_aro_reference,
+                        nta_reference: item.nta_reference,
+                        remaining_balance: parseFloat(item.remaining_obligation_balance),
+                        actual_obligation: parseFloat(item.actual_obligation || 0),
+                        nta_budget_allocated: parseFloat(item.nta_budget_allocated || 0)
+                      }))
 
                     return subarosWithBalance.length > 0 ? (
                       <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
@@ -1880,10 +1879,10 @@ export default function SUB_ARO_NTA() {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                               <div style={{ flex: 1 }}>
                                 <Text strong style={{ fontSize: 12, display: 'block' }}>
-                                  {item.sub_aro_reference}
+                                  SUB-ARO: CHEDRO IV-{item.sub_aro_reference}
                                 </Text>
                                 <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>
-                                  Previously assigned to: {item.nta_reference || 'N/A'}
+                                  Previously assigned to: NTA-{item.nta_reference || 'N/A'}
                                 </Text>
                               </div>
                             </div>
