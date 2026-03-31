@@ -12,6 +12,7 @@ const FORM_TYPES = [
   { value: 'annexF3', label: 'Annex F-3 — By Sex' },
   { value: 'annexF4', label: 'Annex F-4 — By Type of HEI' },
   { value: 'annexF6', label: 'Annex F-6 — Graduates' },
+  { value: 'annexE1', label: 'Annex E-1 — Database of CMSP Beneficiaries' },
 ]
 
 const FORM_ENDPOINTS = {
@@ -20,6 +21,7 @@ const FORM_ENDPOINTS = {
   annexF3: '/students/annex-f3',
   annexF4: '/students/annex-f4',
   annexF6: '/students/annex-f6',
+  annexE1: '/students/annex-e1',
 }
 
 export function meta() {
@@ -58,8 +60,14 @@ export default function StudentsPdf() {
   useEffect(() => { approvedNameRef.current = approvedName }, [approvedName])
   useEffect(() => { approvedPositionRef.current = approvedPosition }, [approvedPosition])
 
-  const needsProgram = formType === 'masterlist'
+  const needsProgram = formType === 'masterlist' || formType === 'annexE1'
   const showsSignatories = true
+
+  // Simplified program options for AnnexE1
+  const annexE1Programs = [
+    { label: 'CMSP', value: 'CMSP' },
+    { label: 'ESTAT', value: 'ESTAT' },
+  ]
 
   // LocalStorage keys
   const STORAGE_KEY = 'stufaps_masterlist_form'
@@ -377,7 +385,7 @@ export default function StudentsPdf() {
               <Form.Item label="Form Type" style={{ minWidth: '280px', flex: 1 }}>
                 <Select
                   value={formType}
-                  onChange={(val) => { setFormType(val); setPreviewUrl(''); setPreviewError('') }}
+                  onChange={(val) => { setFormType(val); setProgram(undefined); setPreviewUrl(''); setPreviewError('') }}
                   style={{ width: '100%' }}
                   options={FORM_TYPES}
                 />
@@ -394,7 +402,7 @@ export default function StudentsPdf() {
                   loading={loadingOptions}
                   style={{ width: '100%' }}
                   optionFilterProp="label"
-                  options={programOptions.map((opt) => ({
+                  options={formType === 'annexE1' ? annexE1Programs : programOptions.map((opt) => ({
                     label: opt,
                     value: opt,
                     disabled: /^(COSCHO|MSRS)$/i.test(opt),
@@ -460,7 +468,7 @@ export default function StudentsPdf() {
             </div>
           </div>
 
-          {needsProgram && (
+          {formType === 'masterlist' && (
           <Text type="secondary" style={{ display: 'block', marginTop: '12px', fontStyle: 'italic' }}>
             Note: COSCHO and MSRS scholarships have a different format and are not applicable to the masterlist layout.
           </Text>
