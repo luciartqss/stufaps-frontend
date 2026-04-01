@@ -13,6 +13,10 @@ import {
   FileTextOutlined,
   WalletOutlined,
   SwapOutlined,
+  BarChartOutlined,
+  UserOutlined,
+  BankOutlined,
+  LineChartOutlined,
 } from '@ant-design/icons'
 import {
   PieChart,
@@ -26,6 +30,8 @@ import {
   Tooltip as RechartsTooltip,
   Legend,
   ResponsiveContainer,
+  Area,
+  AreaChart,
 } from 'recharts'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -114,12 +120,26 @@ const PROGRAM_COLORS = {
   'Others': '#94a3b8',
 }
 
+const formatCompactCurrency = (value) => {
+  if (value >= 1_000_000) return '\u20B1' + (value / 1_000_000).toFixed(1) + 'M'
+  if (value >= 1_000) return '\u20B1' + (value / 1_000).toFixed(0) + 'K'
+  return '\u20B1' + Number(value).toLocaleString()
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({ semester: null, academic_year: null })
   const [filterOptions, setFilterOptions] = useState({ semesters: [], academic_years: [] })
+  const [analytics, setAnalytics] = useState({
+    year_level: [],
+    sex: [],
+    hei_type: [],
+    graduates_count: 0,
+    disbursement_by_program: [],
+    disbursement_trends: [],
+  })
   const [data, setData] = useState({
     stats: { totalStudents: 0, activeScholars: 0, graduated: 0, terminated: 0, replacement: 0, others: 0, totalDisbursed: 0 },
     statusDistribution: [],
@@ -187,18 +207,35 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => { fetchDashboard() }, [])
+  const fetchAnalytics = async (currentFilters = filters) => {
+    try {
+      const params = new URLSearchParams()
+      if (currentFilters.semester) params.append('semester', currentFilters.semester)
+      if (currentFilters.academic_year) params.append('academic_year', currentFilters.academic_year)
+      const url = `${API_URL}/dashboard/analytics${params.toString() ? '?' + params.toString() : ''}`
+      const response = await fetch(url)
+      if (!response.ok) return
+      const d = await response.json()
+      if (!d.error) setAnalytics(d)
+    } catch (err) {
+      console.error('Analytics fetch error:', err)
+    }
+  }
+
+  useEffect(() => { fetchDashboard(); fetchAnalytics() }, [])
 
   const handleFilterChange = (key, value) => {
     const f = { ...filters, [key]: value }
     setFilters(f)
     fetchDashboard(f)
+    fetchAnalytics(f)
   }
 
   const clearFilters = () => {
     const f = { semester: null, academic_year: null }
     setFilters(f)
     fetchDashboard(f)
+    fetchAnalytics(f)
   }
 
   function getStatusColor(status) {
@@ -402,6 +439,258 @@ export default function Dashboard() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
                 <Empty description="No program data" />
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── Annex Analytics: Year Level (F2) + Sex (F3) + HEI Type (F4) ── */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {/* Year Level Distribution - F2 */}
+        <Col xs={24} lg={10}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BarChartOutlined style={{ color: '#3b82f6', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>Beneficiaries by Year Level</Text>
+              </div>
+            }
+            extra={<Tag color="blue" style={{ fontSize: 11, borderRadius: 4 }}>Annex F-2</Tag>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.year_level.some(d => d.count > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={analytics.year_level} margin={{ left: 0, right: 20, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                  <XAxis dataKey="year" tick={{ fill: '#434343', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <RechartsTooltip
+                    formatter={(value) => [value.toLocaleString() + ' scholars', 'Count']}
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                  />
+                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={48}
+                    label={{ position: 'top', fill: '#8c8c8c', fontSize: 11, formatter: (v) => v > 0 ? v.toLocaleString() : '' }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No year level data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* Sex Distribution - F3 */}
+        <Col xs={24} lg={7}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <UserOutlined style={{ color: '#8b5cf6', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>By Sex</Text>
+              </div>
+            }
+            extra={<Tag color="purple" style={{ fontSize: 11, borderRadius: 4 }}>Annex F-3</Tag>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.sex.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={analytics.sex.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="48%"
+                    outerRadius="78%"
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => name + ' ' + (percent * 100).toFixed(0) + '%'}
+                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                  >
+                    {analytics.sex.filter(d => d.value > 0).map((entry, i) => (
+                      <Cell key={'sex-' + i} fill={entry.name === 'Male' ? '#3b82f6' : entry.name === 'Female' ? '#ec4899' : '#94a3b8'} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
+                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No sex data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        {/* HEI Type Distribution - F4 */}
+        <Col xs={24} lg={7}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BankOutlined style={{ color: '#0891b2', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>By HEI Type</Text>
+              </div>
+            }
+            extra={<Tag color="cyan" style={{ fontSize: 11, borderRadius: 4 }}>Annex F-4</Tag>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.hei_type.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={analytics.hei_type.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="48%"
+                    outerRadius="78%"
+                    paddingAngle={3}
+                    dataKey="value"
+                    label={({ name, percent }) => name + ' ' + (percent * 100).toFixed(0) + '%'}
+                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
+                  >
+                    {analytics.hei_type.filter(d => d.value > 0).map((entry, i) => {
+                      const colors = { 'SUCs': '#16a34a', 'LUCs': '#f59e0b', 'Private': '#3b82f6' }
+                      return <Cell key={'hei-' + i} fill={colors[entry.name] || '#94a3b8'} />
+                    })}
+                  </Pie>
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
+                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No HEI type data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── Disbursement Trends + Disbursement by Program (side by side) ── */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <LineChartOutlined style={{ color: '#7c3aed', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>Disbursement Trends</Text>
+              </div>
+            }
+            extra={<Text type="secondary" style={{ fontSize: 12 }}>{analytics.disbursement_trends.length} periods</Text>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.disbursement_trends.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={analytics.disbursement_trends} margin={{ left: 20, right: 30, top: 10, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: '#8c8c8c', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    angle={-30}
+                    textAnchor="end"
+                    height={60}
+                  />
+                  <YAxis
+                    tick={{ fill: '#8c8c8c', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => {
+                      if (v >= 1_000_000) return '\u20B1' + (v / 1_000_000).toFixed(1) + 'M'
+                      if (v >= 1_000) return '\u20B1' + (v / 1_000).toFixed(0) + 'K'
+                      return '\u20B1' + v
+                    }}
+                  />
+                  <RechartsTooltip
+                    formatter={(value, name) => {
+                      if (name === 'total_amount') return ['\u20B1' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 }), 'Amount']
+                      return [Number(value).toLocaleString(), 'Disbursements']
+                    }}
+                    labelFormatter={(label) => label}
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                  />
+                  <Area type="monotone" dataKey="total_amount" stroke="#7c3aed" strokeWidth={2.5} fill="url(#colorAmount)" dot={{ r: 4, fill: '#7c3aed' }} activeDot={{ r: 6 }} />
+                  <Legend verticalAlign="top" formatter={(v) => v === 'total_amount' ? 'Amount Disbursed' : v} iconType="line" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 320 }}>
+                <Empty description="No disbursement trend data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <DollarOutlined style={{ color: '#0f766e', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>Disbursement by Scholarship Program</Text>
+              </div>
+            }
+            extra={<Text type="secondary" style={{ fontSize: 12 }}>{analytics.disbursement_by_program.length} programs</Text>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.disbursement_by_program.length > 0 ? (
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={analytics.disbursement_by_program} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={{ fill: '#8c8c8c', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={formatCompactCurrency}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="program"
+                    tick={{ fill: '#434343', fontSize: 12 }}
+                    width={150}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <RechartsTooltip
+                    formatter={(value, name) => {
+                      if (name === 'total_amount') {
+                        return ['\u20B1' + Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'Amount']
+                      }
+
+                      return [Number(value).toLocaleString(), 'Disbursements']
+                    }}
+                    labelFormatter={(label) => PROGRAM_FULL_NAMES[label] || label}
+                    contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                  />
+                  <Bar
+                    dataKey="total_amount"
+                    shape={<RoundedBar />}
+                    maxBarSize={24}
+                    label={{ position: 'right', fill: '#8c8c8c', fontSize: 11, formatter: (v) => formatCompactCurrency(v) }}
+                  >
+                    {analytics.disbursement_by_program.map((entry, i) => (
+                      <Cell key={'disb-program-' + i} fill={PROGRAM_COLORS[entry.program] || '#94a3b8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 320 }}>
+                <Empty description="No program disbursement data available" />
               </div>
             )}
           </Card>

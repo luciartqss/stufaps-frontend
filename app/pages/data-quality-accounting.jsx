@@ -88,6 +88,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
   const [academicYear, setAcademicYear] = useState(null)
   const [semester, setSemester] = useState(null)
   const [scholarshipProgram, setScholarshipProgram] = useState(null)
+  const [voucherTrackingNo, setVoucherTrackingNo] = useState('')
 
   const filtersReady = academicYear && semester && scholarshipProgram
 
@@ -127,6 +128,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
         semester: semester,
         scholarship_program: scholarshipProgram,
       })
+      if (voucherTrackingNo) params.append('voucher_tracking_no', voucherTrackingNo)
       if (searchRef.current) params.append('search', searchRef.current)
 
       const res = await fetch(`${API_BASE}/disbursements/accounting?${params}`)
@@ -141,7 +143,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
     } finally {
       setLoading(false)
     }
-  }, [showMissingOnly, pagination.pageSize, academicYear, semester, scholarshipProgram])
+  }, [showMissingOnly, pagination.pageSize, academicYear, semester, scholarshipProgram, voucherTrackingNo])
 
   // Auto-fetch when all 3 required filters are set
   useEffect(() => {
@@ -226,6 +228,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
     setAcademicYear(null)
     setSemester(null)
     setScholarshipProgram(null)
+    setVoucherTrackingNo('')
     setShowMissingOnly(true)
     setSelectedRowKeys([])
     setBulkDate(null)
@@ -345,6 +348,12 @@ export default function DataQualityAccounting({ readOnly = false }) {
           <Text style={{ fontSize: 13 }}>{val || '—'}</Text>
         </Tooltip>
       ),
+    },
+    {
+      title: 'Voucher Tracking No.',
+      dataIndex: 'voucher_tracking_no',
+      width: 170,
+      render: (val) => <Text style={{ fontSize: 13 }}>{val || '—'}</Text>,
     },
     {
       title: 'Voucher No.',
@@ -469,6 +478,15 @@ export default function DataQualityAccounting({ readOnly = false }) {
             optionFilterProp="label"
             style={{ width: 260 }}
             options={filterOptions.scholarship_programs.map(v => ({ label: v, value: v }))}
+          />
+
+          <Input
+            placeholder="Voucher Tracking No."
+            value={voucherTrackingNo}
+            onChange={(e) => setVoucherTrackingNo(e.target.value)}
+            onPressEnter={() => fetchData(1)}
+            style={{ width: 180 }}
+            allowClear
           />
 
           <Divider type="vertical" style={{ height: 28 }} />
