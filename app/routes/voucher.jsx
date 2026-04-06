@@ -179,6 +179,8 @@ export default function Voucher() {
     setStudentSearch(value)
   }, [])
 
+  const lockedNta = selectedStudents.length > 0 ? (selectedStudents[0].nta || '') : ''
+
   useEffect(() => {
     const query = studentSearch.toLowerCase().trim()
     const selectedIds = new Set(selectedStudents.map(s => String(s.id)))
@@ -192,19 +194,24 @@ export default function Voucher() {
     setStudentOptions(
       filtered
         .filter(s => !selectedIds.has(String(s.id)))
+        .filter(s => s.nta && s.nta.trim() !== '')
+        .filter(s => !lockedNta || s.nta === lockedNta)
         .slice(0, 50)
         .map(s => ({
           value: String(s.id),
           label: (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>{s.fullName} <span style={{ color: '#999', fontSize: 12 }}>({s.atmAccount || 'No ATM'})</span></span>
-              {s.voucherTrackingNo && <Tag color="orange" style={{ marginLeft: 8, fontSize: 11 }}>{s.voucherTrackingNo}</Tag>}
+              <span style={{ display: 'flex', gap: 4 }}>
+                {s.nta && <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{s.nta}</Tag>}
+                {s.voucherTrackingNo && <Tag color="orange" style={{ margin: 0, fontSize: 11 }}>{s.voucherTrackingNo}</Tag>}
+              </span>
             </div>
           ),
           student: s,
         }))
     )
-  }, [availableStudents, selectedStudents, studentSearch])
+  }, [availableStudents, selectedStudents, studentSearch, lockedNta])
 
   const handleSelectStudent = useCallback((value, option) => {
     const student = option.student
@@ -636,6 +643,13 @@ export default function Voucher() {
             />
           </div>
 
+          {lockedNta && (
+            <div style={{ padding: '8px 24px', background: '#e6f4ff', borderBottom: '1px solid #91caff', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Tag color="blue" style={{ margin: 0, fontWeight: 500 }}>{lockedNta}</Tag>
+              <Text type="secondary" style={{ fontSize: 12 }}>Only students with this NTA/SUB-ARO can be added</Text>
+            </div>
+          )}
+
           <div style={{ padding: '16px 24px', background: '#fafafa', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text strong style={{ margin: 0 }}>Selected ({selectedStudents.length})</Text>
             {selectedStudents.length > 1 && (
@@ -675,6 +689,7 @@ export default function Voucher() {
                         </div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4, paddingLeft: 18 }}>
                           <Text type="secondary" style={{ fontSize: 12 }}>{s.atmAccount || 'No ATM'}</Text>
+                          {s.nta && <Tag color="blue" style={{ margin: 0, fontSize: 11, border: 0 }}>{s.nta}</Tag>}
                           {hasV && (
                             <Tooltip title="This tracking number will be overwritten.">
                               <Tag color="orange" style={{ margin: 0, fontSize: 11, border: 0 }}><WarningOutlined /> {s.voucherTrackingNo}</Tag>
