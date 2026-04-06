@@ -111,6 +111,23 @@ export default function Voucher() {
     setPreviewStale(false)
   }, [])
 
+  const readErrorMessage = async (res, fallback) => {
+    try {
+      const data = await res.json()
+      if (data?.error) return data.error
+      if (data?.message) return data.message
+    } catch {
+      try {
+        const text = await res.text()
+        if (text) return text
+      } catch {
+        // Ignore secondary parsing failures.
+      }
+    }
+
+    return fallback
+  }
+
   const loadStudents = useCallback(async () => {
     if (!program) {
       setAvailableStudents([])
@@ -299,7 +316,9 @@ export default function Voucher() {
         body: JSON.stringify({ schoolYear, semester, scholarshipProgram: program, customAmount, students: uniqueStudents }),
       })
 
-      if (!res.ok) throw new Error('Preview failed to generate')
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, 'Preview failed to generate'))
+      }
       const data = await res.json()
       if (data.error) throw new Error(data.error)
 
@@ -318,7 +337,7 @@ export default function Voucher() {
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
-        setPreviewError('Failed to load preview. Please try again.')
+        setPreviewError(err.message || 'Failed to load preview. Please try again.')
       }
     } finally {
       if (abortRef.current && !abortRef.current.signal.aborted) {
@@ -361,7 +380,9 @@ export default function Voucher() {
         body: JSON.stringify({ schoolYear, semester, scholarshipProgram: program, customAmount, students: uniqueStudents, previewFile }),
       })
       
-      if (!res.ok) throw new Error('Failed to finalize voucher')
+      if (!res.ok) {
+        throw new Error(await readErrorMessage(res, 'Failed to finalize voucher'))
+      }
       const data = await res.json()
       
       if (data.downloadFile) {
