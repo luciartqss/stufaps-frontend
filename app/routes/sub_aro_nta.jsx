@@ -597,137 +597,175 @@ export default function SUB_ARO_NTA() {
   /* ── Loading state ── */
   if (initialLoading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)' }}>
-        <Spin size="large" />
-        <Text style={{ marginLeft: 16, fontSize: 15 }}>Loading...</Text>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(100vh - 120px)', background: '#f9fafb' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Spin size="large" style={{ display: 'block', marginBottom: 16 }} />
+          <Text style={{ fontSize: 14, color: '#6b7280' }}>Loading document management system...</Text>
+        </div>
       </div>
     )
   }
 
   return (
-    <div style={{ background: '#fff', minHeight: 'calc(100vh - 72px)', margin: -24 }}>
+    <div style={{ background: '#f9fafb', minHeight: 'calc(100vh - 72px)', margin: -24 }}>
 
       {/* Header */}
-      <div style={{ padding: '24px', borderBottom: '1px solid #e8eaed' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '32px 24px', background: '#fff', borderBottom: '1px solid #e5e7eb', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <Title level={2} style={{ margin: 0, fontWeight: 600 }}>SUB-ARO / NTA</Title>
-            <Text style={{ color: '#6b7280', fontSize: 14 }}>Sub Allotment Release Order / Notice of Transfer Allocation</Text>
+            <Title level={2} style={{ margin: 0, fontWeight: 700, color: '#1f2937', letterSpacing: '-0.5px' }}>Sub-Allotment Release Order / Notice of Transfer Allocation</Title>
+            <Text style={{ color: '#6b7280', fontSize: 13, marginTop: 4, display: 'block' }}>Manage budget allocations and transfer documentation</Text>
           </div>
           {canEdit && (
-            <Button type="primary" icon={<UploadOutlined />} onClick={() => { form.resetFields(); setFileList([]); setSubAroBreakdown([]); setFilteredSubAroForModal([]); setLoadingSubAroFilter(false); setIsModalVisible(true) }}>
-              Upload File
+            <Button 
+              type="primary" 
+              icon={<UploadOutlined />} 
+              onClick={() => { form.resetFields(); setFileList([]); setSubAroBreakdown([]); setFilteredSubAroForModal([]); setLoadingSubAroFilter(false); setIsModalVisible(true) }}
+              style={{ borderRadius: 6, fontWeight: 500 }}
+            >
+              Upload Document
             </Button>
           )}
         </div>
       </div>
 
       {/* Toolbar: Tab + Fiscal Year + Search */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Segmented
-          block
-          value={activeTab}
-          onChange={(v) => { setActiveTab(v); setSearchQuery(''); fetchAll() }}
-          options={[
-            { label: <span>Sub Allotment Release Order <Tag style={{ marginLeft: 6, fontSize: 11 }}>{fileCounts['SUB-ARO']}</Tag></span>, value: 'SUB-ARO' },
-            { label: <span>Notice of Transfer Allocation <Tag style={{ marginLeft: 6, fontSize: 11 }}>{fileCounts.NTA}</Tag></span>, value: 'NTA' },
-          ]}
-        />
+      <div style={{ padding: '20px 24px', background: '#fff', borderBottom: '2px solid #e5e7eb' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Tab Section */}
+          <div>
+            <Text style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 8 }}>Document Type</Text>
+            <Segmented
+              block
+              value={activeTab}
+              onChange={(v) => { setActiveTab(v); setSearchQuery(''); fetchAll() }}
+              options={[
+                { label: <span style={{ fontSize: 13, fontWeight: 500 }}>Sub Allotment Release Order <Tag style={{ marginLeft: 8, fontSize: 11, backgroundColor: '#eef2ff', color: '#3730a3', border: 'none' }}>{fileCounts['SUB-ARO']}</Tag></span>, value: 'SUB-ARO' },
+                { label: <span style={{ fontSize: 13, fontWeight: 500 }}>Notice of Transfer Allocation <Tag style={{ marginLeft: 8, fontSize: 11, backgroundColor: '#f0fdf4', color: '#15803d', border: 'none' }}>{fileCounts.NTA}</Tag></span>, value: 'NTA' },
+              ]}
+              style={{ background: '#f3f4f6' }}
+            />
+          </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <CalendarOutlined style={{ color: '#8c8c8c' }} />
-          <Select
-            value={selectedFY}
-            onChange={v => setSelectedFY(v)}
-            style={{ width: 160 }}
-            placeholder="Fiscal Year"
-            allowClear
-          >
-            {fiscalYears.map(fy => (
-              <Select.Option key={fy.id} value={fy.year_suffix}>
-                FY {fy.fiscal_year} ({fy.year_suffix})
-              </Select.Option>
-            ))}
-          </Select>
-          {canEdit && activeTab === 'SUB-ARO' && (
-            <Button size="small" icon={<PlusOutlined />} onClick={handleAddFiscalYear}>Add FY</Button>
-          )}
+          {/* Filters Row */}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div style={{ flex: '0 0 auto' }}>
+              <Text style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Fiscal Year</Text>
+              <Select
+                value={selectedFY}
+                onChange={v => setSelectedFY(v)}
+                style={{ width: 200 }}
+                placeholder="All Years"
+                allowClear
+                size="large"
+              >
+                {fiscalYears.map(fy => (
+                  <Select.Option key={fy.id} value={fy.year_suffix}>
+                    Fiscal Year {fy.fiscal_year} ({fy.year_suffix})
+                  </Select.Option>
+                ))}
+              </Select>
+            </div>
+
+            {canEdit && activeTab === 'SUB-ARO' && (
+              <Button size="large" type="dashed" onClick={handleAddFiscalYear} style={{ borderColor: '#d1d5db', color: '#374151' }}>
+                Add New Fiscal Year
+              </Button>
+            )}
+
+            <div style={{ flex: 1, minWidth: 300 }}>
+              <Text style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: 6 }}>Search</Text>
+              <Input
+                placeholder="Search by document name or reference number..."
+                prefix={<SearchOutlined style={{ color: '#9ca3af' }} />}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                allowClear
+                size="large"
+                style={{ borderRadius: 6 }}
+              />
+            </div>
+          </div>
         </div>
-
-        <Input
-          placeholder="Search files..."
-          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          allowClear
-          style={{ width: 240, marginLeft: 'auto' }}
-        />
       </div>
 
-      {/* Content */}
-      <div style={{ padding: 24 }}>
-        {/* Info */}
-        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Text strong style={{ fontSize: 15 }}>
-            {activeTab === 'SUB-ARO' ? 'Sub Allotment Release Order' : 'Notice of Transfer Allocation'}
-          </Text>
-          {selectedFYObj && (
-            <Tag color="blue">FY {selectedFYObj.fiscal_year}</Tag>
-          )}
-          <Text type="secondary" style={{ fontSize: 13 }}>
-            — {filteredFiles.length} file{filteredFiles.length !== 1 ? 's' : ''}
-          </Text>
+      {/* Content Area */}
+      <div style={{ padding: '24px' }}>
+        {/* Section Header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <div style={{ width: 4, height: 24, background: '#3b82f6', borderRadius: 2 }}></div>
+            <Text strong style={{ fontSize: 16, color: '#1f2937' }}>
+              {activeTab === 'SUB-ARO' ? 'Sub Allotment Release Orders' : 'Notices of Transfer Allocation'}
+            </Text>
+            {selectedFYObj && (
+              <span style={{ padding: '4px 12px', background: '#eff6ff', borderRadius: 4, border: '1px solid #bfdbfe' }}>
+                <Text style={{ fontSize: 12, color: '#3b82f6', fontWeight: 500 }}>Fiscal Year {selectedFYObj.fiscal_year}</Text>
+              </span>
+            )}
+            <Text type="secondary" style={{ fontSize: 12, marginLeft: 'auto' }}>
+              {filteredFiles.length} document{filteredFiles.length !== 1 ? 's' : ''} found
+            </Text>
+          </div>
+          <div style={{ height: 1, background: '#e5e7eb' }}></div>
         </div>
 
         {/* File grid */}
         {filteredFiles.length === 0 ? (
-          <Empty
-            description={searchQuery.trim() ? 'No files match your search' : `No ${activeTab} files found`}
-            style={{ padding: '60px 0' }}
-          />
+          <div style={{ padding: '60px 24px', textAlign: 'center', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+            <div style={{ fontSize: 32, color: '#d1d5db', marginBottom: 12, fontWeight: 300 }}>FILE</div>
+            <Text strong style={{ fontSize: 16, color: '#374151', display: 'block', marginBottom: 8 }}>
+              No Documents Found
+            </Text>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              {searchQuery.trim() ? 'No documents match your search criteria. Try adjusting your filters.' : `No ${activeTab} documents available for the selected fiscal year.`}
+            </Text>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {filteredFiles.map(f => (
               <Card
                 key={f.id}
                 size="small"
-                style={{ borderRadius: 10, border: '1px solid #f0f0f0' }}
+                style={{ borderRadius: 8, border: '1px solid #e5e7eb', background: '#fff', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.02)' }}
                 styles={{ body: { padding: 0 } }}
+                hoverable
               >
-                {/* Header */}
-                <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Card Header */}
+                <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid #f3f4f6' }}>
                   {/* Icon */}
                   <div style={{
-                    width: 40, height: 40, borderRadius: 10,
-                    background: activeTab === 'NTA' ? '#f0f5ff' : '#e6f7ff',
+                    width: 48, height: 48, borderRadius: 6,
+                    background: activeTab === 'NTA' ? '#f0fdf4' : '#eff6ff',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: activeTab === 'NTA' ? '#2f54eb' : '#1890ff', fontSize: 18, flexShrink: 0,
+                    color: activeTab === 'NTA' ? '#15803d' : '#3b82f6',
+                    fontSize: 20, flexShrink: 0, border: `1px solid ${activeTab === 'NTA' ? '#dcfce7' : '#bfdbfe'}`
                   }}>
                     <FilePdfOutlined />
                   </div>
 
                   {/* Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <Text strong style={{ fontSize: 13, display: 'block' }}>{getTitle(f)}</Text>
-                    <Tooltip title={f.filename} placement="top">
+                    <Text strong style={{ fontSize: 14, display: 'block', color: '#1f2937', marginBottom: 4 }}>{getTitle(f)}</Text>
+                    <Tooltip title={`Click to open: ${f.filename}`} placement="top">
                       <Text
-                        style={{ fontSize: 12, color: '#1890ff', cursor: 'pointer', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        style={{ fontSize: 12, color: '#3b82f6', cursor: 'pointer', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                         onClick={() => openFile(f.file)}
                       >
                         {f.filename}
                       </Text>
                     </Tooltip>
-                    <Text type="secondary" style={{ fontSize: 11 }}>
-                      {f.upload_date ? dayjs(f.upload_date).format('DD/MM/YYYY') : dayjs(f.created_at).format('DD/MM/YYYY')}
+                    <Text type="secondary" style={{ fontSize: 11, color: '#9ca3af' }}>
+                      Uploaded: {f.upload_date ? dayjs(f.upload_date).format('DD MMMM YYYY') : dayjs(f.created_at).format('DD MMMM YYYY')}
                     </Text>
                   </div>
 
                   {/* Actions */}
                   {canEdit && (
-                    <Space size={4}>
-                      <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditFile(f)} />
-                      <Popconfirm title="Delete this file?" onConfirm={() => handleDelete(f.id)} okText="Delete" okButtonProps={{ danger: true }}>
-                        <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+                    <Space size={8} style={{ flexShrink: 0 }}>
+                      <Button type="text" size="small" icon={<EditOutlined />} onClick={() => handleEditFile(f)} style={{ color: '#6b7280' }} title="Edit document" />
+                      <Popconfirm title="Delete this document?" onConfirm={() => handleDelete(f.id)} okText="Delete" okButtonProps={{ danger: true }}>
+                        <Button type="text" danger size="small" icon={<DeleteOutlined />} title="Delete document" />
                       </Popconfirm>
                     </Space>
                   )}
@@ -739,85 +777,80 @@ export default function SUB_ARO_NTA() {
                     items={[
                       {
                         key: f.id,
-                        label: <span style={{ fontSize: 12, color: '#8c8c8c' }}>Details</span>,
+                        label: <span style={{ fontSize: 13, fontWeight: 500, color: '#3b82f6' }}>View Financial Details</span>,
                         children: (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {/* For SUB-ARO: 3-column layout with scholarship program header */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 8 }}>
+                            {/* For SUB-ARO: Financial Summary */}
                             {f.filetype === 'SUB-ARO' ? (
                               <>
-                                {/* Scholarship Program Header */}
+                                {/* Program Banner */}
                                 {f.scholarship_program && (
-                                  <div style={{ padding: '8px 12px', background: '#f6ffed', borderRadius: 6, border: '1px solid #b7eb8f', marginBottom: 4 }}>
-                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 2 }}>Scholarship Program</Text>
-                                    <Text strong style={{ fontSize: 14 }}>{f.scholarship_program}</Text>
+                                  <div style={{ padding: '12px 16px', background: '#f0f9ff', borderRadius: 6, border: '1px solid #bfdbfe', marginBottom: 8 }}>
+                                    <Text style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2, fontWeight: 600, textTransform: 'uppercase' }}>Scholarship Program</Text>
+                                    <Text strong style={{ fontSize: 14, color: '#1e40af' }}>{f.scholarship_program}</Text>
                                   </div>
                                 )}
 
-                                {/* 3-Column Layout: Card | Chart | Chart */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr 1fr', gap: 16 }}>
-                                  {/* Card for Column 1 & 2 */}
-                                  <div>
-                                    <Card size="small" style={{ borderRadius: 8, height: '100%', background: '#fafafa' }} styles={{ body: { padding: '12px' } }}>
-                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                                        {/* Column 1: Financial */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Fund Transfer</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#0891B2' }}>
-                                              ₱{parseFloat(f.budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Operational Cost</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#F97316' }}>
-                                              ₱{parseFloat(f.Operational_Cost || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Amount</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#2563EB' }}>
-                                              ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Obligation</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
-                                              ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Text>
-                                          </div>
-                                        </div>
-
-                                        {/* Column 2: Grantees & Disbursement */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>No. of Grantees</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.number_of_grantees || 0}</Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Granted</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#10B981' }}>{f.granted_count || 0}</Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursement %</Text>
-                                            <Text strong style={{ fontSize: 12, color: (parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)) > 0 ? '#8B5CF6' : '#9CA3AF' }}>
-                                              {(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)) > 0
-                                                ? ((parseFloat(f.disbursed || 0) / (parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0))) * 100).toFixed(2)
-                                                : '0.00'}%
-                                            </Text>
-                                          </div>
-                                          <div>
-                                            <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Actual Disbursement</Text>
-                                            <Text strong style={{ fontSize: 12, color: '#F59E0B' }}>
-                                              ₱{parseFloat(f.disbursed || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                            </Text>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </Card>
+                                {/* Financial Grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+                                  {/* Fund Transfer */}
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Fund Transfer</Text>
+                                    <Text strong style={{ fontSize: 16, color: '#0369a1' }}>
+                                      ₱{parseFloat(f.budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
                                   </div>
+                                  
+                                  {/* Operational Cost */}
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Operational Cost</Text>
+                                    <Text strong style={{ fontSize: 16, color: '#ea580c' }}>
+                                      ₱{parseFloat(f.Operational_Cost || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                  </div>
+                                  
+                                  {/* Total Obligation */}
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Total Obligation</Text>
+                                    <Text strong style={{ fontSize: 16, color: '#1e40af' }}>
+                                      ₱{(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                  </div>
+                                  
+                                  {/* Actual Disbursement */}
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Disbursed</Text>
+                                    <Text strong style={{ fontSize: 16, color: '#16a34a' }}>
+                                      ₱{parseFloat(f.disbursed || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </Text>
+                                  </div>
+                                </div>
 
-                                  {/* Column 3: Pie Chart 1 */}
-                                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                {/* Beneficiary Stats */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Total Grantees</Text>
+                                    <Text strong style={{ fontSize: 20, color: '#7c3aed' }}>{f.number_of_grantees || 0}</Text>
+                                  </div>
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Granted</Text>
+                                    <Text strong style={{ fontSize: 20, color: '#059669' }}>{f.granted_count || 0}</Text>
+                                  </div>
+                                  <div style={{ padding: '12px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 8, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase' }}>Disbursement %</Text>
+                                    <Text strong style={{ fontSize: 20, color: '#7c3aed' }}>
+                                      {(parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)) > 0
+                                        ? ((parseFloat(f.disbursed || 0) / (parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0))) * 100).toFixed(1)
+                                        : '0.0'}%
+                                    </Text>
+                                  </div>
+                                </div>
+
+                                {/* Charts */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                  {/* Obligation vs Disbursement */}
+                                  <div style={{ padding: '16px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 12, color: '#374151' }}>Obligation vs Disbursement</Text>
                                     {(() => {
                                       const totalObligation = parseFloat(f.budget || 0) + parseFloat(f.Operational_Cost || 0)
                                       const disbursed = parseFloat(f.disbursed || 0)
@@ -826,78 +859,69 @@ export default function SUB_ARO_NTA() {
                                         { name: 'Disbursed', value: disbursed },
                                         { name: 'Remaining', value: remaining },
                                       ]
-                                      const OB_COLORS = ['#10B981', '#FCD34D']
+                                      const OB_COLORS = ['#059669', '#cbd5e1']
                                       return (
-                                        <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Obligation vs Disbursement</Text>
-                                          <ResponsiveContainer width="100%" height={200}>
-                                            <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
-                                              <Pie
-                                                data={obligationData}
-                                                cx="50%" cy="45%"
-                                                innerRadius={30} outerRadius={48}
-                                                paddingAngle={3}
-                                                dataKey="value"
-                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                                                style={{ fontSize: 9 }}
-                                              >
-                                                {obligationData.map((_, i) => <Cell key={i} fill={OB_COLORS[i]} />)}
-                                              </Pie>
-                                              <RechartsTooltip formatter={(val) => `₱${parseFloat(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                                              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
-                                            </PieChart>
-                                          </ResponsiveContainer>
-                                        </div>
+                                        <ResponsiveContainer width="100%" height={180}>
+                                          <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                                            <Pie
+                                              data={obligationData}
+                                              cx="50%" cy="50%"
+                                              innerRadius={28} outerRadius={45}
+                                              paddingAngle={2}
+                                              dataKey="value"
+                                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                              labelLine={false}
+                                              style={{ fontSize: 10, fontWeight: 500 }}
+                                            >
+                                              {obligationData.map((_, i) => <Cell key={i} fill={OB_COLORS[i]} />)}
+                                            </Pie>
+                                          </PieChart>
+                                        </ResponsiveContainer>
                                       )
                                     })()}
                                   </div>
 
-                                  {/* Column 4: Pie Chart 2 */}
-                                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                  {/* Beneficiaries */}
+                                  <div style={{ padding: '16px', background: '#fafafa', borderRadius: 6, border: '1px solid #e5e7eb' }}>
+                                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 12, color: '#374151' }}>Beneficiary Status</Text>
                                     {(() => {
                                       const total = parseInt(f.number_of_grantees || 0)
                                       const granted = parseInt(f.granted_count || 0)
                                       const notGranted = Math.max(total - granted, 0)
                                       const granteeData = [
                                         { name: 'Granted', value: granted },
-                                        { name: 'Not Yet', value: notGranted },
+                                        { name: 'Pending', value: notGranted },
                                       ]
-                                      const GR_COLORS = ['#EF4444', '#6B7280']
+                                      const GR_COLORS = ['#3b82f6', '#cbd5e1']
                                       return (
-                                        <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Granted vs Not Yet Granted</Text>
-                                          <ResponsiveContainer width="100%" height={200}>
-                                            <PieChart margin={{ top: 20, right: 30, bottom: 10, left: 30 }}>
-                                              <Pie
-                                                data={granteeData}
-                                                cx="50%" cy="45%"
-                                                innerRadius={30} outerRadius={48}
-                                                paddingAngle={3}
-                                                dataKey="value"
-                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                                                style={{ fontSize: 9 }}
-                                              >
-                                                {granteeData.map((_, i) => <Cell key={i} fill={GR_COLORS[i]} />)}
-                                              </Pie>
-                                              <RechartsTooltip formatter={(val, name) => [val + ' scholars', name]} />
-                                              <Legend iconSize={8} iconType="circle" wrapperStyle={{ fontSize: 9 }} />
-                                            </PieChart>
-                                          </ResponsiveContainer>
-                                        </div>
+                                        <ResponsiveContainer width="100%" height={180}>
+                                          <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                                            <Pie
+                                              data={granteeData}
+                                              cx="50%" cy="50%"
+                                              innerRadius={28} outerRadius={45}
+                                              paddingAngle={2}
+                                              dataKey="value"
+                                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                              labelLine={false}
+                                              style={{ fontSize: 10, fontWeight: 500 }}
+                                            >
+                                              {granteeData.map((_, i) => <Cell key={i} fill={GR_COLORS[i]} />)}
+                                            </Pie>
+                                          </PieChart>
+                                        </ResponsiveContainer>
                                       )
                                     })()}
                                   </div>
                                 </div>
                               </>
                             ) : (
-                              /* For NTA: SUB-ARO Breakdown + Summary Card + Pie Chart */
+                              /* For NTA: SUB-ARO Breakdown + Summary */
                               <>
                                 {f.assignments && f.assignments.length > 0 && (
                                   <div style={{ marginBottom: 20 }}>
-                                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8 }}>SUB-ARO Breakdown</Text>
-                                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
+                                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 12, color: '#1F2937' }}>SUB-ARO ALLOCATION DETAILS</Text>
+                                    <div style={{ border: '1px solid #D1D5DB', borderRadius: 6, overflow: 'hidden' }}>
                                       {f.assignments.map((item, idx) => {
                                         const subAro = item.subAro
                                         const actualObligation = item.exceedingBalance?.actual_obligation ? parseFloat(item.exceedingBalance.actual_obligation) : (item.actual_obligation ? parseFloat(item.actual_obligation) : 0)
@@ -912,86 +936,105 @@ export default function SUB_ARO_NTA() {
                                         const grantedPercent = grantees > 0 ? ((granted / grantees) * 100).toFixed(2) : '0.00'
                                         const hasCarryover = carryoverBalance > 0 || carryoverUndisbursedCount > 0
                                         return (
-                                          <div key={idx} style={{ paddingBottom: idx < f.assignments.length - 1 ? 12 : 8, borderBottom: idx < f.assignments.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                                          <div key={idx} style={{ paddingBottom: idx < f.assignments.length - 1 ? 0 : 0, borderBottom: idx < f.assignments.length - 1 ? '1px solid #E5E7EB' : 'none' }}>
                                             {/* Header with SUB-ARO name and scholarship program */}
-                                            <div style={{ padding: '8px 12px', paddingBottom: 8, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center' }}>
-                                              <Text strong style={{ fontSize: 12 }}>
-                                                {item.sub_aro_reference ? `CHEDRO IV-${item.sub_aro_reference}` : 'Unknown SUB-ARO'}
+                                            <div style={{ padding: '12px 16px', background: '#F9FAFB', borderBottom: '1px solid #E5E7EB', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                              <div style={{ flex: 1 }}>
+                                                <Text strong style={{ fontSize: 11, display: 'block', color: '#111827', marginBottom: 2 }}>
+                                                  {item.sub_aro_reference ? `CHEDRO IV-${item.sub_aro_reference}` : 'Unknown SUB-ARO'}
+                                                </Text>
                                                 {subAro?.scholarship_program && (
-                                                  <span style={{ marginLeft: 8, marginRight: 8 }}>-</span>
-                                                )}
-                                                {subAro?.scholarship_program && (
-                                                  <span style={{ fontWeight: 500, color: '#8c8c8c' }}>
+                                                  <Text type="secondary" style={{ fontSize: 10, display: 'block', color: '#6B7280' }}>
                                                     {subAro.scholarship_program}
-                                                  </span>
+                                                  </Text>
                                                 )}
-                                              </Text>
-                                            </div>
-
-                                            {/* Row 1: Actual Obligation, Disbursed, Remaining Balance */}
-                                            <div style={{ padding: '8px 12px', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Actual Obligation</Text>
-                                                <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
-                                                  ₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </Text>
-                                              </div>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Disbursed</Text>
-                                                <Text strong style={{ fontSize: 12, color: '#10B981' }}>
-                                                  ₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </Text>
-                                              </div>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Obligation Disbursement %</Text>
-                                                <Text strong style={{ fontSize: 12, color: actualObligation > 0 ? '#8B5CF6' : '#9CA3AF' }}>
-                                                  {disbursementPercent}%
-                                                </Text>
                                               </div>
                                             </div>
 
-                                            {/* Row 2: Remaining Balance, Grantees, Granted */}
-                                            <div style={{ padding: '8px 12px', display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Remaining Balance</Text>
-                                                <Text strong style={{ fontSize: 12, color: remainingBalance > 0 ? '#F59E0B' : '#10B981' }}>
-                                                  ₱{remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </Text>
+                                            {/* Financial Allocation Details - Table Format */}
+                                            <div style={{ padding: '12px 16px' }}>
+                                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginBottom: 12 }}>
+                                                {/* Column 1: Actual Obligation */}
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Actual Obligation</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    ₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  </Text>
+                                                </div>
+                                                {/* Column 2: Disbursed */}
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Disbursed Amount</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    ₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  </Text>
+                                                </div>
+                                                {/* Column 3: Remaining Balance */}
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Remaining Balance</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    ₱{remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                  </Text>
+                                                </div>
+                                                {/* Column 4: Disbursement % */}
+                                                <div>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Disbursement %</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    {disbursementPercent}%
+                                                  </Text>
+                                                </div>
                                               </div>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Grantees</Text>
-                                                <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>
-                                                  {grantees}
-                                                </Text>
-                                              </div>
-                                              <div style={{ flex: 1, textAlign: 'left' }}>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Granted</Text>
-                                                <Text strong style={{ fontSize: 12, color: '#10B981' }}>
-                                                  {granted} {grantees > 0 && <span style={{ color: '#9CA3AF', fontWeight: 400, fontSize: 10 }}>({grantedPercent}%)</span>}
-                                                </Text>
+                                              <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: 12, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
+                                                {/* Grantee Stats - Row 2 */}
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Grantees</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    {grantees}
+                                                  </Text>
+                                                </div>
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Granted Count</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    {granted}
+                                                  </Text>
+                                                </div>
+                                                <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Grant % Progress</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    {grantedPercent}%
+                                                  </Text>
+                                                </div>
+                                                <div>
+                                                  <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Undisbursed Count</Text>
+                                                  <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
+                                                    {undisbursedCount}
+                                                  </Text>
+                                                </div>
                                               </div>
                                             </div>
 
                                             {/* Carryover Section */}
                                             {hasCarryover && (
-                                              <div style={{ padding: '8px 12px', background: '#FEF3C7', borderTop: '1px solid #FDE68A', display: 'flex', gap: 24, alignItems: 'flex-start', borderRadius: '0 0 4px 4px' }}>
-                                                <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>Carryover Balance</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#D97706' }}>
-                                                    ₱{carryoverBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                  </Text>
-                                                </div>
-                                                <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>Undisbursed Count</Text>
-                                                  <Text strong style={{ fontSize: 12, color: '#D97706' }}>
-                                                    {carryoverUndisbursedCount} disbursements pending
-                                                  </Text>
-                                                </div>
-                                                <div style={{ flex: 1, textAlign: 'left' }}>
-                                                  <Text type="warning" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600 }}>ℹStatus</Text>
-                                                  <Text strong style={{ fontSize: 12, color: parseFloat(disbursementPercent) === 100 ? '#10B981' : '#D97706' }}>
-                                                    {parseFloat(disbursementPercent) === 100 ? 'Disbursement is completed.' : 'Disbursement is Ongoing.'}
-                                                  </Text>
+                                              <div style={{ padding: '12px 16px', background: '#FFFBEB', borderTop: '1px solid #E5E7EB', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                <Text strong style={{ fontSize: 10, color: '#B45309', textTransform: 'uppercase' }}>⚠ CARRYOVER BALANCE FROM PREVIOUS ALLOCATION</Text>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                                                  <div style={{ borderRight: '1px solid #FEF3C7', paddingRight: 12 }}>
+                                                    <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#92400E' }}>Balance Amount</Text>
+                                                    <Text strong style={{ fontSize: 12, color: '#B45309' }}>
+                                                      ₱{carryoverBalance.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                                    </Text>
+                                                  </div>
+                                                  <div style={{ borderRight: '1px solid #FEF3C7', paddingRight: 12 }}>
+                                                    <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#92400E' }}>Undisbursed</Text>
+                                                    <Text strong style={{ fontSize: 12, color: '#B45309' }}>
+                                                      {carryoverUndisbursedCount}
+                                                    </Text>
+                                                  </div>
+                                                  <div>
+                                                    <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#92400E' }}>Status</Text>
+                                                    <Text strong style={{ fontSize: 12, color: parseFloat(disbursementPercent) === 100 ? '#059669' : '#B45309' }}>
+                                                      {parseFloat(disbursementPercent) === 100 ? 'Completed' : 'In Progress'}
+                                                    </Text>
+                                                  </div>
                                                 </div>
                                               </div>
                                             )}
@@ -1046,19 +1089,19 @@ export default function SUB_ARO_NTA() {
 
                                 {/* Summary Card + Balance Report + Pie Chart */}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                  {/* Summary Card Header */}
-                                  <Text type="secondary" style={{ fontSize: 11, display: 'block' }}>NTA Breakdown</Text>
-                                  <Card size="small" style={{ borderRadius: 8, background: '#fafafa' }} styles={{ body: { padding: '12px' } }}>
-                                    {/* NTA Total Budget Header */}
-                                    <div style={{ marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #E5E7EB', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                                  {/* NTA Breakdown Header */}
+                                  <Text strong style={{ fontSize: 12, display: 'block', color: '#1F2937' }}>NTA ALLOCATION SUMMARY</Text>
+                                  <Card size="small" style={{ borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB' }} styles={{ body: { padding: '16px' } }}>
+                                    {/* NTA Total Budget Header - 4-Column Layout */}
+                                    <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid #E5E7EB', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
                                       {/* Column 1: Overall Allotment */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
                                         {(() => {
                                           const ntaBudget = parseFloat(f.nta_budget || 0)
                                           return (
                                             <>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Overall Allotment</Text>
-                                              <Text strong style={{ fontSize: 16, color: '#1890FF' }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Budget Allotment</Text>
+                                              <Text strong style={{ fontSize: 14, color: '#1F2937' }}>
                                                 ₱{ntaBudget.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                               </Text>
                                             </>
@@ -1066,14 +1109,14 @@ export default function SUB_ARO_NTA() {
                                         })()}
                                       </div>
 
-                                      {/* Column 2: Disbursed */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      {/* Column 2: Total Disbursed */}
+                                      <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
                                         {(() => {
                                           const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
                                           return (
                                             <>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Disbursed</Text>
-                                              <Text strong style={{ fontSize: 16, color: '#10B981' }}>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Disbursed</Text>
+                                              <Text strong style={{ fontSize: 14, color: '#1F2937' }}>
                                                 ₱{totalDisbursed.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                               </Text>
                                             </>
@@ -1081,21 +1124,32 @@ export default function SUB_ARO_NTA() {
                                         })()}
                                       </div>
 
-                                      {/* Column 3: Remaining Cash */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      {/* Column 3: Remaining Balance */}
+                                      <div style={{ borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
+                                        {(() => {
+                                          const remainingCash = parseFloat(f.remaining_cash || 0)
+                                          return (
+                                            <>
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Remaining Cash</Text>
+                                              <Text strong style={{ fontSize: 14, color: '#1F2937' }}>
+                                                ₱{remainingCash.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                              </Text>
+                                            </>
+                                          )
+                                        })()}
+                                      </div>
+
+                                      {/* Column 4: Percentage Breakdown */}
+                                      <div>
                                         {(() => {
                                           const ntaBudget = parseFloat(f.nta_budget || 0)
                                           const totalDisbursed = parseFloat(f.disbursed || 0)
-                                          const remainingCash = parseFloat(f.remaining_cash || 0)
                                           const disbursementPercent = ntaBudget > 0 ? ((totalDisbursed / ntaBudget) * 100).toFixed(2) : '0.00'
                                           return (
                                             <>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4 }}>Remaining Cash</Text>
-                                              <Text strong style={{ fontSize: 16, color: remainingCash > 0 ? '#F59E0B' : '#10B981' }}>
-                                                ₱{remainingCash.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                              </Text>
-                                              <Text type="secondary" style={{ fontSize: 10, display: 'block', marginTop: 2 }}>
-                                                {disbursementPercent}% disbursed
+                                              <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 6, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Disbursement Progress</Text>
+                                              <Text strong style={{ fontSize: 14, color: '#1F2937' }}>
+                                                {disbursementPercent}%
                                               </Text>
                                             </>
                                           )
@@ -1162,11 +1216,13 @@ export default function SUB_ARO_NTA() {
                                       )
                                     })()}
 
-                                    {/* Three Charts - Horizontally Aligned in Cards */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-                                      
-                                      {/* Bar Chart - Budget Data */}
-                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                    {/* Balance Report Charts - Formal Style */}
+                                    <div style={{ marginTop: 20, marginBottom: 16 }}>
+                                      <Text strong style={{ fontSize: 12, display: 'block', color: '#1F2937', marginBottom: 12 }}>BALANCE REPORT & ANALYTICS</Text>
+                                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                                        
+                                        {/* Bar Chart - Budget Data */}
+                                        <Card size="small" style={{ borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB' }} styles={{ body: { padding: '12px' } }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
                                           {(() => {
                                             const ntaTotalBudget = parseFloat(f.nta_budget || 0)
@@ -1177,7 +1233,7 @@ export default function SUB_ARO_NTA() {
                                             ]
                                             return (
                                               <div>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Allotment Balance Report</Text>
+                                                <Text strong style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 8, color: '#1F2937', fontWeight: 600 }}>ALLOTMENT BALANCE REPORT</Text>
                                                 <ResponsiveContainer width="100%" height={150}>
                                                   <BarChart data={budgetChartData} layout="vertical" margin={{ top: 30, right: 30, left: 0, bottom: 10 }}>
                                                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1196,7 +1252,7 @@ export default function SUB_ARO_NTA() {
                                       </Card>
                                       
                                       {/* Pie Chart - Disbursement */}
-                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                      <Card size="small" style={{ borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB' }} styles={{ body: { padding: '12px' } }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
                                           {(() => {
                                             const totalDisbursed = parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0)
@@ -1209,7 +1265,7 @@ export default function SUB_ARO_NTA() {
                                             const CHART_COLORS = ['#10B981', '#FCD34D']
                                             return (
                                               <div>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>NTA Disbursement Summary</Text>
+                                                <Text strong style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 8, color: '#1F2937', fontWeight: 600 }}>NTA DISBURSEMENT PROGRESS</Text>
                                                 <ResponsiveContainer width="100%" height={150}>
                                                   <PieChart margin={{ top: 20, right: 15, bottom: 10, left: 15 }}>
                                                     <Pie
@@ -1235,7 +1291,7 @@ export default function SUB_ARO_NTA() {
                                       </Card>
 
                                       {/* Pie Chart - Grantees */}
-                                      <Card size="small" style={{ borderRadius: 8, background: '#fff' }} styles={{ body: { padding: '12px' } }}>
+                                      <Card size="small" style={{ borderRadius: 6, background: '#fff', border: '1px solid #D1D5DB' }} styles={{ body: { padding: '12px' } }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%' }}>
                                           {(() => {
                                             const totalGrantees = f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0
@@ -1248,7 +1304,7 @@ export default function SUB_ARO_NTA() {
                                             const GRANTEE_COLORS = ['#10B981', '#EF4444']
                                             return (
                                               <div>
-                                                <Text type="secondary" style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 4 }}>Overall Grantees</Text>
+                                                <Text strong style={{ fontSize: 10, display: 'block', textAlign: 'center', marginBottom: 8, color: '#1F2937', fontWeight: 600 }}>GRANTEE DISTRIBUTION</Text>
                                                 <ResponsiveContainer width="100%" height={150}>
                                                   <PieChart margin={{ top: 20, right: 15, bottom: 10, left: 15 }}>
                                                     <Pie
@@ -1274,37 +1330,32 @@ export default function SUB_ARO_NTA() {
                                       </Card>
                                     </div>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, paddingTop: 12, borderTop: '1px solid #E5E7EB', marginTop: 12 }}>
                                       {/* Column 1: Disbursed & Total Obligation */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Disbursed</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#10B981' }}>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Disbursed</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
                                             ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                           </Text>
                                         </div>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Sub-ARO Obligation</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#DC2626' }}>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Sub-ARO Obligation</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
                                             ₱{parseFloat(f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                           </Text>
                                         </div>
                                       </div>
 
                                       {/* Column 2: Sub-ARO count & Disbursement */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, borderRight: '1px solid #E5E7EB', paddingRight: 12 }}>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>No. of Selected Sub-ARO</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>{f.assignments?.length || 0}</Text>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>No. of Selected Sub-ARO</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>{f.assignments?.length || 0}</Text>
                                         </div>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursement %</Text>
-                                          <Text strong style={{
-                                            fontSize: 12, color: (() => {
-                                              const totalObl = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
-                                              return totalObl > 0 ? '#8B5CF6' : '#9CA3AF'
-                                            })()
-                                          }}>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Disbursement %</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
                                             {(() => {
                                               const totalObl = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.actual_obligation || 0)), 0) || 0
                                               const totalDisbursed = f.assignments?.reduce((sum, item) => sum + (parseFloat(item.disbursed || 0)), 0) || 0
@@ -1315,16 +1366,16 @@ export default function SUB_ARO_NTA() {
                                       </div>
 
                                       {/* Column 3: Grantees & Granted */}
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12, borderLeft: '2px solid #E5E7EB' }}>
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Total Grantees</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#7C3AED' }}>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Total Grantees</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
                                             {f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0}
                                           </Text>
                                         </div>
                                         <div>
-                                          <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Granted</Text>
-                                          <Text strong style={{ fontSize: 12, color: '#10B981' }}>
+                                          <Text type="secondary" style={{ fontSize: 9, display: 'block', marginBottom: 4, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase' }}>Granted Count</Text>
+                                          <Text strong style={{ fontSize: 13, color: '#1F2937' }}>
                                             {(() => {
                                               const totalGrantees = f.assignments?.reduce((sum, item) => sum + (parseInt(item.number_of_grantees || 0)), 0) || 0;
                                               const totalGranted = f.assignments?.reduce((sum, item) => sum + (parseInt(item.granted_count || 0)), 0) || 0;
@@ -1335,9 +1386,10 @@ export default function SUB_ARO_NTA() {
                                         </div>
                                       </div>
                                     </div>
-                                  </Card>
+                                  </div>
+                                </Card>
 
-                                  {/* Balance Report + Pie Chart Below - Stacked Vertically */}
+                                    {/* Balance Report + Pie Chart Below - Stacked Vertically */}
                                   <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 16 }}>
                                     {/* Left: Balance Report with SubARO Breakdown */}
                                     <Card size="small" style={{ borderRadius: 8, background: '#fafafa' }} styles={{ body: { padding: '16px' } }}>
@@ -1472,7 +1524,11 @@ export default function SUB_ARO_NTA() {
 
       {/* Upload / Edit Modal */}
       <Modal
-        title={editingFileId ? `Edit ${activeTab} File` : `Upload ${activeTab} File`}
+        title={
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#1f2937' }}>
+            {editingFileId ? `Update ${activeTab === 'NTA' ? 'Notice of Transfer Allocation' : 'Sub-Allotment Release Order'}` : `Upload New ${activeTab === 'NTA' ? 'Notice of Transfer Allocation' : 'Sub-Allotment Release Order'}`}
+          </div>
+        }
         open={isModalVisible}
         onOk={form.submit}
         onCancel={() => {
@@ -1483,30 +1539,41 @@ export default function SUB_ARO_NTA() {
           setLoadingSubAroFilter(false)
         }}
         confirmLoading={loading}
-        width={activeTab === 'NTA' ? 600 : 480}
-        okText={editingFileId ? 'Update' : 'Upload'}
+        width={activeTab === 'NTA' ? 1000 : 520}
+        okText={editingFileId ? 'Save Changes' : 'Upload Document'}
+        cancelText="Cancel"
+        okButtonProps={{ style: { borderRadius: 6 } }}
+        cancelButtonProps={{ style: { borderRadius: 6 } }}
+        styles={{
+          body: { paddingTop: 20 }
+        }}
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmitFile} style={{ marginTop: 16 }}>
-          <Form.Item label="PDF File" required={!editingFileId}>
+        <Form form={form} layout="vertical" onFinish={handleSubmitFile}>
+          {/* Document File Upload */}
+          <Form.Item label={<span style={{ fontWeight: 600, color: '#1f2937' }}>PDF Document</span>} required={!editingFileId}>
             <Upload.Dragger
               fileList={fileList}
               onChange={({ fileList: fl }) => setFileList(fl.slice(-1))}
               accept=".pdf"
               maxCount={1}
               beforeUpload={() => false}
+              style={{ borderRadius: 6 }}
             >
-              <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-              <p className="ant-upload-text">{editingFileId ? 'Upload new PDF (optional)' : 'Click or drag a PDF here'}</p>
+              <p style={{ fontSize: 24, margin: '8px 0 12px', color: '#d1d5db', fontWeight: 300 }}>PDF FILE</p>
+              <p style={{ fontWeight: 500, color: '#1f2937', marginBottom: 4 }}>{editingFileId ? 'Update PDF (optional)' : 'Upload PDF Document'}</p>
+              <p style={{ fontSize: 12, color: '#6b7280' }}>Click to browse or drag and drop PDF file here</p>
             </Upload.Dragger>
           </Form.Item>
 
-          <Form.Item name="filename" label="Sub-Allotment Release Order" rules={[{ required: true, message: 'Required' }]}>
-            <Input placeholder="e.g., Budget Report - January" />
+          {/* Filename */}
+          <Form.Item name="filename" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Document Name</span>} rules={[{ required: true, message: 'Please enter document name' }]}>
+            <Input placeholder="e.g., Budget Allocation - January 2024" size="large" style={{ borderRadius: 6 }} />
           </Form.Item>
 
-          <Space style={{ width: '100%' }} size={12}>
-            <Form.Item name="yearsuffix" label="Fiscal Year" rules={[{ required: true, message: 'Required' }]} style={{ flex: 1 }}>
-              <Select placeholder="Select FY" onChange={handleFiscalYearChange}>
+          {/* Fiscal Year and Reference Number */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Form.Item name="yearsuffix" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Fiscal Year</span>} rules={[{ required: true, message: 'Select fiscal year' }]}>
+              <Select placeholder="Select Fiscal Year" onChange={handleFiscalYearChange} size="large" style={{ borderRadius: 6 }}>
                 {fiscalYears.map(fy => (
                   <Select.Option key={fy.id} value={fy.year_suffix}>
                     FY {fy.fiscal_year} ({fy.year_suffix})
@@ -1517,30 +1584,36 @@ export default function SUB_ARO_NTA() {
 
             <Form.Item
               name="number_count"
-              label="Reference No."
-              rules={[{ required: true, message: 'Required' }]}
-              style={{ flex: 1 }}
+              label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Reference Number</span>}
+              rules={[{ required: true, message: 'Please enter reference number' }]}
             >
-              <Input placeholder="e.g., 001" />
+              <Input placeholder="e.g., 001" size="large" style={{ borderRadius: 6 }} />
             </Form.Item>
-          </Space>
+          </div>
 
-          <Form.Item name="upload_date" label="Date Uploaded">
-            <DatePicker style={{ width: '100%' }} />
+          <Form.Item name="upload_date" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Upload Date</span>}>
+            <DatePicker style={{ width: '100%', borderRadius: 6 }} size="large" />
           </Form.Item>
 
+          {/* SUB-ARO Financial Details */}
           {activeTab === 'SUB-ARO' ? (
             <>
-              <Form.Item name="budget" label="Fund Transfer">
-                <Input placeholder="0.00" type="number" step="0.01" />
-              </Form.Item>
+              <div style={{ marginTop: 24, marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #e5e7eb' }}>
+                <Text strong style={{ fontSize: 13, color: '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Financial Information</Text>
+              </div>
 
-              <Form.Item name="Operational_Cost" label="Operational Cost">
-                <Input placeholder="0.00" type="number" step="0.01" />
-              </Form.Item>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <Form.Item name="budget" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Fund Transfer</span>}>
+                  <Input placeholder="0.00" type="number" step="0.01" size="large" style={{ borderRadius: 6 }} />
+                </Form.Item>
 
-              <Form.Item name="scholarship_program" label="Scholarship Program">
-                <Select placeholder="Select or type a scholarship program" allowClear showSearch optionFilterProp="label">
+                <Form.Item name="Operational_Cost" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Operational Cost</span>}>
+                  <Input placeholder="0.00" type="number" step="0.01" size="large" style={{ borderRadius: 6 }} />
+                </Form.Item>
+              </div>
+
+              <Form.Item name="scholarship_program" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Scholarship Program</span>}>
+                <Select placeholder="Select or type scholarship program" allowClear showSearch optionFilterProp="label" size="large" style={{ borderRadius: 6 }}>
                   {(() => {
                     const cmspInList = scholarshipPrograms.filter(p => isCmspProgram(p))
                     const otherProgs = scholarshipPrograms.filter(p => !isCmspProgram(p))
@@ -1566,19 +1639,26 @@ export default function SUB_ARO_NTA() {
                 </Select>
               </Form.Item>
 
-              <Form.Item name="number_of_grantees" label="No. of Grantees">
-                <Input placeholder="e.g., 100" type="number" />
+              <Form.Item name="number_of_grantees" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Number of Grantees</span>}>
+                <Input placeholder="e.g., 100" type="number" size="large" style={{ borderRadius: 6 }} />
               </Form.Item>
             </>
           ) : (
             <>
-              <Form.Item name="scholarship_program" label="Scholarship Program">
+              {/* NTA Fields */}
+              <div style={{ marginTop: 24, marginBottom: 16, paddingBottom: 12, borderBottom: '2px solid #e5e7eb' }}>
+                <Text strong style={{ fontSize: 13, color: '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Budget Information</Text>
+              </div>
+
+              <Form.Item name="scholarship_program" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Scholarship Program</span>}>
                 <Select
-                  placeholder="Select or type a scholarship program"
+                  placeholder="Select or type scholarship program"
                   allowClear
                   showSearch
                   optionFilterProp="label"
                   onChange={handleScholarshipProgramChange}
+                  size="large"
+                  style={{ borderRadius: 6 }}
                 >
                   {(() => {
                     const cmspInList = scholarshipPrograms.filter(p => isCmspProgram(p))
@@ -1605,8 +1685,8 @@ export default function SUB_ARO_NTA() {
                 </Select>
               </Form.Item>
 
-              <Form.Item name="total_budget" label="Total Budget" initialValue={0}>
-                <Input placeholder="0.00" type="number" step="0.01" onChange={(e) => {
+              <Form.Item name="total_budget" label={<span style={{ fontWeight: 600, color: '#1f2937' }}>Total Budget Allocation</span>} initialValue={0}>
+                <Input placeholder="0.00" type="number" step="0.01" size="large" style={{ borderRadius: 6 }} onChange={(e) => {
                   const newBudget = parseFloat(e.target.value) || 0
                   // Auto-redistribute NTA budget across selected Sub-AROs
                   if (subAroBreakdown.length > 0) {
@@ -1640,327 +1720,297 @@ export default function SUB_ARO_NTA() {
                 ) : null
               })()}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
-                {/* Available SUB-AROs - Full Width */}
-                <div>
-                  <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
-                    Available SUB-AROs
-                  </Text>
-                  <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 12, maxHeight: 300, overflowY: 'auto', position: 'relative' }}>
-                    {loadingSubAroFilter && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 100 }}>
-                        <Spin size="small" style={{ marginRight: 8 }} />
-                        <Text type="secondary" style={{ fontSize: 12 }}>Loading SUB-AROs...</Text>
-                      </div>
-                    )}
-                    {!loadingSubAroFilter && filteredSubAroForModal.length > 0 ? (
-                      filteredSubAroForModal.map(subAro => {
-                        const isSelected = subAroBreakdown.some(b => b.sub_aro_id === subAro.id)
-                        const obligation = parseFloat(subAro.budget || 0) + parseFloat(subAro.Operational_Cost || 0)
-                        const remainingForNTAs = getSubAroRemainingForNTAs(subAro.id, editingFileId)
-                        const fullyObligated = isSubAroFullyObligated(subAro.id, editingFileId)
-                        const totalNtaObligated = getSubAroTotalNtaObligated(subAro.id, editingFileId)
-                        const obligatedPercent = obligation > 0 ? ((totalNtaObligated / obligation) * 100).toFixed(1) : '0.0'
-                        const disbursed = parseFloat(subAro.disbursed || 0)
-                        const fullyDisbursed = obligation > 0 && disbursed >= obligation
-                        const assignedNtas = getSubAroAssignedNtas(subAro.id, editingFileId)
-                        const isAssignedToOtherNta = assignedNtas.length > 0
-
-                        // Hide fully obligated or fully disbursed Sub-AROs unless already selected
-                        // Also hide Sub-AROs already assigned to other NTAs unless already selected
-                        if (((fullyObligated || fullyDisbursed) || isAssignedToOtherNta) && !isSelected) return null
-
-                        const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
-                        const currentAllocated = subAroBreakdown.reduce((sum, item) => sum + (parseFloat(item.budget) || 0), 0)
-                        const remainingNtaBudget = ntaBudget - currentAllocated
-
-                        return (
-                          <div key={subAro.id} style={{
-                            marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8,
-                            opacity: (fullyObligated || fullyDisbursed) ? 0.5 : 1
-                          }}>
-                            <Checkbox
-                              checked={isSelected}
-                              disabled={(fullyObligated || fullyDisbursed) && !isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  // Auto-populate with carryover amount
-                                  const carryover = getCarryoverDetails(subAro.id, editingFileId)
-                                  const allocation = carryover ? carryover.carryoverBalance : Math.min(remainingForNTAs, Math.max(remainingNtaBudget, 0))
-                                  const newBreakdown = [
-                                    ...subAroBreakdown,
-                                    {
-                                      sub_aro_id: subAro.id,
-                                      budget: allocation,
-                                      title: `CHEDRO IV-${subAro.yearsuffix}-${subAro.number_count}`
-                                    }
-                                  ]
-                                  setSubAroBreakdown(newBreakdown)
-                                } else {
-                                  const newBreakdown = subAroBreakdown.filter(b => b.sub_aro_id !== subAro.id)
-                                  const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
-                                  setSubAroBreakdown(redistributeNtaBudget(ntaBudget, newBreakdown, editingFileId))
-                                }
-                              }}
-                            />
-                            <div style={{ flex: 1 }}>
-                              <Text style={{ fontSize: 12, display: 'block' }}>
-                                CHEDRO IV-{subAro.yearsuffix}-{subAro.number_count}
-                              </Text>
-                              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                                <Text type="secondary" style={{ fontSize: 11 }}>
-                                  Obligation: ₱{obligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                </Text>
-                                <Text type="secondary" style={{ fontSize: 11 }}>
-                                  Disbursed: ₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                </Text>
-                                <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, color: '#1890ff' }}>
-                                  Remaining: ₱{(obligation - disbursed).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                </Text>
-                                {(() => {
-                                  const assignedNtas = getSubAroAssignedNtas(subAro.id, editingFileId)
-                                  if (assignedNtas.length > 0) {
-                                    return (
-                                      <Tag color="orange" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
-                                        Assigned to: {assignedNtas.map(n => n.reference).join(', ')}
-                                      </Tag>
-                                    )
-                                  }
-                                  return null
-                                })()}
-                                {fullyDisbursed && (
-                                  <Tag color="red" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
-                                    Fully Disbursed
-                                  </Tag>
-                                )}
-                                {!fullyDisbursed && totalNtaObligated > 0 && (
-                                  <Tag color={fullyObligated ? 'red' : 'blue'} style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>
-                                    {fullyObligated ? 'Fully Obligated' : `Available for NTA: ₱${remainingForNTAs.toLocaleString('en-PH', { minimumFractionDigits: 2 })} (${obligatedPercent}% obligated)`}
-                                  </Tag>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })
-                    ) : !loadingSubAroFilter && (
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        No SUB-AROs available for selected fiscal year
-                      </Text>
-                    )}
-                  </div>
-                </div>
-
-                {/* Selected SUB-ARO Breakdown - Full Width */}
-                <div>
-                  <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
-                    Selected SUB-AROs ({subAroBreakdown.length})
-                  </Text>
-                  {subAroBreakdown.length > 0 ? (
-                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
-                      {subAroBreakdown.map((item, idx) => {
-                        const subAro = subAroFiles.find(s => s.id === item.sub_aro_id)
-                        const remainingForNTAs = getSubAroRemainingForNTAs(item.sub_aro_id, editingFileId)
-                        const obligation = parseFloat(subAro?.budget || 0) + parseFloat(subAro?.Operational_Cost || 0)
-                        const totalNtaObligated = getSubAroTotalNtaObligated(item.sub_aro_id, editingFileId)
-                        const allocationPercent = obligation > 0 ? ((parseFloat(item.budget) / obligation) * 100).toFixed(1) : '0.0'
-                        const carryover = getCarryoverDetails(item.sub_aro_id, editingFileId)
-                        const hasCarryover = carryover && carryover.carryoverBalance > 0
-                        const editDiffs = previousBreakdown.length > 0 ? getEditDifferences(idx) : {}
-                        const hasEditDiff = Object.keys(editDiffs).length > 0
-                        return (
-                          <div key={idx} style={{ padding: '12px', borderBottom: idx < subAroBreakdown.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                              <div style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 12 }}>{item.title}</Text>
-                                <Text type="secondary" style={{ fontSize: 10, display: 'block' }}>
-                                  Available: ₱{remainingForNTAs.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                  {totalNtaObligated > 0 && ` (₱${totalNtaObligated.toLocaleString('en-PH', { minimumFractionDigits: 2 })} obligated by other NTAs)`}
-                                </Text>
-                                {hasCarryover && (
-                                  <div style={{ marginTop: 6, padding: '6px', background: '#FEF3C7', borderRadius: 4, border: '1px solid #FDE68A' }}>
-                                    <Text type="warning" style={{ fontSize: 10, display: 'block' }}>
-                                      💼 <strong>Carryover:</strong> ₱{carryover.carryoverBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })} remaining
-                                    </Text>
-                                    <Text type="warning" style={{ fontSize: 10, display: 'block' }}>
-                                      📋 <strong>Undisbursed:</strong> {carryover.undisbursedCount} disbursements pending
-                                    </Text>
-                                  </div>
-                                )}
-                                {hasEditDiff && (
-                                  <div style={{ marginTop: 6, padding: '6px', background: '#EEF2FF', borderRadius: 4, border: '1px solid #C7D2FE' }}>
-                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', color: '#4F46E5', fontWeight: 600 }}>
-                                      ✏️ Changes from original:
-                                    </Text>
-                                    {Object.entries(editDiffs).map(([field, diff]) => (
-                                      <Text key={field} type="secondary" style={{ fontSize: 9, display: 'block', color: '#6B7280', marginTop: 2 }}>
-                                        <span style={{ fontWeight: 600 }}>{diff.label}:</span> {diff.previous} → <strong style={{ color: '#4F46E5' }}>{diff.current}</strong>
-                                      </Text>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                              <Button
-                                type="text"
-                                danger
-                                size="small"
-                                icon={<DeleteOutlined />}
-                                onClick={() => {
-                                  const newBreakdown = subAroBreakdown.filter((_, i) => i !== idx)
-                                  const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
-                                  setSubAroBreakdown(redistributeNtaBudget(ntaBudget, newBreakdown, editingFileId))
-                                }}
-                              />
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <Text style={{ fontSize: 11, color: '#8c8c8c' }}>₱</Text>
-                              <Input
-                                size="small"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                max={remainingForNTAs}
-                                value={item.budget}
-                                style={{ flex: 1, fontSize: 12 }}
-                                onChange={(e) => {
-                                  const val = Math.min(Math.max(parseFloat(e.target.value) || 0, 0), remainingForNTAs)
-                                  setSubAroBreakdown(prev => prev.map((b, i) => i === idx ? { ...b, budget: val } : b))
-                                }}
-                              />
-                              <Tag color={parseFloat(item.budget) >= remainingForNTAs ? 'green' : 'blue'} style={{ fontSize: 10, margin: 0 }}>
-                                {allocationPercent}%
-                              </Tag>
-                            </div>
-                          </div>
-                        )
-                      })}
-
-                      {/* Total Row */}
-                      <div style={{ padding: '12px', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 600 }}>
-                        <Text strong style={{ fontSize: 12 }}>Total:</Text>
-                        <Text strong style={{ color: '#52c41a', fontSize: 13 }}>
-                          ₱{subAroBreakdown.reduce((sum, item) => sum + (parseFloat(item.budget) || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {/* Two-Column Layout: Main Content + Right Sidebar */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 16 }}>
+                
+                {(() => {
+                  const selectedYearSuffix = form.getFieldValue('yearsuffix')
+                  const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+                  
+                  if (!selectedYearSuffix || !selectedScholarshipProgram) {
+                    return (
+                      <div style={{ 
+                        padding: '40px 20px', 
+                        textAlign: 'center', 
+                        background: '#f9fafb', 
+                        borderRadius: 6, 
+                        border: '1px solid #e5e7eb' 
+                      }}>
+                        <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
+                          {!selectedYearSuffix && !selectedScholarshipProgram 
+                            ? 'Please select a Fiscal Year and Scholarship Program to view available Sub-AROs'
+                            : !selectedYearSuffix
+                            ? 'Please select a Fiscal Year to view available Sub-AROs'
+                            : 'Please select a Scholarship Program to view available Sub-AROs'}
                         </Text>
                       </div>
-                    </div>
-                  ) : (
-                    <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 20, textAlign: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>
-                        Select SUB-AROs from the list
-                      </Text>
-                    </div>
-                  )}
-                </div>
+                    )
+                  }
 
-                {/* SUB-AROS WITH Remaining Balance - Full Width */}
-                <div>
-                  <Text strong style={{ fontSize: 13, display: 'block', marginBottom: 12 }}>
-                    SUB-AROS WITH Remaining Balance
-                  </Text>
-                  {(() => {
-                    // Get selected fiscal year and scholarship program from form
-                    const selectedYearSuffix = form.getFieldValue('yearsuffix')
-                    const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
-                    
-                    // Filter exceeding_balances by:
-                    // 1. Remaining balance > 0
-                    // 2. Fiscal year (yearsuffix) matches selected
-                    // 3. Scholarship program matches selected (if selected)
-                    // 4. Not already in current breakdown
-                    const subarosWithBalance = exceedingBalances
-                      .filter(item => 
-                        parseFloat(item.remaining_obligation_balance || 0) > 0 &&
-                        item.yearsuffix === selectedYearSuffix &&
-                        (!selectedScholarshipProgram || item.scholarship_program === selectedScholarshipProgram)
-                      )
+                  return (
+                    <>
+                {/* Top Row: Available and With Balance side by side */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                  {/* Left: Available SUB-AROs */}
+                  <div>
+                    <div style={{ marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
+                      <Text strong style={{ fontSize: 13, color: '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Available Sub-AROs</Text>
+                    </div>
+                    <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: 12, maxHeight: 320, overflowY: 'auto', background: '#fafafa', position: 'relative' }}>
+                      {loadingSubAroFilter && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 100 }}>
+                          <Spin size="small" style={{ marginRight: 8 }} />
+                          <Text type="secondary" style={{ fontSize: 12 }}>Loading SUB-AROs...</Text>
+                        </div>
+                      )}
+                      {!loadingSubAroFilter && filteredSubAroForModal.length > 0 ? (
+                        filteredSubAroForModal.map(subAro => {
+                          const isSelected = subAroBreakdown.some(b => b.sub_aro_id === subAro.id)
+                          const obligation = parseFloat(subAro.budget || 0) + parseFloat(subAro.Operational_Cost || 0)
+                          const remainingForNTAs = getSubAroRemainingForNTAs(subAro.id, editingFileId)
+                          const fullyObligated = isSubAroFullyObligated(subAro.id, editingFileId)
+                          const totalNtaObligated = getSubAroTotalNtaObligated(subAro.id, editingFileId)
+                          const obligatedPercent = obligation > 0 ? ((totalNtaObligated / obligation) * 100).toFixed(1) : '0.0'
+                          const disbursed = parseFloat(subAro.disbursed || 0)
+                          const fullyDisbursed = obligation > 0 && disbursed >= obligation
+                          const assignedNtas = getSubAroAssignedNtas(subAro.id, editingFileId)
+                          const isAssignedToOtherNta = assignedNtas.length > 0
 
-                    return subarosWithBalance.length > 0 ? (
-                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 12, maxHeight: 300, overflowY: 'auto', position: 'relative' }}>
-                        {subarosWithBalance.map((item, idx) => {
-                          const isSelected = subAroBreakdown.some(b => b.sub_aro_id === item.sub_aro_id)
-                          const remainingBalance = parseFloat(item.remaining_obligation_balance || 0)
-                          const actualObligation = parseFloat(item.actual_obligation || 0)
-                          const ntaBudgetAllocated = parseFloat(item.nta_budget_allocated || 0)
-                          
+                          // Hide fully obligated or fully disbursed Sub-AROs unless already selected
+                          // Also hide Sub-AROs already assigned to other NTAs unless already selected
+                          if (((fullyObligated || fullyDisbursed) || isAssignedToOtherNta) && !isSelected) return null
+
+                          const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
+                          const currentAllocated = subAroBreakdown.reduce((sum, item) => sum + (parseFloat(item.budget) || 0), 0)
+                          const remainingNtaBudget = ntaBudget - currentAllocated
+
                           return (
-                            <div key={idx} style={{
-                              marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8,
-                              opacity: isSelected ? 0.5 : 1
+                            <div key={subAro.id} style={{
+                              marginBottom: 8, padding: '10px', display: 'flex', alignItems: 'flex-start', gap: 10,
+                              opacity: (fullyObligated || fullyDisbursed) && !isSelected ? 0.6 : 1,
+                              background: isSelected ? '#f0fdf4' : '#fff',
+                              borderRadius: 4,
+                              border: isSelected ? '1px solid #dcfce7' : '1px solid #e5e7eb'
                             }}>
                               <Checkbox
                                 checked={isSelected}
+                                disabled={(fullyObligated || fullyDisbursed) && !isSelected}
                                 onChange={(e) => {
                                   if (e.target.checked) {
-                                    // Add with remaining_obligation_balance as the allocation
-                                    // For carryover: nta_budget_allocated = what we're actually allocating to THIS NEW NTA
-                                    const subAroFile = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                    // Auto-populate with carryover amount
+                                    const carryover = getCarryoverDetails(subAro.id, editingFileId)
+                                    const allocation = carryover ? carryover.carryoverBalance : Math.min(remainingForNTAs, Math.max(remainingNtaBudget, 0))
                                     const newBreakdown = [
                                       ...subAroBreakdown,
                                       {
-                                        sub_aro_id: item.sub_aro_id,
-                                        budget: remainingBalance,
-                                        title: subAroFile ? `CHEDRO IV-${subAroFile.yearsuffix}-${subAroFile.number_count}` : `CHEDRO IV-${item.sub_aro_reference}`,
-                                        actual_obligation: actualObligation,
-                                        nta_budget_allocated: remainingBalance,  // Carryover amount for the NEW NTA
-                                        scholarship_program: item.scholarship_program
+                                        sub_aro_id: subAro.id,
+                                        budget: allocation,
+                                        title: `CHEDRO IV-${subAro.yearsuffix}-${subAro.number_count}`
                                       }
                                     ]
                                     setSubAroBreakdown(newBreakdown)
                                   } else {
-                                    // Remove from breakdown
-                                    const newBreakdown = subAroBreakdown.filter(b => b.sub_aro_id !== item.sub_aro_id)
-                                    setSubAroBreakdown(newBreakdown)
+                                    const newBreakdown = subAroBreakdown.filter(b => b.sub_aro_id !== subAro.id)
+                                    const ntaBudget = parseFloat(form.getFieldValue('total_budget')) || 0
+                                    setSubAroBreakdown(redistributeNtaBudget(ntaBudget, newBreakdown, editingFileId))
                                   }
                                 }}
                               />
                               <div style={{ flex: 1 }}>
-                                <Text style={{ fontSize: 12, display: 'block' }}>
-                                  CHEDRO IV-{item.sub_aro_reference}
+                                <Text style={{ fontSize: 12, fontWeight: 500, color: '#1f2937', display: 'block', marginBottom: 4 }}>
+                                  CHEDRO IV-{subAro.yearsuffix}-{subAro.number_count}
                                 </Text>
-                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                                  <Text type="secondary" style={{ fontSize: 11 }}>
-                                    Remaining: ₱{remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                  </Text>
-                                  <Text type="secondary" style={{ fontSize: 11 }}>
-                                    Obligation: ₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                  </Text>
-                                  <Text type="secondary" style={{ fontSize: 11, fontWeight: 600, color: '#1890ff' }}>
-                                    Prev. Allocated: ₱{ntaBudgetAllocated.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                                  </Text>
-                                  <Tag color="blue" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
-                                    From: NTA-{item.nta_reference}
-                                  </Tag>
-                                  {isSelected && (
-                                    <Tag color="green" style={{ fontSize: 10, lineHeight: '16px', padding: '0 6px' }}>
-                                      Selected for this NTA
-                                    </Tag>
-                                  )}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 6 }}>
+                                  <div>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Obligation</Text>
+                                    <Text strong style={{ fontSize: 11, color: '#1f2937' }}>₱{obligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</Text>
+                                  </div>
+                                  <div>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Disbursed</Text>
+                                    <Text strong style={{ fontSize: 11, color: '#059669' }}>₱{disbursed.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</Text>
+                                  </div>
+                                  <div>
+                                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 2 }}>Remaining</Text>
+                                    <Text strong style={{ fontSize: 11, color: '#0369a1' }}>₱{(obligation - disbursed).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</Text>
+                                  </div>
                                 </div>
+                                {(() => {
+                                  const assignedNtas = getSubAroAssignedNtas(subAro.id, editingFileId)
+                                  return (
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                      {assignedNtas.length > 0 && (
+                                        <span style={{ fontSize: 10, padding: '2px 8px', background: '#fef3c7', borderRadius: 3, border: '1px solid #fde68a', color: '#92400e' }}>
+                                          Assigned to: {assignedNtas.map(n => n.reference).join(', ')}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )
+                                })()}
                               </div>
                             </div>
                           )
-                        })}
+                        })
+                      ) : !loadingSubAroFilter && (
+                        <div style={{ padding: '20px', textAlign: 'center', background: '#f9fafb', color: '#6b7280', fontSize: 12 }}>
+                          No SUB-AROs available for selected fiscal year
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: SUB-AROs With Balance */}
+                  <div>
+                    <div style={{ marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
+                      <Text strong style={{ fontSize: 13, color: '#1f2937', textTransform: 'uppercase', letterSpacing: '0.5px' }}>SUB-AROs With Balance</Text>
+                    </div>
+                    <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, overflow: 'hidden', background: '#fff', display: 'flex', flexDirection: 'column', maxHeight: 320 }}>
+                      <div style={{ flex: 1, overflowY: 'auto', padding: 12, minHeight: 0 }}>
+                        {(() => {
+                          // Get selected fiscal year and scholarship program from form
+                          const selectedYearSuffix = form.getFieldValue('yearsuffix')
+                          const selectedScholarshipProgram = form.getFieldValue('scholarship_program')
+                          
+                          // Filter exceeding_balances by:
+                          // 1. Remaining balance > 0
+                          // 2. Fiscal year (yearsuffix) matches selected
+                          // 3. Scholarship program matches selected (if selected)
+                          // 4. Not already in current breakdown
+                          const subarosWithBalance = exceedingBalances
+                            .filter(item => 
+                              parseFloat(item.remaining_obligation_balance || 0) > 0 &&
+                              item.yearsuffix === selectedYearSuffix &&
+                              (!selectedScholarshipProgram || item.scholarship_program === selectedScholarshipProgram)
+                            )
+
+                          return subarosWithBalance.length > 0 ? (
+                            subarosWithBalance.map((item, idx) => {
+                              const isSelected = subAroBreakdown.some(b => b.sub_aro_id === item.sub_aro_id)
+                              const remainingBalance = parseFloat(item.remaining_obligation_balance || 0)
+                              const actualObligation = parseFloat(item.actual_obligation || 0)
+                              const ntaBudgetAllocated = parseFloat(item.nta_budget_allocated || 0)
+                              
+                              return (
+                                <Tooltip
+                                  key={idx}
+                                  title={
+                                    <div style={{ fontSize: 10 }}>
+                                      <div style={{ marginBottom: 6 }}>
+                                        <div style={{ color: '#ccc', fontSize: 8, marginBottom: 1 }}>REMAINING</div>
+                                        <div style={{ fontSize: 11, color: '#4ade80', fontWeight: 600 }}>₱{remainingBalance.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+                                      </div>
+                                      <div style={{ marginBottom: 6 }}>
+                                        <div style={{ color: '#ccc', fontSize: 8, marginBottom: 1 }}>OBLIGATION</div>
+                                        <div style={{ fontSize: 11, color: '#60a5fa', fontWeight: 600 }}>₱{actualObligation.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+                                      </div>
+                                      <div style={{ marginBottom: 6 }}>
+                                        <div style={{ color: '#ccc', fontSize: 8, marginBottom: 1 }}>PREV. ALLOC.</div>
+                                        <div style={{ fontSize: 11, color: '#d8b4fe', fontWeight: 600 }}>₱{ntaBudgetAllocated.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</div>
+                                      </div>
+                                      {item.nta_reference && (
+                                        <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #444', color: '#93c5fd', fontSize: 9 }}>
+                                          From: {item.nta_reference}
+                                        </div>
+                                      )}
+                                    </div>
+                                  }
+                                  placement="left"
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'help', padding: '6px 4px', borderRadius: 3, background: isSelected ? '#f0f9ff' : 'transparent', border: isSelected ? '1px solid #bfdbfe' : '1px solid transparent', marginBottom: 4 }}>
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          const subAroFile = subAroFiles.find(s => s.id === item.sub_aro_id)
+                                          const newBreakdown = [
+                                            ...subAroBreakdown,
+                                            {
+                                              sub_aro_id: item.sub_aro_id,
+                                              budget: remainingBalance,
+                                              title: subAroFile ? `CHEDRO IV-${subAroFile.yearsuffix}-${subAroFile.number_count}` : `CHEDRO IV-${item.sub_aro_reference}`,
+                                              actual_obligation: actualObligation,
+                                              nta_budget_allocated: remainingBalance,
+                                              scholarship_program: item.scholarship_program
+                                            }
+                                          ]
+                                          setSubAroBreakdown(newBreakdown)
+                                        } else {
+                                          const newBreakdown = subAroBreakdown.filter(b => b.sub_aro_id !== item.sub_aro_id)
+                                          setSubAroBreakdown(newBreakdown)
+                                        }
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <Text style={{ fontSize: 11, fontWeight: 500, color: '#1f2937', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                      CHEDRO IV-{item.sub_aro_reference}
+                                    </Text>
+                                    <Text strong style={{ fontSize: 10, color: '#059669', whiteSpace: 'nowrap' }}>
+                                      ₱{remainingBalance.toLocaleString('en-PH', { maximumFractionDigits: 0 })}
+                                    </Text>
+                                  </div>
+                                </Tooltip>
+                              )
+                            })
+                          ) : (
+                            <div style={{ padding: '16px 12px', textAlign: 'center', color: '#6b7280', fontSize: 11 }}>
+                              No SUB-AROs with remaining balance available
+                            </div>
+                          )
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Row: Total Allocation - Full Width */}
+                <div style={{ border: '1px solid #e5e7eb', borderRadius: 6, overflow: 'hidden', background: '#fff' }}>
+                  <div style={{ padding: '12px', background: '#f0fdf4', borderBottom: '1px solid #dcfce7' }}>
+                    <Text type="secondary" style={{ fontSize: 10, display: 'block', marginBottom: 4, fontWeight: 600, color: '#15803d', textTransform: 'uppercase' }}>Total Allocation</Text>
+                    <Text strong style={{ fontSize: 24, color: '#15803d' }}>
+                      ₱{subAroBreakdown.reduce((sum, item) => sum + (parseFloat(item.budget) || 0), 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                  </div>
+                  <div style={{ padding: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 11, color: '#6b7280' }}>Selected Sub-AROs</Text>
+                      <Tag color="blue" style={{ fontSize: 11, fontWeight: 600 }}>{subAroBreakdown.length}</Tag>
+                    </div>
+                    <div style={{ height: 1, background: '#f3f4f6', marginBottom: 8 }}></div>
+                    {subAroBreakdown.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 140, overflowY: 'auto' }}>
+                        {subAroBreakdown.map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, paddingBottom: 6, borderBottom: '1px solid #f0f0f0' }}>
+                            <Text type="secondary" style={{ fontSize: 10, flex: 1, wordBreak: 'break-word' }}>
+                              {item.title}
+                            </Text>
+                            <Text strong style={{ fontSize: 10, color: '#3b82f6', marginLeft: 8, whiteSpace: 'nowrap' }}>
+                              ₱{parseFloat(item.budget || 0).toLocaleString('en-PH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </Text>
+                          </div>
+                        ))}
                       </div>
                     ) : (
-                      <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, padding: 20, textAlign: 'center' }}>
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          No SUB-AROs with remaining balance
-                        </Text>
-                      </div>
-                    )
-                  })()}
+                      <Text type="secondary" style={{ fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
+                        No Sub-AROs selected
+                      </Text>
+                    )}
+                  </div>
                 </div>
+                    </>
+                  )
+                })()}
               </div>
             </>
           )}
 
-          <div style={{ padding: '8px 12px', background: '#fafafa', borderRadius: 6, fontSize: 13, color: '#8c8c8c' }}>
-            Title preview: <strong style={{ color: '#262626' }}>
+          {/* Document Title Preview */}
+          <div style={{ marginTop: 24, padding: '16px', background: '#f0f9ff', borderRadius: 6, border: '1px solid #bfdbfe' }}>
+            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 8, fontWeight: 600, color: '#0c4a6e', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Document Reference Number</Text>
+            <Text strong style={{ fontSize: 14, color: '#1e40af', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
               {activeTab === 'NTA'
-                ? `NTA-${selectedFYObj?.fiscal_year || 'YYYY'}-${form.getFieldValue('number_count') || ''}`
-                : `CHEDRO IV-${selectedFYObj?.fiscal_year || 'YYYY'}-${form.getFieldValue('number_count') || ''}`
+                ? `NTA-${selectedFYObj?.fiscal_year || 'YYYY'}-${form.getFieldValue('number_count') || '_'}`
+                : `CHEDRO IV-${selectedFYObj?.fiscal_year || 'YYYY'}-${form.getFieldValue('number_count') || '_'}`
               }
-            </strong>
+            </Text>
           </div>
         </Form>
       </Modal>
