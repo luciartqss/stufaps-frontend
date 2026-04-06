@@ -43,6 +43,7 @@ export default function StudentsPdf() {
   const [previewError, setPreviewError] = useState('')
   const [lastUpdated, setLastUpdated] = useState(null)
   const abortRef = useRef(null)
+  const previewUrlRef = useRef('')
 
   // Signature fields
   const [preparedBy, setPreparedBy] = useState([{ name: '', position: '' }])
@@ -232,6 +233,7 @@ export default function StudentsPdf() {
 
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev)
+        previewUrlRef.current = url
         return url
       })
       setLastUpdated(new Date())
@@ -256,6 +258,7 @@ export default function StudentsPdf() {
     } else {
       setPreviewUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev)
+        previewUrlRef.current = ''
         return ''
       })
       setPreviewError('')
@@ -266,7 +269,7 @@ export default function StudentsPdf() {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
       if (abortRef.current) abortRef.current.abort()
     }
   }, [])
@@ -337,7 +340,9 @@ export default function StudentsPdf() {
     if (!previewUrl) return
     const link = document.createElement('a')
     link.href = previewUrl
-    const prefix = formType === 'masterlist' ? `masterlist-${program}` : formType
+    const prefix = (formType === 'masterlist' || formType === 'annexE1') && program
+      ? `${formType}-${program}`
+      : formType
     link.download = `${prefix}-${semester}-AY-${academicYear}.pdf`
     document.body.appendChild(link)
     link.click()
@@ -385,7 +390,16 @@ export default function StudentsPdf() {
               <Form.Item label="Form Type" style={{ minWidth: '280px', flex: 1 }}>
                 <Select
                   value={formType}
-                  onChange={(val) => { setFormType(val); setProgram(undefined); setPreviewUrl(''); setPreviewError('') }}
+                  onChange={(val) => {
+                    setFormType(val)
+                    setProgram(undefined)
+                    setPreviewUrl((prev) => {
+                      if (prev) URL.revokeObjectURL(prev)
+                      previewUrlRef.current = ''
+                      return ''
+                    })
+                    setPreviewError('')
+                  }}
                   style={{ width: '100%' }}
                   options={FORM_TYPES}
                 />
