@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined } from '@ant-design/icons'
+import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown, Empty } from 'antd'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined, EditOutlined, SaveOutlined, CloseOutlined, LoadingOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
@@ -313,6 +313,10 @@ export default function StudentsIndex() {
   const [loading, setLoading] = useState(true)
   const [filterOptions, setFilterOptions] = useState({})
   const [filtersDrawerOpen, setFiltersDrawerOpen] = useState(false)
+  const [expandedRowKeys, setExpandedRowKeys] = useState([])
+  const [editingRow, setEditingRow] = useState(null) // disbursement id being edited
+  const [editingRowValues, setEditingRowValues] = useState({}) // field values for the row
+  const [savingRow, setSavingRow] = useState(false)
 
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -531,6 +535,362 @@ export default function StudentsIndex() {
           {val}
         </span>
       </Tooltip>
+    )
+  }
+
+  // Format currency for disbursement display
+  const fmtCurrency = (val) => {
+    if (!val && val !== 0) return '—'
+    return `₱${Number(val).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  }
+
+  // Check if a specific disbursement row can be edited by the current user
+  const canEditDisbursement = (student, disbRecord) => {
+    if (isMasterAdmin) return true
+    if (!canAddDisbursements) return false
+    const programOk = assignedPrograms.includes('ALL') || assignedPrograms.includes(student?.scholarship_program)
+    const yearOk = assignedYears.includes('ALL') || assignedYears.includes(disbRecord.academic_year)
+    return programOk && yearOk
+  }
+
+  // StuFAPs-editable fields (not accounting/cashier — those are read-only for StuFAPs)
+  const STUFAPS_EDITABLE_FIELDS = ['nta', 'fund_source', 'voucher_tracking_no', 'mode_of_payment', 'atm_account_no', 'date_process', 'status', 'remarks']
+
+  // Start editing a row: snapshot current values
+  const startEditingRow = (disbRecord) => {
+    setEditingRow(disbRecord.id)
+    const snapshot = {}
+    STUFAPS_EDITABLE_FIELDS.forEach(f => { snapshot[f] = disbRecord[f] ?? '' })
+    setEditingRowValues(snapshot)
+  }
+
+  // Save entire row edit to API
+  const handleSaveRow = async (student, disbRecord) => {
+    setSavingRow(true)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      // Build payload with only changed fields
+      const payload = {}
+      let hasChanges = false
+      STUFAPS_EDITABLE_FIELDS.forEach(f => {
+        const newVal = editingRowValues[f] === '' ? null : editingRowValues[f]
+        const oldVal = disbRecord[f] ?? null
+        if (newVal !== oldVal) {
+          payload[f] = newVal
+          hasChanges = true
+        }
+      })
+
+      if (!hasChanges) {
+        setEditingRow(null)
+        return
+      }
+
+      if (disbRecord.version !== undefined) payload.version = disbRecord.version
+
+      const response = await fetch(`${API_BASE}/disbursements/${disbRecord.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.status === 409) {
+        message.warning('This record was modified by someone else. Refreshing...')
+        fetchStudents()
+        setEditingRow(null)
+        return
+      }
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || err.message || 'Update failed')
+      }
+
+      const result = await response.json()
+      // Optimistic update
+      setStudents(prev => prev.map(s => {
+        if (s.seq !== student.seq) return s
+        return {
+          ...s,
+          disbursements: (s.disbursements || []).map(d => {
+            if (d.id !== disbRecord.id) return d
+            const updated = { ...d, version: result.data?.version ?? d.version }
+            STUFAPS_EDITABLE_FIELDS.forEach(f => {
+              updated[f] = editingRowValues[f] === '' ? null : editingRowValues[f]
+            })
+            return updated
+          }),
+        }
+      }))
+      message.success('Disbursement updated')
+    } catch (err) {
+      console.error('Row edit error:', err)
+      message.error(err.message || 'Failed to update')
+    } finally {
+      setSavingRow(false)
+      setEditingRow(null)
+    }
+  }
+
+  // Expanded row: disbursement sub-table with horizontal scroll + row-level editing
+  // Lazy: only renders when the row is actually expanded
+  const expandedRowRender = (record) => {
+    if (!expandedRowKeys.includes(record.seq)) return null
+
+    const disbursements = record.disbursements || []
+    if (disbursements.length === 0) {
+      return (
+        <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+          <Empty description="No disbursement records" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+        </div>
+      )
+    }
+
+    const totalAmount = disbursements.reduce((sum, d) => sum + (Number(d.amount) || 0), 0)
+
+    // Render a cell — editable input if row is being edited, otherwise plain text
+    const renderField = (field, r, opts = {}) => {
+      const isEditing = editingRow === r.id
+      const editable = canEditDisbursement(record, r) && STUFAPS_EDITABLE_FIELDS.includes(field)
+      const val = isEditing ? (editingRowValues[field] ?? '') : (r[field] ?? '')
+
+      if (isEditing && editable) {
+        if (field === 'mode_of_payment') {
+          return (
+            <Select
+              size="small"
+              style={{ width: '100%', fontSize: 12 }}
+              value={val || undefined}
+              onChange={(v) => setEditingRowValues(prev => ({ ...prev, [field]: v || '' }))}
+              placeholder="Select"
+              allowClear
+            >
+              <Option value="ATM">ATM</Option>
+              <Option value="Cheque">Cheque</Option>
+              <Option value="Through the HEI">Through the HEI</Option>
+            </Select>
+          )
+        }
+        return (
+          <Input
+            size="small"
+            style={{ fontSize: 12 }}
+            value={val}
+            onChange={(e) => setEditingRowValues(prev => ({ ...prev, [field]: e.target.value }))}
+            onPressEnter={() => handleSaveRow(record, r)}
+            onKeyDown={(e) => { if (e.key === 'Escape') setEditingRow(null) }}
+          />
+        )
+      }
+
+      return <span style={{ fontSize: 12, ...(opts.style || {}) }}>{val || '—'}</span>
+    }
+
+    const disbColumns = [
+      {
+        title: 'Academic Year',
+        dataIndex: 'academic_year',
+        width: 110,
+        fixed: 'left',
+        render: v => <span style={{ fontWeight: 500, fontSize: 12 }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Semester',
+        dataIndex: 'semester',
+        width: 90,
+        fixed: 'left',
+        render: v => <span style={{ fontSize: 12 }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Year Level',
+        dataIndex: 'curriculum_year_level',
+        width: 90,
+        align: 'center',
+        render: v => <span style={{ fontSize: 12 }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Amount',
+        dataIndex: 'amount',
+        width: 120,
+        align: 'right',
+        render: v => <span style={{ fontSize: 12, fontWeight: 600, color: v ? '#16a34a' : '#bfbfbf' }}>{fmtCurrency(v)}</span>,
+      },
+      {
+        title: 'Payment',
+        key: 'paymentStatus',
+        width: 90,
+        align: 'center',
+        render: (_, r) => {
+          const paid = r.lddap_no && r.lddap_no.trim()
+          return <Tag color={paid ? 'green' : 'orange'} style={{ fontSize: 11, margin: 0 }}>{paid ? 'Paid' : 'Unpaid'}</Tag>
+        },
+      },
+      {
+        title: 'NTA',
+        dataIndex: 'nta',
+        width: 150,
+        ellipsis: true,
+        render: (v, r) => renderField('nta', r),
+      },
+      {
+        title: 'Fund Source',
+        dataIndex: 'fund_source',
+        width: 130,
+        ellipsis: true,
+        render: (v, r) => renderField('fund_source', r),
+      },
+      {
+        title: 'Voucher Tracking No.',
+        dataIndex: 'voucher_tracking_no',
+        width: 160,
+        ellipsis: true,
+        render: (v, r) => renderField('voucher_tracking_no', r),
+      },
+      {
+        title: 'Mode of Payment',
+        dataIndex: 'mode_of_payment',
+        width: 145,
+        ellipsis: true,
+        render: (v, r) => renderField('mode_of_payment', r),
+      },
+      {
+        title: 'ATM Account No.',
+        dataIndex: 'atm_account_no',
+        width: 145,
+        ellipsis: true,
+        render: (v, r) => renderField('atm_account_no', r),
+      },
+      {
+        title: 'Date Process',
+        dataIndex: 'date_process',
+        width: 115,
+        render: (v, r) => renderField('date_process', r),
+      },
+      {
+        title: 'Voucher No.',
+        dataIndex: 'voucher_no',
+        width: 130,
+        ellipsis: true,
+        render: v => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Voucher Date',
+        dataIndex: 'voucher_date',
+        width: 115,
+        render: v => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Account/Check No.',
+        dataIndex: 'account_check_no',
+        width: 150,
+        ellipsis: true,
+        render: v => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{v || '—'}</span>,
+      },
+      {
+        title: 'LDDAP No.',
+        dataIndex: 'lddap_no',
+        width: 130,
+        ellipsis: true,
+        render: v => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Disbursement Date',
+        dataIndex: 'disbursement_date',
+        width: 145,
+        render: v => <span style={{ fontSize: 12, color: '#8c8c8c' }}>{v || '—'}</span>,
+      },
+      {
+        title: 'Status',
+        dataIndex: 'status',
+        width: 110,
+        render: (v, r) => renderField('status', r),
+      },
+      {
+        title: 'Remarks',
+        dataIndex: 'remarks',
+        width: 200,
+        ellipsis: true,
+        render: (v, r) => renderField('remarks', r),
+      },
+      {
+        title: '',
+        key: 'actions',
+        width: 80,
+        fixed: 'right',
+        align: 'center',
+        render: (_, r) => {
+          if (!canEditDisbursement(record, r)) return null
+          if (editingRow === r.id) {
+            return (
+              <Space size={4}>
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={savingRow ? <LoadingOutlined /> : <SaveOutlined />}
+                  onClick={() => handleSaveRow(record, r)}
+                  disabled={savingRow}
+                  style={{ fontSize: 11, padding: '0 8px', height: 24 }}
+                >
+                  Save
+                </Button>
+                <Button
+                  size="small"
+                  icon={<CloseOutlined />}
+                  onClick={() => setEditingRow(null)}
+                  disabled={savingRow}
+                  style={{ fontSize: 11, padding: '0 6px', height: 24 }}
+                />
+              </Space>
+            )
+          }
+          return (
+            <Button
+              type="text"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => startEditingRow(r)}
+              style={{ fontSize: 11, color: '#1677ff' }}
+            />
+          )
+        },
+      },
+    ]
+
+    return (
+      <div style={{ padding: '12px 8px', background: 'linear-gradient(135deg, #f8fafc 0%, #f0f4ff 100%)', borderRadius: 4 }}>
+        {/* Toolbar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 3, height: 16, background: '#1677ff', borderRadius: 2 }} />
+            <span style={{ fontWeight: 600, fontSize: 13, color: '#1d39c4' }}>Disbursements</span>
+            <Tag color="blue" style={{ fontSize: 11, margin: 0, lineHeight: '18px', padding: '0 6px' }}>{disbursements.length}</Tag>
+          </div>
+          {totalAmount > 0 && (
+            <>
+              <div style={{ height: 16, width: 1, background: '#d9d9d9' }} />
+              <span style={{ fontSize: 12, color: '#389e0d', fontWeight: 600 }}>
+                Total: {fmtCurrency(totalAmount)}
+              </span>
+            </>
+          )}
+        </div>
+        {/* Sub-table */}
+        <Table
+          className="disbursement-sub-table"
+          dataSource={disbursements}
+          columns={disbColumns}
+          rowKey="id"
+          size="small"
+          pagination={false}
+          scroll={{ x: 2500 }}
+          bordered
+          style={{ borderRadius: 8, overflow: 'hidden' }}
+          rowClassName={(r) => editingRow === r.id ? 'disb-row-editing' : ''}
+        />
+      </div>
     )
   }
 
@@ -1285,6 +1645,79 @@ export default function StudentsIndex() {
         .student-row-other:hover td {
           background: #ffe7ba !important;
         }
+        /* Expandable row styles */
+        .students-table .ant-table-expanded-row > td {
+          padding: 0 !important;
+          background: transparent !important;
+        }
+        .students-table .ant-table-row-expand-icon {
+          border-color: #1677ff;
+          color: #1677ff;
+        }
+        .students-table .ant-table-row-expand-icon:hover {
+          border-color: #4096ff;
+          color: #4096ff;
+        }
+        .disbursement-sub-table .ant-table {
+          font-size: 12px;
+        }
+        .disbursement-sub-table .ant-table-thead > tr > th {
+          font-size: 10px;
+          font-weight: 600;
+          padding: 6px 8px;
+          background: #e8f4fd;
+          color: #1d39c4;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+          white-space: normal;
+          word-break: break-word;
+          line-height: 1.2;
+          text-align: center;
+          vertical-align: middle;
+        }
+        .disbursement-sub-table .ant-table-thead > tr > th .ant-table-column-title {
+          white-space: normal;
+          word-break: break-word;
+          line-height: 1.2;
+          text-align: center;
+        }
+        .disbursement-sub-table .ant-table-tbody > tr > td {
+          padding: 6px 8px;
+          vertical-align: middle;
+        }
+        .disbursement-sub-table .ant-table-tbody > tr:hover > td {
+          background: #e6f7ff !important;
+        }
+        .disbursement-sub-table .ant-table-cell-fix-left {
+          background: #f0f7ff !important;
+        }
+        .disbursement-sub-table .ant-table-tbody > tr:hover .ant-table-cell-fix-left {
+          background: #d6ebff !important;
+        }
+        .disbursement-sub-table .ant-table-tbody > tr > td .ant-input {
+          font-size: 12px;
+        }
+        .disbursement-sub-table .ant-table-tbody > tr > td .ant-select {
+          font-size: 12px;
+        }
+        .disb-row-editing > td {
+          background: #fffbe6 !important;
+        }
+        .disb-row-editing:hover > td {
+          background: #fff1b8 !important;
+        }
+        .disb-row-editing .ant-table-cell-fix-left {
+          background: #fffbe6 !important;
+        }
+        .disb-row-editing:hover .ant-table-cell-fix-left {
+          background: #fff1b8 !important;
+        }
+        .disb-row-editing .ant-table-cell-fix-right {
+          background: #fffbe6 !important;
+        }
+        .disb-row-editing:hover .ant-table-cell-fix-right {
+          background: #fff1b8 !important;
+        }
       `}</style>
       <Table
         className="students-table"
@@ -1295,6 +1728,17 @@ export default function StudentsIndex() {
         rowKey="seq"
         size="small"
         scroll={{ x: false }}
+        expandable={{
+          expandedRowRender,
+          expandedRowKeys,
+          onExpand: (expanded, record) => {
+            setExpandedRowKeys(expanded
+              ? [...expandedRowKeys, record.seq]
+              : expandedRowKeys.filter(k => k !== record.seq)
+            )
+          },
+          rowExpandable: (record) => (record.disbursements || []).length > 0,
+        }}
         rowClassName={(record) => {
           const status = (record.scholarship_status || '').toLowerCase()
           if (status === 'terminated') return 'student-row-terminated'
