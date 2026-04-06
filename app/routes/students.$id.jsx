@@ -505,6 +505,8 @@ export default function StudentDetails() {
         return 'blue'
       case 'Terminated':
         return 'red'
+      case 'Replacement':
+        return 'orange'
       default:
         return 'default'
     }
@@ -958,7 +960,8 @@ export default function StudentDetails() {
                 options={[
                   { label: 'Active', value: 'Active' },
                   { label: 'Graduated', value: 'Graduated' },
-                  { label: 'Terminated', value: 'Terminated' }
+                  { label: 'Terminated', value: 'Terminated' },
+                  { label: 'Replacement', value: 'Replacement' }
                 ]}
                 editMode={editMode} 
                 formData={formData} 
