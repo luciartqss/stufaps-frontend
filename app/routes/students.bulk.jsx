@@ -422,6 +422,44 @@ const FRONTEND_TO_BACKEND_MAP = {
   reason: 'termination_reason',
 }
 
+// ── Data Cleaning Utilities ──
+
+// Values treated as empty/null
+const INVALID_VALUES = new Set([
+  'na', 'n/a', 'n.a.', 'n.a', 'n/ a', 'n /a',
+  'none', 'nil', 'null', 'undefined',
+  '-', '--', '---', '.', '..', '...',
+  'not applicable', 'not available',
+])
+
+// Strip invalid placeholder values to null
+const cleanInvalidValue = (val) => {
+  if (val === null || val === undefined) return null
+  const s = String(val).trim()
+  if (s === '') return null
+  if (INVALID_VALUES.has(s.toLowerCase())) return null
+  return s
+}
+
+// Proper Title Case for names:
+//   "JOHN DOE" → "John Doe"
+//   "maria de la cruz" → "Maria De La Cruz"
+//   "O'BRIEN" → "O'Brien"
+//   "MARY-JANE" → "Mary-Jane"
+//   "MC DONALD" → "Mc Donald"
+const toProperName = (val) => {
+  if (!val) return val
+  const s = String(val).trim()
+  if (!s) return null
+  return s
+    .toLowerCase()
+    .replace(/(?:^|[\s\-\'\.])\S/g, (match) => match.toUpperCase())
+}
+
+// Fields that contain person names (should be Title Cased)
+const NAME_FIELDS_FRONTEND = ['surname', 'firstName', 'middleName', 'extension']
+const NAME_FIELDS_BACKEND = ['surname', 'first_name', 'middle_name', 'extension']
+
 // Convert frontend data to backend format
 const convertToBackendFormat = (frontendData) => {
   return frontendData.map(row => {
@@ -430,12 +468,22 @@ const convertToBackendFormat = (frontendData) => {
       const backendKey = FRONTEND_TO_BACKEND_MAP[key]
       if (backendKey === null) return // Skip seq
       if (backendKey && value !== '' && value !== null && value !== undefined) {
+        // Clean invalid placeholder values
+        let cleaned = cleanInvalidValue(value)
+        if (cleaned === null) return
+
         // Convert priority to boolean
         if (key === 'priority') {
-          backendRow[backendKey] = value === 'Yes' || value === true || value === 'true' || value === '1'
-        } else {
-          backendRow[backendKey] = value
+          backendRow[backendKey] = cleaned === 'Yes' || cleaned === true || cleaned === 'true' || cleaned === '1'
+          return
         }
+
+        // Normalize name fields to proper Title Case
+        if (NAME_FIELDS_FRONTEND.includes(key)) {
+          cleaned = toProperName(cleaned)
+        }
+
+        backendRow[backendKey] = cleaned
       }
     })
     return backendRow
