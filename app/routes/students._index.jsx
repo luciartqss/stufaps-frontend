@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Typography, Table, Button, Input, Space, Select, Tag, message, Popover, Popconfirm, Drawer, Tooltip, Dropdown, Empty } from 'antd'
-import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined, EditOutlined, SaveOutlined, CloseOutlined, LoadingOutlined } from '@ant-design/icons'
+import { InfoCircleOutlined, FileExcelOutlined, FilePdfOutlined, FilterOutlined, CheckCircleOutlined, SortAscendingOutlined, PlusOutlined, EditOutlined, SaveOutlined, CloseOutlined, LoadingOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
@@ -238,6 +238,8 @@ const DISB_FIELD_MAP = {
   remarks: 'remarks',
 }
 
+const YEAR_LEVELS = ['I', 'II', 'III', 'IV', 'V', 'VI']
+
 const normalizeSemester = (sem = '') => {
   const val = String(sem || '').toLowerCase()
   if (val.includes('1')) return 'first'
@@ -317,6 +319,7 @@ export default function StudentsIndex() {
   const [editingRow, setEditingRow] = useState(null) // disbursement id being edited
   const [editingRowValues, setEditingRowValues] = useState({}) // field values for the row
   const [savingRow, setSavingRow] = useState(false)
+  const [addingDisbursement, setAddingDisbursement] = useState(null) // student seq being added to
 
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -553,6 +556,147 @@ export default function StudentsIndex() {
     return programOk && yearOk
   }
 
+  // Infer next year level from existing disbursements
+  const inferYearLevel = (targetAy, disbursements) => {
+    if (!targetAy || !disbursements?.length) return null
+    const m = targetAy.match(/^(\d{4})-(\d{4})$/)
+    if (!m || Number(m[2]) !== Number(m[1]) + 1) return null
+    const targetStart = Number(m[1])
+    const sameAy = disbursements.find(d => d.academic_year === targetAy && d.curriculum_year_level)
+    if (sameAy) return sameAy.curriculum_year_level
+    let best = null
+    let bestDiff = Infinity
+    for (const d of disbursements) {
+      if (!d.academic_year || !d.curriculum_year_level) continue
+      const dm = d.academic_year.match(/^(\d{4})-(\d{4})$/)
+      if (!dm) continue
+      const diff = targetStart - Number(dm[1])
+      if (Math.abs(diff) < bestDiff) {
+        bestDiff = Math.abs(diff)
+        best = { level: d.curriculum_year_level, diff }
+      }
+    }
+    if (!best) return null
+    const idx = YEAR_LEVELS.indexOf(best.level)
+    if (idx === -1) return null
+    const newIdx = idx + best.diff
+    return newIdx >= 0 && newIdx < YEAR_LEVELS.length ? YEAR_LEVELS[newIdx] : null
+  }
+
+  // Add disbursement for a student with auto-filled fields
+  const handleAddDisbursement = async (student) => {
+    setAddingDisbursement(student.seq)
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const records = student.disbursements || []
+      const payload = { student_seq: student.seq }
+
+      if (records.length > 0) {
+        const sorted = [...records].sort((a, b) => {
+          if (a.academic_year !== b.academic_year) return b.academic_year.localeCompare(a.academic_year)
+          return a.semester === 'Second' ? -1 : 1
+        })
+        const latest = sorted[0]
+
+        if (latest.academic_year && latest.semester) {
+          if (latest.semester === 'First') {
+            payload.academic_year = latest.academic_year
+            payload.semester = 'Second'
+          } else {
+            const m = latest.academic_year.match(/^(\d{4})-(\d{4})$/)
+            if (m) {
+              const nextStart = Number(m[1]) + 1
+              payload.academic_year = `${nextStart}-${nextStart + 1}`
+            }
+            payload.semester = 'First'
+          }
+        }
+
+        if (payload.academic_year) {
+          const inferred = inferYearLevel(payload.academic_year, records)
+          if (inferred) payload.curriculum_year_level = inferred
+        }
+
+        const withPayment = sorted.find(d => d.mode_of_payment)
+        if (withPayment) payload.mode_of_payment = withPayment.mode_of_payment
+        const withAtm = sorted.find(d => d.atm_account_no)
+        if (withAtm) payload.atm_account_no = withAtm.atm_account_no
+      }
+
+      // Check for duplicate
+      if (payload.academic_year && payload.semester) {
+        const dup = records.find(d => d.academic_year === payload.academic_year && d.semester === payload.semester)
+        if (dup) {
+          message.warning(`${student.surname || 'Student'} already has a record for ${payload.academic_year} – ${payload.semester}`)
+          setAddingDisbursement(null)
+          return
+        }
+      }
+
+      const response = await fetch(`${API_BASE}/disbursements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || err.message || 'Failed to create disbursement')
+      }
+
+      const result = await response.json()
+      // Optimistic update — add the new disbursement to the student's list
+      setStudents(prev => prev.map(s => {
+        if (s.seq !== student.seq) return s
+        return { ...s, disbursements: [...(s.disbursements || []), result.data] }
+      }))
+      // Auto-expand the row
+      if (!expandedRowKeys.includes(student.seq)) {
+        setExpandedRowKeys(prev => [...prev, student.seq])
+      }
+      const info = payload.academic_year && payload.semester
+        ? ` (${payload.academic_year} – ${payload.semester})`
+        : ''
+      message.success(`Disbursement added for ${student.surname || 'student'}${info}`)
+    } catch (err) {
+      console.error('Add disbursement error:', err)
+      message.error(err.message || 'Failed to add disbursement')
+    } finally {
+      setAddingDisbursement(null)
+    }
+  }
+
+  // Delete a single disbursement record
+  const handleDeleteDisbursement = async (student, disbRecord) => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      const response = await fetch(`${API_BASE}/disbursements/${disbRecord.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...(storedUser?.id ? { 'X-User-Id': String(storedUser.id) } : {}),
+        },
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || err.message || 'Failed to delete disbursement')
+      }
+      setStudents(prev => prev.map(s => {
+        if (s.seq !== student.seq) return s
+        return { ...s, disbursements: (s.disbursements || []).filter(d => d.id !== disbRecord.id) }
+      }))
+      message.success('Disbursement deleted')
+    } catch (err) {
+      console.error('Delete disbursement error:', err)
+      message.error(err.message || 'Failed to delete disbursement')
+    }
+  }
+
   // StuFAPs-editable fields (not accounting/cashier — those are read-only for StuFAPs)
   const STUFAPS_EDITABLE_FIELDS = ['nta', 'fund_source', 'voucher_tracking_no', 'mode_of_payment', 'atm_account_no', 'date_process', 'status', 'remarks']
 
@@ -645,6 +789,18 @@ export default function StudentsIndex() {
       return (
         <div style={{ padding: '24px 16px', textAlign: 'center' }}>
           <Empty description="No disbursement records" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          {canAddDisbursements && (
+            <Button
+              type="primary"
+              size="small"
+              icon={addingDisbursement === record.seq ? <LoadingOutlined /> : <PlusOutlined />}
+              onClick={() => handleAddDisbursement(record)}
+              disabled={addingDisbursement === record.seq}
+              style={{ marginTop: 12, fontSize: 12 }}
+            >
+              Add Disbursement
+            </Button>
+          )}
         </div>
       )
     }
@@ -818,7 +974,7 @@ export default function StudentsIndex() {
       {
         title: '',
         key: 'actions',
-        width: 80,
+        width: 120,
         fixed: 'right',
         align: 'center',
         render: (_, r) => {
@@ -841,19 +997,36 @@ export default function StudentsIndex() {
                   icon={<CloseOutlined />}
                   onClick={() => setEditingRow(null)}
                   disabled={savingRow}
-                  style={{ fontSize: 11, padding: '0 6px', height: 24 }}
+                  style={{ fontSize: 11, padding: '0 6px', height: 24, minWidth: 24 }}
                 />
               </Space>
             )
           }
           return (
-            <Button
-              type="text"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => startEditingRow(r)}
-              style={{ fontSize: 11, color: '#1677ff' }}
-            />
+            <Space size={4}>
+              <Button
+                type="text"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => startEditingRow(r)}
+                style={{ fontSize: 11, color: '#1677ff' }}
+              />
+              <Popconfirm
+                title="Delete disbursement"
+                description={`Delete ${r.academic_year || ''} ${r.semester || ''} record?`}
+                onConfirm={() => handleDeleteDisbursement(record, r)}
+                okText="Delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<DeleteOutlined />}
+                  style={{ fontSize: 11, color: '#ff4d4f' }}
+                />
+              </Popconfirm>
+            </Space>
           )
         },
       },
@@ -875,6 +1048,18 @@ export default function StudentsIndex() {
                 Total: {fmtCurrency(totalAmount)}
               </span>
             </>
+          )}
+          {canAddDisbursements && (
+            <Button
+              type="primary"
+              size="small"
+              icon={addingDisbursement === record.seq ? <LoadingOutlined /> : <PlusOutlined />}
+              onClick={() => handleAddDisbursement(record)}
+              disabled={addingDisbursement === record.seq}
+              style={{ fontSize: 11, height: 24, padding: '0 10px', marginLeft: 'auto' }}
+            >
+              Add
+            </Button>
           )}
         </div>
         {/* Sub-table */}
@@ -1737,7 +1922,7 @@ export default function StudentsIndex() {
               : expandedRowKeys.filter(k => k !== record.seq)
             )
           },
-          rowExpandable: (record) => (record.disbursements || []).length > 0,
+          rowExpandable: () => true,
         }}
         rowClassName={(record) => {
           const status = (record.scholarship_status || '').toLowerCase()

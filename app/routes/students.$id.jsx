@@ -544,7 +544,47 @@ export default function StudentDetails() {
   const handleCreateDisbursement = () => {
     setDisbursementModal({ visible: true, mode: 'create', record: null })
     disbursementForm.resetFields()
-    disbursementForm.setFieldsValue({ student_seq: student?.seq })
+
+    const defaults = { student_seq: student?.seq }
+    const records = student?.disbursements || []
+
+    if (records.length > 0) {
+      // Sort by AY descending, then semester (Second > First)
+      const sorted = [...records].sort((a, b) => {
+        if (a.academic_year !== b.academic_year) return b.academic_year.localeCompare(a.academic_year)
+        return a.semester === 'Second' ? -1 : 1
+      })
+      const latest = sorted[0]
+
+      // Determine next semester & AY
+      if (latest.academic_year && latest.semester) {
+        if (latest.semester === 'First') {
+          defaults.academic_year = latest.academic_year
+          defaults.semester = 'Second'
+        } else {
+          const m = latest.academic_year.match(/^(\d{4})-(\d{4})$/)
+          if (m) {
+            const nextStart = Number(m[1]) + 1
+            defaults.academic_year = `${nextStart}-${nextStart + 1}`
+          }
+          defaults.semester = 'First'
+        }
+      }
+
+      // Infer year level for the new AY
+      if (defaults.academic_year) {
+        const inferred = inferYearLevel(defaults.academic_year, records)
+        if (inferred) defaults.curriculum_year_level = inferred
+      }
+
+      // Carry forward payment method & ATM from latest record that has them
+      const withPayment = sorted.find(d => d.mode_of_payment)
+      if (withPayment) defaults.mode_of_payment = withPayment.mode_of_payment
+      const withAtm = sorted.find(d => d.atm_account_no)
+      if (withAtm) defaults.atm_account_no = withAtm.atm_account_no
+    }
+
+    disbursementForm.setFieldsValue(defaults)
   }
 
   const handleDisbursementSubmit = async () => {

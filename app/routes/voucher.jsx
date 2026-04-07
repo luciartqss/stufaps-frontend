@@ -182,26 +182,41 @@ export default function Voucher() {
   useEffect(() => {
     const query = studentSearch.toLowerCase().trim()
     const selectedIds = new Set(selectedStudents.map(s => String(s.id)))
-    const filtered = query === ''
+    const activeNta = selectedStudents.length > 0 ? selectedStudents[0].nta : null
+    let filtered = query === ''
       ? availableStudents
       : availableStudents.filter(s =>
           s.fullName.toLowerCase().includes(query) ||
           (s.atmAccount && s.atmAccount.toLowerCase().includes(query))
         )
 
+    if (activeNta) {
+      filtered = filtered.filter(s => s.nta === activeNta)
+    }
+
     setStudentOptions(
       filtered
         .filter(s => !selectedIds.has(String(s.id)))
-        .slice(0, 50)
         .map(s => ({
           value: String(s.id),
           label: (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{s.fullName} <span style={{ color: '#999', fontSize: 12 }}>({s.atmAccount || 'No ATM'})</span></span>
-              <span style={{ display: 'flex', gap: 4 }}>
-                {s.nta && <Tag color="blue" style={{ margin: 0, fontSize: 11 }}>{s.nta}</Tag>}
-                {s.voucherTrackingNo && <Tag color="orange" style={{ margin: 0, fontSize: 11 }}>{s.voucherTrackingNo}</Tag>}
-              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, padding: '2px 0' }}>
+                <Text strong style={{ fontSize: 13, lineHeight: 1.3, color: '#262626' }}>
+                  {s.fullName}
+                </Text>
+                <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>
+                  {s.atmAccount || 'No ATM'}
+                </Text>
+                {s.nta && (
+                  <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>
+                    {s.nta}
+                  </Text>
+                )}
+                {s.voucherTrackingNo && (
+                  <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2, color: '#8c8c8c' }}>
+                    {s.voucherTrackingNo}
+                  </Text>
+                )}
             </div>
           ),
           student: s,
@@ -622,9 +637,16 @@ export default function Voucher() {
         {/* LEFT BAR: STUDENTS */}
         <div style={{ borderRight: '1px solid #e8e8e8', background: '#fff', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f0f0' }}>
-            <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 12 }}>
-              <TeamOutlined style={{ marginRight: 8, color: '#1677ff' }} />Beneficiaries Selection
-            </Text>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <Text strong style={{ fontSize: 15, whiteSpace: 'nowrap' }}>
+                <TeamOutlined style={{ marginRight: 8, color: '#1677ff' }} />Beneficiaries
+              </Text>
+              {selectedStudents.length > 0 && selectedStudents[0].nta && (
+                <Tag color="blue" style={{ fontSize: 12, padding: '1px 8px', fontWeight: 600, margin: 0, flexShrink: 0 }}>
+                  {selectedStudents[0].nta}
+                </Tag>
+              )}
+            </div>
             <AutoComplete
               ref={autocompleteRef}
               style={{ width: '100%' }}
@@ -649,40 +671,40 @@ export default function Voucher() {
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', maxHeight: 'calc(100vh - 320px)', padding: '16px 24px', background: '#fcfcfc' }}>
-            {studentsWithVoucher.length > 0 && (
-              <Alert
-                type="warning" showIcon
-                style={{ marginBottom: 16, border: '1px solid #ffe58f' }}
-                message={<span style={{ fontSize: 13, fontWeight: 500 }}>Voucher Overwrite Notice</span>}
-                description={<span style={{ fontSize: 12 }}>{studentsWithVoucher.length} student(s) already have a voucher tracking number for this exact semester and AY. Finalizing will update them to the new voucher.</span>}
-              />
-            )}
-
             {selectedStudents.length === 0 ? (
               <Empty style={{ marginTop: 60 }} description="No students selected" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
               <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                {studentsWithVoucher.length > 0 && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="Existing voucher detected"
+                    description={`${studentsWithVoucher.length} selected student(s) already have a voucher. Finalizing will overwrite the current voucher number.`}
+                    style={{ marginBottom: 4 }}
+                  />
+                )}
                 {selectedStudents.map((s, i) => {
                   const hasV = !!s.voucherTrackingNo;
                   return (
                     <div key={s.id} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 12px', background: hasV ? '#fffbe6' : '#fff',
-                      border: hasV ? '1px solid #ffe58f' : '1px solid #e8e8e8',
+                      padding: '10px 12px', background: hasV ? '#fffaf0' : '#fff',
+                      border: hasV ? '1px solid #ffd591' : '1px solid #e8e8e8',
                       borderRadius: 6, boxShadow: '0 1px 2px rgba(0,0,0,0.01)'
                     }}>
                       <div style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                          <Text type="secondary" style={{ fontSize: 11 }}>{i + 1}.</Text>
-                          <Text strong style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.fullName}</Text>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'baseline' }}>
+                          <Text type="secondary" style={{ fontSize: 11, flexShrink: 0 }}>{i + 1}.</Text>
+                          <Text strong style={{ fontSize: 13, lineHeight: 1.35 }}>{s.fullName}</Text>
                         </div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4, paddingLeft: 18 }}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>{s.atmAccount || 'No ATM'}</Text>
-                          {s.nta && <Tag color="blue" style={{ margin: 0, fontSize: 11, border: 0 }}>{s.nta}</Tag>}
+                        <div style={{ paddingLeft: 18, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{s.atmAccount || 'No ATM'}</Text>
+                          {s.nta && <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{s.nta}</Text>}
                           {hasV && (
-                            <Tooltip title="This tracking number will be overwritten.">
-                              <Tag color="orange" style={{ margin: 0, fontSize: 11, border: 0 }}><WarningOutlined /> {s.voucherTrackingNo}</Tag>
-                            </Tooltip>
+                            <Text style={{ fontSize: 11, lineHeight: 1.2, color: '#d46b08' }}>
+                              Existing voucher: {s.voucherTrackingNo} (will be overwritten)
+                            </Text>
                           )}
                         </div>
                       </div>
