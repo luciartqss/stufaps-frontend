@@ -287,12 +287,18 @@ export default function SUB_ARO_NTA() {
 
       const endpoint = activeTab === 'SUB-ARO' ? 'files/sub-aro' : 'files/nta'
       const url = editingFileId ? `${API_BASE}/${endpoint}/${editingFileId}` : `${API_BASE}/${endpoint}`
-      const method = editingFileId ? 'PUT' : 'POST'
 
-      console.log(`Uploading to: ${url}`, { endpoint, method, fileCount: fileList.length })
+      // Always use POST for FormData uploads — PHP doesn't parse multipart/form-data
+      // on PUT requests, so $request->hasFile() and form fields fail silently.
+      // Laravel's _method spoofing routes POST + _method=PUT to the update() method.
+      if (editingFileId) {
+        fd.append('_method', 'PUT')
+      }
+
+      console.log(`Uploading to: ${url}`, { endpoint, editing: !!editingFileId, fileCount: fileList.length })
 
       const res = await fetch(url, {
-        method: method,
+        method: 'POST',
         body: fd
       })
 
