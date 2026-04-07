@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx-js-style'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title } = Typography
 const { Search } = Input
@@ -399,6 +400,8 @@ export default function StudentsIndex() {
     fetchFilterOptions()
     fetchStudents()
   }, [])
+
+  useRealtime(['Student', 'Disbursement'], () => { fetchFilterOptions(); fetchStudents() })
 
   // Auto-search when debounced search value changes
   const initialMount = useRef(true)

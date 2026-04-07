@@ -26,6 +26,8 @@ import {
 const { Text, Title } = Typography
 const { Option } = Select
 
+import { useRealtime } from '../lib/useRealtime'
+
 export function meta() {
   return [
     { title: 'CHED Merit Scholarship Program (CMSP) | StuFAPs' },
@@ -166,6 +168,8 @@ export default function FinancialAssistanceCmsp() {
   }, [semesterFilter])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useRealtime('ScholarshipProgramRecord', fetchData)
 
   const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
 

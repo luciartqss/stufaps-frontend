@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Text, Title } = Typography
 
@@ -67,6 +68,7 @@ export default function AboutUs() {
     const [teamInterns, setTeamInterns] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
     const [selectedPerson, setSelectedPerson] = useState(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [editModalOpen, setEditModalOpen] = useState(false)
@@ -123,7 +125,9 @@ export default function AboutUs() {
                 setError(err.message)
                 setLoading(false)
             })
-    }, [])
+    }, [refreshTrigger])
+
+    useRealtime('Employee', () => setRefreshTrigger(prev => prev + 1))
 
     const handleEditClick = (employee) => {
         setSelectedPerson(employee)

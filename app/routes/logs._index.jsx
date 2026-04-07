@@ -11,6 +11,7 @@ const { Title, Text } = Typography
 
 import { API_BASE as API_URL } from '../lib/config'
 import { formatDisplayDate } from '../lib/dateUtils'
+import { useRealtime } from '../lib/useRealtime'
 
 export function meta() {
   return [
@@ -131,6 +132,8 @@ export default function LogsIndex() {
   }, [])
 
   useEffect(() => { fetchLogs(1, pagination.pageSize) }, [])
+
+  useRealtime('Log', () => fetchLogs(1, pagination.pageSize))
 
   // ── Rollback handler — simple confirm ──
   const handleRollback = (log) => {

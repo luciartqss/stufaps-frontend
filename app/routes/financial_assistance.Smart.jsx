@@ -13,6 +13,7 @@ import {
   WarningOutlined,
 } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Text, Title } = Typography
 const { Option } = Select
@@ -175,6 +176,8 @@ export default function FinancialAssistancescgms_sucs() {
   }, [semesterFilter])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  useRealtime('ScholarshipProgramRecord', fetchData)
 
   const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
 

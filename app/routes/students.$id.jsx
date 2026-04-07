@@ -7,6 +7,7 @@ import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
 import { formatDisplayDateOnly, parseDate, formatForApi } from '../lib/dateUtils'
 import { useReferenceData } from '../lib/useReferenceData'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 
@@ -294,6 +295,8 @@ export default function StudentDetails() {
         setLoading(false)
       })
   }, [id, refreshTrigger])
+
+  useRealtime(['Student', 'Disbursement'], () => setRefreshTrigger(prev => prev + 1))
 
   const handleChange = (field, value) => {
     const newFormData = { ...formData, [field]: value }
