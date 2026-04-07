@@ -577,6 +577,37 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }, [pendingStatuses, fetchPaginated, fetchCounts, noStatus.page])
 
+  // Expanded institution students state (no_uii tab)
+  const [expandedInstitutions, setExpandedInstitutions] = useState({}) // { institutionName: { students, total, page, loading } }
+  const [expandedRowKeys, setExpandedRowKeys] = useState([])
+
+  const fetchInstitutionStudents = useCallback(async (institution, page = 1) => {
+    setExpandedInstitutions(prev => ({
+      ...prev,
+      [institution]: { ...prev[institution], loading: true, page },
+    }))
+    try {
+      const params = new URLSearchParams({ institution, page, per_page: 10 })
+      const res = await fetch(`${API_URL}/dashboard/warnings/no-uii-students?${params}`)
+      const data = await res.json()
+      setExpandedInstitutions(prev => ({
+        ...prev,
+        [institution]: {
+          students: data.students || [],
+          total: data.total || 0,
+          page: data.page || page,
+          loading: false,
+        },
+      }))
+    } catch (err) {
+      console.error('Failed to fetch institution students:', err)
+      setExpandedInstitutions(prev => ({
+        ...prev,
+        [institution]: { ...prev[institution], loading: false },
+      }))
+    }
+  }, [])
+
   // Bulk Institution rename state
   const [pendingInstitutionRenames, setPendingInstitutionRenames] = useState({}) // { oldInstitutionName: newInstitutionName }
   const [savingBulkInstitution, setSavingBulkInstitution] = useState(false)
@@ -1148,6 +1179,67 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                   rowKey={activeTab === 'incomplete_stufaps_disb' ? 'student_seq' : activeTab === 'no_uii' ? 'institution' : 'seq'}
                   locale={{ emptyText: <Empty description="No issues found" /> }}
                   className="data-quality-table"
+                  {...(activeTab === 'no_uii' ? {
+                    expandable: {
+                      expandedRowKeys,
+                      onExpand: (expanded, record) => {
+                        if (expanded) {
+                          setExpandedRowKeys(prev => [...prev, record.institution])
+                          if (!expandedInstitutions[record.institution]?.students) {
+                            fetchInstitutionStudents(record.institution)
+                          }
+                        } else {
+                          setExpandedRowKeys(prev => prev.filter(k => k !== record.institution))
+                        }
+                      },
+                      expandedRowRender: (record) => {
+                        const instData = expandedInstitutions[record.institution] || {}
+                        const students = instData.students || []
+                        return (
+                          <div style={{ padding: '4px 0' }}>
+                            <Spin spinning={!!instData.loading} indicator={<LoadingOutlined />}>
+                              <Table
+                                dataSource={students}
+                                columns={[
+                                  {
+                                    title: 'Name', key: 'name', width: 180,
+                                    render: (_, r) => {
+                                      const name = `${r.surname || ''}, ${r.first_name || ''}`.trim()
+                                      return <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0', fontWeight: 500 }}>{name || 'N/A'}</a>
+                                    },
+                                  },
+                                  { title: 'Award No.', dataIndex: 'award_number', key: 'award_number', width: 150, render: (v) => v || <Text type="secondary">—</Text> },
+                                  { title: 'Scholarship', dataIndex: 'scholarship_program', key: 'program', width: 160, ellipsis: true },
+                                  { title: 'LRN', dataIndex: 'learner_reference_number', key: 'lrn', width: 120, render: (v) => v || <Text type="secondary">—</Text> },
+                                  {
+                                    title: '', key: 'action', width: 45,
+                                    render: (_, r) => <a onClick={() => navigate(`/students/${r.seq}`)} style={{ color: '#0032a0' }}>View</a>,
+                                  },
+                                ]}
+                                size="small"
+                                pagination={false}
+                                rowKey="seq"
+                                className="data-quality-table"
+                                locale={{ emptyText: <Empty description="No students found" /> }}
+                              />
+                              {(instData.total || 0) > 10 && (
+                                <div style={{ padding: '8px 0 0', display: 'flex', justifyContent: 'flex-end' }}>
+                                  <Pagination
+                                    size="small"
+                                    current={instData.page || 1}
+                                    total={instData.total}
+                                    pageSize={10}
+                                    onChange={(p) => fetchInstitutionStudents(record.institution, p)}
+                                    showSizeChanger={false}
+                                  />
+                                </div>
+                              )}
+                            </Spin>
+                          </div>
+                        )
+                      },
+                    },
+                  } : {})}
                 />
                 {tabData.total > PAGE_SIZE && (
                   <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f0f0f0' }}>
