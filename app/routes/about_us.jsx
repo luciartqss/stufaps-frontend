@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Card, Typography, Space, Row, Col, Avatar, Spin, Modal, Button, Input, Popconfirm, message, Select, Upload, Tabs } from 'antd'
 import {
     InfoCircleOutlined,
@@ -88,9 +88,13 @@ export default function AboutUs() {
         profile_picture: '',
     })
 
+    const silentRef = useRef(false)
+
     useEffect(() => {
-        setLoading(true)
-        setError(null)
+        if (!silentRef.current) {
+            setLoading(true)
+            setError(null)
+        }
 
         // Debug log
         console.log('API_BASE:', API_BASE)
@@ -119,15 +123,20 @@ export default function AboutUs() {
                 setTeamMembers(teamMemberList)
                 setTeamInterns(teamInternList)
                 setLoading(false)
+                silentRef.current = false
             })
             .catch(err => {
                 console.error('Error fetching employees:', err)
-                setError(err.message)
+                if (!silentRef.current) setError(err.message)
                 setLoading(false)
+                silentRef.current = false
             })
     }, [refreshTrigger])
 
-    useRealtime('Employee', () => setRefreshTrigger(prev => prev + 1))
+    useRealtime('Employee', () => {
+        silentRef.current = true
+        setRefreshTrigger(prev => prev + 1)
+    })
 
     const handleEditClick = (employee) => {
         setSelectedPerson(employee)

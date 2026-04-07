@@ -10,7 +10,7 @@ import {
   SearchOutlined,
   SaveOutlined,
 } from '@ant-design/icons'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
 import { useRealtime } from '../lib/useRealtime'
@@ -235,6 +235,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const setActiveTab = useCallback((tab) => {
     setActiveTabState(tab)
     setSearchParams({ tab }, { replace: true })
+    searchRef.current = ''
+    setSearchDisplay('')
   }, [setSearchParams])
 
   const [dupAward, setDupAward] = useState({ students: [], total: 0, page: 1, loading: false })
@@ -246,9 +248,13 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const [incomplete, setIncomplete] = useState({ students: [], total: 0, page: 1, loading: false })
   const [incompleteStufapsDisb, setIncompleteStufapsDisb] = useState({ students: [], total: 0, page: 1, loading: false })
 
-  const fetchCounts = useCallback(async () => {
+  const searchRef = useRef('')
+  const [searchDisplay, setSearchDisplay] = useState('')
+  const SEARCHABLE_TABS = ['no_award', 'no_lrn', 'no_status', 'incomplete', 'incomplete_stufaps_disb']
+
+  const fetchCounts = useCallback(async (silent) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const res = await fetch(`${API_URL}/dashboard/stats`)
       if (!res.ok) throw new Error('Failed to load')
       const data = await res.json()
@@ -273,14 +279,16 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     } catch (err) {
       console.error('Failed to fetch counts:', err)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
-  const fetchPaginated = useCallback(async (endpoint, setter, page = 1) => {
+  const fetchPaginated = useCallback(async (endpoint, setter, page = 1, search = searchRef.current) => {
     setter(prev => ({ ...prev, loading: true }))
     try {
-      const res = await fetch(`${API_URL}/dashboard/warnings/${endpoint}?page=${page}&per_page=${PAGE_SIZE}`)
+      const params = new URLSearchParams({ page, per_page: PAGE_SIZE })
+      if (search) params.set('search', search)
+      const res = await fetch(`${API_URL}/dashboard/warnings/${endpoint}?${params}`)
       const data = await res.json()
       setter({ students: data.students || [], total: data.total || 0, page: data.page || page, loading: false })
     } catch (err) {
@@ -306,10 +314,12 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     }
   }, [])
 
-  const fetchIncompleteStufapsDisb = useCallback(async (page = 1) => {
+  const fetchIncompleteStufapsDisb = useCallback(async (page = 1, search = searchRef.current) => {
     setIncompleteStufapsDisb(prev => ({ ...prev, loading: true }))
     try {
-      const res = await fetch(`${API_URL}/dashboard/warnings/incomplete-stufaps?page=${page}&per_page=${PAGE_SIZE}`)
+      const params = new URLSearchParams({ page, per_page: PAGE_SIZE })
+      if (search) params.set('search', search)
+      const res = await fetch(`${API_URL}/dashboard/warnings/incomplete-stufaps?${params}`)
       const data = await res.json()
       setIncompleteStufapsDisb({
         students: data.students || [],
@@ -325,7 +335,19 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
 
   useEffect(() => { fetchCounts() }, [fetchCounts])
 
-  useRealtime(['Student', 'Disbursement'], fetchCounts)
+  useRealtime(['Student', 'Disbursement'], (silent) => {
+    fetchCounts(silent)
+    const s = searchRef.current
+    const tabRefresh = {
+      no_lrn: () => fetchPaginated('no-lrn', setNoLrn, noLrn.page, s),
+      no_award: () => fetchPaginated('no-award-number', setNoAward, noAward.page, s),
+      no_status: () => fetchPaginated('no-status', setNoStatus, noStatus.page, s),
+      no_uii: () => fetchNoUii(noUii.page),
+      incomplete: () => fetchPaginated('incomplete-info', setIncomplete, incomplete.page, s),
+      incomplete_stufaps_disb: () => fetchIncompleteStufapsDisb(incompleteStufapsDisb.page, s),
+    }
+    tabRefresh[activeTab]?.()
+  })
 
   useEffect(() => {
     if (loading) return
@@ -341,9 +363,9 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
     const hasData = (cfg?.data?.students?.length > 0) || (cfg?.data?.institutions?.length > 0)
     if (cfg && cfg.count > 0 && !hasData) {
       if (cfg.customFetch) {
-        cfg.customFetch(1)
+        cfg.customFetch(1, searchRef.current)
       } else {
-        fetchPaginated(cfg.endpoint, cfg.setter, 1)
+        fetchPaginated(cfg.endpoint, cfg.setter, 1, searchRef.current)
       }
     }
   }, [activeTab, loading])
@@ -1009,6 +1031,29 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
             </div>
           }
         >
+          {SEARCHABLE_TABS.includes(activeTab) && (
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0' }}>
+              <Input.Search
+                placeholder="Search by name or award number..."
+                allowClear
+                value={searchDisplay}
+                onChange={e => setSearchDisplay(e.target.value)}
+                onSearch={(value) => {
+                  searchRef.current = value
+                  const tabActions = {
+                    no_lrn: () => fetchPaginated('no-lrn', setNoLrn, 1, value),
+                    no_award: () => fetchPaginated('no-award-number', setNoAward, 1, value),
+                    no_status: () => fetchPaginated('no-status', setNoStatus, 1, value),
+                    incomplete: () => fetchPaginated('incomplete-info', setIncomplete, 1, value),
+                    incomplete_stufaps_disb: () => fetchIncompleteStufapsDisb(1, value),
+                  }
+                  tabActions[activeTab]?.()
+                }}
+                style={{ maxWidth: 340 }}
+                size="middle"
+              />
+            </div>
+          )}
           <Spin spinning={tabData.loading} indicator={<LoadingOutlined />}>
             {(activeTab === 'duplicate_award' || activeTab === 'duplicate_lrn') ? (
               <div style={{ padding: '16px' }}>
@@ -1117,9 +1162,9 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
                       onChange={(page) => {
                         if (paginated) {
                           if (customFetch) {
-                            customFetch(page)
+                            customFetch(page, searchRef.current)
                           } else {
-                            fetchPaginated(endpoint, setter, page)
+                            fetchPaginated(endpoint, setter, page, searchRef.current)
                           }
                         }
                       }}

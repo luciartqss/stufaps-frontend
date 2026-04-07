@@ -115,9 +115,9 @@ export default function DataQualityAccounting({ readOnly = false }) {
     fetchFilterOptions()
   }, [])
 
-  const fetchData = useCallback(async (page = 1, perPage = null) => {
+  const fetchData = useCallback(async (page = 1, perPage = null, silent) => {
     if (!filtersReady) return
-    setLoading(true)
+    if (!silent) setLoading(true)
     setHasQueried(true)
     try {
       const ps = perPage || pagination.pageSize
@@ -142,7 +142,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
       console.error(err)
       message.error('Failed to load accounting data')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [showMissingOnly, pagination.pageSize, academicYear, semester, scholarshipProgram, voucherTrackingNo])
 
@@ -158,7 +158,7 @@ export default function DataQualityAccounting({ readOnly = false }) {
     }
   }, [academicYear, semester, scholarshipProgram, showMissingOnly])
 
-  useRealtime(['Disbursement', 'Student'], () => { if (filtersReady) fetchData() })
+  useRealtime(['Disbursement', 'Student'], (silent) => { if (filtersReady) fetchData(undefined, undefined, silent) })
 
   const handleSearch = useCallback((value) => {
     if (value !== undefined) searchRef.current = value

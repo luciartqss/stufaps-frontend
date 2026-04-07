@@ -154,10 +154,10 @@ export default function Dashboard() {
     warnings: {},
   })
 
-  const fetchDashboard = async (currentFilters = filters) => {
+  const fetchDashboard = async (currentFilters = filters, silent) => {
     try {
-      setLoading(true)
-      setError(null)
+      if (!silent) setLoading(true)
+      if (!silent) setError(null)
       const params = new URLSearchParams()
       if (currentFilters.semester) params.append('semester', currentFilters.semester)
       if (currentFilters.academic_year) params.append('academic_year', currentFilters.academic_year)
@@ -204,7 +204,7 @@ export default function Dashboard() {
       console.error('Dashboard fetch error:', err)
       setError(err.message)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -225,7 +225,7 @@ export default function Dashboard() {
 
   useEffect(() => { fetchDashboard(); fetchAnalytics() }, [])
 
-  useRealtime('*', () => { fetchDashboard(); fetchAnalytics() })
+  useRealtime('*', (silent) => { fetchDashboard(filters, silent); fetchAnalytics() })
 
   const handleFilterChange = (key, value) => {
     const f = { ...filters, [key]: value }

@@ -110,9 +110,9 @@ export default function LogsIndex() {
   const [conflictModal, setConflictModal] = useState({ visible: false, conflicts: [], log: null })
 
   // ── Fetch paginated logs from /logs/batched ──
-  const fetchLogs = useCallback(async (page = 1, pageSize = 20) => {
+  const fetchLogs = useCallback(async (page = 1, pageSize = 20, silent) => {
     try {
-      setLoading(true)
+      if (!silent) setLoading(true)
       const params = new URLSearchParams()
       params.set('page', page)
       params.set('per_page', pageSize)
@@ -127,13 +127,13 @@ export default function LogsIndex() {
       message.error('Failed to fetch logs')
       console.error(error)
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [])
 
   useEffect(() => { fetchLogs(1, pagination.pageSize) }, [])
 
-  useRealtime('Log', () => fetchLogs(1, pagination.pageSize))
+  useRealtime('Log', (silent) => fetchLogs(1, pagination.pageSize, silent))
 
   // ── Rollback handler — simple confirm ──
   const handleRollback = (log) => {

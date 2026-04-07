@@ -422,8 +422,8 @@ export default function FinancialAssistanceIndex() {
   const [othersData, setOthersData] = useState({ total: 0, programs: [] })
   const [slotsModalOpen, setSlotsModalOpen] = useState(false)
 
-  const fetchPrograms = useCallback(() => {
-    setLoading(true)
+  const fetchPrograms = useCallback((silent) => {
+    if (!silent) setLoading(true)
     const semParam = `?semester=${encodeURIComponent(semesterFilter)}`
     Promise.all([
       fetch(`${API_BASE}/scholarship_program_records${semParam}`).then(r => r.json()),
@@ -436,7 +436,7 @@ export default function FinancialAssistanceIndex() {
       setOthersData(others)
     }).catch(err => {
       console.error('Fetch Error:', err)
-    }).finally(() => setLoading(false))
+    }).finally(() => { if (!silent) setLoading(false) })
   }, [semesterFilter])
 
   useEffect(() => { fetchPrograms() }, [fetchPrograms])

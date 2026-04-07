@@ -164,8 +164,8 @@ export default function FinancialAssistanceEstatistikolar() {
   const [semesterFilter, setSemesterFilter] = useState('First')
   const [academicYears, setAcademicYears] = useState([])
 
-  const fetchData = useCallback(() => {
-    setLoading(true)
+  const fetchData = useCallback((silent) => {
+    if (!silent) setLoading(true)
     const semParam = `?semester=${encodeURIComponent(semesterFilter)}`
     fetch(`${API_BASE}/scholarship_program_records/estat-count${semParam}`)
       .then(res => {
@@ -198,7 +198,7 @@ export default function FinancialAssistanceEstatistikolar() {
         console.error('Fetch Error:', err)
         setError(err.message)
       })
-      .finally(() => setLoading(false))
+      .finally(() => { if (!silent) setLoading(false) })
   }, [semesterFilter])
 
   useEffect(() => { fetchData() }, [fetchData])
