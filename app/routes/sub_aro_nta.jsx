@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip as RechartsTooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Text, Title } = Typography
 const STORAGE_BASE = API_BASE.replace('/api', '/storage')
@@ -93,14 +94,10 @@ export default function SUB_ARO_NTA() {
 
   useEffect(() => { 
     fetchAll()
-    
-    // Set up polling to refresh NTA/SubAro data every 5 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetchAll()
-    }, 5000)
-    
-    return () => clearInterval(interval)
   }, [fetchAll])
+
+  // Real-time updates via WebSocket
+  useRealtime(['SubAroFile', 'NtaFile', 'NtaSubAroAssignment', 'SubAroNtaFiscalYear', 'ExceedingBalance'], fetchAll)
 
   // Refresh data when switching between tabs to ensure fresh NTA/SubAro data
   useEffect(() => {

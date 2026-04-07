@@ -36,6 +36,7 @@ import {
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 
@@ -223,6 +224,8 @@ export default function Dashboard() {
   }
 
   useEffect(() => { fetchDashboard(); fetchAnalytics() }, [])
+
+  useRealtime('*', () => { fetchDashboard(); fetchAnalytics() })
 
   const handleFilterChange = (key, value) => {
     const f = { ...filters, [key]: value }

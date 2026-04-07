@@ -27,6 +27,7 @@ import {
 const { Text, Title } = Typography
 const { Option } = Select
 import { Progress } from 'antd'
+import { useRealtime } from '../lib/useRealtime'
 
 export function meta() {
     return [
@@ -188,6 +189,8 @@ export default function FinancialAssistanceAcef_giahep() {
     }, [semesterFilter])
 
     useEffect(() => { fetchData() }, [fetchData])
+
+    useRealtime('ScholarshipProgramRecord', fetchData)
 
     const sortedYears = [...academicYears].filter(y => y !== 'All').sort()
 

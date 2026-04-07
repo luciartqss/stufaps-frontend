@@ -13,6 +13,7 @@ import {
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
+import { useRealtime } from '../lib/useRealtime'
 import { useReferenceData } from '../lib/useReferenceData'
 
 const { Title, Text } = Typography
@@ -323,6 +324,8 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   }, [])
 
   useEffect(() => { fetchCounts() }, [fetchCounts])
+
+  useRealtime(['Student', 'Disbursement'], fetchCounts)
 
   useEffect(() => {
     if (loading) return

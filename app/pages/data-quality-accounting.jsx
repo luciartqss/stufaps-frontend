@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef, memo } from 'react'
 import { API_BASE } from '../lib/config'
 import dayjs from 'dayjs'
 import { formatForApi } from '../lib/dateUtils'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 
@@ -156,6 +157,8 @@ export default function DataQualityAccounting({ readOnly = false }) {
       setPagination(prev => ({ ...prev, current: 1, total: 0 }))
     }
   }, [academicYear, semester, scholarshipProgram, showMissingOnly])
+
+  useRealtime(['Disbursement', 'Student'], () => { if (filtersReady) fetchData() })
 
   const handleSearch = useCallback((value) => {
     if (value !== undefined) searchRef.current = value

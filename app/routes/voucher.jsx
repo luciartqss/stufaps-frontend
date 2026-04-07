@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { API_BASE } from '../lib/config'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 
@@ -70,6 +71,11 @@ export default function Voucher() {
     loadHistory()
     loadTrackingInfo()
   }, [])
+
+  useRealtime(['VoucherHistory', 'VoucherCounter', 'Student', 'Disbursement'], () => {
+    fetchPrograms(); fetchYears(); loadHistory(); loadTrackingInfo()
+    if (program) loadStudents()
+  })
 
   useEffect(() => {
     if (program) loadStudents()

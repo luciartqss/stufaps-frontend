@@ -10,6 +10,7 @@ import {
 
 import { API_BASE } from '../lib/config'
 import { useAuth } from '../lib/AuthContext'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -439,6 +440,8 @@ export default function FinancialAssistanceIndex() {
   }, [semesterFilter])
 
   useEffect(() => { fetchPrograms() }, [fetchPrograms])
+
+  useRealtime('ScholarshipProgramRecord', fetchPrograms)
 
   // Sort academic years ascending for cumulative slot computation
   const sortedYears = useMemo(() => [...academicYears].sort(), [academicYears])

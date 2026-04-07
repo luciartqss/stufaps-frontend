@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Typography, Table, Button, Input, Select, Modal, Form, Tag, Space, message, Popconfirm, Checkbox, Divider, Tooltip, Card } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined, UserOutlined, LockOutlined, IdcardOutlined, BookOutlined, CalendarOutlined, SafetyOutlined } from '@ant-design/icons'
 import { API_BASE } from '../lib/config'
+import { useRealtime } from '../lib/useRealtime'
 
 const { Title, Text } = Typography
 
@@ -64,6 +65,8 @@ export default function AccountManagement() {
     fetchUsers()
     fetchAssignmentOptions()
   }, [])
+
+  useRealtime(['User', 'UserAssignment'], () => { fetchUsers(); fetchAssignmentOptions() })
 
   const openCreate = () => {
     setEditingUser(null)
