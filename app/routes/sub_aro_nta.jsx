@@ -97,7 +97,7 @@ export default function SUB_ARO_NTA() {
   }, [fetchAll])
 
   // Real-time updates via WebSocket
-  useRealtime(['SubAroFile', 'NtaFile', 'NtaSubAroAssignment', 'SubAroNtaFiscalYear', 'ExceedingBalance'], fetchAll)
+  useRealtime(['SubAroFile', 'NtaFile', 'NtaSubAroAssignment', 'SubAroNtaFiscalYear', 'ExceedingBalance', 'Disbursement', 'Student'], fetchAll)
 
   // Refresh data when switching between tabs to ensure fresh NTA/SubAro data
   useEffect(() => {
