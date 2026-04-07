@@ -228,7 +228,7 @@ export default function SUB_ARO_NTA() {
       const latest = fiscalYears.length > 0 ? Math.max(...fiscalYears.map(fy => parseInt(fy.fiscal_year))) : 2020
       const res = await fetch(`${API_BASE}/fiscal-years`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ fiscal_year: String(latest + 1) }),
       })
       if (!res.ok) throw new Error()
@@ -299,6 +299,7 @@ export default function SUB_ARO_NTA() {
 
       const res = await fetch(url, {
         method: 'POST',
+        headers: { 'Accept': 'application/json' },
         body: fd
       })
 
@@ -407,7 +408,7 @@ export default function SUB_ARO_NTA() {
   const handleDelete = async (id) => {
     try {
       const endpoint = activeTab === 'SUB-ARO' ? 'files/sub-aro' : 'files/nta'
-      const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { method: 'DELETE' })
+      const res = await fetch(`${API_BASE}/${endpoint}/${id}`, { method: 'DELETE', headers: { 'Accept': 'application/json' } })
       if (!res.ok) throw new Error()
       message.success('Deleted')
       setUploadedFiles(prev => prev.filter(f => f.id !== id))
