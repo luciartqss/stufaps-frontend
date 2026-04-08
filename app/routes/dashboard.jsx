@@ -140,6 +140,8 @@ export default function Dashboard() {
     graduates_count: 0,
     disbursement_by_program: [],
     disbursement_trends: [],
+    cmsp_breakdown: [],
+    estat_breakdown: [],
   })
   const [data, setData] = useState({
     stats: { totalStudents: 0, activeScholars: 0, graduated: 0, terminated: 0, replacement: 0, others: 0, totalDisbursed: 0 },
@@ -568,6 +570,110 @@ export default function Dashboard() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
                 <Empty description="No HEI type data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+      </Row>
+
+      {/* ── CMSP Breakdown + ESTATISTIKOLAR Breakdown ── */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BarChartOutlined style={{ color: '#3b82f6', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>CMSP Breakdown</Text>
+              </div>
+            }
+            extra={<Tag color="blue" style={{ fontSize: 11, borderRadius: 4 }}>Sub-types</Tag>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.cmsp_breakdown.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={analytics.cmsp_breakdown.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="48%"
+                    outerRadius="78%"
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {analytics.cmsp_breakdown.filter(d => d.value > 0).map((entry, i) => {
+                      const colors = {
+                        'Full SSP': '#1890ff', 'Half SSP': '#52c41a',
+                        'Full SSP-GAD': '#722ed1', 'Half SSP-GAD': '#eb2f96',
+                        'Full PESFA': '#fa8c16', 'Half PESFA': '#13c2c2',
+                        'Full PESFA-GAD': '#2f54eb', 'Half PESFA-GAD': '#f5222d',
+                      }
+                      return <Cell key={'cmsp-' + i} fill={colors[entry.name] || '#94a3b8'} />
+                    })}
+                  </Pie>
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
+                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle"
+                    formatter={(value) => {
+                      const item = analytics.cmsp_breakdown.find(d => d.name === value)
+                      const total = analytics.cmsp_breakdown.reduce((s, d) => s + d.value, 0)
+                      if (!item || !total) return value
+                      return value + ' · ' + item.value.toLocaleString() + ' (' + ((item.value / total) * 100).toFixed(0) + '%)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No CMSP data available" />
+              </div>
+            )}
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
+          <Card
+            title={
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <BarChartOutlined style={{ color: '#8b5cf6', fontSize: 16 }} />
+                <Text strong style={{ fontSize: 15 }}>ESTATISTIKOLAR Breakdown</Text>
+              </div>
+            }
+            extra={<Tag color="purple" style={{ fontSize: 11, borderRadius: 4 }}>Full vs Half</Tag>}
+            style={sectionCardStyle}
+            styles={{ body: { padding: '16px 20px' } }}
+          >
+            {analytics.estat_breakdown.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie
+                    data={analytics.estat_breakdown.filter(d => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="48%"
+                    outerRadius="78%"
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {analytics.estat_breakdown.filter(d => d.value > 0).map((entry, i) => {
+                      const colors = { 'Full ESTAT': '#8b5cf6', 'Half ESTAT': '#c4b5fd' }
+                      return <Cell key={'estat-' + i} fill={colors[entry.name] || '#94a3b8'} />
+                    })}
+                  </Pie>
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
+                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle"
+                    formatter={(value) => {
+                      const item = analytics.estat_breakdown.find(d => d.name === value)
+                      const total = analytics.estat_breakdown.reduce((s, d) => s + d.value, 0)
+                      if (!item || !total) return value
+                      return value + ' · ' + item.value.toLocaleString() + ' (' + ((item.value / total) * 100).toFixed(0) + '%)'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
+                <Empty description="No ESTATISTIKOLAR data available" />
               </div>
             )}
           </Card>

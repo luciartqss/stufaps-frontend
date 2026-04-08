@@ -9,12 +9,14 @@ import {
   ArrowRightOutlined,
   SearchOutlined,
   SaveOutlined,
+  SyncOutlined,
 } from '@ant-design/icons'
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { API_BASE as API_URL } from '../lib/config'
 import { useRealtime } from '../lib/useRealtime'
 import { useReferenceData } from '../lib/useReferenceData'
+import echo from '../lib/echo'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -119,6 +121,38 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
   const [searchParams, setSearchParams] = useSearchParams()
   const initialTab = VALID_TABS.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'no_award'
   const [loading, setLoading] = useState(true)
+
+  // Lookup re-validation state
+  const [lookupRunning, setLookupRunning] = useState(false)
+  const [lookupProgress, setLookupProgress] = useState(null) // { processed, total, corrected }
+
+  // Listen for lookup progress broadcasts via Reverb
+  useEffect(() => {
+    const channel = echo.channel('app-data')
+    const handler = (event) => {
+      setLookupProgress({ processed: event.processed, total: event.total, corrected: event.corrected })
+      if (event.status === 'done') {
+        setLookupRunning(false)
+        message.success(`Re-validation complete — ${event.corrected} record${event.corrected !== 1 ? 's' : ''} corrected`)
+      }
+    }
+    channel.listen('.lookup.progress', handler)
+    return () => channel.stopListening('.lookup.progress', handler)
+  }, [])
+
+  const handleRevalidateLookups = async () => {
+    setLookupRunning(true)
+    setLookupProgress(null)
+    try {
+      const res = await fetch(`${API_URL}/students/revalidate-lookups`, { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to start')
+      const data = await res.json()
+      setLookupProgress({ processed: 0, total: data.total, corrected: 0 })
+    } catch {
+      message.error('Failed to start re-validation')
+      setLookupRunning(false)
+    }
+  }
 
   // Reference data for institution dropdown
   const refData = useReferenceData(true)
@@ -928,7 +962,21 @@ export default function DataQuality({ readOnly = false, canEdit = false }) {
             <Title level={2} style={{ margin: 0, color: '#1a1a1a', fontWeight: 600 }}>Data Quality</Title>
             <Text style={{ color: '#6b7280', fontSize: 16 }}>Review and fix data issues across student records</Text>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {!readOnly && canEdit && (
+              <Tooltip title="Re-validate all student records against reference data (HEI, Programs, PSGC)">
+                <Button
+                  icon={<SyncOutlined spin={lookupRunning} />}
+                  onClick={handleRevalidateLookups}
+                  loading={lookupRunning}
+                  disabled={lookupRunning}
+                >
+                  {lookupRunning && lookupProgress
+                    ? `${lookupProgress.processed}/${lookupProgress.total}`
+                    : 'Re-validate'}
+                </Button>
+              </Tooltip>
+            )}
             {!readOnly && canEdit && (
               <Button
                 type="primary"

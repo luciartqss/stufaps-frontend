@@ -167,6 +167,14 @@ export default function StudentsPdf() {
   const canGenerate = needsProgram ? Boolean(program && semester && academicYear) : Boolean(semester && academicYear)
 
   // Check if signatories are complete
+  const signatorySectionsComplete = useMemo(() => {
+    const preparedComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
+    const reviewedComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
+    const approvedComplete = Boolean(approvedName.trim() && approvedPosition.trim())
+
+    return [preparedComplete, reviewedComplete, approvedComplete].filter(Boolean).length
+  }, [preparedBy, reviewedBy, approvedName, approvedPosition])
+
   const signatoryComplete = useMemo(() => {
     const preparedComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
     const reviewedComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
@@ -603,12 +611,15 @@ export default function StudentsPdf() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <UserOutlined />
             <span>Document Signatories</span>
-            {signatoryComplete && (
-              <Badge 
-                count={<CheckCircleOutlined />} 
-                style={{ marginLeft: '8px' }}
-              />
-            )}
+            <Badge
+              count={`${signatorySectionsComplete}/3`}
+              style={{
+                marginLeft: '8px',
+                backgroundColor: signatoryComplete ? '#52c41a' : '#1677ff',
+                boxShadow: 'none',
+              }}
+            />
+            {signatoryComplete && <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 16 }} />}
           </div>
         }
       >

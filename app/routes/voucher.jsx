@@ -440,14 +440,22 @@ export default function Voucher() {
       const data = await res.json()
       
       if (data.downloadFile) {
-        // Use a hidden iframe to trigger native browser download.
-        // This avoids the "save as" dialog that appears when a.click()
-        // loses user-gesture context after async awaits.
-        const iframe = document.createElement('iframe')
-        iframe.style.display = 'none'
-        iframe.src = `${API_BASE}/voucher/download?file=${encodeURIComponent(data.downloadFile)}`
-        document.body.appendChild(iframe)
-        setTimeout(() => iframe.remove(), 10000)
+        try {
+          const dlRes = await fetch(`${API_BASE}/voucher/download?file=${encodeURIComponent(data.downloadFile)}`)
+          if (dlRes.ok) {
+            const blob = await dlRes.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = data.downloadFile
+            document.body.appendChild(a)
+            a.click()
+            a.remove()
+            URL.revokeObjectURL(url)
+          }
+        } catch (dlErr) {
+          console.error('Download failed:', dlErr)
+        }
       }
       message.success('Voucher finalized, logged, and downloaded successfully!')
       loadHistory()
