@@ -22,6 +22,15 @@ export default function Login() {
     }
   }, [isAuthenticated, permissions, navigate])
 
+  // Show session-ended message if redirected from 401
+  useEffect(() => {
+    const reason = localStorage.getItem('session_ended')
+    if (reason) {
+      message.warning(reason, 5)
+      localStorage.removeItem('session_ended')
+    }
+  }, [])
+
   const onFinish = async (values) => {
     setLoading(true)
     const result = await login(values.username, values.password)

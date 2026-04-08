@@ -7,6 +7,8 @@ import { API_BASE } from './config'
  * Call once at app startup.
  */
 export function setupAuthInterceptor() {
+  if (typeof window === 'undefined') return
+
   const originalFetch = window.fetch
 
   window.fetch = function (input, init = {}) {
@@ -27,10 +29,14 @@ export function setupAuthInterceptor() {
     return originalFetch.call(this, input, init).then((response) => {
       // If API returns 401 (token expired/invalid), clear auth state
       if (response.status === 401 && !url.includes('/auth/login')) {
+        const hadToken = !!localStorage.getItem('auth_token')
         localStorage.removeItem('auth_token')
         localStorage.removeItem('isAuthenticated')
         localStorage.removeItem('user')
         localStorage.removeItem('permissions')
+        if (hadToken) {
+          localStorage.setItem('session_ended', 'Your session has expired or your account was logged in from another device.')
+        }
         window.location.href = '/'
       }
       return response
