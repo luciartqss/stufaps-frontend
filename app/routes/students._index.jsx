@@ -125,6 +125,15 @@ const STATIC_SCHEMA = [
 const sanitize = (str = '') => str.toLowerCase().replace(/[^a-z0-9]/g, '')
 const makeAyId = (label) => `ay_${sanitize(label) || Date.now()}`
 
+const getUniqueOptionValues = (values = []) =>
+  Array.from(
+    new Set(
+      values
+        .map((value) => String(value ?? '').trim())
+        .filter(Boolean)
+    )
+  )
+
 const sortAcademicYears = (list = []) =>
   [...list].sort((a, b) => {
     const aYear = parseInt(String(a.label).slice(0, 4), 10)
@@ -1591,7 +1600,9 @@ export default function StudentsIndex() {
   const priorities = filterOptions.priorities || []
   const specialGroups = filterOptions.specialGroups || []
   const authorityTypes = filterOptions.authorityTypes || []
-  const awardYears = filterOptions.awardYears || []
+  const awardYears = getUniqueOptionValues(filterOptions.awardYears).sort((a, b) =>
+    b.localeCompare(a, undefined, { numeric: true })
+  )
 
   const searchInstructions = (
     <div style={{ maxWidth: 300 }}>

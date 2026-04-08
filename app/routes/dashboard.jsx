@@ -503,25 +503,17 @@ export default function Dashboard() {
           >
             {analytics.sex.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={analytics.sex.filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="48%"
-                    outerRadius="78%"
-                    paddingAngle={3}
-                    dataKey="value"
-                    label={({ name, percent }) => name + ' ' + (percent * 100).toFixed(0) + '%'}
-                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                  >
+                <BarChart data={analytics.sex.filter(d => d.value > 0)} margin={{ left: 0, right: 0, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#434343', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', 'Count']} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={48} label={{ position: 'top', fill: '#8c8c8c', fontSize: 11, formatter: (v) => v > 0 ? v.toLocaleString() : '' }}>
                     {analytics.sex.filter(d => d.value > 0).map((entry, i) => (
                       <Cell key={'sex-' + i} fill={entry.name === 'Male' ? '#3b82f6' : entry.name === 'Female' ? '#ec4899' : '#94a3b8'} />
                     ))}
-                  </Pie>
-                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
-                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
@@ -546,26 +538,18 @@ export default function Dashboard() {
           >
             {analytics.hei_type.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={analytics.hei_type.filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="48%"
-                    outerRadius="78%"
-                    paddingAngle={3}
-                    dataKey="value"
-                    label={({ name, percent }) => name + ' ' + (percent * 100).toFixed(0) + '%'}
-                    labelLine={{ stroke: '#d9d9d9', strokeWidth: 1 }}
-                  >
+                <BarChart data={analytics.hei_type.filter(d => d.value > 0)} margin={{ left: 0, right: 0, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: '#434343', fontSize: 12 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', 'Count']} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={48} label={{ position: 'top', fill: '#8c8c8c', fontSize: 11, formatter: (v) => v > 0 ? v.toLocaleString() : '' }}>
                     {analytics.hei_type.filter(d => d.value > 0).map((entry, i) => {
                       const colors = { 'SUCs': '#16a34a', 'LUCs': '#f59e0b', 'Private': '#3b82f6' }
                       return <Cell key={'hei-' + i} fill={colors[entry.name] || '#94a3b8'} />
                     })}
-                  </Pie>
-                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
-                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle" />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
@@ -592,16 +576,12 @@ export default function Dashboard() {
           >
             {analytics.cmsp_breakdown.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={analytics.cmsp_breakdown.filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="48%"
-                    outerRadius="78%"
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
+                <BarChart data={analytics.cmsp_breakdown.filter(d => d.value > 0)} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: '#434343', fontSize: 12 }} width={120} tickLine={false} axisLine={false} />
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', 'Count']} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
+                  <Bar dataKey="value" shape={<RoundedBar />} maxBarSize={20} label={{ position: 'right', fill: '#8c8c8c', fontSize: 11, formatter: (v) => v.toLocaleString() }}>
                     {analytics.cmsp_breakdown.filter(d => d.value > 0).map((entry, i) => {
                       const colors = {
                         'Full SSP': '#1890ff', 'Half SSP': '#52c41a',
@@ -611,17 +591,8 @@ export default function Dashboard() {
                       }
                       return <Cell key={'cmsp-' + i} fill={colors[entry.name] || '#94a3b8'} />
                     })}
-                  </Pie>
-                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
-                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle"
-                    formatter={(value) => {
-                      const item = analytics.cmsp_breakdown.find(d => d.name === value)
-                      const total = analytics.cmsp_breakdown.reduce((s, d) => s + d.value, 0)
-                      if (!item || !total) return value
-                      return value + ' · ' + item.value.toLocaleString() + ' (' + ((item.value / total) * 100).toFixed(0) + '%)'
-                    }}
-                  />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
@@ -645,31 +616,18 @@ export default function Dashboard() {
           >
             {analytics.estat_breakdown.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={analytics.estat_breakdown.filter(d => d.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="48%"
-                    outerRadius="78%"
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
+                <BarChart data={analytics.estat_breakdown.filter(d => d.value > 0)} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" horizontal={false} />
+                  <XAxis type="number" tick={{ fill: '#8c8c8c', fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fill: '#434343', fontSize: 12 }} width={100} tickLine={false} axisLine={false} />
+                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', 'Count']} contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }} />
+                  <Bar dataKey="value" shape={<RoundedBar />} maxBarSize={32} label={{ position: 'right', fill: '#8c8c8c', fontSize: 11, formatter: (v) => v.toLocaleString() }}>
                     {analytics.estat_breakdown.filter(d => d.value > 0).map((entry, i) => {
                       const colors = { 'Full ESTAT': '#8b5cf6', 'Half ESTAT': '#c4b5fd' }
                       return <Cell key={'estat-' + i} fill={colors[entry.name] || '#94a3b8'} />
                     })}
-                  </Pie>
-                  <RechartsTooltip formatter={(value, name) => [value.toLocaleString() + ' scholars', name]} />
-                  <Legend verticalAlign="bottom" iconSize={8} iconType="circle"
-                    formatter={(value) => {
-                      const item = analytics.estat_breakdown.find(d => d.name === value)
-                      const total = analytics.estat_breakdown.reduce((s, d) => s + d.value, 0)
-                      if (!item || !total) return value
-                      return value + ' · ' + item.value.toLocaleString() + ' (' + ((item.value / total) * 100).toFixed(0) + '%)'
-                    }}
-                  />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 280 }}>
