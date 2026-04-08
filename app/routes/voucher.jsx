@@ -72,9 +72,9 @@ export default function Voucher() {
     loadTrackingInfo()
   }, [])
 
-  useRealtime(['VoucherHistory', 'VoucherCounter', 'Student', 'Disbursement'], () => {
-    fetchPrograms(); fetchYears(); loadHistory(); loadTrackingInfo()
-    if (program) loadStudents()
+  useRealtime(['VoucherHistory', 'VoucherCounter', 'Student', 'Disbursement'], (silent) => {
+    fetchPrograms(); fetchYears(); loadHistory(silent); loadTrackingInfo()
+    if (program) loadStudents(silent)
   })
 
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function Voucher() {
     return fallback
   }
 
-  const loadStudents = useCallback(async () => {
+  const loadStudents = useCallback(async (silent) => {
     if (!program) {
       setAvailableStudents([])
       setStudentOptions([])
@@ -143,7 +143,7 @@ export default function Voucher() {
 
     if (studentAbortRef.current) studentAbortRef.current.abort()
     studentAbortRef.current = new AbortController()
-    setStudentsLoading(true)
+    if (!silent) setStudentsLoading(true)
 
     try {
       let url = `${API_BASE}/voucher/students?program=${encodeURIComponent(program)}`
@@ -158,19 +158,19 @@ export default function Voucher() {
       }
     } finally {
       if (studentAbortRef.current && !studentAbortRef.current.signal.aborted) {
-        setStudentsLoading(false)
+        if (!silent) setStudentsLoading(false)
       }
     }
   }, [program, schoolYear, semester])
 
-  const loadHistory = async () => {
-    setHistoryLoading(true)
+  const loadHistory = async (silent) => {
+    if (!silent) setHistoryLoading(true)
     try {
       const res = await fetch(`${API_BASE}/voucher/history`)
       const data = await res.json()
       setHistory(data || [])
     } catch { /* ignore */ }
-    setHistoryLoading(false)
+    if (!silent) setHistoryLoading(false)
   }
 
   const loadTrackingInfo = async () => {

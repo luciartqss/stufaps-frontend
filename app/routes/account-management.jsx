@@ -38,8 +38,8 @@ export default function AccountManagement() {
   // Watch the role field to show/hide stufaps-specific fields
   const selectedRole = Form.useWatch('role', form)
 
-  const fetchUsers = async () => {
-    setLoading(true)
+  const fetchUsers = async (silent) => {
+    if (!silent) setLoading(true)
     try {
       const res = await fetch(`${API_BASE}/users`)
       if (!res.ok) throw new Error('Failed to fetch')
@@ -48,7 +48,7 @@ export default function AccountManagement() {
       console.error(err)
       message.error('Failed to load users')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
@@ -66,7 +66,7 @@ export default function AccountManagement() {
     fetchAssignmentOptions()
   }, [])
 
-  useRealtime(['User', 'UserAssignment'], () => { fetchUsers(); fetchAssignmentOptions() })
+  useRealtime(['User', 'UserAssignment'], (silent) => { fetchUsers(silent); fetchAssignmentOptions() })
 
   const openCreate = () => {
     setEditingUser(null)

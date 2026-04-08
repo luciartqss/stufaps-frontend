@@ -401,7 +401,7 @@ export default function StudentsIndex() {
     fetchStudents()
   }, [])
 
-  useRealtime(['Student', 'Disbursement'], () => { fetchFilterOptions(); fetchStudents() })
+  useRealtime(['Student', 'Disbursement'], (silent) => { fetchFilterOptions(); fetchStudents({}, silent) })
 
   // Auto-search when debounced search value changes
   const initialMount = useRef(true)
@@ -460,8 +460,8 @@ export default function StudentsIndex() {
     return params.toString()
   }
 
-  const fetchStudents = async (overrides = {}) => {
-    setLoading(true)
+  const fetchStudents = async (overrides = {}, silent) => {
+    if (!silent) setLoading(true)
     try {
       const queryString = buildQueryParams(overrides)
       const response = await fetch(`${API_BASE}/students?${queryString}`)
@@ -479,7 +479,7 @@ export default function StudentsIndex() {
       console.error('Error fetching students:', error)
       message.error('Failed to load students')
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }
 
