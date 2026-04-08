@@ -101,40 +101,39 @@ export function ErrorBoundary({ error }) {
   }
 
   return (
-    <Layout>
-      <main
+    <main
+      style={{
+        padding: '64px 24px',
+        textAlign: 'center',
+        backgroundColor: '#f5f5f5',
+        minHeight: '100vh',
+      }}
+    >
+      <h1
         style={{
-          padding: '64px 24px',
-          textAlign: 'center',
-          backgroundColor: '#f5f5f5',
-          minHeight: '100vh',
+          fontSize: '48px',
+          color: '#ff4d4f',
+          marginBottom: '16px',
         }}
       >
-        <h1
+        {message}
+      </h1>
+      <p style={{ color: '#8c8c8c', marginBottom: '24px' }}>{details}</p>
+      {stack && (
+        <pre
           style={{
-            fontSize: '48px',
-            color: '#ff4d4f',
-            marginBottom: '16px',
+            textAlign: 'left',
+            backgroundColor: '#fff',
+            padding: '16px',
+            borderRadius: '8px',
+            overflow: 'auto',
+            border: '1px solid #f0f0f0',
           }}
         >
-          {message}
-        </h1>
-        <p style={{ color: '#8c8c8c', marginBottom: '24px' }}>{details}</p>
-        {stack && (
-          <pre
-            style={{
-              textAlign: 'left',
-              backgroundColor: '#fff',
-              padding: '16px',
-              borderRadius: '8px',
-              overflow: 'auto',
-              border: '1px solid #f0f0f0',
-            }}
-          >
-            <code>{stack}</code>
-          </pre>
-        )}
-      </main>
-    </Layout>
+          <code>{stack}</code>
+        </pre>
+      )}
+      <a href="/" style={{ color: '#1677ff', fontSize: 16, marginTop: 24, display: 'inline-block' }}>Go back to home</a>
+    </main>
   )
 }

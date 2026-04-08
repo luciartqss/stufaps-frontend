@@ -51,29 +51,19 @@ export default function StudentsPdf() {
   const [approvedName, setApprovedName] = useState('')
   const [approvedPosition, setApprovedPosition] = useState('Director IV')
 
-  // Refs for signatory values so generatePreview doesn't re-create on every keystroke
-  const preparedByRef = useRef(preparedBy)
-  const reviewedByRef = useRef(reviewedBy)
-  const approvedNameRef = useRef(approvedName)
-  const approvedPositionRef = useRef(approvedPosition)
-  useEffect(() => { preparedByRef.current = preparedBy }, [preparedBy])
-  useEffect(() => { reviewedByRef.current = reviewedBy }, [reviewedBy])
-  useEffect(() => { approvedNameRef.current = approvedName }, [approvedName])
-  useEffect(() => { approvedPositionRef.current = approvedPosition }, [approvedPosition])
+  // Keep a stringified version of signatories to trigger effects correctly
+  const signatoryDeps = JSON.stringify({ preparedBy, reviewedBy, approvedName, approvedPosition })
 
   const needsProgram = formType === 'masterlist' || formType === 'annexE1'
   const showsSignatories = true
 
-  // Simplified program options for AnnexE1
   const annexE1Programs = [
     { label: 'CMSP', value: 'CMSP' },
     { label: 'ESTAT', value: 'ESTAT' },
   ]
 
-  // LocalStorage keys
   const STORAGE_KEY = 'stufaps_masterlist_form'
 
-  // Save form data to localStorage
   const saveFormData = useCallback(() => {
     const formData = {
       program,
@@ -88,17 +78,15 @@ export default function StudentsPdf() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData))
     } catch (error) {
-      console.warn('Failed to save form data to localStorage:', error)
+      console.warn('Failed to save to localStorage:', error)
     }
   }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition])
 
-  // Load form data from localStorage
   const loadFormData = useCallback(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const formData = JSON.parse(saved)
-        // Only restore if the data is not too old (7 days)
         const isRecent = new Date() - new Date(formData.timestamp) < 7 * 24 * 60 * 60 * 1000
         if (isRecent && formData) {
           if (formData.program) setProgram(formData.program)
@@ -111,11 +99,10 @@ export default function StudentsPdf() {
         }
       }
     } catch (error) {
-      console.warn('Failed to load form data from localStorage:', error)
+      console.warn('Failed to load from localStorage:', error)
     }
   }, [])
 
-  // Fetch filter options from dedicated endpoint
   const [filterOptions, setFilterOptions] = useState({ scholarshipPrograms: [], academicYears: [], semesters: [] })
 
   useEffect(() => {
@@ -128,7 +115,7 @@ export default function StudentsPdf() {
         setFilterOptions(data)
       } catch (err) {
         console.error(err)
-        message.error('Unable to load filter options')
+        message.warning('Could not load some dropdown options. Please refresh.')
       } finally {
         setLoadingOptions(false)
       }
@@ -136,21 +123,17 @@ export default function StudentsPdf() {
     fetchFilterOptions()
   }, [])
 
-  // Load saved form data on mount
   useEffect(() => {
     loadFormData()
   }, [loadFormData])
 
-  // Save form data whenever values change
+  // Save changes when things update
   useEffect(() => {
-    if (program || semester || academicYear || preparedBy.some(p => p.name || p.position) || 
-        reviewedBy.some(r => r.name || r.position) || approvedName || approvedPosition !== 'Director IV') {
-      const timeoutId = setTimeout(saveFormData, 1000) // Debounce saves
-      return () => clearTimeout(timeoutId)
-    }
-  }, [program, semester, academicYear, preparedBy, reviewedBy, approvedName, approvedPosition, saveFormData])
+    const timeoutId = setTimeout(saveFormData, 1000)
+    return () => clearTimeout(timeoutId)
+    // using signatoryDeps so it sees changes properly
+  }, [program, semester, academicYear, signatoryDeps, saveFormData])
 
-  // Derive filter options from dedicated endpoint
   const programOptions = useMemo(() => {
     return (filterOptions.scholarshipPrograms || []).slice().sort()
   }, [filterOptions])
@@ -166,28 +149,17 @@ export default function StudentsPdf() {
 
   const canGenerate = needsProgram ? Boolean(program && semester && academicYear) : Boolean(semester && academicYear)
 
-  // Check if signatories are complete
   const signatorySectionsComplete = useMemo(() => {
-    const preparedComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
-    const reviewedComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
-    const approvedComplete = Boolean(approvedName.trim() && approvedPosition.trim())
-
-    return [preparedComplete, reviewedComplete, approvedComplete].filter(Boolean).length
+    const pComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
+    const rComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
+    const aComplete = Boolean(approvedName.trim() && approvedPosition.trim())
+    return [pComplete, rComplete, aComplete].filter(Boolean).length
   }, [preparedBy, reviewedBy, approvedName, approvedPosition])
+  const signatoryComplete = signatorySectionsComplete === 3
 
-  const signatoryComplete = useMemo(() => {
-    const preparedComplete = preparedBy.every(p => p.name.trim() && p.position.trim())
-    const reviewedComplete = reviewedBy.every(r => r.name.trim() && r.position.trim())
-    const approvedComplete = approvedName.trim() && approvedPosition.trim()
-    return preparedComplete && reviewedComplete && approvedComplete
-  }, [preparedBy, reviewedBy, approvedName, approvedPosition])
-
-  // Generate preview when all filters are selected
   const generatePreview = useCallback(async () => {
-    if (needsProgram && !program) return
-    if (!semester || !academicYear) return
+    if (!canGenerate) return
 
-    // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort()
     abortRef.current = new AbortController()
 
@@ -199,35 +171,34 @@ export default function StudentsPdf() {
         semester,
         academic_year: academicYear,
       })
-      if (needsProgram) {
+      if (needsProgram && program) {
         params.set('program', program)
       }
-      params.set('approved_name', approvedNameRef.current)
-      params.set('approved_position', approvedPositionRef.current)
-      preparedByRef.current.forEach((p, i) => {
+      
+      params.set('approved_name', approvedName)
+      params.set('approved_position', approvedPosition)
+      preparedBy.forEach((p, i) => {
         params.append(`prepared_name[${i}]`, p.name)
         params.append(`prepared_position[${i}]`, p.position)
       })
-      reviewedByRef.current.forEach((p, i) => {
+      reviewedBy.forEach((p, i) => {
         params.append(`reviewed_name[${i}]`, p.name)
         params.append(`reviewed_position[${i}]`, p.position)
       })
+
       const endpoint = FORM_ENDPOINTS[formType] || FORM_ENDPOINTS.masterlist
-      const res = await fetch(`${API_BASE}${endpoint}?${params}`, {
+      const res = await fetch(`${API_BASE}${endpoint}?${params.toString()}`, {
         signal: abortRef.current.signal,
       })
 
       if (!res.ok) {
-        // Try JSON first, then extract from HTML, then show status
         let errorMsg
         const contentType = res.headers.get('content-type') || ''
         if (contentType.includes('application/json')) {
           const errData = await res.json().catch(() => null)
           errorMsg = errData?.message
         } else {
-          // Server likely returned an HTML error page (e.g. PHP crash)
           const text = await res.text().catch(() => '')
-          // Try to extract a meaningful message from HTML
           const match = text.match(/<title>(.*?)<\/title>/i)
           errorMsg = match?.[1] || (text.length > 200 ? `Server error (${res.status})` : text)
         }
@@ -235,7 +206,6 @@ export default function StudentsPdf() {
       }
 
       const blob = await res.blob()
-      // Ensure blob has correct PDF type for all browsers
       const pdfBlob = new Blob([blob], { type: 'application/pdf' })
       const url = URL.createObjectURL(pdfBlob)
 
@@ -252,16 +222,17 @@ export default function StudentsPdf() {
         setPreviewUrl('')
       }
     } finally {
-      setLoadingPreview(false)
+      if (abortRef.current && !abortRef.current.signal.aborted) {
+        setLoadingPreview(false)
+      }
     }
-  }, [program, semester, academicYear, formType, needsProgram])
+  }, [canGenerate, program, semester, academicYear, formType, needsProgram, preparedBy, reviewedBy, approvedName, approvedPosition])
 
-  // Auto-generate preview when filters change (with debounce)
   useEffect(() => {
     if (canGenerate) {
       const timeoutId = setTimeout(() => {
         generatePreview()
-      }, 300) // 300ms debounce
+      }, 500)
       return () => clearTimeout(timeoutId)
     } else {
       setPreviewUrl((prev) => {
@@ -274,7 +245,6 @@ export default function StudentsPdf() {
     }
   }, [canGenerate, generatePreview])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current)
@@ -294,63 +264,17 @@ export default function StudentsPdf() {
     setApprovedPosition('Director IV')
     setLastUpdated(null)
     
-    // Clear saved data
     try {
       localStorage.removeItem(STORAGE_KEY)
       message.success('Form reset and saved data cleared')
-    } catch (error) {
-      console.warn('Failed to clear saved data:', error)
-    }
-  }
-
-  // Handle prepared by changes
-  const handlePreparedByChange = (index, field, value) => {
-    setPreparedBy((prev) => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
-      return updated
-    })
-  }
-
-  const addPreparedBy = () => {
-    if (preparedBy.length < 2) {
-      setPreparedBy((prev) => [...prev, { name: '', position: '' }])
-    }
-  }
-
-  const removePreparedBy = (index) => {
-    if (preparedBy.length > 1) {
-      setPreparedBy((prev) => prev.filter((_, i) => i !== index))
-    }
-  }
-
-  const handleReviewedByChange = (index, field, value) => {
-    setReviewedBy((prev) => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
-      return updated
-    })
-  }
-
-  const addReviewedBy = () => {
-    if (reviewedBy.length < 2) {
-      setReviewedBy((prev) => [...prev, { name: '', position: '' }])
-    }
-  }
-
-  const removeReviewedBy = (index) => {
-    if (reviewedBy.length > 1) {
-      setReviewedBy((prev) => prev.filter((_, i) => i !== index))
-    }
+    } catch (e) {}
   }
 
   const handleDownload = () => {
     if (!previewUrl) return
     const link = document.createElement('a')
     link.href = previewUrl
-    const prefix = (formType === 'masterlist' || formType === 'annexE1') && program
-      ? `${formType}-${program}`
-      : formType
+    const prefix = needsProgram && program ? `${formType}-${program}` : formType
     link.download = `${prefix}-${semester}-AY-${academicYear}.pdf`
     document.body.appendChild(link)
     link.click()
@@ -362,254 +286,179 @@ export default function StudentsPdf() {
     if (previewUrl) window.open(previewUrl, '_blank')
   }
 
-  const formatLastUpdated = (date) => {
-    if (!date) return ''
-    const now = new Date()
-    const diff = Math.floor((now - date) / 1000)
-    
-    if (diff < 60) return 'just now'
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
-    const m = String(date.getMonth() + 1).padStart(2, '0')
-    const d = String(date.getDate()).padStart(2, '0')
-    const y = date.getFullYear()
-    return `${m}-${d}-${y}`
-  }
-
   return (
     <div style={{ margin: '-24px', background: '#f5f5f5', minHeight: 'calc(100vh - 72px)', display: 'flex', flexDirection: 'column' }}>
       {/* Header - Filters */}
-      <Card style={{ marginBottom: 0, borderRadius: 0 }}>
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/students')} />
+      <Card style={{ marginBottom: 0, borderRadius: 0, borderBottom: '1px solid #e8e8e8' }} styles={{ body: { padding: '24px' } }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: 20 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/students')} style={{ marginLeft: -12 }} />
               <Title level={3} style={{ margin: 0, color: '#262626' }}>
                 Generate PDF Reports
               </Title>
             </div>
-            <Text type="secondary" style={{ fontSize: '14px', textAlign: 'left' }}>
-              Select a form type, then choose the filters to generate and preview the document
+            <Text type="secondary" style={{ fontSize: '14px' }}>
+              Select a form type, then choose the filters to automatically generate the document
             </Text>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <Form layout="inline" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', flex: 1 }}>
-              <Form.Item label="Form Type" style={{ minWidth: '280px', flex: 1 }}>
-                <Select
-                  value={formType}
-                  onChange={(val) => {
-                    setFormType(val)
-                    setProgram(undefined)
-                    setPreviewUrl((prev) => {
-                      if (prev) URL.revokeObjectURL(prev)
-                      previewUrlRef.current = ''
-                      return ''
-                    })
-                    setPreviewError('')
-                  }}
-                  style={{ width: '100%' }}
-                  options={FORM_TYPES}
-                />
-              </Form.Item>
-
-              {needsProgram && (
-              <Form.Item label="Program" style={{ minWidth: '300px', flex: 1 }}>
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Select program"
-                  value={program}
-                  onChange={setProgram}
-                  loading={loadingOptions}
-                  style={{ width: '100%' }}
-                  optionFilterProp="label"
-                  options={formType === 'annexE1' ? annexE1Programs : programOptions.map((opt) => ({
-                    label: opt,
-                    value: opt,
-                    disabled: /^(COSCHO|MSRS)$/i.test(opt),
-                  }))}
-                />
-              </Form.Item>
-              )}
-
-              <Form.Item label="Semester" style={{ minWidth: '200px', flex: 1 }}>
-                <Select
-                  allowClear
-                  placeholder="Select semester"
-                  value={semester}
-                  onChange={setSemester}
-                  loading={loadingOptions}
-                  style={{ width: '100%' }}
-                  options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
-                />
-              </Form.Item>
-
-              <Form.Item label="Academic Year" style={{ minWidth: '200px', flex: 1 }}>
-                <Select
-                  showSearch
-                  allowClear
-                  placeholder="Select academic year"
-                  value={academicYear}
-                  onChange={setAcademicYear}
-                  loading={loadingOptions}
-                  style={{ width: '100%' }}
-                  optionFilterProp="label"
-                  options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
-                />
-              </Form.Item>
-            </Form>
-
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={handleReset}
-                disabled={loadingPreview}
-                style={{ height: '40px' }}
-              >
-                Reset
-              </Button>
-              <Button
-                icon={<SyncOutlined />}
-                onClick={generatePreview}
-                disabled={!canGenerate || loadingPreview}
-                loading={loadingPreview}
-                style={{ height: '40px' }}
-              >
-                Refresh
-              </Button>
-              <Button
-                type="primary"
-                icon={<DownloadOutlined />}
-                onClick={handleDownload}
-                disabled={!previewUrl}
-                style={{ height: '40px' }}
-              >
-                Download PDF
-              </Button>
-            </div>
-          </div>
-
-          {formType === 'masterlist' && (
-          <Text type="secondary" style={{ display: 'block', marginTop: '12px', fontStyle: 'italic' }}>
-            Note: COSCHO and MSRS scholarships have a different format and are not applicable to the masterlist layout.
-          </Text>
-          )}
+          
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={handleReset} disabled={loadingPreview}>
+              Reset All
+            </Button>
+            <Button
+              icon={<SyncOutlined spin={loadingPreview} />}
+              onClick={generatePreview}
+              disabled={!canGenerate}
+              loading={loadingPreview}
+            >
+              Refresh
+            </Button>
+            <Button
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={handleDownload}
+              disabled={!previewUrl}
+            >
+              Download PDF
+            </Button>
+          </Space>
         </div>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={needsProgram ? 6 : 8}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Form Type</Text>
+            <Select
+              size="large"
+              value={formType}
+              onChange={(val) => {
+                setFormType(val)
+                setProgram(undefined)
+              }}
+              style={{ width: '100%' }}
+              options={FORM_TYPES}
+            />
+          </Col>
+
+          {needsProgram && (
+            <Col xs={24} md={6}>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>Program</Text>
+              <Select
+                size="large"
+                showSearch
+                allowClear
+                placeholder="Select program"
+                value={program}
+                onChange={setProgram}
+                loading={loadingOptions}
+                style={{ width: '100%' }}
+                options={formType === 'annexE1' ? annexE1Programs : programOptions.map((opt) => ({
+                  label: opt,
+                  value: opt,
+                  disabled: /^(COSCHO|MSRS)$/i.test(opt),
+                }))}
+              />
+            </Col>
+          )}
+
+          <Col xs={24} md={needsProgram ? 6 : 8}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Semester</Text>
+            <Select
+              size="large"
+              allowClear
+              placeholder="Select semester"
+              value={semester}
+              onChange={setSemester}
+              loading={loadingOptions}
+              style={{ width: '100%' }}
+              options={semesterOptions.map((opt) => ({ label: opt, value: opt }))}
+            />
+          </Col>
+
+          <Col xs={24} md={needsProgram ? 6 : 8}>
+            <Text strong style={{ display: 'block', marginBottom: 8 }}>Academic Year</Text>
+            <Select
+              size="large"
+              showSearch
+              allowClear
+              placeholder="Select academic year"
+              value={academicYear}
+              onChange={setAcademicYear}
+              loading={loadingOptions}
+              style={{ width: '100%' }}
+              options={academicYearOptions.map((opt) => ({ label: opt, value: opt }))}
+            />
+          </Col>
+        </Row>
+        
+        {formType === 'masterlist' && (
+          <Text type="secondary" style={{ display: 'block', marginTop: '16px', fontSize: '13px' }}>
+            * Note: COSCHO and MSRS scholarships have a different format and are not applicable to the masterlist layout.
+          </Text>
+        )}
       </Card>
 
       {/* Body - PDF Viewer */}
       <Card 
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileTextOutlined />
-            <span>PDF Preview — {FORM_TYPES.find(f => f.value === formType)?.label}</span>
-            {loadingPreview && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
-                <SyncOutlined spin style={{ fontSize: '12px' }} />
-                <Text style={{ fontSize: '12px' }}>Updating...</Text>
-              </div>
-            )}
+            <FileTextOutlined style={{ color: '#1677ff' }} />
+            <span>Preview: {FORM_TYPES.find(f => f.value === formType)?.label}</span>
           </div>
         }
         extra={
           <Space>
             {lastUpdated && (
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                Updated {formatLastUpdated(lastUpdated)}
+                Updated just now
               </Text>
             )}
             {previewUrl && (
-              <Button
-                type="link"
-                icon={<EyeOutlined />}
-                onClick={handleOpenNewTab}
-                size="small"
-              >
+              <Button type="link" icon={<EyeOutlined />} onClick={handleOpenNewTab} size="small">
                 Open in new tab
               </Button>
             )}
           </Space>
         }
-        style={{ flex: 1, marginBottom: 0, borderRadius: 0 }}
-        styles={{ body: { padding: '16px', height: '80vh', display: 'flex', flexDirection: 'column' } }}
+        style={{ flex: 1, margin: '24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
+        styles={{ body: { padding: 0, height: '70vh', display: 'flex', flexDirection: 'column' } }}
       >
-        {loadingPreview ? (
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            background: '#fafafa',
-            borderRadius: '6px',
-            flex: 1
-          }}>
-            <Spin size="large" tip="Generating preview..." />
+        {loadingPreview && !previewUrl ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', flex: 1, background: '#fafafa' }}>
+            <Spin size="large" />
+            <Text style={{ marginTop: 16, color: '#8c8c8c' }}>Generating document...</Text>
           </div>
         ) : previewError ? (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            background: '#fff2f0',
-            border: '2px dashed #ffccc7',
-            borderRadius: '6px',
-            textAlign: 'center',
-            flex: 1
-          }}>
-            <FileTextOutlined style={{ fontSize: '48px', marginBottom: '16px' }} />
-            <Text style={{ fontSize: '16px', fontWeight: 500 }}>
-              {previewError}
-            </Text>
-            <Text type="secondary" style={{ marginTop: '8px' }}>
-              Try adjusting the filters above.
-            </Text>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', flex: 1, background: '#fff2f0' }}>
+            <FileTextOutlined style={{ fontSize: '48px', color: '#ff4d4f', marginBottom: '16px' }} />
+            <Text strong style={{ fontSize: '16px', color: '#cf1322' }}>{previewError}</Text>
+            <Text type="secondary" style={{ marginTop: '8px' }}>Adjust the filters above to try again.</Text>
           </div>
         ) : previewUrl ? (
           <iframe
-            title="Masterlist Preview"
-            src={previewUrl}
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              border: '1px solid #d9d9d9',
-              borderRadius: '6px',
-              flex: 1
-            }}
+            title="PDF Preview"
+            src={`${previewUrl}#toolbar=0`}
+            style={{ width: '100%', height: '100%', border: 'none', flex: 1 }}
           />
         ) : (
-          <div style={{ 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '100%',
-            background: '#fafafa',
-            border: '2px dashed #d9d9d9',
-            borderRadius: '6px',
-            textAlign: 'center',
-            flex: 1
-          }}>
-            <FileTextOutlined style={{ fontSize: '64px', color: '#bfbfbf', marginBottom: '24px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', flex: 1, background: '#fafafa' }}>
+            <FileTextOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '24px' }} />
             <Text style={{ fontSize: '18px', fontWeight: 500, color: '#8c8c8c', marginBottom: '8px' }}>
               {needsProgram ? 'Select Program, Semester, and Academic Year' : 'Select Semester and Academic Year'}
             </Text>
-            <Text type="secondary" style={{ fontSize: '14px' }}>
-              to preview the document
-            </Text>
+            <Text type="secondary" style={{ fontSize: '14px' }}>to automatically preview the document</Text>
           </div>
         )}
       </Card>
 
-      {/* Footer - Signatories (only for Masterlist) */}
+      {/* Footer - Signatories */}
       {showsSignatories && (
       <Card
-        style={{ borderRadius: 0 }}
+        style={{ margin: '0 24px 24px 24px', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserOutlined />
+            <UserOutlined style={{ color: '#1677ff' }} />
             <span>Document Signatories</span>
             <Badge
               count={`${signatorySectionsComplete}/3`}
@@ -626,194 +475,76 @@ export default function StudentsPdf() {
         <Row gutter={[24, 24]}>
           {/* Prepared By */}
           <Col xs={24} md={8}>
-            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Text strong style={{ fontSize: '16px' }}>Prepared By</Text>
+            <div style={{ padding: '20px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f0f0f0', height: '100%' }}>
+              <div style={{ marginBottom: '16px', borderBottom: '1px solid #e8e8e8', paddingBottom: 8 }}>
+                <Text strong>Prepared By</Text>
               </div>
-              
-              <div style={{ flex: 1 }}>
-                {preparedBy.map((person, index) => (
-                  <div key={index} style={{ 
-                    marginBottom: index < preparedBy.length - 1 ? '16px' : '0',
-                    padding: '16px',
-                    background: '#f9f9f9',
-                    borderRadius: '6px',
-                    border: '1px solid #d9d9d9'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
-                        {preparedBy.length > 1 ? `Person ${index + 1}` : 'Person'}
-                      </Text>
-                      {preparedBy.length > 1 && (
-                        <Button
-                          type="text"
-                          size="small"
-                          danger
-                          icon={<CloseCircleOutlined />}
-                          onClick={() => removePreparedBy(index)}
-                        />
-                      )}
-                    </div>
-                    <Form.Item
-                      label="Name"
-                      labelCol={{ span: 6 }} // Adjust label width
-                      wrapperCol={{ span: 18 }} // Adjust input width
-                      style={{ marginBottom: '12px' }}
-                    >
-                      <Input
-                        placeholder="Enter full name"
-                        value={person.name}
-                        onChange={(e) => handlePreparedByChange(index, 'name', e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label="Position"
-                      labelCol={{ span: 6 }} // Same label width as "Name"
-                      wrapperCol={{ span: 18 }} // Same input width as "Name"
-                      style={{ marginBottom: '0' }}
-                    >
-                      <Input
-                        placeholder="Enter position/title"
-                        value={person.position}
-                        onChange={(e) => handlePreparedByChange(index, 'position', e.target.value)}
-                      />
-                    </Form.Item>
+              {preparedBy.map((person, index) => (
+                <div key={index} style={{ marginBottom: index < preparedBy.length - 1 ? 16 : 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Person {index + 1}</Text>
+                    {preparedBy.length > 1 && (
+                      <Button type="text" size="small" danger icon={<CloseCircleOutlined />} onClick={() => setPreparedBy(prev => prev.filter((_, i) => i !== index))} />
+                    )}
                   </div>
-                ))}
-              </div>
-
-              {preparedBy.length < 2 && (
-                <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                  <Button
-                    type="dashed"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={addPreparedBy}
-                  >
-                    Add Person
-                  </Button>
+                  <Input placeholder="Name" value={person.name} onChange={e => {
+                    const next = [...preparedBy]; next[index].name = e.target.value; setPreparedBy(next);
+                  }} style={{ marginBottom: 8 }} />
+                  <Input placeholder="Position" value={person.position} onChange={e => {
+                    const next = [...preparedBy]; next[index].position = e.target.value; setPreparedBy(next);
+                  }} />
                 </div>
+              ))}
+              {preparedBy.length < 2 && (
+                <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setPreparedBy(p => [...p, {name: '', position: ''}])} style={{ marginTop: 16, width: '100%' }}>
+                  Add Person
+                </Button>
               )}
             </div>
           </Col>
 
           {/* Reviewed By */}
           <Col xs={24} md={8}>
-            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Text strong style={{ fontSize: '16px' }}>Reviewed By</Text>
+            <div style={{ padding: '20px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f0f0f0', height: '100%' }}>
+              <div style={{ marginBottom: '16px', borderBottom: '1px solid #e8e8e8', paddingBottom: 8 }}>
+                <Text strong>Reviewed By</Text>
               </div>
-              
-              <div style={{ flex: 1 }}>
-                {reviewedBy.map((person, index) => (
-                  <div key={index} style={{ 
-                    marginBottom: index < reviewedBy.length - 1 ? '16px' : '0',
-                    padding: '16px',
-                    background: '#f9f9f9',
-                    borderRadius: '6px',
-                    border: '1px solid #d9d9d9'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                      <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
-                        {reviewedBy.length > 1 ? `Person ${index + 1}` : 'Person'}
-                      </Text>
-                      {reviewedBy.length > 1 && (
-                        <Button
-                          type="text"
-                          size="small"
-                          danger
-                          icon={<CloseCircleOutlined />}
-                          onClick={() => removeReviewedBy(index)}
-                        />
-                      )}
-                    </div>
-                    <Form.Item
-                      label="Name"
-                      labelCol={{ span: 6 }}
-                      wrapperCol={{ span: 18 }}
-                      style={{ marginBottom: '12px' }}
-                    >
-                      <Input
-                        placeholder="Enter full name"
-                        value={person.name}
-                        onChange={(e) => handleReviewedByChange(index, 'name', e.target.value)}
-                      />
-                    </Form.Item>
-                    <Form.Item
-                      label="Position"
-                      labelCol={{ span: 6 }}
-                      wrapperCol={{ span: 18 }}
-                      style={{ marginBottom: '0' }}
-                    >
-                      <Input
-                        placeholder="Enter position/title"
-                        value={person.position}
-                        onChange={(e) => handleReviewedByChange(index, 'position', e.target.value)}
-                      />
-                    </Form.Item>
+              {reviewedBy.map((person, index) => (
+                <div key={index} style={{ marginBottom: index < reviewedBy.length - 1 ? 16 : 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>Person {index + 1}</Text>
+                    {reviewedBy.length > 1 && (
+                      <Button type="text" size="small" danger icon={<CloseCircleOutlined />} onClick={() => setReviewedBy(prev => prev.filter((_, i) => i !== index))} />
+                    )}
                   </div>
-                ))}
-              </div>
-
-              {reviewedBy.length < 2 && (
-                <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                  <Button
-                    type="dashed"
-                    size="small"
-                    icon={<PlusOutlined />}
-                    onClick={addReviewedBy}
-                  >
-                    Add Person
-                  </Button>
+                  <Input placeholder="Name" value={person.name} onChange={e => {
+                    const next = [...reviewedBy]; next[index].name = e.target.value; setReviewedBy(next);
+                  }} style={{ marginBottom: 8 }} />
+                  <Input placeholder="Position" value={person.position} onChange={e => {
+                    const next = [...reviewedBy]; next[index].position = e.target.value; setReviewedBy(next);
+                  }} />
                 </div>
+              ))}
+              {reviewedBy.length < 2 && (
+                <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => setReviewedBy(p => [...p, {name: '', position: ''}])} style={{ marginTop: 16, width: '100%' }}>
+                  Add Person
+                </Button>
               )}
             </div>
           </Col>
 
           {/* Approved By */}
           <Col xs={24} md={8}>
-            <div style={{ padding: '24px', background: '#fff', borderRadius: '8px', border: '1px solid #d9d9d9', height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-                <Text strong style={{ fontSize: '16px' }}>Approved By</Text>
+            <div style={{ padding: '20px', background: '#fafafa', borderRadius: '8px', border: '1px solid #f0f0f0', height: '100%' }}>
+              <div style={{ marginBottom: '16px', borderBottom: '1px solid #e8e8e8', paddingBottom: 8 }}>
+                <Text strong>Approved By</Text>
               </div>
-              
-              <div style={{ flex: 1 }}>
-                <div style={{ 
-                  padding: '16px',
-                  background: '#f9f9f9',
-                  borderRadius: '6px',
-                  border: '1px solid #d9d9d9'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <Text style={{ fontSize: '12px', color: '#8c8c8c', fontWeight: 500 }}>
-                      Person
-                    </Text>
-                  </div>
-                  <Form.Item
-                    label="Name"
-                    labelCol={{ span: 6 }}
-                    wrapperCol={{ span: 18 }}
-                    style={{ marginBottom: '12px' }}
-                  >
-                    <Input
-                      placeholder="Enter full name"
-                      value={approvedName}
-                      onChange={(e) => setApprovedName(e.target.value)}
-                    />
-                  </Form.Item>
-                  <Form.Item
-                    label="Position"
-                    labelCol={{ span: 6 }}
-                    wrapperCol={{ span: 18 }}
-                    style={{ marginBottom: '0' }}
-                  >
-                    <Input
-                      placeholder="Enter position/title"
-                      value={approvedPosition}
-                      onChange={(e) => setApprovedPosition(e.target.value)}
-                    />
-                  </Form.Item>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Authorized Signatory</Text>
                 </div>
+                <Input placeholder="Name" value={approvedName} onChange={e => setApprovedName(e.target.value)} style={{ marginBottom: 8 }} />
+                <Input placeholder="Position" value={approvedPosition} onChange={e => setApprovedPosition(e.target.value)} />
               </div>
             </div>
           </Col>
