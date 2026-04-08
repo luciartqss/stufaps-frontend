@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
       setPermissions(permsData)
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('user', JSON.stringify(userData))
+      if (data.token) localStorage.setItem('auth_token', data.token)
       if (permsData) localStorage.setItem('permissions', JSON.stringify(permsData))
 
       return { success: true, user: userData, permissions: permsData, must_change_password: userData.must_change_password }
@@ -52,20 +53,33 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      const token = localStorage.getItem('auth_token')
+      if (token) {
+        await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        })
+      }
+    } catch (_) { /* ignore logout errors */ }
     setIsAuthenticated(false)
     setUser(null)
     setPermissions(null)
     localStorage.removeItem('isAuthenticated')
     localStorage.removeItem('user')
     localStorage.removeItem('permissions')
+    localStorage.removeItem('auth_token')
   }
 
   // Refresh permissions from server (e.g. after admin changes assignments)
   const refreshPermissions = useCallback(async () => {
     if (!user?.id) return
     try {
-      const res = await fetch(`${API_BASE}/users/${user.id}/permissions`)
+      const token = localStorage.getItem('auth_token')
+      const res = await fetch(`${API_BASE}/users/${user.id}/permissions`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      })
       if (!res.ok) {
         // User was deleted or server error — force logout
         if (res.status === 404) {

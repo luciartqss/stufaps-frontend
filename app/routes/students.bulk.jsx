@@ -1026,11 +1026,12 @@ export default function ImportBulk() {
     }
 
     // --- Phase 1: Missing required fields = Conflict ---
-    // Required: Award Number, Surname, First Name
+    // Required: Award Number (except ACEF-GIAHEP), Surname, First Name
     // (Scholarship Status, Middle Name and Extension are optional)
     rows.forEach((row, idx) => {
       const missing = []
-      if (!String(row.awardNumber || '').trim()) missing.push('Award Number')
+      const isAcef = /^ACEF[-\s]?GIAHEP$/i.test(String(row.scholarshipProgram || '').trim())
+      if (!isAcef && !String(row.awardNumber || '').trim()) missing.push('Award Number')
       if (!String(row.surname || '').trim()) missing.push('Surname')
       if (!String(row.firstName || '').trim()) missing.push('First Name')
 
@@ -1170,7 +1171,7 @@ export default function ImportBulk() {
     }
     const c = validationCounts
     if (c.missingFields > 0) {
-      message.error(`${c.missingFields} row(s) missing required fields (Award Number, Status, or Name). Fix or remove them first.`)
+      message.error(`${c.missingFields} row(s) missing required fields (Award Number [except ACEF-GIAHEP], or Name). Fix or remove them first.`)
       return
     }
     // db_match rows are allowed — the resolve-import flow will handle duplicates

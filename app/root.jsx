@@ -11,8 +11,11 @@ import Layout from './components/Layout'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import ForceChangePasswordModal from './components/ForceChangePasswordModal'
+import { setupAuthInterceptor } from './lib/authInterceptor'
 
 import './app.css'
+
+setupAuthInterceptor()
 
 export const links = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

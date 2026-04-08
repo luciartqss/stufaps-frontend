@@ -31,6 +31,14 @@ const PROGRAM_AMOUNTS = {
   'ACEF-GIAHEP SUC': 20000,
 }
 
+const isAcefProgram = (p) => /ACEF/i.test(p)
+
+// ACEF institutional type helpers
+const isAcefPhei = (t) => /^Private$/i.test(t)
+const isAcefSuc = (t) => /^(SUC|LUC)$/i.test(t)
+const isValidAcefType = (t) => isAcefPhei(t) || isAcefSuc(t)
+const getAcefGroup = (t) => isAcefPhei(t) ? 'PHEI' : isAcefSuc(t) ? 'SUC' : null
+
 export default function Voucher() {
   const [programs, setPrograms] = useState([])
   const [years, setYears] = useState([])
@@ -82,12 +90,19 @@ export default function Voucher() {
   }, [program, schoolYear, semester])
 
   useEffect(() => {
-    if (program && PROGRAM_AMOUNTS[program]) {
+    if (isAcefProgram(program) && selectedStudents.length > 0) {
+      const instType = selectedStudents[0].institutionalType
+      if (isAcefPhei(instType)) {
+        setCustomAmount(30000)
+      } else if (isAcefSuc(instType)) {
+        setCustomAmount(20000)
+      }
+    } else if (program && PROGRAM_AMOUNTS[program]) {
       setCustomAmount(PROGRAM_AMOUNTS[program])
     } else {
       setCustomAmount(null)
     }
-  }, [program])
+  }, [program, selectedStudents])
 
   const fetchPrograms = async () => {
     try {
@@ -189,6 +204,7 @@ export default function Voucher() {
     const query = studentSearch.toLowerCase().trim()
     const selectedIds = new Set(selectedStudents.map(s => String(s.id)))
     const activeNta = selectedStudents.length > 0 ? selectedStudents[0].nta : null
+    const activeInstType = selectedStudents.length > 0 ? selectedStudents[0].institutionalType : null
     let filtered = query === ''
       ? availableStudents
       : availableStudents.filter(s =>
@@ -198,6 +214,15 @@ export default function Voucher() {
 
     if (activeNta) {
       filtered = filtered.filter(s => s.nta === activeNta)
+    }
+
+    // For ACEF programs: only show Private/SUC/LUC students, lock to same group
+    if (isAcefProgram(program)) {
+      filtered = filtered.filter(s => isValidAcefType(s.institutionalType))
+      if (activeInstType) {
+        const activeGroup = getAcefGroup(activeInstType)
+        filtered = filtered.filter(s => getAcefGroup(s.institutionalType) === activeGroup)
+      }
     }
 
     setStudentOptions(
@@ -216,6 +241,11 @@ export default function Voucher() {
                 {s.nta && (
                   <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>
                     {s.nta}
+                  </Text>
+                )}
+                {isAcefProgram(program) && s.institutionalType && (
+                  <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>
+                    {s.institutionalType}
                   </Text>
                 )}
                 {s.voucherTrackingNo && (
@@ -652,6 +682,11 @@ export default function Voucher() {
                   {selectedStudents[0].nta}
                 </Tag>
               )}
+              {isAcefProgram(program) && selectedStudents.length > 0 && selectedStudents[0].institutionalType && (
+                <Tag color="green" style={{ fontSize: 12, padding: '1px 8px', fontWeight: 600, margin: 0, flexShrink: 0 }}>
+                  {getAcefGroup(selectedStudents[0].institutionalType)}
+                </Tag>
+              )}
             </div>
             <AutoComplete
               ref={autocompleteRef}
@@ -707,6 +742,7 @@ export default function Voucher() {
                         <div style={{ paddingLeft: 18, marginTop: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
                           <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{s.atmAccount || 'No ATM'}</Text>
                           {s.nta && <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{s.nta}</Text>}
+                          {isAcefProgram(program) && s.institutionalType && <Text type="secondary" style={{ fontSize: 11, lineHeight: 1.2 }}>{s.institutionalType}</Text>}
                           {hasV && (
                             <Text style={{ fontSize: 11, lineHeight: 1.2, color: '#d46b08' }}>
                               Existing voucher: {s.voucherTrackingNo} (will be overwritten)
